@@ -60,10 +60,13 @@ try {
   };
   await settleCaptures(); await assertCount('portfolio');
   // Check the popup after opening source arrivals have finished replacing the initial table.
-  for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(!await page.getByRole('combobox', { name, exact: true }).isVisible());
-  await page.getByRole('button', { name: 'More filters (5)', exact: true }).click();
-  for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(await page.getByRole('combobox', { name, exact: true }).isVisible());
-  await page.getByRole('dialog', { name: 'More filters (5)', exact: true }).getByRole('button', { name: 'Done', exact: true }).click();
+  assert.equal(await page.getByRole('combobox', { name: 'Category', exact: true }).count(), 0);
+  assert(await page.getByRole('combobox', { name: 'Trade category', exact: true }).isVisible());
+  assert.equal(await page.locator('[data-watch-toggle]').count(), 0);
+  for (const name of ['Exchange', 'Transaction type', 'Mode']) assert(!await page.getByRole('combobox', { name, exact: true }).isVisible());
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  for (const name of ['Exchange', 'Transaction type', 'Mode']) assert(await page.getByRole('combobox', { name, exact: true }).isVisible());
+  await page.getByRole('dialog', { name: 'Filters', exact: true }).getByRole('button', { name: 'Done', exact: true }).click();
   assert.equal(await page.getByRole('columnheader', { name: 'Exchange', exact: true }).count(), 1);
   assert(await page.locator('[data-insider-source-link]').count());
   const portfolioCount = await count();
@@ -123,8 +126,13 @@ try {
   await page.getByRole('dialog').locator('[data-modal-close]').click();
   assert(await page.getByText('NEW SATTVA DEAL', { exact: true }).count(), 'failed source retains visible evidence');
   await search().fill(''); await period().selectOption('30');
+  await search().blur();
   await page.screenshot({ path: '/tmp/sattva-deals-desktop.png', fullPage: true });
   await page.evaluate(() => window.sattvaTheme.toggle());
+  await page.evaluate(async () => {
+    await Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+      .map(animation => animation.finished.catch(() => {})));
+  });
   await page.screenshot({ path: '/tmp/sattva-deals-dark.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
@@ -135,5 +143,5 @@ try {
   await page.waitForFunction(() => !document.body.textContent.includes('NEW SATTVA DEAL'));
   assert.equal(await period().inputValue(), 'today', 'Today advances at midnight without a new capture revision');
   assert.deepEqual(errors, []);
-  console.log('PASS Sattva deals: portfolio/universe/watchlist, six filters, retained history, URL reload, automatic arrivals, Excel, failures, midnight, themes and mobile');
+  console.log('PASS Sattva deals: portfolio/universe/watchlist, five filters, retained history, URL reload, automatic arrivals, Excel, failures, midnight, themes and mobile');
 } finally { await browser.close(); server.closeAllConnections(); await new Promise(done => server.close(done)); }

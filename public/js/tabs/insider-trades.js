@@ -7,7 +7,8 @@ import { TAB_META } from './catalog.js';
 // THE HEADINGS ARE REPRODUCED, NOT TRANSLATED. If the source writes "Acq/Disp" this says
 // "Acq/Disp", not "Action" — mapping their vocabulary onto ours would put our word on their data,
 // and it would break silently the day they add a column. The one thing read out of the row is the
-// date, and only so the table can sort; every other cell is passed through as text.
+// date, and only so the table can sort. Numeric cells gain Indian digit grouping for reading;
+// source units, decimal digits, original tooltips and exported values remain unchanged.
 //
 // NOTHING IS SUMMED. A quantity column may hold "1,20,000" or "1,20,000 (pledged)" and a value
 // column may be blank; totalling those would either crash or, worse, quietly produce a number.
@@ -74,14 +75,21 @@ function directionTint(v) {
   return 'text-slate-600';
 }
 
+// Group digits as text so large quantities and trailing decimals never lose precision.
+function numberText(raw) {
+  const match = /^([+-]?)(0|[1-9]\d*)(\.\d+)?$/.exec(raw);
+  if (!match || match[2].length <= 3) return raw;
+  const lead = match[2].slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+  return `${match[1]}${lead},${match[2].slice(-3)}${match[3] || ''}`;
+}
+
 // The upstream owns both the headings and the values, so these filters only locate likely heading
 // variants and reproduce the cell text as-is. In particular, "Transaction" is presented as
 // "Transaction type" on the control because that is the question the reader is asking; its option
 // values remain the source's own words (Acquisition, Disposal, Pledge, and so on).
 const FILTER_FIELDS = [
-  { label: 'Trade category', allLabel: 'All trade categories', keys: ['trade category'], maxWidthPx: 220 },
+  { label: 'Trade category', allLabel: 'All trade types', keys: ['trade category'], maxWidthPx: 220 },
   { label: 'Exchange', allLabel: 'All exchanges', keys: ['exchange'], maxWidthPx: 160 },
-  { label: 'Category', allLabel: 'All categories', keys: ['category'], maxWidthPx: 220 },
   {
     label: 'Transaction type',
     allLabel: 'All transaction types',
@@ -153,8 +161,11 @@ const tab = makeFilingsTab({
   nameWrap: true,
   rowName: companyNameFor,
   rowSub: (r) => insiderNameFor(r) || '(not named)',
-  afterSub: (r) => r.ticker ? `<div class="text-xs text-slate-500">${escapeHtml(r.ticker)}</div>` : '',
-  searchable: (r) => `${companyNameFor(r)} ${r.ticker || ''} ${Object.values(r.cells || {}).join(' ')}`,
+  afterSub: (r) => r.ticker ? `<span class="deal-ticker">${escapeHtml(r.ticker)}</span>` : '',
+  showWatchFilter: false,
+  searchable: (r) => `${companyNameFor(r)} ${r.ticker || ''} ${Object.values(r.cells || {}).join(' ')} ${Object.entries(r.cells || {})
+    .filter(([header]) => /shares|quantity|price|value|amount|stake|%/i.test(header))
+    .map(([, value]) => numberText(String(value ?? ''))).join(' ')}`,
   // The whole row, because these rows have no id of their own: no URL, no headline, and two filings
   // on one day by two people are a legitimate pair. NEVER the row's index — see the note beside the
   // key builder in filings-tab.js for what that cost the News tab.
@@ -166,10 +177,13 @@ const tab = makeFilingsTab({
   },
   filters: tradeFilters,
   filterGroup: {
-    label: 'More filters (5)',
-    indices: FILTER_FIELDS.map((_, i) => i),
+    label: 'Filters',
+    indices: [1, 2, 3],
     position: 'end',
-    summary: () => 'More filters (5)',
+    summary: filters => {
+      const count = [1, 2, 3].filter(i => filters[i] !== 'all').length;
+      return count ? `Filters · ${count}` : 'Filters';
+    },
   },
   preserveReadingPosition: true,
   renderRevision: m => `${newsDay()}:${m.snapshotReadError || ''}`,
@@ -185,6 +199,19 @@ const tab = makeFilingsTab({
     return { ...previous, filters };
   },
   wireAboveTable: (root, ctx) => {
+    const table = root.querySelector('[data-score-table]');
+    table?.setAttribute('data-deals-table', '');
+    const search = table?.querySelector('[data-table-search]');
+    if (search) {
+      search.placeholder = 'Search company or investor…';
+      search.setAttribute('aria-label', 'Search company or investor');
+      search.previousElementSibling.innerHTML = '<svg class="deal-control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';
+    }
+    const exportIcon = table?.querySelector('[data-export] [aria-hidden]');
+    if (exportIcon) exportIcon.innerHTML = '<svg class="deal-control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg>';
+    const toolbar = table?.querySelector('[data-table-toolbar]');
+    const exportButton = toolbar?.querySelector('[data-export]');
+    if (exportButton) toolbar.firstElementChild.append(exportButton);
     const select = root.querySelector('[data-table-filter][aria-label="Trade period"]');
     if (!select) return;
     const changed = () => ctx.setParamsQuiet({ ...ctx.params, range: PERIOD_TO_RANGE[select.value] || select.value });
@@ -198,9 +225,11 @@ const tab = makeFilingsTab({
   // identity/date fields and the source/link fields consolidated into the one Source arrow below.
   // A source that adds any other column still gets a column.
   columns: (m) => {
-    const headers = (m.headers || []).filter((h) => !looksLikeName(h) && !looksLikeCompany(h) && !looksLikeSource(h) && !looksLikeLink(h));
+    const order = ['trade category', 'transaction', 'transaction type', 'acq/disp', 'trade shares', 'quantity', 'price', 'value'];
+    const priority = h => { const index = order.indexOf(h.toLowerCase()); return index < 0 ? order.length : index; };
+    const headers = (m.headers || []).filter((h) => !looksLikeName(h) && !looksLikeCompany(h) && !looksLikeSource(h) && !looksLikeLink(h))
+      .sort((a, b) => priority(a) - priority(b));
     const cols = [
-      { label: 'Exchange', get: (r) => r.cells?.Exchange || '—' },
       {
         label: 'Date',
         get: (r) => (r.date ? `<span class="whitespace-nowrap tabular-nums text-slate-600">${escapeHtml(formatDate(r.date))}</span>` : dash('the row carried no readable date')),
@@ -212,10 +241,19 @@ const tab = makeFilingsTab({
       if (looksLikeDate(h)) continue; // already the Date column
       cols.push({
         label: h,
+        align: /shares|quantity|price|value|amount|stake|%/i.test(h) ? 'right' : 'left',
         get: (r) => {
           const v = r.cells?.[h];
           if (v == null || v === '') return dash('the source left this cell empty');
-          return `<span class="${directionTint(v)}">${escapeHtml(String(v))}</span>`;
+          const text = escapeHtml(String(v));
+          if (/^trade category$/i.test(h)) return `<span class="deal-type">${text}</span>`;
+          if (/^(transaction|transaction type|acq\/disp|acquisition\/disposal)$/i.test(h)) {
+            const tint = directionTint(v);
+            const direction = tint.includes('emerald') ? 'buy' : tint.includes('rose') ? 'sell' : 'other';
+            return `<span class="deal-transaction" data-direction="${direction}">${text}</span>`;
+          }
+          if (/shares|quantity|price|value|amount|stake|%/i.test(h)) return `<span class="deal-number" title="${text}">${escapeHtml(numberText(String(v)))}</span>`;
+          return `<span class="deal-cell">${text}</span>`;
         },
         html: true,
         // Sorted as text, because these cells are text. A quantity written "1,20,000 (pledged)" is
@@ -223,6 +261,7 @@ const tab = makeFilingsTab({
         sortValue: (r) => String(r.cells?.[h] ?? ''),
       });
     }
+    cols.push({ label: 'Exchange', get: (r) => r.cells?.Exchange ? `<span class="deal-exchange">${escapeHtml(String(r.cells.Exchange))}</span>` : dash('the source supplied no exchange'), html: true });
     cols.push({
       label: 'Source',
       get: sourceCell,

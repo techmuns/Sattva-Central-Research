@@ -17,16 +17,17 @@ const fullParty = 'Person 0 And The Complete Name Of An Institutional Investment
 const rows = [...types, '1,00,000 Equity', '1,20,00,000 Any Other Instrument', '1290773'].map((Transaction, i) => ({
   ticker: 'TEST', date, cells: { Insider: i === 0 ? fullParty : `Person ${i}`, Company: i === 0 ? fullCompany : 'Test Company', Transaction, 'Trade Category': categories[i % 4],
     Exchange: i % 2 ? 'BSE' : 'NSE', Category: i % 2 ? 'Public' : 'Promoter', Mode: i % 2 ? 'Off Market' : 'On Market',
-    'Trade Shares': String(100 + i), Source: 'Screener.in' },
+    'Trade Shares': i === 0 ? '1234567' : String(100 + i), Source: 'Screener.in' },
 }));
 rows.push({ ticker: 'TEST', date, cells: { Insider: 'Alternate', Transaction: '27,000 Equity', 'Acq/Disp': 'Disposal', 'Trade Category': 'Insider trade' } });
+rows[0].cells.Price = '1234.0500';
 delete rows[2].cells.Company; rows[2].cells['Company Name'] = 'Company Name Variant Limited';
 delete rows[3].cells.Company;
 delete rows[5].cells.Company; rows[5].company = 'Issuer Stored On The Row Limited';
 delete rows[9].cells.Company; rows[9].cells['Company Name'] = 'Company With No Named Party'; rows[9].cells.Insider = '';
 let capture = { kind: 'insider', capturedAt: at, coversUniverse: true, windowDays: 365,
   headers: [...new Set(rows.flatMap(row => Object.keys(row.cells)))], byTicker: { TEST: rows } };
-const html = `<!doctype html><link rel="stylesheet" href="/css/tailwind.css"><main id="root"></main><script type="module">
+const html = `<!doctype html><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"><main id="root"></main><script type="module">
 import * as tab from '/js/tabs/insider-trades.js';
 import * as coverage from '/js/data/coverage.js';
 coverage.prime({holdings:[{ticker:'TEST',name:'Test Company'}]});
@@ -81,6 +82,18 @@ try {
     assert(await row.locator('[data-insider-source-link]').count());
   };
   await assertFullNames();
+  const numbers = page.locator('tr[data-row-key]').filter({ hasText: fullParty }).first().locator('.deal-number');
+  assert.equal(await numbers.getByText('12,34,567', { exact: true }).getAttribute('title'), '1234567');
+  assert.equal(await numbers.getByText('1,234.0500', { exact: true }).getAttribute('title'), '1234.0500');
+  const heads = await page.getByRole('columnheader').allTextContents();
+  assert.deepEqual(heads.slice(0, 6).map(value => value.replace(/[▴▾]/g, '').trim()), ['Company', 'Date', 'Trade Category', 'Transaction', 'Acq/Disp', 'Trade Shares']);
+  assert.equal(await page.locator('.deal-number').first().evaluate(el => getComputedStyle(el.closest('td')).textAlign), 'right');
+  for (const value of ['1234567', '12,34,567', '1,234.0500']) {
+    await page.locator('[data-table-search]').fill(value);
+    await page.waitForFunction(() => /^1 trade /.test(document.querySelector('[data-row-count]')?.textContent));
+    assert((await page.locator('tr[data-row-key]').innerText()).includes(fullParty), 'both original and displayed numbers remain searchable');
+  }
+  await page.locator('[data-table-search]').fill('');
   assert(await page.getByTitle('Company Name Variant Limited', { exact: true }).count());
   assert(await page.getByTitle('Issuer Stored On The Row Limited', { exact: true }).count());
   await page.locator('[data-table-search]').fill('Issuer Stored On The Row');
@@ -92,13 +105,16 @@ try {
   await page.waitForFunction(() => /^1 trade /.test(document.querySelector('[data-row-count]')?.textContent));
   assert.equal(await page.locator('tr[data-row-key] td').first().locator('span[title]').innerText(), '(not named)', 'issuer-only Name fields cannot become a party');
   await page.locator('[data-table-search]').fill('');
-  const more = page.getByRole('button', { name: 'More filters (5)', exact: true });
-  const panel = page.getByRole('dialog', { name: 'More filters (5)', exact: true });
-  const names = ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode'];
+  const more = page.getByRole('button', { name: /^Filters(?: · \d+)?$/ });
+  const panel = page.getByRole('dialog', { name: 'Filters', exact: true });
+  const names = ['Exchange', 'Transaction type', 'Mode'];
   const period = page.getByLabel('Trade period', { exact: true });
   const search = page.locator('[data-table-search]');
   assert(await search.isVisible()); assert(await period.isVisible());
-  assert(await page.locator('[data-watch-toggle]').isVisible());
+  assert.equal(await page.locator('[data-watch-toggle]').count(), 0, 'shared Watchlist scope owns company selection');
+  assert(await page.getByLabel('Trade category', { exact: true }).isVisible());
+  assert.equal(await page.getByLabel('Category', { exact: true }).count(), 0, 'person Category has no hidden predicate or selector');
+  assert.equal(await page.getByRole('columnheader', { name: 'Category', exact: true }).count(), 1, 'raw source categories remain readable');
   for (const name of names) assert(!await page.getByLabel(name, { exact: true }).isVisible(), `${name} starts collapsed`);
   const order = await page.locator('[data-table-toolbar]').evaluate(el => {
     const search = el.querySelector('[data-table-search]'), period = el.querySelector('[aria-label="Trade period"]'), more = el.querySelector('[data-filter-group-toggle]');
@@ -107,7 +123,7 @@ try {
   });
   assert(order, 'Search and Period lead the compact toolbar');
   await more.click();
-  assert.equal(await panel.locator('select').count(), 5);
+  assert.equal(await panel.locator('select').count(), 3);
   for (const name of names) assert(await page.getByLabel(name, { exact: true }).isVisible());
   const select = page.getByLabel('Transaction type', { exact: true });
   const choices = await select.locator('option').evaluateAll(options => options.map(option => option.value));
@@ -121,7 +137,7 @@ try {
     if (type === 'Disposal') assert(names.some(text => text.includes('Alternate')));
   }
   await select.selectOption('Buy');
-  for (const [name, excluded, included] of [['Exchange', 'BSE', 'NSE'], ['Category', 'Public', 'Promoter'], ['Mode', 'Off Market', 'On Market']]) {
+  for (const [name, excluded, included] of [['Exchange', 'BSE', 'NSE'], ['Mode', 'Off Market', 'On Market']]) {
     await page.getByLabel(name, { exact: true }).selectOption(excluded);
     await page.waitForFunction(() => /^0 trades/.test(document.querySelector('[data-row-count]')?.textContent));
     await page.getByLabel(name, { exact: true }).selectOption(included);
@@ -135,22 +151,24 @@ try {
   assert.equal(await more.getAttribute('data-active'), 'true');
   await search.fill('Person 0'); await period.selectOption('today');
   await more.focus(); await page.keyboard.press('Enter');
-  await panel.getByRole('button', { name: 'Clear more filters (5)', exact: true }).click();
+  await panel.getByRole('button', { name: 'Clear filters', exact: true }).click();
   for (const name of names) assert.equal(await page.getByLabel(name, { exact: true }).inputValue(), 'all');
   assert.equal(await search.inputValue(), 'Person 0');
-  assert.equal(await period.inputValue(), 'today', 'Clear affects only the five grouped selectors');
-  await page.waitForFunction(() => /^1 trade /.test(document.querySelector('[data-row-count]')?.textContent));
+  assert.equal(await period.inputValue(), 'today', 'Clear affects only the three grouped selectors');
+  assert.equal(await page.getByLabel('Trade category', { exact: true }).inputValue(), 'Block deal', 'Clear preserves the primary trade category');
+  await page.waitForFunction(() => /^0 trades/.test(document.querySelector('[data-row-count]')?.textContent));
   assert.equal(await more.getAttribute('data-active'), 'false');
   await page.keyboard.press('Escape');
   assert(!await select.isVisible());
   await search.fill(''); await period.selectOption('30');
+  await page.getByLabel('Trade category', { exact: true }).selectOption('all');
   await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.match(/\d+/)?.[0]) === n, rows.length);
   assert.match(await count.innerText(), /12 trades/);
   for (const size of [{ width: 390, height: 844 }, { width: 740, height: 360 }]) {
     await page.setViewportSize(size); await assertFullNames(); await more.scrollIntoViewIfNeeded(); await more.click();
     const box = await panel.boundingBox();
     assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= size.width && box.y + box.height <= size.height,
-      'all five selectors remain in a scrollable panel inside the viewport');
+      'secondary selectors remain in a scrollable panel inside the viewport');
     await panel.getByRole('button', { name: 'Done', exact: true }).click();
     assert(!await select.isVisible());
   }
@@ -166,6 +184,26 @@ try {
   await page.locator('[data-table-search]').fill('Window party 249');
   await page.waitForFunction(() => /^1 trade /.test(document.querySelector('[data-row-count]')?.textContent));
   assert((await page.locator('tr[data-row-key] td').first().innerText()).includes('Window party 249'));
+  // Saved screens store named filters, so removing Category must not shift the other choices
+  // or retain its now-invisible predicate. Every matching fixture row is a Promoter.
+  await page.evaluate(async () => {
+    const tab = await import('/js/tabs/insider-trades.js');
+    const { enterView } = await import('/js/core/view-reading.js');
+    tab.destroy();
+    enterView({ key: 'legacy-deals', source: 'insider-trades', preset: { reading: {
+      tableKey: 'sattva-insider-trades', q: 'Window party 249', watchOnly: false, sort: { key: 'Date', dir: 'desc' },
+      filters: [{ label: 'Category', value: 'Public' }, { label: 'Trade category', value: 'Bulk deal' },
+        { label: 'Exchange', value: 'NSE' }, { label: 'Transaction type', value: 'Buy' },
+        { label: 'Mode', value: 'On Market' }, { label: 'Trade period', value: 'today' }],
+    } } });
+    tab.render({ root: document.querySelector('#root'), scope: 'universe', data: { universe: [] }, params: {},
+      setParamsQuiet() {}, live: { register() {}, start() {}, stop() {} } });
+  });
+  await page.waitForFunction(() => /^1 trade /.test(document.querySelector('[data-row-count]')?.textContent));
+  for (const [label, value] of [['Trade category', 'Bulk deal'], ['Exchange', 'NSE'], ['Transaction type', 'Buy'], ['Mode', 'On Market'], ['Trade period', 'today']]) {
+    assert.equal(await page.getByLabel(label, { exact: true }).inputValue(), value, `saved ${label} keeps its meaning`);
+  }
+  assert.equal(await page.getByLabel('Category', { exact: true }).count(), 0);
   assert.deepEqual(errors, []);
   console.log('PASS company-first complete names, issuer fallbacks, bounded wrapped history, compact filters, small viewports and retained disclosures');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
