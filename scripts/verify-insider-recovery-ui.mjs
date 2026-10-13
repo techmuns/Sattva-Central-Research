@@ -53,7 +53,7 @@ const server = createServer((req, res) => {
     let body = readFileSync(file);
     if (path === '/sw.js') {
       body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
-      if (!upgraded) body = body.replace(/-insider-capture-recovery-v1/, '-previous-insider-capture');
+      if (!upgraded) body = body.replace(/-insider-capture-recovery-v\d+/, '-previous-insider-capture');
     }
     if (path === '/js/tabs/insider-trades.js' && !upgraded) body = `export const meta={};export const destroy=()=>{};export function render(ctx){ctx.root.innerHTML='<h2>This feed needs the Worker</h2>';}`;
     res.setHeader('content-type', {'.js':'text/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'}[extname(file)] || 'application/octet-stream');
@@ -108,6 +108,7 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.ready && window.feed.rows().some(row => row.cells.Insider === 'Official fund'));
   assert.equal(await page.evaluate(() => window.feed.meta().exchanges.updatedAt),at,'an older committed seed cannot hide newer saved API history');
+  await page.waitForFunction(() => window.feed.meta().exchanges?.deliveryError?.includes('unavailable'));
   assert.match(await page.evaluate(() => window.feed.meta().exchanges.deliveryError),/unavailable/);
 
   // The live exchange route remains down while its independent committed input recovers.
