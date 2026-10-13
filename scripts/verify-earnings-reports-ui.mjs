@@ -11,7 +11,7 @@ const results = { meta: { currentPeriod: 'Jun 26', priorPeriod: 'Jun 25', subTyp
     revenue: { current: 42, prior: 31, kind: 'normal', pct: 35, direction: 1 },
     netProfit: { current: 63, prior: -12, kind: 'turnaround', pct: null, direction: 1 },
   })) };
-let upgraded = false, mode = 'exchange', sourceReads = 0, captureReads = 0, reportingYear = 2026, projectionReads = 0;
+let upgraded = false, mode = 'exchange', sourceReads = 0, captureReads = 0, reportingYear = 2026, projectionReads = 0, resultsDegraded = null;
 const resultsFor = subType => {
   const future = reportingYear === 2028;
   const meta = { ...results.meta, subType, structureTag: 'unchanged-figures',
@@ -39,7 +39,8 @@ if(new URL(location.href).searchParams.has('upgrade')) {
   await navigator.serviceWorker.ready;
 }
 window.ready=true;`;
-const html = '<!doctype html><html><head><link rel="stylesheet" href="/css/tailwind.css"></head><body><main></main><script type="module" src="/js/earnings-test.js"></script></body></html>';
+const shellStyles = [...readFileSync(resolve(root, 'index.html'), 'utf8').matchAll(/<style[^>]*>[\s\S]*?<\/style>/g)].map(match => match[0]).join('');
+const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css">${shellStyles}<link rel="stylesheet" href="/css/theme.css"><script src="/js/theme-init.js"></script></head><body style="padding:20px"><main></main><script type="module" src="/js/earnings-test.js"></script></body></html>`;
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const pathname = url.pathname;
@@ -54,7 +55,7 @@ const server = createServer((req, res) => {
     const payload = resultsFor(url.searchParams.get('subType') || 'yoy');
     if (url.searchParams.get('fields') === 'prices') {
       projectionReads++;
-      return json({ fields: 'prices', structureTag: payload.meta.structureTag, meta: payload.meta,
+      return json({ fields: 'prices', structureTag: payload.meta.structureTag, meta: payload.meta, degraded: resultsDegraded,
         prices: Object.fromEntries(payload.rows.map(row => [row.scId, [null, null]])) });
     }
     return json(payload);
@@ -90,7 +91,7 @@ const server = createServer((req, res) => {
       body = body.toString().replace('const VIEWS = [', "const VIEWS = [{value:'filings',label:'Company Filings',help:'Documents'},")
         .replace('const cur = reportingPeriodLabel(m?.currentPeriod, \'Current period\');', "const cur = m?.currentPeriod || 'Current';")
         .replace('const pri = reportingPeriodLabel(m?.priorPeriod, \'Comparison period\');', "const pri = m?.priorPeriod || 'Prior';")
-        .replace("description: 'Latest reported quarterly results, newest first. Figures in ₹ crore.',",
+        .replace("description: 'Latest reported quarterly results, newest first.',",
           "description: `Every company that has reported this quarter, newest first. ${m?.currentPeriod} against ${m?.priorPeriod}.`,");
     }
     send({ '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'text/plain', body);
@@ -129,7 +130,7 @@ try {
   const after = await returning.evaluate(() => caches.keys());
   assert(after.some(key => !before.includes(key)));
   assert(!after.some(key => key.includes('previous-earnings-release')));
-  assert.match(await returning.locator('[data-earnings-head]').textContent(), /Latest reported quarterly results, newest first\. Figures in ₹ crore\./);
+  assert.match(await returning.locator('[data-earnings-head]').textContent(), /Latest reported quarterly results, newest first\./);
   assert(!/against|Sep 26|Sep 25/.test(await returning.locator('[data-earnings-head]').textContent()));
   assert.equal(await returning.locator('th[data-sort="Revenue Jun 2026"]').count(), 1);
   assert.equal(captureReads, 0, 'opening earnings does not fetch every company document');
@@ -174,16 +175,41 @@ try {
   assert.equal(await future.locator('th[data-sort="Revenue Sep 2027"]').count(), 1);
   assert.equal(await future.locator('[data-earnings-report]').first().getAttribute('data-report-period'), 'Sep 28', 'report lookup keeps the original source period');
   const header = await future.locator('[data-earnings-head]').textContent();
+  assert.equal(await future.locator('[data-view-toggle], [data-period-toggle]').count(), 2);
+  assert.deepEqual(await future.locator('[data-view]').allTextContents(), ['Reported', 'Calendar']);
+  assert.equal(await future.locator('[data-live-info]').count(), 0);
+  assert.equal(await future.locator('[data-results-context]').innerText(), 'Q2 FY28-29 · Figures in ₹ crore');
+  assert(!/Universe|Live|reported$/.test(await future.locator('[data-section-controls]').innerText()));
   assert(!/against|this quarter|Sep 26|Sep 25/.test(header));
   await future.locator('[data-period="qoq"]').click();
   await future.locator('[data-period="qoq"][aria-pressed="true"]').waitFor();
   assert.equal(await future.locator('th[data-sort="Revenue Jun 2028"]').count(), 1);
   assert.equal(await future.locator('th[data-sort="Revenue Sep 2028"]').count(), 1);
   assert(projectionReads > 0, 'the ordinary price projection discovers the reporting-period correction');
-  for (const width of [1440, 390]) {
+  for (const theme of ['light', 'dark']) for (const width of [1440, 900, 390, 320]) {
     await future.setViewportSize({ width, height: 900 });
-    assert(await future.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `no page overflow at ${width}px`);
+    await future.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
+    assert(await future.locator('.earnings-reading-controls').evaluate(el => {
+      const groups = [...el.querySelectorAll('.earnings-switch')].map(group => group.getBoundingClientRect());
+      const line = el.querySelector('[data-results-context]').getBoundingClientRect();
+      return document.documentElement.scrollWidth <= innerWidth + 1 && line.height <= 21 && groups.every(group => group.left >= 0 && group.right <= innerWidth && group.bottom <= line.top) &&
+        (groups[0].right <= groups[1].left || groups[0].bottom <= groups[1].top);
+    }), `two aligned switches and one-line context without overflow at ${width}px in ${theme}`);
+    if (process.env.EARNINGS_SCREENSHOT_DIR) await future.screenshot({ path: `${process.env.EARNINGS_SCREENSHOT_DIR}/earnings-${width}-${theme}.png`, fullPage: true });
   }
+  await future.getByRole('button', { name: 'Calendar', exact: true }).click();
+  await future.getByRole('heading', { name: 'Earnings Calendar', exact: true }).waitFor();
+  await future.getByRole('button', { name: 'Reported', exact: true }).click();
+  await future.locator('[data-period="qoq"][aria-pressed="true"]').waitFor();
+  assert.equal(await future.locator('[data-results-context]').innerText(), 'Q2 FY28-29 · Figures in ₹ crore');
+  resultsDegraded = 'Results source unavailable in fixture';
+  await future.evaluate(() => feed.refresh());
+  assert.match(await future.locator('[data-results-status]').innerText(), /Snapshot · update unavailable/);
+  assert.equal(await future.locator('[data-table-search]').inputValue(), 'horizon');
+  assert.equal(await future.locator('tr[data-row-key]').count(), 1, 'retained results survive while the failure stays visible');
+  resultsDegraded = null;
+  await future.evaluate(() => feed.refresh());
+  assert.equal(await future.locator('[data-results-status]').count(), 0, 'source recovery clears the failure notice without restoring the Live chip');
   await future.screenshot({ path: '/tmp/sattva-results-periods-2028.png', fullPage: true });
   await future.context().close();
   console.log('PASS evergreen Results copy, source-bound full years, period-only corrections, retained sort/search, future YoY/QoQ and cached-session upgrade');
