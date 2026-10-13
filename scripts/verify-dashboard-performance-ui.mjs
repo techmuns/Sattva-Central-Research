@@ -23,7 +23,7 @@ const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmark
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
   'corporate-actions', 'nse-filings', 'insider-trades', 'mutual-funds'];
 const currentTabOrder = ['alerts', 'announcements',
-  'earnings', 'breakouts', 'insider-trades', 'mutual-funds', 'news', 'public-chatter', 'super-investors'];
+  'earnings', 'breakouts', 'insider-trades', 'mutual-funds', 'news-section', 'super-investors'];
 const requests = [];
 const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
@@ -77,7 +77,8 @@ const server = createServer((req, res) => {
       const source = readFileSync(path, 'utf8');
       res.end(previousRelease ? source.replace("navigationTitle: 'Results',", '').replace("navigationTitle: 'Concall',", '')
         .replace("navigationTitle: 'Corporate Announcements',", '')
-        .replaceAll(/navigationGroup: '(?:alerts|announcements|earnings)',/g, '')
+        .replace("navigationTitle: 'Market News',", '')
+        .replaceAll(/navigationGroup: '(?:alerts|announcements|earnings|news-section)',/g, '')
         .replace(/(title: 'NSE Filings',\s*\/\/[^\n]*\s*)hideFromNavigation: true,/, '$1') : source);
     } else if (pathname === '/js/tabs/registry.js') {
       const source = readFileSync(path, 'utf8');
@@ -329,6 +330,14 @@ try {
   await page.locator('#subview-mount [data-tab-id="concall"]').click();
   await page.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="earnings"]').getAttribute('aria-selected'), 'true');
+  await page.locator('#tabbar-mount [data-tab-id="news-section"]').click();
+  await page.locator('#subview-mount [data-tab-id="news"][aria-selected="true"]').waitFor();
+  assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
+    tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+    [['news', 'Market News'], ['public-chatter', 'Public Chatter']], 'the returning session receives Market News by default and Public Chatter beside it');
+  await page.locator('#subview-mount [data-tab-id="public-chatter"]').click();
+  await page.locator('#subview-mount [data-tab-id="public-chatter"][aria-selected="true"]').waitFor();
+  assert.equal(await page.locator('#tabbar-mount [data-tab-id="news-section"]').getAttribute('aria-selected'), 'true');
   // Exercise the ordinary browser upgrade and interactions before attaching
   // DevTools so cache measurements cannot affect their worker lifecycle.
   // Keep the data/API outage, restoring only these synthetic cache fixtures.

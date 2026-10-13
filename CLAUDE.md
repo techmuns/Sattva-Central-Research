@@ -290,7 +290,7 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 Navigation update (12 October 2026): the tab strip is ordered Alerts,
 Announcements, Earnings, Breakouts / Technical,
-Bulk/Block Deal, Mutual Funds, News, Public Chatter, Super Investors.
+Bulk/Block Deal, Mutual Funds, News, Super Investors.
 `meta.navigationTitle` optionally changes the tab label without changing its page title or route.
 Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still resolve.
 Alerts contains AI Alerts and All Alerts as pill subtabs, using `meta.navigationGroup` and
@@ -301,6 +301,10 @@ in that order, defaulting to Corporate Announcements when entering from another 
 Each reader keeps its saved routes, scope behavior and independent data lifecycle.
 Earnings contains Results (the existing Earnings Hub reader, selected by default) and Concall,
 in that order. Both keep their existing routes, reader controls and data lifecycles.
+News contains Market News (the existing News reader, selected by default) and Public Chatter.
+Its `news-section` group ID stays distinct from the saved `news` reader route, so selecting
+Market News from Public Chatter changes readers normally. Both retain their existing routes,
+scope behavior, filters and independent data lifecycles.
 
 Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
 `scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
