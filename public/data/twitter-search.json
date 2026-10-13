@@ -2299,9 +2299,9 @@
       "pending": []
     },
     "isin:INE235A01022|FINCABLES": {
-      "lastAttemptAt": "2026-10-07T17:08:22+00:00",
+      "lastAttemptAt": "2026-10-13T07:37:24+00:00",
       "lastResultCount": 48,
-      "error": null,
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00",
       "targetThrough": null,
       "pending": []
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T07:01:37.290485+00:00"
+    "checkedAt": "2026-10-13T07:37:24.574261+00:00"
   }
 }
