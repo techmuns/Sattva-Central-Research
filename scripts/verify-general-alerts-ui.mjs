@@ -290,6 +290,30 @@ try {
   await page.locator('[data-sources-close]').click();
   assert.equal(await picker.getAttribute('open'), null);
   assert.match(await sourceSummary.innerText(), /2 selected/, 'collapsed control discloses the active filter');
+  // Closing a shared preset must return every ordinary-reader choice, including its source set.
+  const normalReading = await page.evaluate(async () => ({
+    reading: (await import('/js/core/view-reading.js')).captureTableReading(document.querySelector('#root')),
+    extras: (await import('/js/tabs/daily-alerts.js')).getSavedView(),
+  }));
+  await page.evaluate(async () => {
+    window.dispose();
+    const tab = await import('/js/tabs/daily-alerts.js'), views = await import('/js/core/view-reading.js');
+    const reading = { q: 'Saved screen only', filters: [{ label: 'Priority', value: 'high' }, { label: 'Direction', value: 'positive' }, { label: 'Date range', value: '7d' }], extras: { allSources: false, sources: ['earnings'] } };
+    views.enterView({ source: 'daily-alerts', key: 'fixture-saved-alerts', preset: { reading } });
+    tab.applySavedView(reading.extras, reading);
+    tab.render({ root: document.querySelector('#root'), scope: 'universe', params: {}, data: {}, savedView: { reading }, savedViewKey: 'fixture-saved-alerts' });
+  });
+  await settled();
+  assert.equal(await page.locator('[data-table-search]').inputValue(), 'Saved screen only');
+  assert.equal(await period.inputValue(), '7d');
+  assert.deepEqual(await page.evaluate(async () => (await import('/js/tabs/daily-alerts.js')).getSavedView().sources), ['earnings']);
+  await page.evaluate(async () => { window.dispose(); (await import('/js/core/view-reading.js')).enterView(null); window.show(); });
+  await settled();
+  const restoredReading = await page.evaluate(async () => ({
+    reading: (await import('/js/core/view-reading.js')).captureTableReading(document.querySelector('#root')),
+    extras: (await import('/js/tabs/daily-alerts.js')).getSavedView(),
+  }));
+  assert.deepEqual(restoredReading, normalReading, 'ordinary sources, search, priority, direction, sort and date window survive a shared saved screen');
   await sourceSummary.press('Enter');
   await page.locator('[data-feed-toggle="__all"]').click();
   await page.locator('[data-feed-toggle="__all"]').press('Escape');
