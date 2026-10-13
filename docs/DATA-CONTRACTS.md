@@ -2753,6 +2753,8 @@ empty or smaller response adds what it returned without deleting earlier events 
 companies retain their prior capture timestamps through the existing fallback metadata. The
 news collapse guard does not discard a partial insider capture, and `FILINGS_FORCE` does not
 disable insider retention. Readable dates outside the requested window expire; undated rows stay.
+The browser's inclusive end date for insider capture merges and company requests follows IST.
+An India-dated disclosure stays available after Indian midnight while UTC is still yesterday.
 
 Overlap is matched on the economic event fields shared by both providers: trade category, ticker,
 date, person, normalised direction and share quantity. Provider label, URL and number formatting do
