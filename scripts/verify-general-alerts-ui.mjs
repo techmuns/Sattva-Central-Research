@@ -96,6 +96,7 @@ const server = createServer((req, res) => {
     if (url.pathname === '/api/super-investors') { const x = data('super-investors.json'); json({ ok: true, investors: x.investors, fetchedAt: x.capturedAt }); return; }
     if (url.pathname === '/api/nse-announcements') { json({ capturedAt: '2026-09-04T08:00:00Z', rows: [
       { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T07:00:00Z', subject: 'Analyst day complete source record', description: 'Original analyst presentation', url: 'https://example.test/analyst.pdf' },
+      { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T07:01:00Z', subject: 'Fraud/Default/Arrest & defaultValue <img src=x onerror="window.alertHeadlineInjection=true">', description: 'Original risk disclosure', url: 'https://example.test/risk.pdf' },
       { company: 'Undated issuer', ticker: null, publishedAt: null, subject: 'Undated retained item', url: 'https://example.test/undated.pdf' },
       ...(version > 1 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T08:00:00Z', subject: 'Newly arrived NSE record', url: 'https://example.test/new.pdf' }] : []),
       ...(version > 2 ? [
@@ -171,6 +172,22 @@ try {
   const signalControl = page.locator('[data-filter-group-toggle]');
   assert.equal(await page.locator('[data-filter-group-summary]').innerText(), 'Signal & priority');
   assert.equal(await page.getByRole('combobox', { name:'Priority',exact:true }).isVisible(), false, 'Priority and Direction occupy one closed toolbar control');
+  await period.selectOption('all');
+  await page.locator('[data-table-search]').fill('defaultValue');
+  await page.waitForFunction(() => document.querySelector('[data-score-table]')?.dataset.virtualTotal === '1');
+  const riskHeadline = page.locator('tbody [data-alert-headline]');
+  assert.deepEqual(await riskHeadline.locator('[data-alert-risk]').allTextContents(), ['Fraud', 'Default', 'Arrest'], 'risk words are emphasized in the headline without matching defaultValue');
+  assert((await riskHeadline.innerText()).includes('& defaultValue <img src=x onerror="window.alertHeadlineInjection=true">'), 'source punctuation and HTML-like text remain literal');
+  assert.equal(await riskHeadline.locator('img').count(), 0, 'highlighting cannot inject source HTML');
+  assert.equal(await page.evaluate(() => window.alertHeadlineInjection), undefined);
+  const emphasis = await riskHeadline.locator('[data-alert-risk]').first().evaluate(node => ({ color:getComputedStyle(node).color, weight:getComputedStyle(node).fontWeight }));
+  assert.equal(emphasis.weight, '700');
+  assert.equal(emphasis.color, 'rgb(190, 18, 60)', 'light-theme risk words are red');
+  const riskRow = page.locator('tbody tr[data-row-key]').first();
+  assert(!/Signal ·|Priority ·/.test(await riskRow.innerText()), 'rows omit both repeated explanation lines');
+  assert((await riskRow.locator('[data-alert-signal]').getAttribute('title')).includes('Rule-derived from the filing text'), 'classification reasons remain available on hover');
+  assert.equal(await riskRow.locator('[data-alert-signal]').getAttribute('data-alert-importance'), 'high');
+  await period.selectOption('today');
   const routineHeadline = 'Jayaswal Neco Industries shares an update';
   await page.locator('[data-table-search]').fill(routineHeadline);
   await signalControl.click();
