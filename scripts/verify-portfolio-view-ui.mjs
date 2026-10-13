@@ -252,7 +252,10 @@ try {
       await page.evaluate(async () => { (await import('/js/core/watchlist.js')).add('KISSHT', 'OnEMI scheduled result'); });
       await page.evaluate(date => { location.hash = `#/research/earnings-hub?scope=watchlist&view=calendar&date=${date}`; }, todayIst);
       await page.waitForFunction(async () => (await import('/js/core/state.js')).state.scope === 'watchlist');
-      await page.getByText('Watchlist ·', { exact:false }).waitFor();
+      await page.locator('#scope-toggle-mount [data-value="watchlist"][aria-pressed="true"]').waitFor();
+      await page.waitForFunction(() => !document.querySelector('#content-host')?.inert &&
+        document.querySelector('#content-host [data-view="calendar"]')?.getAttribute('aria-pressed') === 'true' &&
+        document.querySelectorAll('#content-host tr[data-row-key]').length === 2);
       await page.getByText('OnEMI scheduled result', { exact:true }).waitFor();
       const watchlistCalendar = await page.locator('#content-host').innerText();
       assert.doesNotMatch(watchlistCalendar, /New holding scheduled call|Outside scheduled call|Unresolved scheduled call/);
