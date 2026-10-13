@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-13T01:21:39.771Z",
-  "oldestDataAt": "2026-10-13T01:21:39.771Z",
+  "capturedAt": "2026-10-13T07:01:19.541Z",
+  "oldestDataAt": "2026-10-13T07:01:19.541Z",
   "from": "2025-10-13",
   "to": "2026-10-13",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T01:21:39.771Z",
+      "capturedAt": "2026-10-13T07:01:19.541Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T01:21:39.771Z",
+      "capturedAt": "2026-10-13T07:01:19.541Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-08",
-      "oldestDate": "2026-09-30",
+      "latestDate": "2026-10-12",
+      "oldestDate": "2026-10-01",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T01:21:39.771Z",
+      "capturedAt": "2026-10-13T07:01:19.541Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T01:21:39.771Z",
+      "capturedAt": "2026-10-13T07:01:19.541Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 1922,
+  "withRows": 1924,
   "emptyCount": 0,
-  "rowCount": 20777,
+  "rowCount": 20787,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -256294,6 +256294,21 @@
     "SILGO": [
       {
         "ticker": "SILGO",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Silgo Retail",
+          "Insider": "Nitin Jain",
+          "Transaction": "Acquisition",
+          "Trade Shares": "93750",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SILGO",
         "date": "2026-10-08",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -310778,6 +310793,51 @@
     "MAGSON": [
       {
         "ticker": "MAGSON",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Magson Retail",
+          "Insider": "Anil Natvaral Pethani",
+          "Transaction": "Sell",
+          "Trade Shares": "42000",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAGSON",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Magson Retail",
+          "Insider": "Jennifer Rajesh Fracis",
+          "Transaction": "Sell",
+          "Trade Shares": "131000",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAGSON",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Magson Retail",
+          "Insider": "Ranjan Nitinbhai Patel",
+          "Transaction": "Sell",
+          "Trade Shares": "36000",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAGSON",
         "date": "2026-10-06",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -323627,6 +323687,21 @@
       }
     ],
     "MCL": [
+      {
+        "ticker": "MCL",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "MR. VISHAL Tulsibhai MONPARA",
+          "Transaction": "Sell",
+          "Trade Shares": "8500",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MCL",
         "date": "2026-10-08",
@@ -372060,6 +372135,21 @@
     "BEWLTD": [
       {
         "ticker": "BEWLTD",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "BEW Engg",
+          "Insider": "HImalaya Finance & Investment Co.",
+          "Transaction": "Sell",
+          "Trade Shares": "284000",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "BEWLTD",
         "date": "2026-09-21",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -382714,6 +382804,21 @@
       }
     ],
     "KAPSTON": [
+      {
+        "ticker": "KAPSTON",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Kapston Services",
+          "Insider": "MR. SRIKANTH KODALI",
+          "Transaction": "Sell",
+          "Trade Shares": "912913",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "KAPSTON",
         "date": "2026-10-06",
@@ -396393,6 +396498,21 @@
     "MAXVOLT": [
       {
         "ticker": "MAXVOLT",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Maxvolt Energy",
+          "Insider": "Satendra Shukla",
+          "Transaction": "Acquisition",
+          "Trade Shares": "448986",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAXVOLT",
         "date": "2026-10-08",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -398866,6 +398986,40 @@
           "Trade Shares": "323960",
           "Trade Value": "7.21 crore",
           "Price": "223",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "SJLOGISTIC": [
+      {
+        "ticker": "SJLOGISTIC",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "S J Logistics (I",
+          "Insider": "Rupanki Prashant Shah",
+          "Transaction": "Acquisition",
+          "Trade Shares": "52250",
+          "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "PRITI": [
+      {
+        "ticker": "PRITI",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Priti Internati.",
+          "Insider": "Priti Lohiya",
+          "Transaction": "Sell",
+          "Trade Shares": "3600000",
           "Broadcast Date": "2026-10-12",
           "Source": "Screener.in"
         }
