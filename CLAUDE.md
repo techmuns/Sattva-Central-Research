@@ -2109,9 +2109,6 @@ scrollbar drag, keep rendering the current window but defer height-estimate corr
 release: changing the scroll range or writing `scrollTop` during the gesture makes the thumb
 fall behind the pointer. On release, preserve the actual visible row and offset. Pointer release,
 cancellation, window blur and disposal must all release the gesture state/listeners.
-Table anchors start below the sticky header. `scoreTable` supplies its current height through
-the window's `viewportInset`; ordinary lists keep zero inset. Preserve the uncovered reading row
-when an arrival lands between a header-hidden row and that row, including after thumb release.
 Live updates keep existing row corrections visible while queuing only additions/reordering until
 release; counts, search and export adopt the complete current model immediately. Explicit filters
 and removed/revoked records interrupt the gesture and apply immediately. Overlay thumbs are inside
@@ -3391,6 +3388,9 @@ scope picker, while company stars continue to edit the same shared list.
 Priority and Direction share one compact Signal & priority control. Keep the two predicates
 independent inside its panel, show active selections on the button, and retain both across refreshes.
 Clearing that control resets only those predicates, preserving search, sources, scope and date.
+Rows omit the repeated Signal and Priority explanation lines. Their reasons remain in marker
+hover details and export. Fraud, default, arrest and insolvency/bankruptcy words in the displayed
+headline are red and bold; this is emphasis of source wording, independent of signal classification.
 Keep the global scope picker, date filter,
 source coverage and retained history available; collection and retention are unchanged.
 

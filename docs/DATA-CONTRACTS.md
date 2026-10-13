@@ -5751,6 +5751,12 @@ failures still awaiting their retry are printed in the run log and do not fail i
 
 ## Mutual Fund ownership
 
+Company Holdings uses the shared compact table layout. View, sorting, search, Coverage and export
+share its toolbar; the table fits the measured remaining viewport on resize and toolbar wrapping.
+All three Mutual Funds views retain their existing routes and scope. Only mounted rows are bounded;
+the complete eligible company set remains searchable and exportable. Ownership calculations,
+private access, source statuses, collection and retained history are unchanged.
+
 `GET /api/mutual-funds?isins=ISIN,...` returns `{meta, rows, nextCursor}`. Up to 250
 exact ISINs may be selected; unscoped reads use a 250-company keyset page. Each summary
 carries the actual month, total shares, comparable net/addition/reduction shares, fund counts,

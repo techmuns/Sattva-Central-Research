@@ -35,8 +35,7 @@ export function rowGeometry(count, estimate = 72) {
 
 export function mountWindowedList({ scroller, content, items, key, renderRows, renderParts = null, spacerHtml,
   rowSelector, estimateHeight = 72, initialKey = null, onScrollActivity = null, onWindow = null,
-  viewportInset = () => 0,
-  minRows = 40, maxRows = 100, overscan = 8, patchRow = null }) {
+  minRows = 40, maxRows = 100, overscan = 8, patchRow = null, viewportInset = () => 0 }) {
   const rendered = new Map(); // only mounted nodes and their last generated markup
   const measured = new Map(); // at most one small measurement per currently retained record
   let rows = items, geometry, start = -1, end = 0, frame = 0, measureFrame = 0, disposed = false;
@@ -46,15 +45,14 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   let pendingRows = null;
   const head = () => content === scroller ? 0 : Math.max(0,
     content.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop);
-  const inset = () => Math.max(0, Number(viewportInset()) || 0);
-  // A sticky table header covers rows at the scroll box's top. Anchor the first
-  // uncovered row; an insertion below a hidden anchor would move the reader.
-  const rowTop = () => Math.max(0, scroller.scrollTop - head() + inset());
+  const rowTop = () => Math.max(0, scroller.scrollTop - head());
   const resetGeometry = () => {
     geometry = rowGeometry(rows.length, estimateHeight);
     rows.forEach((row, i) => { const old = measured.get(String(key(row))); if (old?.row === row) geometry.set(i, old.height); });
   };
-  const anchor = () => { const top = rowTop(), index = geometry.indexAt(top); return { index, inside: top - geometry.offset(index) }; };
+  // Preserve the first readable row. A sticky header can hide the geometric top row;
+  // holding that hidden row lets arrivals below it push the visible record down.
+  const anchor = () => { const top = Math.max(0, scroller.scrollTop - head() + viewportInset()), index = geometry.indexAt(top); return { index, inside: top - geometry.offset(index) }; };
   function spacers() {
     const top = content.querySelector('[data-window-spacer="top"]');
     const bottom = content.querySelector('[data-window-spacer="bottom"]');
@@ -62,7 +60,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     if (bottom) bottom.style.height = `${geometry.offset(rows.length) - geometry.offset(end)}px`;
   }
   function restore(held) {
-    const target = head() + geometry.offset(held.index) + held.inside - inset();
+    const target = head() + geometry.offset(held.index) + held.inside - viewportInset();
     if (Math.abs(target - scroller.scrollTop) >= 0.5) scroller.scrollTop = target;
   }
   function measureBoxes(boxes) {
@@ -98,7 +96,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     if (settleScrollbar) {
       // The drag displayed natural heights against frozen estimates. Keep the row actually
       // under the reader's eyes when adopting those heights, rather than the estimated row.
-      const top = scroller.getBoundingClientRect().top + inset();
+      const top = scroller.getBoundingClientRect().top + viewportInset();
       const visible = boxes.findIndex(box => box.bottom > top);
       if (visible >= 0) held = { index: start + visible, inside: top - boxes[visible].top };
       settleScrollbar = false;
@@ -201,7 +199,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     frame = requestAnimationFrame(() => {
       frame = 0;
       const index = geometry.indexAt(rowTop());
-      const lastVisible = geometry.indexAt(rowTop() + Math.max(0, scroller.clientHeight - inset()));
+      const lastVisible = geometry.indexAt(rowTop() + scroller.clientHeight);
       if (index < start + overscan / 2 || lastVisible >= end - overscan / 2) settle(index, { held: draggingScrollbar ? null : anchor() });
     });
   }
@@ -247,7 +245,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   const initialIndex = initialKey == null ? -1 : rows.findIndex(row => String(key(row)) === initialKey);
   if (initialIndex >= 0) scroller.scrollTop = geometry.offset(initialIndex);
   settle(initialIndex >= 0 ? initialIndex : geometry.indexAt(rowTop()), { force: true });
-  if (initialIndex >= 0) restore({ index: initialIndex, inside: 0 });
+  if (initialIndex >= 0) scroller.scrollTop = head() + geometry.offset(initialIndex);
   const observer = new ResizeObserver(() => {
     if (width !== scroller.clientWidth) {
       const held = anchor(); width = scroller.clientWidth;
