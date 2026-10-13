@@ -23,7 +23,7 @@ const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmark
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
   'corporate-actions', 'nse-filings', 'insider-trades', 'mutual-funds'];
 const currentTabOrder = ['alerts', 'announcements',
-  'earnings', 'breakouts', 'insider-trades', 'mutual-funds', 'news-section', 'super-investors'];
+  'earnings', 'breakouts', 'mutual-funds', 'news-section', 'super-investors'];
 const requests = [];
 const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
@@ -84,6 +84,10 @@ const server = createServer((req, res) => {
       const source = readFileSync(path, 'utf8');
       res.end(previousRelease ? `${source}\nconst previousTabOrder = ${JSON.stringify(previousTabOrder)};
 researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrder.indexOf(b.meta.id));` : source);
+    } else if (pathname === '/js/core/workspace.js' && previousRelease) {
+      // The old navigation predates shared ordering. It follows the catalog rather than
+      // applying the new grouped-parent order to these deliberately ungrouped old readers.
+      res.end('export const snapshot=()=>({version:1,revision:0,tabs:[],order:[]});export const status=()=>({confirmed:false,pending:0,error:null,rejected:[]});export const onChange=()=>()=>{};export const start=()=>{};export const sync=async()=>({confirmed:false});export const edit=async()=>({confirmed:false});');
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/alert-pool-format.js') {
@@ -314,10 +318,10 @@ try {
   await page.locator('[data-active-tab="corp-announcements"]').waitFor();
   assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
     tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-    [['corp-announcements', 'Corporate Announcements'], ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs']],
-    'the returning session receives all three Announcements subtabs with the default selected');
+    [['corp-announcements', 'Corporate Announcements'], ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs'], ['insider-trades', 'Bulk/Block Deal']],
+    'the returning session receives all four Announcements subtabs with the default selected');
   assert.equal(await page.locator('#subview-mount [data-tab-id="corp-announcements"]').getAttribute('aria-selected'), 'true');
-  for (const id of ['corporate-actions', 'ipos']) {
+  for (const id of ['corporate-actions', 'ipos', 'insider-trades']) {
     await page.locator(`#subview-mount [data-tab-id="${id}"]`).click();
     await page.locator(`[data-active-tab="${id}"]`).waitFor();
     assert.equal(await page.locator('#tabbar-mount [data-tab-id="announcements"]').getAttribute('aria-selected'), 'true');

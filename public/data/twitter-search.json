@@ -2367,23 +2367,23 @@
       "error": "search-unavailable"
     },
     "isin:INE658D01029|Simplex Casting": {
-      "lastAttemptAt": "2026-10-07T23:38:50+00:00",
+      "lastAttemptAt": "2026-10-13T15:52:20+00:00",
       "error": "search-unavailable"
     },
     "isin:INE658D01029|Simplex Castings": {
-      "lastAttemptAt": "2026-10-08T00:15:49+00:00",
+      "lastAttemptAt": "2026-10-13T16:24:45+00:00",
       "error": "search-unavailable"
     },
     "isin:INE658D01029|SIMPLEXCAS": {
-      "lastAttemptAt": "2026-10-08T00:48:25+00:00",
+      "lastAttemptAt": "2026-10-13T16:58:13+00:00",
       "error": "search-unavailable"
     },
     "isin:INE092A01019|Tata Chemicals": {
-      "lastAttemptAt": "2026-10-08T01:22:40+00:00",
+      "lastAttemptAt": "2026-10-13T17:17:47+00:00",
       "error": "search-unavailable"
     },
     "isin:INE092A01019|TATACHEM": {
-      "lastAttemptAt": "2026-10-08T02:05:58+00:00",
+      "lastAttemptAt": "2026-10-13T17:48:28+00:00",
       "error": "search-unavailable"
     },
     "isin:INE011K01018|Tega Industries": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T15:21:22.485127+00:00"
+    "checkedAt": "2026-10-13T17:48:28.837406+00:00"
   }
 }

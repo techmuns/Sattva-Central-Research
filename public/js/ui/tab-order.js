@@ -16,7 +16,7 @@ export function restoreTabOrder(tabs, key) {
   return [...tabs].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
 }
 
-export function wireTabOrder(list, key, onReorder) {
+export function wireTabOrder(list, key, onReorder, shareOrder = null) {
   const defaults = [...list.querySelectorAll('[data-tab-id]')];
   // Markup records the catalog order even when a saved preference has already been applied.
   defaults.sort((a, b) => Number(a.dataset.tabDefaultIndex) - Number(b.dataset.tabDefaultIndex));
@@ -28,10 +28,19 @@ export function wireTabOrder(list, key, onReorder) {
   status.setAttribute('role', 'status');
   list.parentElement.append(status);
   const buttons = () => [...list.querySelectorAll('[data-tab-id]')];
-  function save(button) {
+  function save(button, intent = null) {
     const order = buttons().map(item => item.dataset.tabId);
     memory.set(key, order);
     let saved = true;
+    if (shareOrder) {
+      status.textContent = 'Saving tab order for everyone…';
+      Promise.resolve().then(() => shareOrder(intent)).then(result => {
+        if (!status.isConnected) return;
+        status.toggleAttribute('data-unavailable', !result.confirmed);
+        status.textContent = result.confirmed ? 'Tab order saved for everyone.' : result.error || 'Tab order changed here and is waiting to be shared.';
+      }).catch(() => { status.toggleAttribute('data-unavailable', true); status.textContent = 'Tab order could not be shared. Please retry.'; });
+      button.focus({ preventScroll: true }); onReorder(); return;
+    }
     try { localStorage.setItem(PREFIX + key, JSON.stringify(order)); } catch { saved = false; }
     status.toggleAttribute('data-unavailable', !saved);
     status.textContent = saved ? `${button.textContent.trim()} moved. Tab order saved for this browser.`
@@ -43,7 +52,7 @@ export function wireTabOrder(list, key, onReorder) {
     if (!target || target === button) return;
     const before = buttons();
     list.insertBefore(button, after ? target.nextElementSibling : target);
-    if (buttons().some((item, index) => item !== before[index])) save(button);
+    if (buttons().some((item, index) => item !== before[index])) save(button, { op: 'move', tabId: button.dataset.tabId, targetId: target.dataset.tabId, after, seedOrder: before.map(item => item.dataset.tabId) });
   }
   function mark(target, after) {
     gesture.target?.removeAttribute('data-tab-drop');
@@ -141,7 +150,7 @@ export function wireTabOrder(list, key, onReorder) {
     event.preventDefault();
     finish();
     if (event.key === 'Home') {
-      if (order.some((item, i) => item !== defaults[i])) { defaults.forEach(item => list.append(item)); save(button); }
+      if (order.some((item, i) => item !== defaults[i])) { defaults.forEach(item => list.append(item)); save(button, { op: 'reset' }); }
     } else move(button, order[index + (event.key === 'ArrowRight' ? 1 : -1)], event.key === 'ArrowRight');
   });
   return () => { finish(); abort.abort(); status.remove(); };

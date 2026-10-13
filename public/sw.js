@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-10-13-manager-contract-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-10-13-investor-changes-v4`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/js/core/json-worker.js', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -144,7 +144,7 @@ self.addEventListener('install', (event) => {
   // complete successfully before this version can replace the active worker.
   event.waitUntil(self.skipWaiting());
   event.waitUntil((async () => {
-    const cache = await caches.open(ipoFilingCacheKey());
+    const cache = await caches.open(sharedWorkspaceCacheKey());
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -158,7 +158,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== ipoFilingCacheKey()).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== sharedWorkspaceCacheKey()).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -227,7 +227,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(ipoFilingCacheKey());
+    const cache = await caches.open(sharedWorkspaceCacheKey());
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture
@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${appReleaseCacheKey()}-all-alerts-clean-header-v13`;
+  return `${ipoFilingCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2`;
 }
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.
@@ -260,11 +260,15 @@ function dashboardCacheKey() {
 }
 
 // Compose column presentation with other releases without changing their version markers.
+function sharedWorkspaceCacheKey() {
+  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v2`;
+}
+
 function tableLayoutCacheKey() {
-  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1`;
+  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1`;
 }
 
 // Keep the IPO revision independent of other dashboard release markers.
 function ipoFilingCacheKey() {
-  return `${tableLayoutCacheKey()}-single-ipo-filing-link-v3-accepted-article-identities-v1`;
+  return `${appReleaseCacheKey()}-single-ipo-filing-link-v5-accepted-article-identities-v1`;
 }

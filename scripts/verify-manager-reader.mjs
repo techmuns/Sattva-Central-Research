@@ -18,11 +18,12 @@ const tick = () => new Promise(done => setImmediate(done));
 let clock = Date.now();
 const realNow = Date.now;
 Date.now = () => clock;
+const openPeriod = `${new Date().getUTCFullYear() + 1}-03-31`;
 const revision = JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-10-01T00:00:00Z', null]));
 const fixture = (checked = clock, sourceRevision = revision) => ({ version: 1, valuation: 'workbook', checkedAt: new Date(checked).toISOString(),
-  bookAsOf: '2026-08-31', listedValuationAt: null, listedValuationBasis: null, archiveVersion: 1, sourceRevision,
+  bookAsOf: openPeriod, listedValuationAt: null, listedValuationBasis: null, archiveVersion: 1, sourceRevision,
   coverage: { note: 'Fixture coverage', transactionAsOf: '2026-08-31', sourceCount: 6, privateCount: 0 },
-  managers: [{ id: 'custodian-example', name: 'Example', kind: 'custodian', asOf: '2026-08-31', positions: [], transactions: [],
+  managers: [{ id: 'custodian-example', name: 'Example', kind: 'custodian', asOf: openPeriod, positions: [], transactions: [],
     values: { marketValue: 0, costBasis: 0, unrealised: 0, cashValue: 0, positionCount: 0 } }] });
 let reads = [];
 responder = m => {

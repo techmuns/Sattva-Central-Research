@@ -17,17 +17,20 @@ const sourceRows = [document('STLTECH', '2026-09-03', '101'),
   document('STLTECH', '2026-09-03', '102', 'Recording'), document('HISTORY', '2026-01-02', '103')];
 const calendar = [{ ticker: 'STLTECH', date: '2026-09-22', eventType: 'AGM' }];
 
-async function fixture({ fail = 'schedule', hasSnapshot = true, hasDocuments = true } = {}, verify) {
+async function fixture({ fail = 'head', hasSnapshot = true, hasDocuments = true } = {}, verify) {
   const previousFetch = globalThis.fetch;
   const previousCaches = globalThis.caches;
   const entries = new Map();
   const jobs = [];
   const upstream = [];
   const put = (key, value) => entries.set(`https://cache.invalid/sattva-central-research/concalls/${key}`, value);
-  put('head', { rows: [scan], meta: { fetchedAt: '2026-09-20T11:00:00Z' } });
-  put('tail', { rows: [], meta: { truncated: false } });
-  put('schedule', { upcoming: [], today: { day: null, rows: [] } });
-  if (fail) entries.delete(`https://cache.invalid/sattva-central-research/concalls/${fail}`);
+  const head = { rows: [scan], meta: { quarter: '202606', quarters: ['202606'], next: fail === 'tail' ? 1 : null,
+    total: fail === 'tail' ? 2 : 1, fetchedAt: '2026-09-20T11:00:00Z' } };
+  put('head-v2', head);
+  put('history-v2/202606/202606', { rows: [scan], meta: { truncated: false } });
+  put('schedule-v2', { upcoming: [], today: { day: null, rows: [] }, errors: [] });
+  const key = fail === 'tail' ? 'history-v2/202606/202606' : `${fail}-v2`;
+  if (fail) entries.delete(`https://cache.invalid/sattva-central-research/concalls/${key}`);
   put('screener-documents-v1', { capture: hasDocuments ? { rows: sourceRows, portfolioUpcoming: calendar } : null,
     source: { status: hasDocuments ? 'ok' : 'failed', checkedAt: new Date().toISOString(), records: hasDocuments ? 3 : 0 } });
   globalThis.caches = { default: {
@@ -46,7 +49,7 @@ async function fixture({ fail = 'schedule', hasSnapshot = true, hasDocuments = t
   } } };
   const read = headers => worker.fetch(new Request('https://dashboard.example/api/concalls', { headers }), env,
     { waitUntil: promise => jobs.push(promise) });
-  try { await verify({ read, entries, put, upstream }); }
+  try { await verify({ read, entries, put, upstream, head }); }
   finally { await Promise.allSettled(jobs); globalThis.fetch = previousFetch; globalThis.caches = previousCaches; }
 }
 
@@ -62,9 +65,11 @@ for (const fail of ['head', 'tail', 'schedule']) test(`${fail} outage retains ex
     assert.equal(payload.rows.find(row => row.ticker === 'HISTORY')?.analysisTracked, false);
     assert.equal(payload.meta.total, 2);
     assert.equal(payload.meta.stockscansTotal, 1);
-    assert.equal(payload.meta.fetchedAt, snapshot.meta.fetchedAt, 'do not redate saved analysis');
+    assert.equal(payload.meta.fetchedAt, fail === 'head' ? snapshot.meta.fetchedAt : '2026-09-20T11:00:00Z',
+      'a schedule or history failure cannot redate or discard a healthy current analysis read');
+    assert.equal(payload.meta.analysisLive, fail !== 'head');
     assert.deepEqual(payload.portfolioUpcoming, calendar);
-    assert.match(payload.degraded, /unavailable/);
+    assert.match(payload.degraded, fail === 'tail' ? /updating/ : /unavailable/);
     assert.equal((await read({ 'if-none-match': response.headers.get('etag') })).status, 304);
   });
 });
@@ -99,9 +104,9 @@ test('an unavailable catalogue is not invented from its metadata', async () => {
 });
 
 test('normal recovery changes the validator and preserves the same summary links', async () => {
-  await fixture({}, async ({ read, put }) => {
+  await fixture({}, async ({ read, put, head }) => {
     const fallback = await read();
-    put('schedule', { upcoming: [], today: { day: null, rows: [] } });
+    put('head-v2', head);
     const recovered = await read({ 'if-none-match': fallback.headers.get('etag') });
     assert.equal(recovered.status, 200);
     const payload = await recovered.json();

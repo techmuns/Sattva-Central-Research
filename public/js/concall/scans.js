@@ -4,7 +4,7 @@
 //   openScheduleModal(rows)  "Upcoming Concalls" — the schedule, as an overlay off that table
 //
 // This is the WHOLE tab now. Screener supplies the retained market-wide document index; StockScans
-// supplies current-quarter analysis. The two are joined by ticker/date before rendering, and each
+// supplies published-quarter analysis. The two are joined by ticker/date before rendering, and each
 // scored field remains explicitly attributed to StockScans rather than to Screener or this app.
 //
 // EVERYTHING SCORED HERE IS STOCKSCANS' OWN ANALYSIS.
@@ -28,7 +28,8 @@
 //     - Nothing that costs a run fires on render or from a poller. The Deep Dive button is the
 //       explicit run command: its click dispatches once and opens directly on progress.
 //     - Reading their index IS free, and the column uses that. `GET /api/summary` lists the
-//       reports they already hold; it is fetched once per page load, and the rows it names get a
+//       reports they already hold; it is refreshed every five minutes while visible, retries
+//       failures after 30 seconds, and the rows it names get a
 //       "Ready" button that opens the finished report at no cost to anyone. The reader should not
 //       have to pay to discover the answer already exists.
 //     - The report is theirs. js/concall/deep-dive.js lays it out and computes nothing on top;
@@ -79,7 +80,7 @@ function tierPill(tier, title) {
 function highlight(tag) {
   const s = String(tag || '');
   const mark = s.charAt(0);
-  const text = s.slice(1).trim() || s;
+  const text = ['▲', '▼', '●'].includes(mark) ? s.slice(1).trim() || s : s;
   const cls = mark === '▲' ? 'text-emerald-700' : mark === '▼' ? 'text-rose-700' : 'text-slate-600';
   const dot = mark === '▲' ? '▲' : mark === '▼' ? '▼' : '●';
   return `<span class="flex items-start gap-1 ${cls}"><span class="mt-px flex-shrink-0 text-[9px] leading-4">${dot}</span><span>${escapeHtml(text)}</span></span>`;
@@ -153,7 +154,6 @@ function matchingSaved(row, allRows, savedByRecord, savedByTicker) {
 }
 
 function deepDiveInsight(row, allRows, savedByRecord, savedByTicker) {
-  if (row.analysisTracked !== false) return null;
   const saved = matchingSaved(row, allRows, savedByRecord, savedByTicker)?.summary || null;
   return saved?.transcript_available === true ? saved : matchingDeepDive(row, allRows);
 }
@@ -162,15 +162,20 @@ const deepDivePill = (value, kind) =>
   `<span class="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-200" title="Concall Deep Dive ${escapeHtml(kind)}, reproduced unchanged. This is not a StockScans tier.">DD · ${escapeHtml(value)}</span>`;
 
 function deepDiveHighlights(hit) {
-  if (!hit) return '<span class="text-slate-300">—</span>';
+  if (!hit) return assessmentStatus();
   const headline = String(hit.headline || '').trim();
   const tags = Array.isArray(hit.tags) ? hit.tags.filter(Boolean).slice(0, 3) : [];
-  if (!headline && !tags.length) return '<span class="text-slate-300">—</span>';
+  if (!headline && !tags.length) return assessmentStatus('No highlights published');
   return `<div class="flex max-w-[380px] flex-col gap-1 whitespace-normal text-[11px] leading-snug">
     <span class="font-semibold text-violet-700">Deep Dive</span>
     ${headline ? `<span class="line-clamp-3 text-slate-600" title="${escapeHtml(headline)}">${escapeHtml(headline)}</span>` : ''}
     ${tags.length ? `<span class="text-slate-400">${tags.map((tag) => escapeHtml(tag)).join(' · ')}</span>` : ''}
   </div>`;
+}
+
+function assessmentStatus(message = null) {
+  const label = message || (readyError ? 'Assessment source unavailable' : readyCheckedAt ? 'No matching assessment' : 'Checking assessments');
+  return `<span class="whitespace-normal text-xs text-slate-500" title="Only a published assessment matched to this exact call can fill this field. No rating is inferred from a document link.">${escapeHtml(label)}</span>`;
 }
 
 // EVERY TIME ON THIS TAB IS IST, EXPLICITLY — NOT THE VIEWER'S ZONE.
@@ -232,7 +237,7 @@ export function livePill(m) {
   return `
     <span data-cs-info title="Current con-call feed status"
       class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${cls}">
-      ${dot}<span>${degraded ? 'Snapshot' : 'Live'}</span>
+      ${dot}<span>${degraded ? m.analysisLive ? 'Partial' : 'Snapshot' : 'Live'}</span>
       <span class="font-normal opacity-70">${escapeHtml(formatNumber(m.count || 0))} calls</span>
       ${fresh ? `<span class="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-bold tabular-nums">+${fresh} new</span>` : ''}
     </span>`;
@@ -247,20 +252,22 @@ export function wireLivePill(root, m) {
     openModal(
       `<div class="px-7 py-6">
         <div class="mb-3 flex items-start justify-between gap-4">
-          <h2 class="font-display text-xl font-bold text-slate-900">${m.degraded ? 'Showing the last snapshot' : 'Live con-call scan'}</h2>
+          <h2 class="font-display text-xl font-bold text-slate-900">${m.degraded ? m.analysisLive ? 'Partly checked con-call library' : 'Showing the last snapshot' : 'Live con-call scan'}</h2>
           <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
         </div>
         <div class="text-sm leading-relaxed text-slate-600">
           ${
             m.degraded
               ? `<p class="rounded-xl bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200">${escapeHtml(m.degraded)}
-                   The rows below were correct when captured, but they are not live right now.</p>`
+                   ${m.analysisLive ? 'Current calls are checked live. Retained assessments stay readable while the incomplete sources recover.'
+                     : 'The saved assessments retain their original check times and are not a live source check.'}</p>`
               : `<p><strong>Real, live</strong> from an independent con-call research provider, polled every
                    ${feed.POLL_MS / 1000} seconds.</p>`
           }
-          <p class="mt-2"><strong>${escapeHtml(formatNumber(m.count || 0))}</strong> calls this quarter ·
+          <p class="mt-2"><strong>${escapeHtml(formatNumber(m.count || 0))}</strong> calls in the library ·
              <strong>${escapeHtml(formatNumber(m.analysed || 0))}</strong> analysed ·
-             last update ${escapeHtml(m.receivedAt ? formatRelativeTime(m.receivedAt) : '—')}.</p>
+             analysis checked ${escapeHtml(m.fetchedAt ? formatRelativeTime(m.fetchedAt) : 'not available')}.
+             ${m.screener?.checkedAt ? `Document index checked ${escapeHtml(formatRelativeTime(m.screener.checkedAt))}.` : ''}</p>
 
           <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Whose numbers these are</h3>
           <p class="mt-1 text-xs"><strong>Not ours.</strong> The result score, the sentiment tier and the highlight bullets are
@@ -307,7 +314,7 @@ export function wireLivePill(root, m) {
 // ---------------------------------------------------------------------------------------
 // Sub-view 1 — the scan table
 // ---------------------------------------------------------------------------------------
-export function renderScans(ctx, { disposers, tableView, onView, onInsights = null }) {
+export function renderScans(ctx, { disposers, tableView, onView, onInsights = null, initialRowKey = null }) {
   ctx.root.dataset.summaryAvailable = String(summariesAvailable());
   const m = feed.meta();
   const rows = feed.forScope(ctx.scope, coverage.holdings());
@@ -336,6 +343,7 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
     nameAfter: 1,
     dense: true,
     nameMaxPx: 250,
+    initialRowKey,
     stickyHead: 'max(320px, calc(100vh - 330px))',
     columns: [
       { label: 'Call / Published', get: (r) => dateCell(r), html: true, align: 'left', sortValue: (r) => r.when || '' },
@@ -350,7 +358,7 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
             ? documentsOnlyPill()
             : r.resultScore == null
             ? pendingPill('a result score')
-            : `<span class="font-semibold tabular-nums text-slate-900">${escapeHtml(r.resultScore.toFixed(1))}</span><span class="ml-1 text-[10px] text-slate-400">/100</span>`,
+            : `${r.analysisRetained ? `<span class="mr-1 text-[10px] text-slate-500" title="Published assessment retained from ${escapeHtml(r.analysisCheckedAt || 'its earlier source capture')}">saved</span>` : ''}<span class="font-semibold tabular-nums text-slate-900">${escapeHtml(r.resultScore.toFixed(1))}</span><span class="ml-1 text-[10px] text-slate-400">/100</span>`,
         html: true,
         align: 'right',
         sortValue: (r) => r.resultScore ?? -1,
@@ -358,9 +366,11 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
       {
         label: 'Result',
         get: (r) => {
-          if (r.analysisTracked !== false) return tierPill(r.resultTier, 'a result score');
+          if (r.resultTier) return tierPill(r.resultTier, 'a result score');
           const insight = deepDiveInsight(r, allRows, saved, savedByTicker);
-          return insight?.result ? deepDivePill(insight.result, 'reported-result label') : '<span class="text-slate-300">—</span>';
+          return insight?.result ? deepDivePill(insight.result, 'reported-result label') : r.analysisTracked !== false
+            ? r.notesReady ? assessmentStatus('No result label published') : pendingPill('a result assessment')
+            : assessmentStatus(insight ? 'No result label published' : m?.truncated ? 'Analysis coverage incomplete' : null);
         },
         html: true,
         align: 'right',
@@ -369,9 +379,11 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
       {
         label: 'Sentiment / View',
         get: (r) => {
-          if (r.analysisTracked !== false) return tierPill(r.sentiment, 'a sentiment reading');
+          if (r.sentiment) return tierPill(r.sentiment, 'a sentiment reading');
           const insight = deepDiveInsight(r, allRows, saved, savedByTicker);
-          return insight?.verdict ? deepDivePill(insight.verdict, 'investment view') : '<span class="text-slate-300">—</span>';
+          return insight?.verdict ? deepDivePill(insight.verdict, 'investment view') : r.analysisTracked !== false
+            ? r.notesReady ? assessmentStatus('No sentiment published') : pendingPill('a sentiment assessment')
+            : assessmentStatus(insight ? 'No view published' : m?.truncated ? 'Analysis coverage incomplete' : null);
         },
         html: true,
         align: 'right',
@@ -379,10 +391,13 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
       },
       {
         label: 'Highlights',
-        get: (r) =>
-          r.tags.length
-            ? `<div class="flex max-w-[380px] flex-col gap-0.5 whitespace-normal text-[11px] leading-snug">${r.tags.slice(0, 3).map(highlight).join('')}</div>`
-            : deepDiveHighlights(deepDiveInsight(r, allRows, saved, savedByTicker)),
+        get: (r) => {
+          if (r.tags.length) return `<div class="flex max-w-[380px] flex-col gap-0.5 whitespace-normal text-[11px] leading-snug">${r.tags.slice(0, 3).map(highlight).join('')}</div>`;
+          const insight = deepDiveInsight(r, allRows, saved, savedByTicker);
+          return insight ? deepDiveHighlights(insight) : r.analysisTracked !== false
+            ? assessmentStatus(r.notesReady ? 'No highlights published' : 'Awaiting published analysis')
+            : assessmentStatus(m?.truncated ? 'Analysis coverage incomplete' : null);
+        },
         html: true,
         sortable: false,
       },
@@ -539,18 +554,43 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
 let readyReports = {};
 let readyPromise = null;
 let readyVersion = 0;
+let readyCheckedAt = 0;
+let readyAttemptAt = 0;
+let readyError = false;
+const READY_REFRESH_MS = 5 * 60000;
 function loadReady() {
+  if (!readyPromise && readyAttemptAt && Date.now() - readyAttemptAt < (readyError ? 30000 : READY_REFRESH_MS)) return Promise.resolve(readyReports);
   if (!readyPromise) {
+    readyAttemptAt = Date.now();
     readyPromise = deepDive
-      .readyReportsByTicker()
+      .readyReportsByTicker({ refresh: true, strict: true })
       .then((map) => {
-        readyReports = map || {};
-        readyVersion++;
+        if (JSON.stringify(readyReports) !== JSON.stringify(map || {}) || readyError || !readyCheckedAt) readyVersion++;
+        readyReports = map || {}; readyCheckedAt = Date.now(); readyError = false;
         return readyReports;
       })
-      .catch(() => ({}));
+      .catch(() => { if (!readyError) readyVersion++; readyError = true; return readyReports; })
+      .finally(() => { readyPromise = null; });
   }
   return readyPromise;
+}
+
+// Free published-report reads only. Failures retain verified reports and retry after the normal
+// source window; returning to the tab rechecks an old index without ever dispatching a paid run.
+export function watchPublishedAssessments(onChange) {
+  let disposed = false;
+  const check = async () => {
+    if (document.hidden) return;
+    const version = readyVersion;
+    await loadReady();
+    if (!disposed && readyVersion !== version) onChange();
+  };
+  const timer = setInterval(check, 30000);
+  window.addEventListener('focus', check);
+  window.addEventListener('online', check);
+  document.addEventListener('visibilitychange', check);
+  return () => { disposed = true; clearInterval(timer); window.removeEventListener('focus', check);
+    window.removeEventListener('online', check); document.removeEventListener('visibilitychange', check); };
 }
 
 /** The row key, in one place, because the Deep Dive button carries it back. */

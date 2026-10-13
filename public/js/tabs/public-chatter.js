@@ -45,6 +45,8 @@ let disposers = [];
 let paintDisposers = [];
 let tableViews = { covered: null, telegram: null };
 let chatterSection = 'coverage';
+export function getSavedView() { return { chatterSection }; }
+export function applySavedView(extras = {}) { chatterSection = ['coverage', 'telegram'].includes(extras.chatterSection) ? extras.chatterSection : 'coverage'; }
 let mentionRequestToken = 0;
 // A company deep-link from a General Alerts chatter row: `?company=TICKER&open=mentions`. Tracked at
 // module level so a live repaint (chatter.onChange) does not re-open the popup on every tick, and a

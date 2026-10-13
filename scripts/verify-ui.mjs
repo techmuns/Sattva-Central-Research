@@ -3352,8 +3352,8 @@ const ddEligible = await page.evaluate(async () => {
 ok('every rendered named call carries a Deep Dive button, ticker or not', ddCells > 0 && ddCells === ddRows && ddEligible >= ddCells, `${ddCells} buttons, ${ddEligible} eligible model rows, ${ddRows} mounted rows`);
 ok('...and the column is headed Deep Dive', (await page.$$eval('#content-host thead th', (ts) => ts.map((t) => t.innerText.trim().toUpperCase()))).includes('DEEP DIVE'));
 ok('THE TABLE DISPATCHES NOTHING ON RENDER', ddHits.analyze === 0 && ddHits.report === 0, `analyze=${ddHits.analyze} report=${ddHits.report}`);
-// Their free index is read once per document load and never again — not per row, not per repaint,
-// not on a route change within the tab. This navigation is a hash change, so it must add nothing.
+// The free index is shared across rows and repaints. This quick hash navigation remains inside
+// the five-minute successful-read window, so it must add nothing.
 ok('their free index has been read', ddHits.summary >= 1, `${ddHits.summary} fetches so far`);
 ok('...and a route change inside the tab does not re-read it', ddHits.summary === ddSummaryBefore, `${ddHits.summary - ddSummaryBefore} extra`);
 

@@ -10,7 +10,8 @@ const { chromium } = await import(`${PW_ROOT}/index.mjs`);
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
 });
-const context = await browser.newContext({ viewport: { width: 900, height: 800 } });
+// Keep the shortened parent strip overflowing so native scrolling remains exercised.
+const context = await browser.newContext({ viewport: { width: 768, height: 800 } });
 await context.route('**/*', (route) => {
   const url = new URL(route.request().url());
   if (url.origin === new URL(BASE).origin && !url.pathname.startsWith('/api/')) return route.continue();
@@ -146,6 +147,24 @@ try {
   assert(await page.locator(selectedChild).evaluate(button => document.activeElement === button));
   assert.equal(await page.locator(`${children} [tabindex="0"]`).count(), 1);
   pass('Saved Announcements routes and keyboard subtabs preserve focus; IPOs loads with an empty watchlist');
+  await page.locator(selectedChild).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator(selectedChild).getAttribute('data-tab-id'), 'ipos');
+  await page.keyboard.press('Enter');
+  await page.locator(`${children} [data-tab-id="insider-trades"][aria-selected="true"]`).waitFor();
+  assert(await page.evaluate(selector => window.announcementList === document.querySelector(selector), children));
+  assert(await page.locator(selectedChild).evaluate(button => document.activeElement === button));
+  assert.equal(await page.locator(`${strip} [data-tab-id="insider-trades"]`).count(), 0);
+  await page.evaluate(() => { location.hash = '#/research/insider-trades?scope=universe&range=all'; });
+  await page.locator('[data-active-tab="insider-trades"]').waitFor();
+  await page.waitForFunction(() => document.querySelector('#scope-toggle-mount [aria-pressed="true"]')?.textContent.trim() === 'Universe');
+  const dealUrl = page.url();
+  await page.locator(`${strip} [data-tab-id="announcements"]`).click();
+  assert.equal(page.url(), dealUrl, 'active Announcements retains the saved deals route and period');
+  await page.goBack();
+  await page.waitForFunction(() => location.hash.includes('insider-trades?scope=watchlist'));
+  await page.locator(`${children} [data-tab-id="insider-trades"][aria-selected="true"]`).waitFor();
+  pass('Bulk/Block Deal is an Announcements subtab; keyboard activation and saved links retain scope, period and history');
   for (const width of [1440, 1100, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 850 });
     await visibleInStrip(active);

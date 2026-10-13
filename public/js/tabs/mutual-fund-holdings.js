@@ -11,6 +11,9 @@ import {mutualFundView} from '../ui/mutual-fund-view.js';
 import {fitTableViewport} from '../ui/table-viewport.js';
 export const meta={id:'mutual-funds',title:'Mutual Funds',subtitle:'Monthly mutual-fund ownership across your portfolio.',subviews:[]};
 let ctx=null,disposeTable=null,unfit=null,table=null,offReady=null,offInvalid=null,offSession=null,offUpdate=null,timer=null,sequence=0,dialog=0,sort='holdings',busy=false,lastRead=0;
+let normalSort=null;
+export function getSavedView(){return {holdingsSort:sort};}
+export function applySavedView(extras={}){normalSort=sort;if(typeof extras.holdingsSort==='string')sort=extras.holdingsSort;}
 const num=n=>Number.isFinite(n)?n.toLocaleString('en-IN',{maximumFractionDigits:0}):'—';
 const pct=n=>Number.isFinite(n)?`${n.toLocaleString('en-IN',{maximumFractionDigits:2})}%`:'—';
 const signed=n=>Number.isFinite(n)?`${n>0?'+':n<0?'−':''}${num(Math.abs(n))}`:'—';
@@ -153,4 +156,4 @@ function showCoverage(){
   openModal(`<div class="p-6 mf-coverage"><button data-modal-close class="float-right text-2xl" aria-label="Close">×</button><h2 class="text-xl font-bold">Mutual Fund coverage</h2><div class="mf-detail-scroll mt-4"><table data-column-layout="mutual-funds:2" class="mf-detail-table mf-coverage-table"><thead><tr><th class="mf-identity">Source</th><th>Latest month</th><th>Status</th><th>Last successful check</th><th>Last attempt</th></tr></thead><tbody>${rows.map(a=>`<tr><td class="mf-identity">${esc(a.name)}</td><td>${esc(monthLabel(a.month))}</td><td><span class="mf-coverage-status" data-tone="${a.tone}">${esc(a.status)}</span></td><td>${esc(coverageTime(a.checkedAt))}</td><td>${esc(coverageTime(a.attemptAt))}</td></tr>`).join('')||'<tr><td colspan="5">Source coverage is unavailable.</td></tr>'}</tbody></table></div></div>`,{size:'wide'});
 }
 function cleanup(){unfit?.();unfit=null;disposeTable?.();disposeTable=null;table=null;offReady?.();offInvalid?.();offSession?.();offUpdate?.();clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);}
-export function destroy(){cleanup();sequence++;dialog++;ctx=null;activeCompany=null;}
+export function destroy({preserveSaved=false}={}){cleanup();sequence++;dialog++;ctx=null;activeCompany=null;if(normalSort!==null&&!preserveSaved){sort=normalSort;normalSort=null;}}

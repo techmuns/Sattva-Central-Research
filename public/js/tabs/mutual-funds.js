@@ -10,10 +10,19 @@ import {mutualFundView} from '../ui/mutual-fund-view.js';
 import {fitTableViewport} from '../ui/table-viewport.js';
 export const meta = TAB_META['mutual-funds'];
 let ctx=null,off=null,timer=null,disposers=[],view=null,categoryView=null,management='all',period='1Y',measure='return';
+let normalReading=null;
+export function getSavedView(){return {management,period,measure,...holdings.getSavedView()};}
+export function applySavedView(extras={}){
+  normalReading={management,period,measure};
+  management=['all','active','passive'].includes(extras.management)?extras.management:'all';
+  period=typeof extras.period==='string'?extras.period:'1Y';
+  measure=extras.measure==='excess'?'excess':'return';
+  holdings.applySavedView(extras);
+}
 function clearTable(){for(const off of disposers)off?.();disposers=[];}
 const pct=n=>Number.isFinite(n)?`${n.toLocaleString('en-IN',{maximumFractionDigits:2})}%`:'—';
 export function render(context){
-  destroy();ctx=context;
+  destroy({preserveSaved:true});ctx=context;
   if(!context.subview||context.subview==='company-holdings'){holdings.render(context);return;}
   off=feed.onUpdate(sourceChanged);
   window.addEventListener('focus',resume);window.addEventListener('online',resume);document.addEventListener('visibilitychange',resume);
@@ -70,4 +79,4 @@ function paintCategories(m){
   disposers.push(fitTableViewport(ctx.root));
   const picker=ctx.root.querySelector('[data-fund-period]');picker.value=period;picker.onchange=e=>{period=e.target.value;categoryView={...categoryView,sort:null};paint();};
 }
-export function destroy(){holdings.destroy();clearTable();off?.();off=null;clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);ctx=null;}
+export function destroy({preserveSaved=false}={}){holdings.destroy({preserveSaved});clearTable();off?.();off=null;clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);ctx=null;if(normalReading&&!preserveSaved){({management,period,measure}=normalReading);normalReading=null;}}

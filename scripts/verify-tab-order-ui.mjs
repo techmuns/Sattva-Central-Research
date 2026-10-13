@@ -144,7 +144,7 @@ try {
   await fresh.evaluate(() => localStorage.setItem('dashboard:tab-order:v1:research', '{broken'));
   await fresh.reload(); await fresh.waitForFunction(() => window.ready); assert.deepEqual(await order(fresh), ids);
   // Exercise the actual shell through grouped routes and scope changes, with source reads denied.
-  await fresh.evaluate(order => localStorage.setItem('dashboard:tab-order:v1:research', JSON.stringify(order)), ['news-section', ...ids.filter(id => id !== 'news-section')]);
+  await fresh.evaluate(order => localStorage.setItem('sattva:shared-workspace:v1', JSON.stringify({version:1,revision:1,updatedAt:null,tabs:[],order})), ['news-section', ...ids.filter(id => id !== 'news-section')]);
   await clean.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({ status: 200, body: '', contentType: 'text/javascript' }));
   await fresh.goto(`${origin}/#/research/ask-research?scope=universe`);
   await fresh.locator('[data-active-tab="ask-research"]').waitFor();
@@ -155,6 +155,12 @@ try {
   await fresh.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
   assert.equal(await fresh.locator('#tabbar-mount [data-tab-id]').first().getAttribute('data-tab-id'), 'news-section');
   assert.equal(await fresh.locator('#subview-mount [data-tab-drag-handle]').count(), 0, 'subtabs keep their catalog order');
+  await fresh.evaluate(() => location.hash = '#/research/insider-trades?scope=universe&range=all');
+  await fresh.locator('#subview-mount [data-tab-id="insider-trades"][aria-selected="true"]').waitFor();
+  assert.equal(await fresh.locator('#tabbar-mount [data-tab-id="insider-trades"]').count(), 0, 'saved orders cannot restore the removed deals parent');
+  assert.equal(await fresh.locator('#tabbar-mount [data-tab-id]').first().getAttribute('data-tab-id'), 'news-section', 'moving a reader into a group preserves the saved parent layout');
+  assert.deepEqual(await fresh.locator('#subview-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+    ['corp-announcements', 'corporate-actions', 'ipos', 'insider-trades'], 'announcement readers retain catalog order');
   await clean.close();
 
   previousRelease = true; upgradeFixture = true;

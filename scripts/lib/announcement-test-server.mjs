@@ -15,6 +15,8 @@ import { AnnouncementReadStore } from '../../worker/announcement-read-store.mjs'
 import { handleAnnouncementIndex } from '../../worker/announcement-index.mjs';
 import { handleAnnouncementRead } from '../../worker/announcement-read.mjs';
 import { handleRelevanceFeedback } from '../../worker/relevance-feedback.mjs';
+import { handleWorkspace } from '../../worker/workspace.mjs';
+import { WORKSPACE_OBJECT } from '../../public/js/data/workspace-shared.js';
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2' };
@@ -46,7 +48,7 @@ export function directorySource(dir, { id = 1, createdAt = new Date().toISOStrin
  * @param {Function} [o.readFetcher]     the AI Read's fetch (documents and the model)
  * @param {Function} [o.now]
  */
-export async function startAnnouncementServer({ indexDir = null, publicDir, readFetcher = null, now = Date.now, port = 0, nseLive = 'off' } = {}) {
+export async function startAnnouncementServer({ indexDir = null, publicDir, readFetcher = null, now = Date.now, port = 0, nseLive = 'off', workspaceStore = null, transformAsset = (_path, bytes) => bytes } = {}) {
   const root = resolve(publicDir);
   const readAsset = async (path) => { try { return JSON.parse(readFileSync(join(root, path))); } catch { return null; } };
   const feedback = new RelevanceFeedbackStore(sqliteStorage(), { now });
@@ -64,6 +66,7 @@ export async function startAnnouncementServer({ indexDir = null, publicDir, read
   };
   const registry = {
     getByName(name) {
+      if (name === WORKSPACE_OBJECT && workspaceStore) return { workspaceSnapshot: () => workspaceStore.snapshot(), workspaceApply: intent => workspaceStore.apply(intent) };
       if (name === 'relevance-feedback:v1') return { feedbackApply: async (v) => feedback.apply(v), feedbackModel: async () => feedback.model(), feedbackMine: async (d) => feedback.mine(d) };
       if (name === 'announcement-read:v1') return { announcementRead: (input) => settled(() => reads.read(input)), announcementReadStream: (input) => reads.stream(input), announcementReadStatus: () => settled(() => reads.status()) };
       if (name === 'announcement-index:v1') {
@@ -82,12 +85,13 @@ export async function startAnnouncementServer({ indexDir = null, publicDir, read
     },
   };
   const allow = { limit: async () => ({ success: true }) };
-  const env = { CAPTURE_REGISTRY: registry, RELEVANCE_FEEDBACK_LIMITER: allow, ANNOUNCEMENT_READ_LIMITER: allow, ANNOUNCEMENT_INDEX_LIMITER: allow };
+  const env = { CAPTURE_REGISTRY: registry, RELEVANCE_FEEDBACK_LIMITER: allow, ANNOUNCEMENT_READ_LIMITER: allow, ANNOUNCEMENT_INDEX_LIMITER: allow,
+    ...(workspaceStore ? { SHARED_WATCHLIST: registry, SHARED_WATCHLIST_LIMITER: allow } : {}) };
   const stats = { queries: 0, reads: 0, votes: 0 };
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const route = url.pathname.startsWith('/api/announcement-index/') ? handleAnnouncementIndex
+    const route = url.pathname === '/api/workspace' ? handleWorkspace : url.pathname.startsWith('/api/announcement-index/') ? handleAnnouncementIndex
       : url.pathname === '/api/announcement-read' || url.pathname === '/api/announcement-read/status' ? handleAnnouncementRead
         : url.pathname.startsWith('/api/relevance/') ? handleRelevanceFeedback : null;
     if (route) {
@@ -99,7 +103,7 @@ export async function startAnnouncementServer({ indexDir = null, publicDir, read
       const request = new Request(url, { method: req.method, headers: req.headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) });
       const response = await route(request, env);
       res.writeHead(response.status, Object.fromEntries(response.headers));
-      for await (const chunk of response.body) { if (!res.destroyed) res.write(chunk); }
+      if (response.body) for await (const chunk of response.body) { if (!res.destroyed) res.write(chunk); }
       res.end();
       return;
     }
@@ -111,7 +115,7 @@ export async function startAnnouncementServer({ indexDir = null, publicDir, read
     try {
       if (!statSync(file).isFile()) throw new Error('not a file');
       res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'no-cache' });
-      res.end(readFileSync(file));
+      res.end(transformAsset(url.pathname, readFileSync(file)));
     } catch {
       res.writeHead(404, { 'content-type': 'text/html' });
       res.end('<h1>404</h1>');

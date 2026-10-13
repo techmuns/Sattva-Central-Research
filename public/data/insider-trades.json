@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-13T08:28:06.610Z",
-  "oldestDataAt": "2026-10-13T08:28:06.610Z",
+  "capturedAt": "2026-10-13T16:41:56.733Z",
+  "oldestDataAt": "2026-10-13T16:41:56.733Z",
   "from": "2025-10-13",
   "to": "2026-10-13",
   "windowDays": 365,
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 2,
-      "latestDate": "2026-10-12",
+      "pagesRead": 9,
+      "latestDate": "2026-10-13",
       "oldestDate": "2026-10-12",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 50,
-      "capturedAt": "2026-10-13T08:28:06.610Z",
+      "rowCount": 225,
+      "capturedAt": "2026-10-13T16:41:56.733Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -36,12 +36,12 @@
       "label": "Block deal",
       "url": "https://www.screener.in/trades/block/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-12",
+      "latestDate": "2026-10-13",
       "oldestDate": "2026-10-01",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T08:28:06.610Z",
+      "capturedAt": "2026-10-13T16:41:56.733Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T08:28:06.610Z",
+      "capturedAt": "2026-10-13T16:41:56.733Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -62,20 +62,20 @@
       "label": "Insider trade",
       "url": "https://www.screener.in/trades/insiders/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-12",
+      "latestDate": "2026-10-13",
       "oldestDate": "2026-10-07",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T08:28:06.610Z",
+      "capturedAt": "2026-10-13T16:41:56.733Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 1924,
+  "withRows": 1932,
   "emptyCount": 0,
-  "rowCount": 20787,
+  "rowCount": 21000,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -7544,6 +7544,24 @@
     "517320": [
       {
         "ticker": "517320",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Magnus Steel",
+          "Insider": "Syed Rehaman",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "22888",
+          "Trade Value": "7.60 lacs",
+          "Price": "33.2",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "517320",
         "date": "2026-09-29",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=12",
         "sourceId": "bulk",
@@ -8524,6 +8542,24 @@
       }
     ],
     "517431": [
+      {
+        "ticker": "517431",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Narmada Macplast",
+          "Insider": "Viji Finance Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "200000",
+          "Trade Value": "45.02 lacs",
+          "Price": "22.5",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "517431",
         "date": "2026-08-17",
@@ -9902,6 +9938,24 @@
           "Trade Value": "21.28 lacs",
           "Price": "66.5",
           "Broadcast Date": "2026-08-06",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "521105": [
+      {
+        "ticker": "521105",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Olympia Industri",
+          "Insider": "Navin Kumar Pansari",
+          "Category": "Promoter And Director",
+          "Security Type": "Equity",
+          "Trade Shares": "151516",
+          "Broadcast Date": "2026-10-13",
           "Source": "Screener.in"
         }
       }
@@ -14541,6 +14595,24 @@
       }
     ],
     "526675": [
+      {
+        "ticker": "526675",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Tirth Plastic",
+          "Insider": "Ashiabanu Anvarli Saiyad",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "23230",
+          "Trade Value": "7.35 lacs",
+          "Price": "31.6",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "526675",
         "date": "2026-10-12",
@@ -21327,6 +21399,26 @@
         }
       }
     ],
+    "531460": [
+      {
+        "ticker": "531460",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Cont. Controls",
+          "Insider": "Shipra Bathla",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "46000",
+          "Trade Value": "6.16 lacs",
+          "Price": "13.4",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      }
+    ],
     "531471": [
       {
         "ticker": "531471",
@@ -23331,6 +23423,42 @@
       }
     ],
     "531553": [
+      {
+        "ticker": "531553",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Disha Resources",
+          "Insider": "Ashwini Niraj Singh",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "105000",
+          "Trade Value": "36.90 lacs",
+          "Price": "35.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "531553",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Disha Resources",
+          "Insider": "Sheetal Sachin Bakhai",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "50000",
+          "Trade Value": "17.58 lacs",
+          "Price": "35.2",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "531553",
         "date": "2026-09-30",
@@ -26346,6 +26474,42 @@
       }
     ],
     "531911": [
+      {
+        "ticker": "531911",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Galaxy Agrico",
+          "Insider": "Balgopal Commercial Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "117000",
+          "Trade Value": "1.06 crore",
+          "Price": "91.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "531911",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Galaxy Agrico",
+          "Insider": "Qapla Investments",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "98069",
+          "Trade Value": "89.14 lacs",
+          "Price": "90.9",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "531911",
         "date": "2026-10-08",
@@ -30103,6 +30267,24 @@
     "538542": [
       {
         "ticker": "538542",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Goldcoin Health",
+          "Insider": "Shaju Mathai",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "9696",
+          "Trade Value": "3.54 lacs",
+          "Price": "36.6",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "538542",
         "date": "2026-10-09",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
         "sourceId": "bulk",
@@ -30989,6 +31171,24 @@
       }
     ],
     "538837": [
+      {
+        "ticker": "538837",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Jeevan Scienti.",
+          "Insider": "Pranali Bangad",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "118300",
+          "Trade Value": "1.01 crore",
+          "Price": "85.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "538837",
         "date": "2026-10-06",
@@ -32376,6 +32576,24 @@
       }
     ],
     "539200": [
+      {
+        "ticker": "539200",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Noble Polymers",
+          "Insider": "Neo Apex Share Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "79800",
+          "Trade Value": "16.10 lacs",
+          "Price": "20.2",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "539200",
         "date": "2026-10-06",
@@ -37340,6 +37558,60 @@
     "540175": [
       {
         "ticker": "540175",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Regency Fincorp",
+          "Insider": "Nivesh Consultancy Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "481772",
+          "Trade Value": "2.51 crore",
+          "Price": "52.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "540175",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Regency Fincorp",
+          "Insider": "Nivesh Consultancy Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "4000",
+          "Trade Value": "2.18 lacs",
+          "Price": "54.6",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "540175",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Regency Fincorp",
+          "Insider": "Pardeep Garg",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "650000",
+          "Trade Value": "3.39 crore",
+          "Price": "52.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "540175",
         "date": "2026-10-09",
         "url": "https://www.screener.in/trades/insiders/?o=-2",
         "sourceId": "insiders",
@@ -39116,6 +39388,24 @@
     "541299": [
       {
         "ticker": "541299",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Dr Lalchand. Lab",
+          "Insider": "Prarthna Jindal",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "44000",
+          "Trade Value": "2.94 lacs",
+          "Price": "6.69",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "541299",
         "date": "2026-09-22",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=10",
         "sourceId": "bulk",
@@ -40398,6 +40688,25 @@
           "Trade Shares": "6000",
           "Trade Value": "9.92 lacs",
           "Broadcast Date": "2026-08-19",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "542117": [
+      {
+        "ticker": "542117",
+        "date": "2026-10-12",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Netripples Soft.",
+          "Insider": "Netripples",
+          "Category": "Connected Person",
+          "Security Type": "Equity",
+          "Transaction": "Others",
+          "Trade Shares": "0",
+          "Broadcast Date": "2026-10-12",
           "Source": "Screener.in"
         }
       }
@@ -43190,6 +43499,42 @@
     "543516": [
       {
         "ticker": "543516",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Dhyaani Trade",
+          "Insider": "Meet Prakash Kariya",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "112000",
+          "Trade Value": "11.78 lacs",
+          "Price": "10.5",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "543516",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Dhyaani Trade",
+          "Insider": "Shah Sanvi Chirag",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "140000",
+          "Trade Value": "14.77 lacs",
+          "Price": "10.6",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "543516",
         "date": "2026-10-09",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
         "sourceId": "bulk",
@@ -44574,6 +44919,44 @@
           "Trade Value": "9.35 lacs",
           "Price": "36.0",
           "Broadcast Date": "2026-08-10",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "543540": [
+      {
+        "ticker": "543540",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pearl Green Club",
+          "Insider": "Akarshika Traders Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "29400",
+          "Trade Value": "32.60 lacs",
+          "Price": "111",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "543540",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pearl Green Club",
+          "Insider": "Hemantkumar Desai",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "36600",
+          "Trade Value": "40.59 lacs",
+          "Price": "111",
+          "Broadcast Date": "2026-10-13",
           "Source": "Screener.in"
         }
       }
@@ -49121,6 +49504,60 @@
     "544373": [
       {
         "ticker": "544373",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "NAPS Global",
+          "Insider": "Arc Finance Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "36800",
+          "Trade Value": "24.92 lacs",
+          "Price": "67.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544373",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "NAPS Global",
+          "Insider": "Aryaman Broking Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "3200",
+          "Trade Value": "2.17 lacs",
+          "Price": "67.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544373",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "NAPS Global",
+          "Insider": "Aryaman Broking Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "41600",
+          "Trade Value": "28.17 lacs",
+          "Price": "67.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544373",
         "date": "2026-09-28",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=10",
         "sourceId": "bulk",
@@ -51654,6 +52091,42 @@
     "544628": [
       {
         "ticker": "544628",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Astron",
+          "Insider": "Jyotiben Narendrakumar Vora",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "30000",
+          "Trade Value": "5.12 lacs",
+          "Price": "17.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544628",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Astron",
+          "Insider": "Jyotiben Narendrakumar Vora",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "46000",
+          "Trade Value": "7.85 lacs",
+          "Price": "17.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544628",
         "date": "2026-10-07",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=9",
         "sourceId": "bulk",
@@ -52414,6 +52887,24 @@
       }
     ],
     "544686": [
+      {
+        "ticker": "544686",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shayona Eng.",
+          "Insider": "Shaili V Patel",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "24000",
+          "Trade Value": "34.56 lacs",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "544686",
         "date": "2026-09-03",
@@ -61085,6 +61576,78 @@
     "544940": [
       {
         "ticker": "544940",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Robokidz Eduventures",
+          "Insider": "Jmp Securities Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "55200",
+          "Trade Value": "1.16 crore",
+          "Price": "210",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544940",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Robokidz Eduventures",
+          "Insider": "Jmp Securities Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "67200",
+          "Trade Value": "1.42 crore",
+          "Price": "211",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544940",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Robokidz Eduventures",
+          "Insider": "Vora Financial Services Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "129600",
+          "Trade Value": "2.74 crore",
+          "Price": "211",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544940",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Robokidz Eduventures",
+          "Insider": "Vora Financial Services Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "60000",
+          "Trade Value": "1.30 crore",
+          "Price": "216",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544940",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
         "sourceId": "bulk",
@@ -61429,6 +61992,42 @@
       }
     ],
     "544943": [
+      {
+        "ticker": "544943",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Himalaya Nutravedics",
+          "Insider": "Davinder Singh",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "52800",
+          "Trade Value": "63.31 lacs",
+          "Price": "120",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544943",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Himalaya Nutravedics",
+          "Insider": "Niraj Rajnikant Shah",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "51600",
+          "Trade Value": "61.87 lacs",
+          "Price": "120",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "544943",
         "date": "2026-10-05",
@@ -62735,6 +63334,42 @@
       }
     ],
     "544976": [
+      {
+        "ticker": "544976",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Omara Ventures",
+          "Insider": "Manba Finance Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "68000",
+          "Trade Value": "2.16 crore",
+          "Price": "318",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "544976",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Omara Ventures",
+          "Insider": "Sidhachakra Enterprise Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "24000",
+          "Trade Value": "76.27 lacs",
+          "Price": "318",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "544976",
         "date": "2026-10-12",
@@ -103122,6 +103757,42 @@
     "INFY": [
       {
         "ticker": "INFY",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/block/?o=-2",
+        "sourceId": "block",
+        "cells": {
+          "Trade Category": "Block deal",
+          "Company": "Infosys",
+          "Insider": "Bofa Securities Europe Sa",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "4900000",
+          "Trade Value": "515 crore",
+          "Price": "1052",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INFY",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/block/?o=-2",
+        "sourceId": "block",
+        "cells": {
+          "Trade Category": "Block deal",
+          "Company": "Infosys",
+          "Insider": "Bofa Securities Europe Sa",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "4900000",
+          "Trade Value": "515 crore",
+          "Price": "1052",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INFY",
         "date": "2026-09-28",
         "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
         "sourceId": "insiders",
@@ -113095,6 +113766,24 @@
       }
     ],
     "ECLERX": [
+      {
+        "ticker": "ECLERX",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "eClerx Services",
+          "Insider": "Eclerx Employee Welfare",
+          "Category": "Trust",
+          "Security Type": "Equity",
+          "Transaction": "Off Market",
+          "Trade Shares": "5123",
+          "Trade Value": "36.37 lacs",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "ECLERX",
         "date": "2026-10-05",
@@ -220880,6 +221569,42 @@
     "RATNAVEER": [
       {
         "ticker": "RATNAVEER",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ratnaveer Precis",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "794103",
+          "Trade Value": "26.91 crore",
+          "Price": "339",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "RATNAVEER",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ratnaveer Precis",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "794103",
+          "Trade Value": "26.98 crore",
+          "Price": "340",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "RATNAVEER",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2",
         "sourceId": "bulk",
@@ -227506,6 +228231,42 @@
       }
     ],
     "GCSL": [
+      {
+        "ticker": "GCSL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Gretex Corporate",
+          "Insider": "Mansukh Securities & Finance Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "168755",
+          "Trade Value": "12.31 crore",
+          "Price": "729",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "GCSL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Gretex Corporate",
+          "Insider": "Mansukh Securities & Finance Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "201869",
+          "Trade Value": "14.82 crore",
+          "Price": "734",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "GCSL",
         "date": "2026-10-08",
@@ -238592,6 +239353,78 @@
       }
     ],
     "PRIORITY": [
+      {
+        "ticker": "PRIORITY",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Priority Jewels",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "155519",
+          "Trade Value": "5.58 crore",
+          "Price": "359",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PRIORITY",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Priority Jewels",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "149552",
+          "Trade Value": "5.42 crore",
+          "Price": "362",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PRIORITY",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Priority Jewels",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "113430",
+          "Trade Value": "4.07 crore",
+          "Price": "359",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PRIORITY",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Priority Jewels",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "113617",
+          "Trade Value": "4.14 crore",
+          "Price": "364",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "PRIORITY",
         "date": "2026-10-12",
@@ -253766,6 +254599,42 @@
     "GSMFOILS": [
       {
         "ticker": "GSMFOILS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "GSM Foils",
+          "Insider": "Hi Growth Corporate Services Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "87500",
+          "Trade Value": "53.18 lacs",
+          "Price": "60.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "GSMFOILS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "GSM Foils",
+          "Insider": "Hi Growth Corporate Services Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "90000",
+          "Trade Value": "55.31 lacs",
+          "Price": "61.5",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "GSMFOILS",
         "date": "2026-10-09",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
         "sourceId": "bulk",
@@ -254848,6 +255717,60 @@
       }
     ],
     "MARKOLINES": [
+      {
+        "ticker": "MARKOLINES",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Markolines Pavem",
+          "Insider": "Hypotenuse Investments",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "172527",
+          "Trade Value": "3.02 crore",
+          "Price": "175",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MARKOLINES",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Markolines Pavem",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "188634",
+          "Trade Value": "3.30 crore",
+          "Price": "175",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MARKOLINES",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Markolines Pavem",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "197830",
+          "Trade Value": "3.46 crore",
+          "Price": "175",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MARKOLINES",
         "date": "2026-09-30",
@@ -262337,6 +263260,42 @@
       }
     ],
     "MVKAGRO": [
+      {
+        "ticker": "MVKAGRO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "M.V.K. Agro",
+          "Insider": "Abhishek Ashvinbhai Kamdar Huf",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "735000",
+          "Trade Value": "18.33 crore",
+          "Price": "249",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MVKAGRO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "M.V.K. Agro",
+          "Insider": "Onix Renewable Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "816300",
+          "Trade Value": "20.36 crore",
+          "Price": "249",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MVKAGRO",
         "date": "2026-09-25",
@@ -273369,6 +274328,60 @@
     "ONIXSOLAR": [
       {
         "ticker": "ONIXSOLAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Onix Solar",
+          "Insider": "Abhishek Ashvinbhai Kamdar Huf",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "871264",
+          "Trade Value": "32.68 crore",
+          "Price": "375",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ONIXSOLAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Onix Solar",
+          "Insider": "Onix Renewable Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "746000",
+          "Trade Value": "27.99 crore",
+          "Price": "375",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ONIXSOLAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Onix Solar",
+          "Insider": "Onix Renewable Limited",
+          "Category": "Promoter",
+          "Security Type": "Equity",
+          "Transaction": "Sold",
+          "Trade Shares": "746000",
+          "Trade Value": "27.99 crore",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ONIXSOLAR",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
         "sourceId": "bulk",
@@ -273951,6 +274964,24 @@
       }
     ],
     "FASCINATE": [
+      {
+        "ticker": "FASCINATE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Fascinate Textiles",
+          "Insider": "Balaji Niketan Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "92800",
+          "Trade Value": "95.62 lacs",
+          "Price": "103",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "FASCINATE",
         "date": "2026-10-09",
@@ -275440,6 +276471,60 @@
       }
     ],
     "COMSYN": [
+      {
+        "ticker": "COMSYN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Commerl. Synbags",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "486967",
+          "Trade Value": "12.71 crore",
+          "Price": "261",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "COMSYN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Commerl. Synbags",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "493751",
+          "Trade Value": "12.90 crore",
+          "Price": "261",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "COMSYN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Commerl. Synbags",
+          "Insider": "Golden Goenka Management Consultancy Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "300000",
+          "Trade Value": "7.83 crore",
+          "Price": "261",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "COMSYN",
         "date": "2026-10-12",
@@ -283396,6 +284481,42 @@
     "AQYLON": [
       {
         "ticker": "AQYLON",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Aqylon Nexus",
+          "Insider": "Abhishek Ashvinbhai Kamdar Huf",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "11000000",
+          "Trade Value": "16.50 crore",
+          "Price": "15.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AQYLON",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Aqylon Nexus",
+          "Insider": "Leading Leasing Finance & Investment Company Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "12170520",
+          "Trade Value": "18.24 crore",
+          "Price": "15.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AQYLON",
         "date": "2026-10-09",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
         "sourceId": "bulk",
@@ -283882,6 +285003,78 @@
       }
     ],
     "MARSONS": [
+      {
+        "ticker": "MARSONS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Marsons",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "975480",
+          "Trade Value": "12.79 crore",
+          "Price": "131",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MARSONS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Marsons",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "975480",
+          "Trade Value": "12.82 crore",
+          "Price": "131",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MARSONS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Marsons",
+          "Insider": "Prognosis Securities Pvt. Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "971745",
+          "Trade Value": "12.73 crore",
+          "Price": "131",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MARSONS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Marsons",
+          "Insider": "Prognosis Securities Pvt. Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "805745",
+          "Trade Value": "10.56 crore",
+          "Price": "131",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MARSONS",
         "date": "2026-10-12",
@@ -299970,6 +301163,114 @@
     "PONNIERODE": [
       {
         "ticker": "PONNIERODE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ponni Sug.Erode",
+          "Insider": "Atyant Capital India Fund I",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "125410",
+          "Trade Value": "4.42 crore",
+          "Price": "352",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PONNIERODE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ponni Sug.Erode",
+          "Insider": "Parth Infin Brokers Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "87983",
+          "Trade Value": "3.19 crore",
+          "Price": "362",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PONNIERODE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ponni Sug.Erode",
+          "Insider": "Parth Infin Brokers Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "76794",
+          "Trade Value": "2.83 crore",
+          "Price": "369",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PONNIERODE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ponni Sug.Erode",
+          "Insider": "Ramdoot Realtors Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "141105",
+          "Trade Value": "5.21 crore",
+          "Price": "369",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PONNIERODE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ponni Sug.Erode",
+          "Insider": "Ramdoot Realtors Pvt Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "113511",
+          "Trade Value": "4.22 crore",
+          "Price": "371",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PONNIERODE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ponni Sug.Erode",
+          "Insider": "Raviraj Developers Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "50000",
+          "Trade Value": "1.86 crore",
+          "Price": "372",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PONNIERODE",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
         "sourceId": "bulk",
@@ -302258,6 +303559,42 @@
       }
     ],
     "LAXMICOT": [
+      {
+        "ticker": "LAXMICOT",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Laxmi Cotspin",
+          "Insider": "Rimpy Mittal",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "162133",
+          "Trade Value": "22.16 lacs",
+          "Price": "13.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "LAXMICOT",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Laxmi Cotspin",
+          "Insider": "Rimpy Mittal",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "162133",
+          "Trade Value": "22.18 lacs",
+          "Price": "13.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "LAXMICOT",
         "date": "2026-08-19",
@@ -309920,6 +311257,60 @@
       }
     ],
     "VALUE360": [
+      {
+        "ticker": "VALUE360",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Value 360 Commu.",
+          "Insider": "Craft Emerging Market Fund Pcc-Citadel Capital Fund",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "224400",
+          "Trade Value": "1.91 crore",
+          "Price": "85.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VALUE360",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Value 360 Commu.",
+          "Insider": "Craft Emerging Market Fund Pcc- Elite Capital Fund",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "225600",
+          "Trade Value": "1.92 crore",
+          "Price": "85.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VALUE360",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Value 360 Commu.",
+          "Insider": "Deepank Bhandari",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "82800",
+          "Trade Value": "70.38 lacs",
+          "Price": "85.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "VALUE360",
         "date": "2026-10-07",
@@ -343773,6 +345164,132 @@
     "MOMSBELIEF": [
       {
         "ticker": "MOMSBELIEF",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Rays of Belief",
+          "Insider": "Acme Capital Market Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "222018",
+          "Trade Value": "4.75 crore",
+          "Price": "214",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOMSBELIEF",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Rays of Belief",
+          "Insider": "Acme Capital Market Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "222018",
+          "Trade Value": "4.66 crore",
+          "Price": "210",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOMSBELIEF",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Rays of Belief",
+          "Insider": "L7 Hitech Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "145000",
+          "Trade Value": "3.12 crore",
+          "Price": "215",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOMSBELIEF",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Rays of Belief",
+          "Insider": "Prognosis Securities Pvt. Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "153900",
+          "Trade Value": "3.31 crore",
+          "Price": "215",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOMSBELIEF",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Rays of Belief",
+          "Insider": "Prognosis Securities Pvt. Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "108826",
+          "Trade Value": "2.35 crore",
+          "Price": "216",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOMSBELIEF",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Rays of Belief",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "105401",
+          "Trade Value": "2.26 crore",
+          "Price": "214",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOMSBELIEF",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Rays of Belief",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "105401",
+          "Trade Value": "2.20 crore",
+          "Price": "209",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOMSBELIEF",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2",
         "sourceId": "bulk",
@@ -349551,6 +351068,150 @@
     "AMBICAAGAR": [
       {
         "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "100181",
+          "Trade Value": "24.34 lacs",
+          "Price": "24.3",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "70126",
+          "Trade Value": "16.89 lacs",
+          "Price": "24.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "70727",
+          "Trade Value": "16.90 lacs",
+          "Price": "23.9",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "99580",
+          "Trade Value": "24.00 lacs",
+          "Price": "24.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Orion Stocks Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "113538",
+          "Trade Value": "27.39 lacs",
+          "Price": "24.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Orion Stocks Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "75495",
+          "Trade Value": "18.11 lacs",
+          "Price": "24.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Orion Stocks Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "116019",
+          "Trade Value": "28.22 lacs",
+          "Price": "24.3",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Ambica Agarbat.",
+          "Insider": "Orion Stocks Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "73014",
+          "Trade Value": "17.59 lacs",
+          "Price": "24.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AMBICAAGAR",
         "date": "2026-08-29",
         "url": "https://www.screener.in/trades/sast/?o=-2&p=2",
         "sourceId": "sast",
@@ -352416,6 +354077,42 @@
       }
     ],
     "MOBIKWIK": [
+      {
+        "ticker": "MOBIKWIK",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "One Mobikwik",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "586243",
+          "Trade Value": "14.06 crore",
+          "Price": "240",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MOBIKWIK",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "One Mobikwik",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "567990",
+          "Trade Value": "13.61 crore",
+          "Price": "240",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MOBIKWIK",
         "date": "2026-10-09",
@@ -356417,6 +358114,42 @@
       }
     ],
     "PRANAV": [
+      {
+        "ticker": "PRANAV",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pranav Construc.",
+          "Insider": "Jyothi Kailash Kabra",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "846639",
+          "Trade Value": "8.48 crore",
+          "Price": "100",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PRANAV",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pranav Construc.",
+          "Insider": "Jyothi Kailash Kabra",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "846639",
+          "Trade Value": "8.46 crore",
+          "Price": "99.9",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "PRANAV",
         "date": "2026-10-09",
@@ -367942,6 +369675,42 @@
     "FWSTC": [
       {
         "ticker": "FWSTC",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Flywings Simula.",
+          "Insider": "Gretex Share Broking Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "130200",
+          "Trade Value": "2.89 crore",
+          "Price": "222",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "FWSTC",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Flywings Simula.",
+          "Insider": "Gretex Share Broking Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "48600",
+          "Trade Value": "1.08 crore",
+          "Price": "221",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "FWSTC",
         "date": "2026-09-29",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
         "sourceId": "bulk",
@@ -369197,6 +370966,24 @@
       }
     ],
     "MANIKA": [
+      {
+        "ticker": "MANIKA",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Manika Plastech",
+          "Insider": "Equism Capital Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "700000",
+          "Trade Value": "3.60 crore",
+          "Price": "51.4",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MANIKA",
         "date": "2026-10-07",
@@ -381045,6 +382832,222 @@
     "VIKRAN": [
       {
         "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Clt Research Tech Private Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1623496",
+          "Trade Value": "10.19 crore",
+          "Price": "62.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Clt Research Tech Private Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1619790",
+          "Trade Value": "10.17 crore",
+          "Price": "62.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "3847888",
+          "Trade Value": "24.16 crore",
+          "Price": "62.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "3842055",
+          "Trade Value": "24.14 crore",
+          "Price": "62.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "4277453",
+          "Trade Value": "26.96 crore",
+          "Price": "63.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "4277453",
+          "Trade Value": "26.98 crore",
+          "Price": "63.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "3531942",
+          "Trade Value": "22.18 crore",
+          "Price": "62.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "3531942",
+          "Trade Value": "22.19 crore",
+          "Price": "62.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Plutus Wealth Management Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "2038371",
+          "Trade Value": "12.79 crore",
+          "Price": "62.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Plutus Wealth Management Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "2038371",
+          "Trade Value": "12.80 crore",
+          "Price": "62.8",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "2408244",
+          "Trade Value": "15.09 crore",
+          "Price": "62.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vikran Engg.",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "2460822",
+          "Trade Value": "15.42 crore",
+          "Price": "62.7",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VIKRAN",
         "date": "2026-09-24",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
         "sourceId": "bulk",
@@ -385234,6 +387237,42 @@
     "UDAYJEW": [
       {
         "ticker": "UDAYJEW",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Uday Jewellery",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "178501",
+          "Trade Value": "4.26 crore",
+          "Price": "238",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "UDAYJEW",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Uday Jewellery",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "178501",
+          "Trade Value": "4.26 crore",
+          "Price": "239",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "UDAYJEW",
         "date": "2026-09-26",
         "url": "https://www.screener.in/trades/insiders/?o=-2",
         "sourceId": "insiders",
@@ -387216,6 +389255,42 @@
       }
     ],
     "PNCINFRA": [
+      {
+        "ticker": "PNCINFRA",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "PNC Infratech",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1451741",
+          "Trade Value": "22.32 crore",
+          "Price": "154",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PNCINFRA",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "PNC Infratech",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1455041",
+          "Trade Value": "22.39 crore",
+          "Price": "154",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "PNCINFRA",
         "date": "2026-09-28",
@@ -391360,6 +393435,186 @@
     "ADVANCE": [
       {
         "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "748140",
+          "Trade Value": "10.70 crore",
+          "Price": "143",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "748140",
+          "Trade Value": "10.70 crore",
+          "Price": "143",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "J4S Financial Solutions Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "503770",
+          "Trade Value": "7.25 crore",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "J4S Financial Solutions Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "503770",
+          "Trade Value": "7.24 crore",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "503862",
+          "Trade Value": "7.24 crore",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "513705",
+          "Trade Value": "7.39 crore",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "403104",
+          "Trade Value": "5.79 crore",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "403104",
+          "Trade Value": "5.79 crore",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "494508",
+          "Trade Value": "7.13 crore",
+          "Price": "144",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Advance Agrolife",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "517189",
+          "Trade Value": "7.41 crore",
+          "Price": "143",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ADVANCE",
         "date": "2026-10-01",
         "url": "https://www.screener.in/trades/bulk/?o=-2",
         "sourceId": "bulk",
@@ -393032,6 +395287,42 @@
       }
     ],
     "PIXTRANS": [
+      {
+        "ticker": "PIXTRANS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pix Transmission",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "69781",
+          "Trade Value": "13.60 crore",
+          "Price": "1949",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PIXTRANS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pix Transmission",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "69781",
+          "Trade Value": "13.60 crore",
+          "Price": "1949",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "PIXTRANS",
         "date": "2026-10-01",
@@ -395054,6 +397345,24 @@
     "GENSOL": [
       {
         "ticker": "GENSOL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Gensol Engineer.",
+          "Insider": "Catalyst Trusteeship Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "191500",
+          "Trade Value": "18.54 lacs",
+          "Price": "9.68",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "GENSOL",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
         "sourceId": "bulk",
@@ -396330,6 +398639,222 @@
     "INDIAGLYCO": [
       {
         "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "802758",
+          "Trade Value": "28.22 crore",
+          "Price": "352",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "808594",
+          "Trade Value": "28.44 crore",
+          "Price": "352",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "446396",
+          "Trade Value": "15.78 crore",
+          "Price": "353",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "330683",
+          "Trade Value": "11.68 crore",
+          "Price": "353",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1030673",
+          "Trade Value": "36.41 crore",
+          "Price": "353",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1031949",
+          "Trade Value": "36.47 crore",
+          "Price": "353",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "866674",
+          "Trade Value": "30.71 crore",
+          "Price": "354",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "866674",
+          "Trade Value": "30.74 crore",
+          "Price": "355",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "425376",
+          "Trade Value": "14.98 crore",
+          "Price": "352",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "425376",
+          "Trade Value": "14.99 crore",
+          "Price": "352",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "413373",
+          "Trade Value": "14.61 crore",
+          "Price": "353",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "India Glycols",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "413295",
+          "Trade Value": "14.60 crore",
+          "Price": "353",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "INDIAGLYCO",
         "date": "2026-10-07",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
         "sourceId": "bulk",
@@ -396800,6 +399325,60 @@
       }
     ],
     "NITYAS": [
+      {
+        "ticker": "NITYAS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Nityas Gems & Jewellery",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "603800",
+          "Trade Value": "4.47 crore",
+          "Price": "74.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "NITYAS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Nityas Gems & Jewellery",
+          "Insider": "Arihant Capital Markets Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "490000",
+          "Trade Value": "3.74 crore",
+          "Price": "76.3",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "NITYAS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Nityas Gems & Jewellery",
+          "Insider": "Innovative Vision Fund",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "382399",
+          "Trade Value": "2.83 crore",
+          "Price": "74.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "NITYAS",
         "date": "2026-10-08",
@@ -397588,6 +400167,132 @@
       }
     ],
     "ARFIN": [
+      {
+        "ticker": "ARFIN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Arfin India",
+          "Insider": "Bhola Motor Finance Private Limited .",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "851433",
+          "Trade Value": "9.27 crore",
+          "Price": "109",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ARFIN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Arfin India",
+          "Insider": "Bullpulse Marketedge Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "938026",
+          "Trade Value": "10.26 crore",
+          "Price": "109",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ARFIN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Arfin India",
+          "Insider": "Bullpulse Marketedge Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "938026",
+          "Trade Value": "10.17 crore",
+          "Price": "108",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ARFIN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Arfin India",
+          "Insider": "Trade Station Ventures",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "850000",
+          "Trade Value": "9.22 crore",
+          "Price": "108",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ARFIN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Arfin India",
+          "Insider": "Trade Station Ventures",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "840000",
+          "Trade Value": "9.05 crore",
+          "Price": "108",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ARFIN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Arfin India",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1131458",
+          "Trade Value": "12.28 crore",
+          "Price": "108",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "ARFIN",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Arfin India",
+          "Insider": "Vistaar Trading Service Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1131458",
+          "Trade Value": "12.25 crore",
+          "Price": "108",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "ARFIN",
         "date": "2026-10-09",
@@ -398468,6 +401173,24 @@
     "VGCL": [
       {
         "ticker": "VGCL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Vibrant Glo. Cap",
+          "Insider": "Bhavna Radhemohan Jhunjhunwala",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "313722",
+          "Trade Value": "1.57 crore",
+          "Price": "50.0",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VGCL",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
         "sourceId": "bulk",
@@ -398764,6 +401487,618 @@
     "SHRINGARMS": [
       {
         "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "2277152",
+          "Trade Value": "67.88 crore",
+          "Price": "298",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "2277152",
+          "Trade Value": "67.87 crore",
+          "Price": "298",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Blitzquant Research Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "868352",
+          "Trade Value": "25.99 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Blitzquant Research Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "868352",
+          "Trade Value": "26.00 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Dipan Mehta Commodities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "803107",
+          "Trade Value": "24.15 crore",
+          "Price": "301",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Dipan Mehta Commodities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "793810",
+          "Trade Value": "24.01 crore",
+          "Price": "302",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Elixir Equities Private Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "580301",
+          "Trade Value": "17.46 crore",
+          "Price": "301",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Elixir Equities Private Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "570938",
+          "Trade Value": "17.16 crore",
+          "Price": "300",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Elixir Wealth Management Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1090833",
+          "Trade Value": "32.84 crore",
+          "Price": "301",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Elixir Wealth Management Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1090833",
+          "Trade Value": "32.94 crore",
+          "Price": "302",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Grt Strategic Ventures Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "534157",
+          "Trade Value": "16.04 crore",
+          "Price": "300",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Grt Strategic Ventures Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "534157",
+          "Trade Value": "16.04 crore",
+          "Price": "300",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "647072",
+          "Trade Value": "19.37 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "648240",
+          "Trade Value": "19.42 crore",
+          "Price": "300",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Imc India Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "417623",
+          "Trade Value": "12.59 crore",
+          "Price": "301",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Imc India Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "546686",
+          "Trade Value": "16.24 crore",
+          "Price": "297",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "852822",
+          "Trade Value": "25.48 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "761091",
+          "Trade Value": "22.71 crore",
+          "Price": "298",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "J4S Financial Solutions Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "688258",
+          "Trade Value": "20.60 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "J4S Financial Solutions Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "688258",
+          "Trade Value": "20.61 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1659833",
+          "Trade Value": "49.65 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1670213",
+          "Trade Value": "49.98 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Marwadi Shares And Finance Ltd.",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "530539",
+          "Trade Value": "16.01 crore",
+          "Price": "302",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Marwadi Shares And Finance Ltd.",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "530539",
+          "Trade Value": "15.48 crore",
+          "Price": "292",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "3417319",
+          "Trade Value": "102 crore",
+          "Price": "300",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "3417319",
+          "Trade Value": "102 crore",
+          "Price": "300",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Musigma Securities",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1403347",
+          "Trade Value": "41.67 crore",
+          "Price": "297",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Musigma Securities",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1402633",
+          "Trade Value": "41.67 crore",
+          "Price": "297",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1403941",
+          "Trade Value": "41.73 crore",
+          "Price": "297",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1403941",
+          "Trade Value": "41.75 crore",
+          "Price": "297",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1733552",
+          "Trade Value": "51.86 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1775655",
+          "Trade Value": "52.91 crore",
+          "Price": "298",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Vinsul Makardi Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "618994",
+          "Trade Value": "18.47 crore",
+          "Price": "298",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Shringar House",
+          "Insider": "Vinsul Makardi Ltd",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "619182",
+          "Trade Value": "18.49 crore",
+          "Price": "299",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHRINGARMS",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/bulk/?o=-2",
         "sourceId": "bulk",
@@ -399021,6 +402356,518 @@
           "Transaction": "Sell",
           "Trade Shares": "3600000",
           "Broadcast Date": "2026-10-12",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "CMLL": [
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "1459788",
+          "Trade Value": "92.17 crore",
+          "Price": "631",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "1459788",
+          "Trade Value": "92.24 crore",
+          "Price": "632",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Dipan Mehta Commodities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "408335",
+          "Trade Value": "25.94 crore",
+          "Price": "635",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Dipan Mehta Commodities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "397435",
+          "Trade Value": "25.26 crore",
+          "Price": "636",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Elixir Wealth Management Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "529235",
+          "Trade Value": "33.52 crore",
+          "Price": "633",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Elixir Wealth Management Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "504844",
+          "Trade Value": "32.06 crore",
+          "Price": "635",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "543832",
+          "Trade Value": "34.23 crore",
+          "Price": "629",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Hrti Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "505297",
+          "Trade Value": "31.76 crore",
+          "Price": "628",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "260413",
+          "Trade Value": "16.38 crore",
+          "Price": "629",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "534252",
+          "Trade Value": "33.70 crore",
+          "Price": "631",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=8",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "338735",
+          "Trade Value": "21.38 crore",
+          "Price": "631",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Irage Broking Services Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "455930",
+          "Trade Value": "28.73 crore",
+          "Price": "630",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "683177",
+          "Trade Value": "43.13 crore",
+          "Price": "631",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Junomoneta Finsol Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "691259",
+          "Trade Value": "43.65 crore",
+          "Price": "632",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "2099164",
+          "Trade Value": "133 crore",
+          "Price": "633",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Microcurves Trading Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "2099164",
+          "Trade Value": "133 crore",
+          "Price": "634",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "564054",
+          "Trade Value": "35.67 crore",
+          "Price": "632",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Nk Securities Research Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "564054",
+          "Trade Value": "35.68 crore",
+          "Price": "633",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "689639",
+          "Trade Value": "43.37 crore",
+          "Price": "629",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "CMLL",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Caliber Mining",
+          "Insider": "Qe Securities Llp",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "697263",
+          "Trade Value": "43.87 crore",
+          "Price": "629",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "PASHUPATI": [
+      {
+        "ticker": "PASHUPATI",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pashupati Cotsp.",
+          "Insider": "Rathod Manoj Chhaganlal Huf",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "692799",
+          "Trade Value": "5.01 crore",
+          "Price": "72.4",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PASHUPATI",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Pashupati Cotsp.",
+          "Insider": "Rathod Manoj Chhaganlal Huf",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "886544",
+          "Trade Value": "6.43 crore",
+          "Price": "72.5",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "UTTAMSUGAR": [
+      {
+        "ticker": "UTTAMSUGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Uttam Sug.Mills",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "206090",
+          "Trade Value": "7.42 crore",
+          "Price": "360",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "UTTAMSUGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Uttam Sug.Mills",
+          "Insider": "Alphagrep Securities Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "206090",
+          "Trade Value": "7.42 crore",
+          "Price": "360",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "UTTAMSUGAR",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Uttam Sug.Mills",
+          "Insider": "Mugi Constructions Private Limited",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "195156",
+          "Trade Value": "6.96 crore",
+          "Price": "357",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "GUJRAFFIA": [
+      {
+        "ticker": "GUJRAFFIA",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Guj. Raffia Inds",
+          "Insider": "Amit Kumar Jain",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "30000",
+          "Trade Value": "15.49 lacs",
+          "Price": "51.6",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "GUJRAFFIA",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=7",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Guj. Raffia Inds",
+          "Insider": "Rimpy Mittal",
+          "Security Type": "Equity",
+          "Transaction": "Buy",
+          "Trade Shares": "29491",
+          "Trade Value": "13.88 lacs",
+          "Price": "47.1",
+          "Broadcast Date": "2026-10-13",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "GUJRAFFIA",
+        "date": "2026-10-13",
+        "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
+        "sourceId": "bulk",
+        "cells": {
+          "Trade Category": "Bulk deal",
+          "Company": "Guj. Raffia Inds",
+          "Insider": "Rimpy Mittal",
+          "Security Type": "Equity",
+          "Transaction": "Sell",
+          "Trade Shares": "33673",
+          "Trade Value": "16.27 lacs",
+          "Price": "48.3",
+          "Broadcast Date": "2026-10-13",
           "Source": "Screener.in"
         }
       }
