@@ -319,7 +319,7 @@ jobs:
         if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-ai-alerts-ui.mjs && node scripts/verify-ai-alert-types-ui.mjs && node scripts/verify-ai-alert-timeline-ui.mjs && node scripts/verify-alert-capacity-ui.mjs && node scripts/verify-kpi-impact-ui.mjs
+        run: node scripts/verify-alert-card-grid-ui.mjs && node scripts/verify-ai-alerts-ui.mjs && node scripts/verify-ai-alert-types-ui.mjs && node scripts/verify-ai-alert-timeline-ui.mjs && node scripts/verify-alert-capacity-ui.mjs && node scripts/verify-kpi-impact-ui.mjs
       - name: Verify explicit refresh through the service worker
         if: ${{ matrix.part == 1 }}
         env:

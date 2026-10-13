@@ -155,12 +155,14 @@ const settledRanking = async (page, timeout) => {
   const snapshot = () => {
     const status = document.querySelector('[data-ai-feed-status]');
     const cards = [...document.querySelectorAll('[data-ai-card]')].map(card => card.dataset.ticker);
+    const firstPosition = Number(document.querySelector('[data-ai-card]')?.getAttribute('aria-posinset') || 0);
+    const total = Number(document.querySelector('[data-ai-cards]')?.dataset.aiTotal || 0);
     // A source failure has priority in the compact status label while the remaining sources
     // still read. Collection readiness is separate from that truthful coverage label.
     const ready = !!status?.dataset.state && status.dataset.state !== 'pending' &&
       document.querySelector('[data-ai-cards]')?.getAttribute('aria-busy') === 'false' &&
       document.querySelector('[data-ai-layout]')?.getAttribute('data-ai-collecting') === 'false';
-    return { cards, ready, coverage: status?.dataset.state, grouping: status?.dataset.aiStoryStatus };
+    return { cards, firstPosition, total, ready, coverage: status?.dataset.state, grouping: status?.dataset.aiStoryStatus };
   };
   await page.waitForFunction(() => {
     const status = document.querySelector('[data-ai-feed-status]');
@@ -173,10 +175,14 @@ const settledRanking = async (page, timeout) => {
   });
   let previous = null;
   for (let i = 0; i < 40; i++) {
+    // Live arrivals preserve the company being read. Compare the same first eight companies,
+    // independent of that reading anchor or the adaptive number of mounted grid rows.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(100);
     // Recheck readiness with the order: another source arrival can start a reassembly.
     const state = await page.evaluate(snapshot), cards = state.cards.join(',');
-    if (state.ready && cards && cards === previous) return state.cards;
-    previous = state.ready ? cards : null;
+    if (state.ready && state.firstPosition === 1 && cards && cards === previous) return { cards: state.cards.slice(0, 8), total: state.total };
+    previous = state.ready && state.firstPosition === 1 ? cards : null;
     await page.waitForTimeout(1500);
   }
   throw new Error('the ranking did not settle');
@@ -328,7 +334,7 @@ try {
   await pooled.page.goto(`${origin}/#/research/ai-alerts?scope=universe`);
   const fromAi = served.requests.length;
   await pooled.page.reload();
-  const pooledCards = await settledRanking(pooled.page, 180000);
+  const pooledRanking = await settledRanking(pooled.page, 180000), pooledCards = pooledRanking.cards;
   const aiReads = poolReads(fromAi).filter((path) => path.includes('/ai/'));
   assert(aiReads.length >= index.ai.length, `every AI shard is read (${aiReads.length} of ${index.ai.length})`);
   assert.deepEqual(captureReads(fromAi).filter((path) => path !== '/data/insider-trades.json' && !path.startsWith('/data/insider-archive/')), [], `no pooled capture is downloaded for the ranking (${captureReads(fromAi).join(', ')})`);
@@ -343,7 +349,8 @@ try {
   const liveAi = await openPage();
   await withoutPool(liveAi.page);
   await liveAi.page.goto(`${origin}/#/research/ai-alerts?scope=universe`);
-  const liveCards = await settledRanking(liveAi.page, 300000);
+  const liveRanking = await settledRanking(liveAi.page, 300000), liveCards = liveRanking.cards;
+  assert.equal(pooledRanking.total, liveRanking.total, 'the AI pool retains the same complete company count as full history');
   assert.deepEqual(pooledCards, liveCards, 'the AI pool ranks the same companies in the same order as the full history');
   assert.deepEqual(liveAi.errors.filter(message => !environment(message)), [], 'zero live ranking console errors');
   console.log(`PASS AI Alerts from the AI pool: ${pooledCards.length} cards, identical to the live ranking`);

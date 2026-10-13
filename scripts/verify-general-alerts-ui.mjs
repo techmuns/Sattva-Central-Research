@@ -166,6 +166,7 @@ try {
   await page.goto(origin);
   await settled();
   console.log('Rendered complete All Alerts pool');
+  assert.equal(await page.getByRole('button', { name: /^Show .*more$/i }).count(), 0, 'All Alerts reaches all retained rows through scrolling');
   const period = page.getByRole('combobox', { name: 'Date range', exact: true });
   assert.equal(await period.inputValue(), 'today', 'All Alerts opens on Today');
   assert.equal(await page.locator('[data-watch-toggle]').count(), 0, 'All Alerts uses the global Watchlist scope instead of a second table toggle');
@@ -257,9 +258,14 @@ try {
     await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
   };
   const search = async value => {
-    await page.locator('[data-table-search]').fill(value);
-    // Large histories defer filtering until after the loading cover paints.
-    await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
+    try {
+      await page.locator('[data-table-search]').fill(value);
+      // Large histories defer filtering until after the loading cover paints.
+      await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
+    } catch (error) {
+      const state = await page.locator('#root').innerText().catch(() => 'root unavailable');
+      throw new Error(`All Alerts search ${JSON.stringify(value)} failed: ${state.slice(0, 1000)}; errors: ${errors.join(' | ') || 'none'}`, { cause: error });
+    }
   };
   for (const label of ['Today', 'Last 3 days', 'Last 7 days', 'Last 14 days', 'Last 30 days', 'This month', 'Date not supplied', 'All history through today']) {
     assert((await period.locator('option').allTextContents()).includes(label), `All Alerts offers ${label}`);
