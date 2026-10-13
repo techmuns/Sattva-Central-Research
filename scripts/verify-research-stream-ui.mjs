@@ -18,6 +18,7 @@ const root = fileURLToPath(new URL('../public', import.meta.url));
 const newsFixture = readNewsJson(resolve(root, 'data/news.json'));
 delete newsFixture._jsonShards;
 newsFixture.byTicker = Object.fromEntries(Object.entries(newsFixture.byTicker).filter(([ticker]) => ['JAYNECOIND', 'IIFL', 'SAIL'].includes(ticker)).map(([ticker, rows]) => [ticker, rows.slice(0, 12)]));
+newsFixture.archive = [];
 newsFixture.rowCount = Object.values(newsFixture.byTicker).reduce((sum, rows) => sum + rows.length, 0);
 newsFixture._provenance = 'Bounded UI test fixture; not a source completeness or live latency claim.';
 const newsFixtureJson = JSON.stringify(newsFixture);
@@ -27,9 +28,11 @@ const newsFixtureJson = JSON.stringify(newsFixture);
 const fixtureTickers = new Set(['JAYNECOIND', 'IIFL', 'SAIL']);
 const filingFixtures = new Map();
 function filingFixture(path, file) {
-  if (!/^\/data\/(?:corp-announcements\.json|insider-trades\.json|(?:announcements|insider)-archive\/(?:\d{4}-\d{2}|undated)\.json)$/.test(path)) return null;
+  if (!/^\/data\/(?:corp-announcements\.json|insider-trades\.json|(?:announcements|insider)-archive\/(?:\d{4}-\d{2}|undated)\.json|nse-filings\/(?:\d{4}-\d{2}-\d{2}|undated)\.json)$/.test(path)) return null;
   if (filingFixtures.has(path)) return filingFixtures.get(path);
-  const body = JSON.parse(readFileSync(file, 'utf8'));
+  // Reconstruct transport shards before sampling. Leaving the manifest here
+  // makes the browser expand the complete archive after receiving the sample.
+  const body = readNewsJson(file);
   if (body.byTicker) {
     body.byTicker = Object.fromEntries(Object.entries(body.byTicker).filter(([ticker]) => fixtureTickers.has(ticker)).map(([ticker, rows]) => [ticker, rows.slice(0, 12)]));
     body.rowCount = Object.values(body.byTicker).reduce((sum, rows) => sum + rows.length, 0);
@@ -48,7 +51,7 @@ for (const [name, field] of [
   ['public-holdings', 'holdings'], ['ipo-filings', 'rows'], ['technicals', 'companies'],
   ['earnings-live', 'rows'], ['nse-announcements', 'rows'], ['concall-scans', 'rows'],
 ]) {
-  const capture = JSON.parse(readFileSync(resolve(root, `data/${name}.json`), 'utf8'));
+  const capture = readNewsJson(resolve(root, `data/${name}.json`));
   capture[field] = field === 'byTicker'
     ? Object.fromEntries(Object.entries(capture[field]).filter(([ticker]) => ['JAYNECOIND', 'IIFL', 'SAIL'].includes(ticker)).map(([ticker, rows]) => [ticker, rows.slice(0, 12)]))
     : capture[field].slice(0, 24);
@@ -57,6 +60,17 @@ for (const [name, field] of [
   if (name === 'market-news') { capture.archive = []; capture.archivedCount = capture.articles.length; }
   capture._provenance = 'Bounded conversation UI fixture; full source history is tested separately.';
   captureFixtures.set(`/data/${name}.json`, JSON.stringify(capture));
+}
+// Social archives also grow independently of the stream protocol fixture.
+// Exact retained coverage is exercised by the social/history and portfolio suites.
+const postFixtures = new Map();
+function postFixture(path, file) {
+  if (!/^\/data\/(?:telegram-posts\.json|twitter-archive\/\d{4}-\d{2}\.json)$/.test(path)) return null;
+  if (postFixtures.has(path)) return postFixtures.get(path);
+  const capture = JSON.parse(readFileSync(file, 'utf8'));
+  capture.posts = capture.posts.slice(0, 24);
+  capture._provenance = 'Bounded conversation UI fixture; full social history is tested separately.';
+  const json = JSON.stringify(capture); postFixtures.set(path, json); return json;
 }
 const questions = [], timings = [], errors = [], streamEvents = [];
 let holdAnswer = false;
@@ -141,7 +155,7 @@ const server = createServer(async (req, res) => {
   if (!file.startsWith(root + sep)) { res.writeHead(404); res.end(); return; }
   try {
     res.setHeader('content-type', { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'application/octet-stream');
-    res.end(filingFixture(url.pathname, file) || readFileSync(file));
+    res.end(postFixture(url.pathname, file) || filingFixture(url.pathname, file) || readFileSync(file));
   } catch { res.writeHead(404); res.end(); }
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
