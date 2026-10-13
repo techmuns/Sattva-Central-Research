@@ -14,6 +14,7 @@ import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
 import { buildScreenerTradesSnapshot, hasScreenerTradeOverlap, indexPriorScreenerTradeIdentities, normaliseScreenerTrade, SCREENER_TRADE_SOURCES } from './lib/screener-trades.mjs';
 import { fetchInsiderTrades } from '../worker/muns.mjs';
 import { createFeed } from '../public/js/data/filings.js';
+import { newsDay } from '../public/js/data/news-window.js';
 import { clearAll, readEntry, writeEntry, KEYS } from '../public/js/core/store.js';
 
 const now = Date.now();
@@ -192,12 +193,13 @@ try {
   let snapshot = { ...old, byTicker: { TEST: [a, expired] }, capturedAt: new Date(now - 7200000).toISOString() };
   let live = { ok: true, trades: [b], headers: ['Insider', 'Added column'] };
   let tag = 0;
+  const readerWindow = { from: newsDay(now - 365 * 86400000), to: newsDay(now) };
   globalThis.fetch = async (path) => {
     if (path === 'data/insider-trades.json') return Response.json(snapshot);
     const url = new URL(path, 'http://localhost');
     assert.equal(url.pathname, '/api/insider-trades/TEST');
-    assert.equal(url.searchParams.get('from'), window.from);
-    assert.equal(url.searchParams.get('to'), window.to);
+    assert.equal(url.searchParams.get('from'), readerWindow.from);
+    assert.equal(url.searchParams.get('to'), readerWindow.to);
     return Response.json(live, { headers: { etag: `"live-${tag}"` } });
   };
   const feed = createFeed('insider');
@@ -261,6 +263,38 @@ try {
     feed.dispose();
   }
 } finally { globalThis.fetch = realFetch; await clearAll(); }
+
+// Date-only trades and the UI's Today filter use IST, even while UTC is still yesterday.
+const realNow = Date.now;
+let midnightFeed;
+try {
+  const midnight = Date.parse('2026-10-13T18:40:00.000Z'); // 00:10 IST on 14 October
+  Date.now = () => midnight;
+  const currentDay = '2026-10-14', oldestDay = '2025-10-14';
+  const row = (name, date) => ({ ...trade(name, 'NSE', date), ticker: 'MIDNIGHT' });
+  const midnightCapture = { kind: 'insider', capturedAt: new Date(midnight).toISOString(), coversUniverse: true,
+    byTicker: { MIDNIGHT: [row('Captured today', currentDay), row('Boundary', oldestDay),
+      row('Expired', '2025-10-13'), row('Future', '2026-10-15')] } };
+  let requested;
+  globalThis.fetch = async input => {
+    requested = new URL(String(input), 'https://fixture.test/');
+    assert.equal(requested.pathname, '/api/insider-trades/MIDNIGHT');
+    return Response.json({ ok: true, trades: [row('Live today', currentDay)], headers: [] });
+  };
+  midnightFeed = createFeed('insider', { read: async () => ({ value: midnightCapture }), allowColdStart: false });
+  await midnightFeed.load(['MIDNIGHT']);
+  assert.deepEqual(midnightFeed.rows().map(r => r.cells.Insider).sort(), ['Boundary', 'Captured today']);
+  await midnightFeed.loadOne('MIDNIGHT', { force: true });
+  assert.equal(requested.searchParams.get('from'), oldestDay);
+  assert.equal(requested.searchParams.get('to'), currentDay, 'live queries reach the current IST day');
+  assert.deepEqual(midnightFeed.rows().map(r => r.cells.Insider).sort(), ['Boundary', 'Captured today', 'Live today']);
+  midnightFeed.invalidate();
+  await midnightFeed.load(['MIDNIGHT']);
+  assert.equal(midnightFeed.rows().length, 3, 'current-day trades survive a device-history reload');
+} finally {
+  midnightFeed?.dispose(); Date.now = realNow; globalThis.fetch = realFetch; await clearAll();
+}
+console.log('PASS current IST-day snapshot, live query and retained history before UTC midnight');
 
 // Run the real capture against a localhost fixture in a disposable copy. In particular, the
 // news collapse guard and FILINGS_FORCE must not bypass additive insider retention.

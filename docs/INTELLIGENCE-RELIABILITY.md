@@ -35,6 +35,10 @@ display window. Successful checks must retain old evidence and expose new record
 partial checks must remain visibly partial. Repository CI and a healthy connection
 alone do not prove complete upstream coverage.
 
+Insider trade head windows and live query bounds use IST calendar dates. Verify
+date-only current-day records at 00:10 IST, before the UTC day changes, alongside
+the oldest eligible day, future-day exclusion and retained rows after a failed check.
+
 The known limits in [Filings operations](FILINGS-OPERATIONS.md) still apply. NSE's
 latest-window feed and best-effort scheduled captures do not establish a complete
 exchange archive. Finite retained windows and upstream availability must remain
