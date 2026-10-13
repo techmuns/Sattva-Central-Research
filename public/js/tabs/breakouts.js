@@ -778,15 +778,15 @@ function momentumVolCell(v, volMult) {
 function macdPill(v) {
   if (v.macdBullish == null) return `<span class="${mPillBase} ${M_NA}">—</span>`;
   const title = `MACD line ${num(v.macdLine, 2)} vs signal ${num(v.macdSignal, 2)} · ${v.macdAboveZero ? 'above' : 'below'} zero. ${provNote(v.isLiveQuote)}`;
-  if (v.freshCross) return `<span class="${mPillBase} ${M_PASS}" title="Fresh bullish crossover on the live candle. ${escapeHtml(title)}">⚡ Bullish</span>`;
+  if (v.freshCross) return `<span class="${mPillBase} ${M_PASS}" title="${v.isLiveQuote ? 'Fresh bullish crossover on the live candle.' : 'Bullish crossover in the saved daily reading.'} ${escapeHtml(title)}">⚡ Bullish</span>`;
   if (v.macdBullish) return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}">Bullish</span>`;
   return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">Bearish</span>`;
 }
 function dma20Pill(v) {
   if (v.above20dma == null) return `<span class="${mPillBase} ${M_NA}">—</span>`;
-  const title = `Live price ${v.price == null ? '—' : v.price.toFixed(2)} vs 20 DMA ${v.sma20 == null ? '—' : v.sma20.toFixed(2)}.`;
+  const title = `${v.isLiveQuote ? 'Live price' : 'Saved daily close'} ${v.price == null ? '—' : v.price.toFixed(2)} vs 20 DMA ${v.sma20 == null ? '—' : v.sma20.toFixed(2)}.`;
   if (v.above20dma) {
-    const crossed = v.priorAbove20dma === false;
+    const crossed = v.isLiveQuote && v.priorAbove20dma === false;
     return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}${crossed ? ' Crossed above today.' : ''}">${crossed ? 'Crossed ↑' : 'Above'}</span>`;
   }
   return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">Below</span>`;
@@ -935,11 +935,20 @@ function renderMomentumScanner(ctx, rows) {
     : gate === 'volume-momentum' ? vf(s).f2.evaluable : vf(s).f1.evaluable);
   const exceptions = rows.filter((s) => !evaluable.includes(s));
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
+  // A source gap is not an empty company universe. Keep saved, dated readings searchable in
+  // the existing table when no row can be evaluated; Exception pills never certify a live pass.
+  const savedOnly = !evaluable.length && rows.length > 0;
+  const priceCell = s => {
+    if (vf(s).isLiveQuote) return cmpCell(s.company);
+    const c = s.company;
+    return `<span class="font-semibold text-slate-800">${c.cmp == null ? '—' : formatRupee(c.cmp, {decimals:2})}</span>
+      <div class="text-[10px] text-amber-700">Saved daily close · ${escapeHtml(c.price_date || c.bar_date || 'date unavailable')}</div>`;
+  };
 
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 
   const table = scoreTable({
-    ...tableBase(passers, ctx),
+    ...tableBase(savedOnly ? rows : passers, ctx),
     initialView: tableViews.get(ctx.subview) || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
     nameLabel: 'Stock',
     emptyMessage:
@@ -947,7 +956,7 @@ function renderMomentumScanner(ctx, rows) {
         ? 'No stocks can be scanned. See scan coverage below.'
         : 'No stocks currently meet these conditions — try relaxing a threshold above.',
     columns: [
-      { label: 'Price', get: (s) => cmpCell(s.company), html: true, align: 'right', sortValue: (s) => live.priceInfo(s.company).price ?? -1 },
+      { label: 'Price', get: priceCell, html: true, align: 'right', sortValue: (s) => vf(s).price ?? -1 },
       col('Strong Momentum', (v) => filterPill(v.f1), (v) => (v.f1.pass ? 1 : 0)),
       col('Volume + Momentum', (v) => filterPill(v.f2), (v) => (v.f2.pass ? 1 : 0)),
       col('Volume vs 10D Avg', (v) => momentumVolCell(v, thresholds.volMult), (v) => v.volRatio10d ?? -1, 'right'),
@@ -977,7 +986,7 @@ function renderMomentumScanner(ctx, rows) {
         'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',
     })}
     ${momentumControls(gate, thresholds)}
-    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${scopeHint}</div>
+    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${savedOnly ? ' Saved readings are shown as exceptions while current data is unavailable.' : ''}${scopeHint}</div>
     ${table.html}
     <div class="mt-6 border-t border-slate-100 pt-4 text-center">
       <button type="button" data-momentum-coverage
@@ -1011,9 +1020,9 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Ticker', key: 'ticker', width: 14, get: (s) => s.company.ticker || '' },
     { header: 'Sector', key: 'sector', width: 22, get: (s) => s.company.sector || '' },
     { header: 'Price', key: 'price', width: 12, get: (s) => vf(s).price ?? null },
-    { header: 'Quote source and time', key: 'quote_time', width: 40, get: (s) => live.priceInfo(s.company).label },
-    { header: 'Filter 1 (Strong Momentum)', key: 'f1', width: 24, get: (s) => yn(vf(s).f1.pass) },
-    { header: 'Filter 2 (Volume + Momentum)', key: 'f2', width: 26, get: (s) => yn(vf(s).f2.pass) },
+    { header: 'Quote source and time', key: 'quote_time', width: 40, get: (s) => vf(s).isLiveQuote ? live.priceInfo(s.company).label : `Saved daily close · ${s.company.price_date || s.company.bar_date || 'date unavailable'}` },
+    { header: 'Filter 1 (Strong Momentum)', key: 'f1', width: 24, get: (s) => vf(s).f1.evaluable ? yn(vf(s).f1.pass) : 'Exception' },
+    { header: 'Filter 2 (Volume + Momentum)', key: 'f2', width: 26, get: (s) => vf(s).f2.evaluable ? yn(vf(s).f2.pass) : 'Exception' },
     { header: 'Volume vs 10D avg (× so far today)', key: 'vol', width: 30, get: (s) => (vf(s).volRatio10d == null ? null : Number(vf(s).volRatio10d.toFixed(2))) },
     { header: 'RSI Daily (live)', key: 'rsid', width: 16, get: (s) => (vf(s).rsiDaily == null ? null : Number(vf(s).rsiDaily.toFixed(2))) },
     { header: 'RSI Weekly (live)', key: 'rsiw', width: 16, get: (s) => (vf(s).rsiWeekly == null ? null : Number(vf(s).rsiWeekly.toFixed(2))) },

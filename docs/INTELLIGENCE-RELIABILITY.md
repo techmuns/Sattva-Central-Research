@@ -418,8 +418,18 @@ Legacy undated states require restoring the last completed period before a rollo
 Availability is filter-specific. Strong Momentum requires all four moving averages and all three
 RSI timeframes; Volume + Momentum needs only its own daily RSI, MACD, 20-day average, current price
 and volume evidence. Insufficient history is distinct from an overdue refresh or failed source.
+When no company can be evaluated, the existing scanner table retains searchable saved readings
+with dated daily prices and Exception status, including in exports. They are never counted as
+current passes. Ordinary source checks restore passing rows automatically and retain reader filters.
 Regression checks must cover the corrected volume shortlist, rollovers, saved-close fallback,
 outdated/mismatched quotes, newer listings, durable window retention and a warm service-worker upgrade.
+
+Universe editor openings show verified saved identities before directory revalidation completes.
+Reloads restore the complete BSE/NSE union from the device cache with the original source check times;
+reopening in the same session paints immediately. Failed, truncated, regressed or conflicting reads
+retain the last verified directory and remain visibly failed or partial. Search, exclusions and
+offscreen companies survive recovery. Preparation remains sliced and outside startup; mounted rows
+stay bounded. Verify with `verify-exchange-universe.mjs` and `verify-exchange-universe-ui.mjs`.
 
 ## Performance vs. Data Integrity
 

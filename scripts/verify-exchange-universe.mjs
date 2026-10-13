@@ -5,6 +5,7 @@ import { captureCompanies } from './lib/company-capture.mjs';
 import * as listed from '../public/js/data/listed-companies.js';
 import * as lists from '../public/js/core/scope-lists.js';
 import { filterByScope } from '../public/js/data/scope.js';
+import { writeEntry } from '../public/js/core/store.js';
 
 const read = path => JSON.parse(readFileSync(new URL(`../public/data/${path}`, import.meta.url)));
 const bse = read('announcement-identities.json'), nse = read('filing-capture/nse-identities.json');
@@ -80,4 +81,32 @@ await listed.load({ read: async path => ({ value: path.includes('nse-identities'
 assert.equal(listed.all(), changedRows);
 assert.equal(builds, firstBuilds + 2);
 assert(listed.meta().errors.some(e => e.includes('revalidated')), 'cache reuse cannot turn failed revalidation into success');
+await listed.load({ read: fixtureRead, build: trackedBuild });
+assert.equal(listed.all(), changedRows, 'an older delivered directory cannot roll back a newer verified listing');
+assert(listed.meta().errors.length, 'a regressed capture is a failed check, not a fresh success');
+const beforeConflict = listed.meta().sources.map(s => s.checkedAt).sort();
+await listed.load({ read: async path => ({ value: path.includes('nse-identities') ? nse :
+  { ...changedBse, capturedAt: new Date(Date.parse(changedBse.capturedAt) + 1000).toISOString() }, stale: false }),
+  build: (b, n) => { if (b.entries && n.directories) throw Error('Combined identity conflict'); return buildExchangeUniverseAsync(b, n); } });
+assert.equal(listed.all(), changedRows, 'a failed combined build retains the complete prior row objects');
+assert.deepEqual(listed.meta().sources.map(s => s.checkedAt).sort(), beforeConflict, 'a rejected join cannot advance source check times');
+assert(listed.meta().errors.some(e => e.includes('combined')));
+
+// Simulate a reload with only the verified disk/RAM cache and held network replies. Restore
+// must publish names before those replies settle, preserving the actual source timestamps.
+await writeEntry('snapshot:listed-companies:verified-sources:v1', { value: { version: 1, bse: changedBse, nse } });
+const reloaded = await import('../public/js/data/listed-companies.js?saved-first-fixture');
+let restoredBeforeNetwork = false, release;
+const held = new Promise(resolve => { release = resolve; });
+const off = reloaded.onChange(() => { if (reloaded.all().length) restoredBeforeNetwork = true; });
+const loading = reloaded.load({ read: async () => { await held; throw Error('offline'); } });
+await reloaded.restore();
+assert(restoredBeforeNetwork);
+assert.deepEqual(reloaded.all(), changedRows, 'every company and field survives saved-first recovery');
+assert(reloaded.meta().errors.some(e => e.includes('Saved')));
+const restoredTimes = reloaded.meta().sources.map(s => s.checkedAt);
+release(); await loading; off();
+assert.deepEqual(reloaded.all(), changedRows);
+assert.deepEqual(reloaded.meta().sources.map(s => s.checkedAt), restoredTimes);
+assert(reloaded.meta().errors.length >= 2);
 console.log(`PASS ${expected.size} exchange equity identities: complete union, BSE/NSE collisions, automatic enrollment, persisted exclusions and failure retention.`);
