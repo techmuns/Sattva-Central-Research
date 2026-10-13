@@ -2219,9 +2219,9 @@
       "error": "search-unavailable"
     },
     "isin:INE007A01025|Crisil": {
-      "lastAttemptAt": "2026-10-07T17:08:22+00:00",
+      "lastAttemptAt": "2026-10-13T04:16:24+00:00",
       "lastResultCount": 101,
-      "error": "result-cap-incomplete",
+      "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
       "pending": [
         {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T03:43:53.834851+00:00"
+    "checkedAt": "2026-10-13T04:16:24.464498+00:00"
   }
 }
