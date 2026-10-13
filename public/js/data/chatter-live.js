@@ -181,14 +181,17 @@ export function startLive(live) {
 export const stopLive = live => live?.stop?.(LIVE_ID);
 
 // Details and archive indices also survive reloads. Cache reads never advance checkedAt.
-async function cachedResource(path, { validate, fetchValue, onUpdate, maxAgeMs = 60000, force = false, requireFresh = false }) {
+async function cachedResource(path, { validate, fetchValue, onUpdate, onSaved, generation, maxAgeMs = 60000, force = false, requireFresh = false }) {
   const key = resourceKey(path);
   const stored = await readEntry(key);
   let saved = null;
   try { validate(stored?.value); saved = stored.value; } catch {}
+  // Bounded background readers can paint verified saved evidence while still awaiting the
+  // complete revalidation promise (rather than releasing their request slot on a cache hit).
+  if (saved && onSaved) onSaved({ ...saved, checking: true });
   let flight = resourceFlights.get(key);
   if (flight) { if (onUpdate) flight.callbacks.add(onUpdate); return saved && !requireFresh ? { ...saved, checking: true } : flight.promise; }
-  if (saved && !force && Date.now() - Date.parse(saved.checkedAt || '') < maxAgeMs) return saved;
+  if (saved && !force && (!generation || saved.generatedAt === generation) && Date.now() - Date.parse(saved.checkedAt || '') < maxAgeMs) return saved;
   const callbacks = new Set(onUpdate ? [onUpdate] : []);
   let partial = null;
   const notify = value => {

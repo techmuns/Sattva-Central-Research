@@ -37,6 +37,7 @@ import * as coverage from '../data/coverage.js';
 import * as telegram from '../data/telegram-posts.js';
 import { telegramReadHealth } from '../data/telegram-health.js';
 import { fitTableViewport } from '../ui/table-viewport.js';
+import { chatterHighlightsCell, latestChatterHighlights, wireChatterHighlights } from '../ui/chatter-highlights.js';
 
 export const meta = TAB_META['public-chatter'];
 
@@ -355,7 +356,7 @@ function openSourceDetails(ctx, onTelegram) {
  * Open the real items behind one dashboard count. The detail request is lazy so this table stays a
  * small summary read, while repeated company visits use the saved mentions cache.
  */
-function openMentions(entry) {
+function openMentions(entry, mentionId = null) {
   if (!entry?.slug) return;
   historyCatalogueOff?.(); historyCatalogueOff = null;
   mentionBookmarkOff?.(); mentionBookmarkOff = null;
@@ -365,6 +366,7 @@ function openMentions(entry) {
   const archived = !!entry.archiveTopic;
   let monthIndex = 0, visibleLimit = 40, payloads = new Map();
   let olderPending = false, olderFailed = false;
+  let focusedMention = false;
   openModal(mentionsFrame(entry), {
     size: 'wide',
     onClose: () => {
@@ -386,6 +388,8 @@ function openMentions(entry) {
     const anchorId = anchor?.dataset.mentionId, anchorTop = anchor?.getBoundingClientRect().top;
     const anchorIndex = anchorId ? all.findIndex(post => post.id === anchorId) : -1;
     if (anchorIndex >= visibleLimit) combined.visibleLimit = visibleLimit = anchorIndex + 40;
+    const requestedIndex = mentionId && !focusedMention ? all.findIndex(post => post.id === mentionId) : -1;
+    if (requestedIndex >= visibleLimit) combined.visibleLimit = visibleLimit = requestedIndex + 1;
     mentionBookmarkOff?.();
     // Finish the current month's pages before offering the next older month.
     body.innerHTML = mentionsBody(entry, combined) + (archived && payloads.get(months[monthIndex])?.complete && visibleLimit >= all.length && monthIndex < months.length - 1
@@ -422,6 +426,10 @@ function openMentions(entry) {
     dialog.scrollTop = top;
     const restored = anchorId && [...body.querySelectorAll('[data-mention-id]')].find(row => row.dataset.mentionId === anchorId);
     if (restored) dialog.scrollTop += restored.getBoundingClientRect().top - anchorTop;
+    if (requestedIndex >= 0) {
+      const target = [...body.querySelectorAll('[data-mention-id]')].find(row => row.dataset.mentionId === mentionId);
+      target?.scrollIntoView({ block: 'center' }); target?.focus({ preventScroll: true }); focusedMention = true;
+    }
     // Keep keyboard-accessible buttons while allowing uninterrupted reading by scroll.
     dialog.onscroll = () => {
       if (token !== mentionRequestToken || dialog.scrollTop <= 0 || dialog.scrollHeight - dialog.scrollTop - dialog.clientHeight > 240) return;
@@ -541,7 +549,7 @@ function mentionRow(post, entry, index) {
   const when = Number.isFinite(Date.parse(post.at)) ? `${formatDate(post.at)} · ${formatTime(post.at)}` : 'Time not published';
   const excerpt = shortExcerpt(post.text);
   return `
-    <article class="rounded-xl border border-slate-200 bg-white p-4" data-chatter-mention-row data-mention-index="${index}" data-mention-id="${escapeHtml(post.id)}">
+    <article tabindex="-1" class="rounded-xl border border-slate-200 bg-white p-4" data-chatter-mention-row data-mention-index="${index}" data-mention-id="${escapeHtml(post.id)}">
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
         <span class="font-semibold text-slate-700">${escapeHtml(post.sourceLabel || post.community || 'Source')}</span>
         <span aria-hidden="true">·</span>
@@ -643,6 +651,7 @@ function exportChatterRows(rows) {
     { header: 'Company', key: 'name', width: 30, get: (r) => (r.__banner ? r.text : r.name || '') },
     { header: 'NSE ticker', key: 'ticker', width: 16, get: (r) => value(r, (x) => x.ticker || '') },
     { header: 'Forum topic', key: 'slug', width: 24, get: (r) => value(r, (x) => x.slug || '') },
+    { header: 'Latest source highlights', key: 'highlights', width: 70, get: r => value(r, x => latestChatterHighlights(x).map(post => `${post.text || 'No excerpt published'} [Source: ${post.sentiment || 'unclassified'}; ${post.at || 'time not published'}] ${safeExternalUrl(post.url) || 'Original link unavailable'}`).join('\n') || 'Excerpts not loaded; open company to read') },
     { header: 'Matched company', key: 'matched', width: 30, get: (r) => value(r, (x) => x.matchedName || '') },
     { header: 'Mentions', key: 'mentions', width: 14, get: (r) => value(r, (x) => x.mentions ?? '') },
     { header: 'Previous mentions', key: 'mentions_prev', width: 18, get: (r) => value(r, (x) => x.mentionsPrev ?? '') },
@@ -727,6 +736,7 @@ function buildCoveredTable(rows) {
     searchable: (r) => `${r.name} ${r.ticker} ${r.matchedName || ''} ${r.slug || ''}`,
     dense: true,
     wrapHeads: true,
+    nameMaxPx: 220,
     initialSort: { key: 'Mentions', dir: 'desc' },
     initialView: tableViews.covered,
     exportName: 'chatter-companies',
@@ -759,6 +769,7 @@ function buildCoveredTable(rows) {
         sortValue: (r) => r.sentiment.bullish - r.sentiment.bearish,
       },
       { label: 'Sources', get: sourceCell, html: true },
+      { label: 'Highlights', get: chatterHighlightsCell, html: true },
     ],
   });
   // The table rebuilds on every live tick, so its search/sort/filter state has to survive that or
@@ -767,12 +778,14 @@ function buildCoveredTable(rows) {
     html: table.html,
     wire: (root) => {
       const off = table.wire(root);
+      const highlightsOff = wireChatterHighlights(root, rows, openMentions);
       return () => {
         // `scoreTable` returns `view` as a live OBJECT, not a getter. Calling it threw a
         // TypeError on every teardown, so the reader's search and sort were silently discarded on
         // each live tick — the exact thing this disposer exists to prevent. It went unseen because
         // the console was already noisy with the Tailwind CDN failing in the sandbox.
         tableViews.covered = table.view ?? tableViews.covered;
+        highlightsOff();
         off?.();
       };
     },
