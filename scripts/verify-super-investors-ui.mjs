@@ -331,6 +331,8 @@ try {
   await page.locator('[data-changes-audience] [role="tab"]').filter({ hasText: 'My Managers' }).click();
   await page.locator('[data-changes-period]').selectOption('itd');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '2');
+  assert.match(await page.locator('[data-changes-coverage]').innerText(), /Retained ledger \/ reported deal dates.*transfers and unverified carried purchase dates/);
+  assert.doesNotMatch(await page.locator('[data-changes-coverage]').innerText(), /Matched trade dates/);
   await page.locator('[data-changes-activity] [data-table-search]').fill('Portfolio');
   await page.locator('[data-changes-activity] [data-table-search]').evaluate(el => el.setSelectionRange(2, 5));
   await page.evaluate(async () => (await import('/js/data/managers.js')).load({force:true}));
