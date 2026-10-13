@@ -50,6 +50,9 @@ import { surfaceReading, feedbackItemFor, relevanceRevision, rankedKey } from '.
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel } from '../data/announcement-categories.js';
 import { feedbackMenuButton } from '../ui/relevance-feedback-ui.js';
+import { createNewsMatcher, prepareNewsSearch } from '../data/news-search.js';
+import { newsSearchText } from '../data/company-news-attribution.js';
+import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
 
 // The shared relevance reading of a market-wide story or post. These carry no company, so size and
 // sector read as unknown for every one of them alike; what orders a day is what each story is about.
@@ -90,6 +93,7 @@ let fillStop = null;
 let filterFrame = 0;
 let filterTask = 0;
 let releaseFilterLoading = null;
+let searchPreparation = null;
 
 function cancelFilterPaint() {
   if (filterFrame) cancelAnimationFrame(filterFrame);
@@ -328,6 +332,7 @@ async function requestMore(root) {
 }
 
 /** Which stories the search box and the four filters leave. */
+const matchesSearch = createNewsMatcher(r => `${newsSearchText(r)} ${r.section || ''} ${r.publisher || ''} ${canonicalPublisherName(r.publisher)} ${r.handle || ''} ${r.displayName || ''}`);
 function visibleRows(rows) {
   const q = (listView.q || '').trim().toLowerCase();
   const section = listView.section;
@@ -344,13 +349,12 @@ function visibleRows(rows) {
       // A post has no publisher, no section and no keyword reading, so any of those narrowing to a
       // named value excludes it — the honest answer, and not the same as pretending it matched.
       if ((publisher && publisher !== 'all') || (section && section !== 'all') || (topic && topic !== 'all')) return false;
-      return !q || `${r.title || ''} ${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(q);
+      return matchesSearch(r, q);
     }
     if (publisher && publisher !== 'all' && canonicalPublisherName(r.publisher) !== publisher) return false;
     if (section && section !== 'all' && r.section !== section) return false;
     if (topic && topic !== 'all' && !matchesTopic(readingFor(r), topic)) return false;
-    if (!q) return true;
-    return `${r.title || ''} ${r.summary || ''} ${r.section || ''} ${r.publisher || ''} ${canonicalPublisherName(r.publisher)} ${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(q);
+    return matchesSearch(r, q);
   });
 }
 
@@ -506,11 +510,11 @@ function listHtml(rows) {
   const allPublishers = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return `
     <section data-mcnews-list class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100"${pending ? ` data-rows-pending="${pending}"` : ''}>
-      <div class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
+      <div data-news-toolbar class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <div class="relative w-full min-w-[180px] flex-1 sm:w-auto sm:max-w-md">
             <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-            <input type="text" data-news-search placeholder="Search headlines..." value="${escapeHtml(listView.q || '')}"
+            <input type="text" data-news-search aria-label="Search company, ticker or headline" placeholder="Search company, ticker or headline…" value="${escapeHtml(listView.q || '')}"
               class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           ${sourceSelect}
@@ -543,7 +547,7 @@ function listHtml(rows) {
               .join('')}
           </select>
         </div>
-        <div class="flex items-center gap-3">
+        <div data-news-actions class="flex items-center gap-3">
           <span data-news-count class="whitespace-nowrap text-sm text-slate-500"><strong class="text-slate-800">${escapeHtml(formatNumber(rows.length))}</strong> of ${escapeHtml(formatNumber(feedRows().length))} stories</span>
           <button type="button" data-news-export
             class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
@@ -951,6 +955,7 @@ function failureText(out) {
 
 /** Search, section and export. Rebound on every list rebuild, because the nodes are new. */
 function wireList(root) {
+  arrangeNewsToolbar(root);
   offBookmarks?.();
   offBookmarks = wireBookmarks(root, button => {
     const key = button.closest('[data-news-key]')?.dataset.newsKey;
@@ -961,6 +966,11 @@ function wireList(root) {
   search?.addEventListener('input', () => {
     listView.q = search.value;
     requestRelist(root);
+    if (listView.q.trim().length >= 2 && !searchPreparation) {
+      searchPreparation = prepareNewsSearch().then(changed => {
+        if (changed && ctxRef?.root === root && root.isConnected) requestRelist(root);
+      }).finally(() => { searchPreparation = null; });
+    }
   });
 
   const topic = root.querySelector('[data-news-topic]');

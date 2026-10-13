@@ -1248,6 +1248,21 @@
       .mf-holdings [data-table-actions] > div { display:block; }
       .mf-holdings [data-table-body] td { padding-block:10px; }
       .mf-holdings .mf-insight { font-size:13px; line-height:1.45; }
+      .news-toolbar { display:flex; flex-direction:column; align-items:stretch; padding:12px; gap:10px; }
+      .news-toolbar-primary { display:flex; align-items:center; gap:10px; min-width:0; }
+      .news-toolbar .news-toolbar-search { flex:1; width:auto; min-width:0; max-width:none; }
+      .news-toolbar-primary > select { flex:none; max-width:150px; }
+      .news-toolbar-actions { display:flex; align-items:center; gap:12px; flex:none; }
+      .news-toolbar-filters { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
+      .news-toolbar-filters > select { flex:1; min-width:min(100%,160px); max-width:100%; width:0; }
+      .news-toolbar-filters > [data-watch-toggle] { flex:none; }
+      @media (max-width:700px) {
+        .news-toolbar-primary { flex-wrap:wrap; }
+        .news-toolbar .news-toolbar-search { flex-basis:100%; }
+        .news-toolbar-primary > select { max-width:none; flex:1; }
+        .news-toolbar-actions { width:100%; justify-content:space-between; }
+        .news-toolbar-filters > select { min-width:min(100%,130px); }
+      }
       .mf-coverage-status { display: inline-block; border-radius: 999px; padding: 3px 9px; font-weight: 600; color: rgb(var(--text-amber-700, 180 83 9) / 1); background: rgb(var(--surface-amber-50, 255 251 235) / 1); }
       .mf-coverage-status[data-tone="positive"] { color: rgb(var(--text-emerald-700, 4 120 87) / 1); background: rgb(var(--surface-emerald-50, 236 253 245) / 1); }
       .mf-detail-table th[aria-sort]{cursor:pointer}.mf-sort-header{display:inline-block;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:inherit;cursor:pointer;white-space:nowrap}.mf-sort-header:hover,.mf-sort-header:focus-visible{color:var(--accent-600)}.mf-sort-header:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:2px}.mf-sort-header [data-mf-sort-arrow]{display:inline-block;width:10px;margin-left:3px;opacity:.55}.mf-detail-table th[aria-sort="ascending"] [data-mf-sort-arrow],.mf-detail-table th[aria-sort="descending"] [data-mf-sort-arrow]{opacity:1}

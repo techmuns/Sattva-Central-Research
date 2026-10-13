@@ -48,6 +48,8 @@ import { surfaceReading, feedbackItemFor, rankedKey, istClock, relevanceRevision
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel as categoryLabelOf } from '../data/announcement-categories.js';
 import { feedbackMenuButton, installFeedbackMenus } from '../ui/relevance-feedback-ui.js';
+import { newsSearchControl } from '../ui/news-search.js';
+import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
 
@@ -145,6 +147,8 @@ const tab = makeFilingsTab({
   // The order depends on the shared model and the company profiles, so either moving repaints it.
   renderRevision: () => relevanceRevision(),
   searchable: newsSearchText,
+  searchControl: ({ view }) => newsSearchControl({ q: view?.q || '', searchable: newsSearchText }),
+  toolbarControls: () => ({ html: '', wire: arrangeNewsToolbar }),
   // News is name-searched and can therefore scope private/BSE-only companies by stable entity id.
   // Watchlist remains symbol-based because a saved watch item is a ticker by construction.
   filterByScope: (rows, scope, holdings) =>

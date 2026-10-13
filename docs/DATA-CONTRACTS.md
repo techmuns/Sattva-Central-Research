@@ -3848,6 +3848,14 @@ cover scope identity, the combined `BSE / NSE` label and retained source URLs.
 
 ### News and trades: snapshot first, live detail second
 
+News uses one company/ticker/headline search across scopes. An exact exchange name or symbol
+can expand to captured company names and reviewed brands; additional words narrow the story
+text. The BSE/NSE directory is prepared only after a search, yields to input and reuses verified
+unchanged inputs. This changes text matching, never a story's company attribution or a post's
+identity. Search intersects date, source, publisher, section and topic for rows, counts and
+export. The toolbar keeps search/date/actions on its first row and the other filters beneath it.
+No company lookup dispatches a news walk or calls a paid search provider.
+
 Company news uses free per-company Google News searches, plus Upstox News for listed holdings:
 portfolio identities run every 2 hours, around the clock, and the full universe in the Sunday 06:11
 IST slot, with walks at least 2 hours apart and at most 14 a day. Google News links are its own redirect addresses to the publisher's article. Trades use
