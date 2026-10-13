@@ -158,6 +158,12 @@ const tab = makeFilingsTab({
     return key;
   },
   filters: tradeFilters,
+  filterGroup: {
+    label: 'More filters (5)',
+    indices: FILTER_FIELDS.map((_, i) => i),
+    position: 'end',
+    summary: () => 'More filters (5)',
+  },
   preserveReadingPosition: true,
   renderRevision: m => `${newsDay()}:${m.snapshotReadError || ''}`,
   // Keep the selected period in the URL across links and reloads.

@@ -46,7 +46,9 @@ export function tableFilterGroup({ label, indices, summary }, renderSelect, view
         const width = Math.min(300, innerWidth - 24);
         panel.style.width = `${width}px`;
         panel.style.left = `${Math.max(12, Math.min(box.left, innerWidth - width - 12))}px`;
-        panel.style.top = `${Math.max(12, Math.min(box.bottom + 6, innerHeight - 280))}px`;
+        const top = Math.max(12, Math.min(box.bottom + 6, innerHeight - 280));
+        panel.style.top = `${top}px`;
+        panel.style.maxHeight = `${Math.max(0, innerHeight - top - 12)}px`;
         window.addEventListener('resize', close);
         document.addEventListener('scroll', closeOnScroll, true);
       } else {

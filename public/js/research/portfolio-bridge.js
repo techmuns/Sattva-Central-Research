@@ -1,4 +1,5 @@
 import { validHoldings, validPositionSizes } from '../data/position-sizes-contract.js';
+import { snapshotIssue } from '../data/managers-contract.js';
 export { validPositionSizes } from '../data/position-sizes-contract.js';
 import { useFamilyBook, invalidateFamilyBook, failFamilyBook } from '../data/coverage.js';
 // The authenticated Family reader runs in a hidden frame inside Central Research.
@@ -281,7 +282,11 @@ export function readManagerWorkbook(signal) {
   return forConsumer(enqueueRead(async () => {
     if (!transportReady && !await connectPortfolio()) throw Error(state === 'locked' ? 'Unlock Sattva Family to see your managers.' : 'Sattva Family is unavailable.');
     if (!managersSupported) throw Error('The Family manager connection is not available yet.');
-    return (await request('managers', null, signal, 125_000)).managers;
+    const startedAt = Date.now(); // Freshness belongs to the actual queued source read.
+    const value = (await request('managers', null, signal, 125_000)).managers;
+    const issue = snapshotIssue(value, startedAt);
+    if (issue) throw Error(`The Family manager workbook could not be verified (${issue}). It will be checked again automatically.`);
+    return value;
   }, signal, { adoptHoldings: false }), signal);
 }
 export async function readPriceLevels(cursor = null) {

@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-10-12-collector-reliability-v3`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-10-13-manager-contract-v1`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/js/core/json-worker.js', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -50,7 +50,7 @@ function releaseCacheKey() {
 
 // Compose this UI revision without editing another release's version marker.
 function appReleaseCacheKey() {
-  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2`;
+  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-reorder-research-tabs-v1`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
@@ -261,5 +261,5 @@ function dashboardCacheKey() {
 
 // Compose column presentation with other releases without changing their version markers.
 function tableLayoutCacheKey() {
-  return `${mutualFundsCacheKey()}-company-columns-lift-v3`;
+  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1`;
 }
