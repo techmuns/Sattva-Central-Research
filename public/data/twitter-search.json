@@ -2315,9 +2315,9 @@
       "pending": []
     },
     "isin:INE0PA801013|GHCLTEXTIL": {
-      "lastAttemptAt": "2026-10-07T17:08:22+00:00",
+      "lastAttemptAt": "2026-10-13T08:42:44+00:00",
       "lastResultCount": 4,
-      "error": null,
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00",
       "targetThrough": null,
       "pending": []
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T08:09:52.789194+00:00"
+    "checkedAt": "2026-10-13T08:42:44.623594+00:00"
   }
 }
