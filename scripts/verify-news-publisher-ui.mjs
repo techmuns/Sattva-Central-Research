@@ -70,6 +70,12 @@ window.fixture = {
   discoveryGap(){enrichment={staleOrIncompleteQueries:39,pagesFailed:2,documentsPending:330};notify()},
   dates(){rows=['2026-09-08','2026-09-07','2026-09-06','2026-09-04','2026-09-02','2026-09-01','2026-08-26','2026-08-10','2026-08-09',null,'2026-09-09']
     .map((date,n)=>({...row('Economic Times','dated-'+n),date}));notify()},
+  chronology(){rows=[
+    {...row('Economic Times','older-impact'),title:'OnEMI defaults on repayment',date:'2026-09-08',publishedAt:'2026-09-08T08:50:00+05:30'},
+    {...row('Economic Times','newer-routine'),date:'2026-09-08',publishedAt:'2026-09-08T11:57:00+05:30'},
+    {...row('Economic Times','date-only'),date:'2026-09-08'},
+  ];notify()},
+  latest(){rows.push({...row('Economic Times','newest-arrival'),date:'2026-09-08',publishedAt:'2026-09-08T12:01:00+05:30'});notify()},
   rows:()=>rows,
   universe:()=>tab.render({root:document.querySelector('#root'),scope:'universe',live:{register(){},start(){},stop(){}}}),
 };
@@ -93,7 +99,7 @@ try {
   const errors = [];
   page.on('pageerror', error=>errors.push(error.message));
   await page.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
-  await page.clock.install({ time: new Date('2026-09-08T05:00:00Z') });
+  await page.clock.install({ time: new Date('2026-09-08T08:00:00Z') });
   await page.goto(origin);
   await page.waitForFunction(()=>window.fixture);
   await page.evaluate(()=>window.fixture.tv());
@@ -132,6 +138,19 @@ try {
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 3, 'incomplete enrichment never hides known articles');
   await search.fill('');
   await outlet.selectOption('all');
+  await page.evaluate(()=>window.fixture.chronology());
+  await page.waitForFunction(()=>document.querySelector('tbody tr[data-row-key]')?.textContent.includes('newer-routine'));
+  assert.deepEqual(await page.locator('tbody tr[data-row-key]').evaluateAll(rows=>rows.map(row=>row.dataset.rowKey.split('|')[1])),
+    ['https://example.test/newer-routine','https://example.test/older-impact','https://example.test/date-only'],
+    'Portfolio opens newest publication first, ahead of an older high-impact headline');
+  await page.evaluate(async()=>{
+    (await import('/js/core/watchlist.js')).add('KISSHT','OnEMI Technology Solutions','UI test');
+    (await import('/js/tabs/news.js')).render({root:document.querySelector('#root'),scope:'watchlist',live:{register(){},start(){},stop(){}}});
+  });
+  await page.waitForFunction(()=>document.querySelector('tbody tr[data-row-key]')?.textContent.includes('newer-routine'));
+  await page.evaluate(()=>window.fixture.latest());
+  await page.waitForFunction(()=>document.querySelector('tbody tr[data-row-key]')?.textContent.includes('newest-arrival'));
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 4, 'Watchlist automatic arrivals retain older stories in chronological order');
   await page.evaluate(()=>window.fixture.dates());
   assert.equal(await period.inputValue(), '30', 'the chosen period survives source arrivals');
   assert.deepEqual(await period.locator('option').allTextContents(), ['Last 30 days','Today','Last 3 days','Last 7 days','Last 14 days','This month','Date not supplied']);
@@ -153,16 +172,20 @@ try {
   assert.match(await page.locator('tbody').textContent(), /dated-10/);
   // Universe reads the actual publisher reader. Old partitions are advertised but must not
   // be requested by the recent view, even when scrolling or changing filters.
-  await page.clock.setSystemTime(new Date('2026-09-08T05:00:00Z'));
+  await page.clock.setSystemTime(new Date('2026-09-08T08:00:00Z'));
   const requests = [];
-  let publisherAt = '2026-09-08T05:00:00Z';
+  let publisherAt = '2026-09-08T08:00:00Z';
   const story = (id, publishedAt) => ({id,title:'Fixture story '+id,publisher:'Economic Times',publishedAt,url:'https://example.test/'+id});
-  const datedStories = [story('today','2026-09-08T04:00:00Z'),story('last-week','2026-09-04T04:00:00Z')];
+  const datedStories = [
+    {...story('older-impact','2026-09-08T03:20:00Z'),title:'Company defaults on repayment',id:'999'},
+    story('today','2026-09-08T06:27:00Z'),
+    story('last-week','2026-09-04T04:00:00Z'),
+  ];
   await page.route(/\/data\/market-news(?:\.json|\/.*\.json)(?:\?.*)?$/, route => {
     const path = new URL(route.request().url()).pathname;
     requests.push(path);
-    const body = path === '/data/market-news.json' ? {capturedAt:publisherAt,articles:datedStories,sources:[],archivedCount:5,archive:[
-      {month:'2026-09',file:'market-news/2026-09.json',count:2,inHead:2},
+    const body = path === '/data/market-news.json' ? {capturedAt:publisherAt,articles:datedStories,sources:[],archivedCount:6,archive:[
+      {month:'2026-09',file:'market-news/2026-09.json',count:3,inHead:3},
       {month:'2026-08',file:'market-news/2026-08.json',count:1,inHead:0},
       {month:'undated',file:'market-news/undated.json',count:1,inHead:0},
       {month:'2020-01',file:'market-news/2020-01.json',count:1,inHead:0},
@@ -174,21 +197,23 @@ try {
   await page.evaluate(()=>window.fixture.universe());
   await page.waitForFunction(()=>document.querySelector('[data-news-more]')?.textContent.includes('Recent captured history loaded'));
   assert.equal(await period.inputValue(), 'today', 'Universe News also opens on Today');
-  assert.equal(await page.locator('[data-news-key]').count(), 1);
+  assert.equal(await page.locator('[data-news-key]').count(), 2);
+  assert.match(await page.locator('[data-news-key]').first().textContent(), /Fixture story today/,
+    'Universe opens by publication clock, ahead of an older high-impact headline with a higher publisher id');
   await period.selectOption('30');
-  assert.equal(await page.locator('[data-news-key]').count(), 3, 'older recent stories remain available');
+  assert.equal(await page.locator('[data-news-key]').count(), 4, 'older recent stories remain available');
   assert(!requests.some(path=>path.includes('2020-01')), 'Universe never walks older archive months');
   const recentRequests = requests.length;
   await period.selectOption('today');
-  assert.equal(await page.locator('[data-news-key]').count(), 1);
-  await period.selectOption('7');
   assert.equal(await page.locator('[data-news-key]').count(), 2);
+  await period.selectOption('7');
+  assert.equal(await page.locator('[data-news-key]').count(), 3);
   await period.selectOption('undated');
   assert.equal(await page.locator('[data-news-key]').count(), 1);
   assert.match(await page.locator('[data-news-key]').textContent(), /unknown/);
   assert.equal(requests.length, recentRequests, 'date switches do not fetch archives');
   await page.getByRole('textbox').fill('unknown');
-  publisherAt = '2026-09-08T05:01:00Z';
+  publisherAt = '2026-09-08T08:01:00Z';
   await page.evaluate(async()=>{const market=await import('/js/data/market-news.js');await market.refresh()});
   await page.waitForFunction(()=>document.querySelector('[data-news-more]')?.textContent.includes('Recent captured history loaded'));
   assert.equal(await period.inputValue(), 'undated', 'Universe refresh preserves date filter');
@@ -200,7 +225,7 @@ try {
     assert(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal page overflow at '+width);
   }
   assert.deepEqual(errors, []);
-  console.log('PASS News publishers: uncapped canonical outlet list, original provenance, TV-first partial loading, late ET delivery, retained search/filters and failure/recovery.');
+  console.log('PASS newest-first News in Portfolio, Watchlist and Universe, automatic arrivals; publishers: uncapped canonical outlet list, original provenance, TV-first partial loading, late ET delivery, retained search/filters and failure/recovery.');
 } finally {
   await browser.close();
   await new Promise(done=>server.close(done));
