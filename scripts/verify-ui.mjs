@@ -3710,11 +3710,9 @@ if (!chatterState.ok) {
   } else {
     skip('a chatter deep-link opens that company\'s mentions popup', 'no resolved chatter company in this run');
   }
-  await page.locator('[data-chatter-live]').click();
-  await page.waitForTimeout(200);
-  ok('the Public Chatter Live label opens no explainer popup',
-    (await page.locator('[data-chatter-live]').evaluate((el) => el.tagName)) === 'SPAN' &&
-      (await page.locator('#modal-overlay:not(.hidden)').count()) === 0);
+  ok('Public Chatter omits the collection badge from the page header',
+    (await page.locator('[data-chatter-live]').count()) === 0 &&
+      (await page.locator('[data-chatter-source-details]').count()) === 1);
 
   // THE CENTRAL HONESTY CHECK. A mention delta must never be styled like a return: no emerald, no
   // rose, no currency. Those are what make a reader parse it as money.

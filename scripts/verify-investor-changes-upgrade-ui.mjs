@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
 import { indiaDay } from '../public/js/data/investor-changes.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
-// 00:10 IST is still the previous UTC date: the upgrade must retain today's captured trades.
-const at = '2026-10-13T18:40:00.000Z', today = indiaDay(at), root = resolve('public');
+// Capture timestamps remain UTC while a disclosure can already belong to the next Indian day.
+const root = resolve('public'), at = '2026-10-13T19:30:00.000Z', today = indiaDay(at);
 const oldDay = new Date(Date.parse(`${today}T00:00:00Z`) - 120 * 86400000).toISOString().slice(0, 10);
 let upgraded = false, failed = false;
 const trade = (ticker, date) => ({ ticker, date, cells: { Company: ticker, Insider: 'Example Investor', Transaction: 'Buy', 'Trade Category': 'Bulk deal', 'Trade Shares': '100', Price: '5', Exchange: 'NSE' } });

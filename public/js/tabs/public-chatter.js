@@ -314,7 +314,7 @@ function paint(ctx) {
 }
 
 function chatterHeadMeta(ctx, m, onTelegram = false) {
-  return `${onTelegram ? telegramStatus() : m ? livePill(m) : '<span class="chatter-checking">Checking…</span>'}
+  return `${onTelegram ? telegramStatus() : ''}
     <button type="button" data-chatter-source-details class="chatter-action">Source details</button>
     ${onTelegram ? '' : '<button type="button" data-chatter-history class="chatter-action" title="Captured mention history" aria-label="Captured history">History</button>'}`;
 }
@@ -664,14 +664,6 @@ function exportChatterRows(rows) {
     rows: [banner, ...rows],
   });
 }
-
-/** A readable response does not certify the source collector. */
-const livePill = (m) => {
-  const health = m.health || { state: 'unconfirmed', label: 'Source checks unconfirmed' };
-  const tone = health.state === 'updated' ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : health.state === 'checking' ? 'bg-slate-50 text-slate-600 ring-slate-200' : 'bg-amber-50 text-amber-800 ring-amber-200';
-  const time = health.checkedAt ? ` · ${formatRelativeTime(health.checkedAt)}` : '';
-  return `<span data-chatter-live data-chatter-state="${escapeHtml(health.state)}" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${tone}">${escapeHtml(health.label + time)}</span>`;
-};
 
 // ---------------------------------------------------------------------------------------
 // Tables

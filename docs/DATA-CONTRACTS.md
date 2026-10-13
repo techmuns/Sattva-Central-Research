@@ -2462,6 +2462,10 @@ recently rebuilt archive cannot turn stale collection green. Research evidence f
 same source-health rules, and awaits bounded fresh detail reads instead of treating a failed
 background check as successful evidence.
 
+The Coverage page header omits the collection-status/time badge. The existing Source details
+dialog retains the actual status and per-source check times; freshness evaluation and automatic
+collection are unchanged.
+
 `GET /archive` exposes retained topics including companies outside the recent list.
 `GET /archive/{slug}/{YYYY-MM}` reads monthly captures with pagination. The reader caches
 complete responses, opens them immediately, then revalidates. All pages are fetched (with an
@@ -2749,6 +2753,8 @@ empty or smaller response adds what it returned without deleting earlier events 
 companies retain their prior capture timestamps through the existing fallback metadata. The
 news collapse guard does not discard a partial insider capture, and `FILINGS_FORCE` does not
 disable insider retention. Readable dates outside the requested window expire; undated rows stay.
+The browser's inclusive end date for insider capture merges and company requests follows IST.
+An India-dated disclosure stays available after Indian midnight while UTC is still yesterday.
 
 Overlap is matched on the economic event fields shared by both providers: trade category, ticker,
 date, person, normalised direction and share quantity. Provider label, URL and number formatting do
