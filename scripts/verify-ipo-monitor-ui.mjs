@@ -13,12 +13,13 @@ const capture = JSON.parse(readFileSync(resolve(root, 'data/ipo-filings.json')))
 let failure = false, delay = 0, live = structuredClone(capture);
 const requests = [], errors = [];
 const shellStyles = [...readFileSync(resolve(root, 'index.html'), 'utf8').matchAll(/<style[^>]*>[\s\S]*?<\/style>/g)].map((match) => match[0]).join('');
-const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/style.css">${shellStyles}<script src="/test-exceljs.js"></script></head><body style="padding:20px;background:#f6f5ff"><main id="root" style="max-width:1200px;margin:auto"></main><script type="module">
+const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css">${shellStyles}<link rel="stylesheet" href="/css/theme.css"><script src="/js/theme-init.js"></script><script src="/test-exceljs.js"></script></head><body style="padding:20px"><main id="root" style="max-width:1200px;margin:auto"></main><script type="module">
 import * as tab from '/js/tabs/ipos.js';
 import { mount } from '/js/ui/source-beacon.js';
+import { enterView } from '/js/core/view-reading.js';
 mount();
 const live={ register(id,entry){window.poll=entry;},start(){window.pollStarted=true;},stop(){window.pollStopped=true;} };
-window.showIpos=(params={})=>{tab.destroy();tab.render({root:document.querySelector('#root'),params,scope:'watchlist',live});};
+window.showIpos=(params={},savedView=null)=>{tab.destroy();enterView(savedView?{key:savedView.id,preset:savedView}:null);tab.render({root:document.querySelector('#root'),params,savedView,scope:'watchlist',live});};
 window.destroyIpos=()=>{tab.destroy();document.querySelector('#root').innerHTML='Destroyed';};
 window.showIpos();
 </script></body></html>`;
@@ -49,14 +50,25 @@ try {
   await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
   await page.clock.setFixedTime(new Date(capture.checkedAt));
   await page.goto(origin);
-  const ready = () => page.locator('[data-ipo-refresh]:not([disabled])').waitFor();
+  const ready = () => page.locator('[data-ipo-loading="false"]').waitFor();
+  const refresh = () => page.evaluate(async () => (await import('/js/core/refresh.js')).refreshOne('ipo-filings'));
   const filtered = () => page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
   const search = async value => {
     await page.locator('[data-table-search]').fill(value);
     await filtered();
   };
   await ready();
+  check('IPO toolbar removes the view picker and redundant refresh control', await page.locator('[data-ipo-view], [data-ipo-refresh]').count() === 0);
+  check('date range is part of the same toolbar as search and filters', await page.locator('[data-table-toolbar] [data-ipo-history]').count() === 1);
+  check('board and source share one collapsed control', await page.locator('[data-filter-group-toggle]').isVisible() &&
+    !await page.locator('[data-table-filter="1"]').isVisible() && !await page.locator('[data-table-filter="2"]').isVisible());
   check('native NSE-style table replaces weekly tracker and scoring', await page.locator('[data-score-table]').count() === 1 && await page.locator('.ipo-board, .ipo-card, [data-ipo-settings]').count() === 0);
+  check('filing rows retain one labelled document link without a duplicate Link column',
+    await page.getByRole('columnheader', { name: 'Link', exact: true }).count() === 0 &&
+    await page.locator('tbody tr[data-row-key]').evaluateAll((rows) => rows.length > 0 && rows.every((row) => {
+      const links = [...row.querySelectorAll('a')];
+      return links.length === 1 && links[0].textContent === 'Open filing ↗' && links[0].href;
+    })));
   const history = page.getByRole('combobox', { name: 'History range', exact: true });
   const today = new Date(Date.parse(capture.checkedAt) + 19800000).toISOString().slice(0, 10);
   const dayOffset = (days) => new Date(Date.parse(today) + days * 86400000).toISOString().slice(0, 10);
@@ -96,13 +108,13 @@ try {
   await search('');
   live.companies = [{ id: '999999', company: 'Directory-only <img src=x onerror="window.ipoXss=1">', url: 'https://www.ipoplatform.com/ipo/directory-only/999999', board: 'SME', status: 'Upcoming', openingWindow: '10 Sep - 15 Sep', listingDate: '2026-09-18', observedAt: capture.checkedAt, retained: false }];
   await page.evaluate(() => window.poll.fetcher());
-  await page.locator('[data-ipo-view]').selectOption('directory');
+  await page.evaluate(() => window.showIpos({ view: 'directory' })); await ready();
   check('issuer directory uses same native table and includes companies without filings', await page.locator('[data-score-table]').count() === 1 && (await page.locator('[data-row-count]').innerText()).startsWith('1 of 1') && (await page.locator('[data-row-key]').innerText()).includes('Upcoming'));
   check('publisher directory metadata is labelled and HTML escaped', (await page.locator('#root').innerText()).includes('not exchange confirmations') && await page.locator('[data-row-key] img').count() === 0 && await page.evaluate(() => !window.ipoXss));
   const directoryDownload = page.waitForEvent('download'); await page.locator('[data-export]').click();
   const directoryWorkbook = new ExcelJS.Workbook(); await directoryWorkbook.xlsx.readFile(await (await directoryDownload).path());
   check('directory export includes publisher provenance and all matching issuers', directoryWorkbook.worksheets[0].name === 'IPO directory' && directoryWorkbook.worksheets[0].rowCount === 3);
-  failure = true; await page.locator('[data-ipo-refresh]').click(); await ready();
+  failure = true; await refresh(); await ready();
   check('directory survives outage without restoring removed coverage text', await page.locator('[data-row-key]').count() === 1 && await page.locator('[data-ipo-freshness], [data-ipo-sources]').count() === 0);
   failure = false;
   for (const width of [900, 390, 320]) {
@@ -111,18 +123,36 @@ try {
     check(`directory search remains usable at ${width}px`, await page.locator('[data-table-search]').evaluate((el) => el.getBoundingClientRect().width >= 160));
   }
   await page.setViewportSize({ width: 1280, height: 850 });
-  await page.locator('[data-ipo-view]').selectOption('filings');
+  await page.evaluate(() => window.showIpos()); await ready(); await history.selectOption('all');
+  await page.locator('[data-filter-group-toggle]').click();
   await page.locator('[data-table-filter="1"]').selectOption('SME');
   await page.locator('[data-table-filter="2"]').selectOption('BSE SME');
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
   await page.locator('[data-table-filter="0"]').selectOption('DRHP / Draft prospectus');
   await filtered();
   const visibleBefore = await page.locator('[data-row-count]').innerText();
-  await page.locator('[data-ipo-refresh]').click(); await ready();
-  check('refresh preserves filters and counts', await page.locator('[data-row-count]').innerText() === visibleBefore && await page.locator('[data-table-filter="1"]').inputValue() === 'SME');
+  const intersection = capture.rows.filter(row => row.board === 'SME' && row.source === 'BSE SME' && row.filingType === 'DRHP / Draft prospectus').length;
+  check('combined control retains exact independent board/source/filing intersections', visibleBefore.startsWith(`${intersection} of `));
+  await refresh(); await ready();
+  check('refresh preserves filters and counts', await page.locator('[data-row-count]').innerText() === visibleBefore && await page.locator('[data-table-filter="1"]').inputValue() === 'SME' && (await page.locator('[data-filter-group-summary]').innerText()).includes('BSE SME'));
   const expectedCount = Number(visibleBefore.split(' ')[0]);
   const downloadPromise = page.waitForEvent('download'); await page.locator('[data-export]').click(); const download = await downloadPromise;
   const workbook = new ExcelJS.Workbook(); await workbook.xlsx.readFile(await download.path());
   check('Excel exports all filtered rows, not just rendered rows, with provenance', workbook.worksheets[0].rowCount === expectedCount + 2 && workbook.worksheets[1].name === 'Coverage' && String(workbook.worksheets[0].getCell('A1').value).includes('not a complete IPO universe'));
+  await page.locator('[data-filter-group-toggle]').click();
+  await page.getByRole('button', { name: 'Clear board & source', exact: true }).click();
+  await filtered();
+  check('combined clear resets only board/source and preserves filing type and date range',
+    await page.locator('[data-table-filter="1"]').inputValue() === 'all' && await page.locator('[data-table-filter="2"]').inputValue() === 'all' &&
+    await page.locator('[data-table-filter="0"]').inputValue() === 'DRHP / Draft prospectus' && await history.inputValue() === 'all');
+  await page.keyboard.press('Escape');
+  check('combined filter closes with Escape and returns keyboard focus', await page.locator('[data-filter-group-toggle]').evaluate(el => el === document.activeElement));
+  await page.evaluate(() => window.showIpos({}, { id: 'saved-ipo', reading: {
+    tableKey: 'sattva-ipo-filings', q: '', watchOnly: false, filters: [{ label: 'Boards', value: 'SME' }, { label: 'Sources', value: 'BSE SME' }],
+    extras: { ipoHistory: '30', ipoMode: 'filings' },
+  } })); await ready();
+  check('existing saved board/source choices and date range restore in the combined toolbar', await history.inputValue() === '30' &&
+    await page.locator('[data-table-filter="1"]').inputValue() === 'SME' && await page.locator('[data-table-filter="2"]').inputValue() === 'BSE SME');
   await page.evaluate(() => window.showIpos()); await ready();
   check('returning to IPO Filings restores the seven-day default', await history.inputValue() === '7');
   check('recent window excludes undated documents without inventing dates', (await page.locator('[data-row-key]').allTextContents()).every((t) => !t.includes('Date not supplied')));
@@ -136,6 +166,7 @@ try {
   await page.evaluate(() => window.poll.fetcher());
   check('automatic arrivals preserve the seven-day choice and include only today through six days ago', await history.inputValue() === '7' && await page.locator('[data-row-key]').count() === 2);
   await history.selectOption('30');
+  check('changing date range preserves keyboard focus', await history.evaluate(el => el === document.activeElement));
   await page.evaluate(() => window.poll.fetcher());
   check('a chosen longer window survives source refresh', await history.inputValue() === '30' && await page.locator('[data-row-key]').count() === 3);
   await history.selectOption('all');
@@ -151,23 +182,37 @@ try {
   live.rows.push({ ...capture.rows[0], company: 'Example new arrival', title: 'Example new arrival · DRHP', url: 'https://www.sebi.gov.in/new-arrival.pdf', observedAt: capture.checkedAt });
   await page.evaluate(() => window.poll.fetcher());
   check('a newly published filing arrives through automatic refresh while preserving search', await page.locator('[data-row-key]').count() === 1 && await page.locator('[data-table-search]').inputValue() === 'Example new arrival');
-  failure = true; await page.locator('[data-ipo-refresh]').click(); await ready();
+  failure = true; await refresh(); await ready();
   check('source outage retains documents without restoring removed coverage text', await page.locator('[data-row-key]').count() === 1 && await page.locator('[data-ipo-freshness], [data-ipo-sources]').count() === 0);
   await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon({ group: 'ipo-filings' }));
   check('whole-feed outage does not leave green IPO sources in the beacon', await page.locator('[data-beacon-group="ipo-filings"] .beacon-row.is-live').count() === 0);
   await page.keyboard.press('Escape');
   failure = false;
   const bad = { ...capture.rows[0], company: '<img src=x onerror="window.ipoXss=1">', title: 'Escaped document', url: 'https://www.sebi.gov.in/xss-test.pdf', observedAt: capture.checkedAt };
-  live.rows.push(bad); await search('onerror'); await page.locator('[data-ipo-refresh]').click(); await ready();
+  live.rows.push(bad); await search('onerror'); await refresh(); await ready();
   check('source HTML is escaped', await page.locator('[data-row-key] img').count() === 0 && await page.evaluate(() => !window.ipoXss));
   await search('');
-  for (const width of [900, 390, 320]) {
+  for (const theme of ['light', 'dark']) for (const width of [1280, 900, 390, 320]) {
     await page.setViewportSize({ width, height: 850 });
-    check(`controls remain usable without page overflow at ${width}px`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
+    check(`IPO controls align without overlap or page overflow at ${width}px in ${theme}`, await page.locator('[data-table-toolbar]').evaluate(toolbar => {
+      const fields = [...toolbar.querySelectorAll('[data-table-search], [data-ipo-history], [data-table-filter="0"], [data-filter-group-toggle], [data-watch-toggle], [data-export]')].map(el => el.getBoundingClientRect());
+      const box = toolbar.getBoundingClientRect();
+      return document.documentElement.scrollWidth <= innerWidth && fields.every(field => field.height >= 43 && field.left >= box.left && field.right <= box.right) &&
+        fields.every((a, i) => fields.slice(i + 1).every(b => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top));
+    }));
+    await page.locator('[data-filter-group-toggle]').click();
+    check(`combined filter fits the viewport at ${width}px in ${theme}`, await page.locator('[data-filter-group-panel]').evaluate(el => {
+      const box = el.getBoundingClientRect(); return box.left >= 0 && box.right <= innerWidth && box.top >= 0 && box.bottom <= innerHeight;
+    }));
+    await page.keyboard.press('Escape');
+    if (process.env.IPO_SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.IPO_SCREENSHOT_DIR}/ipo-filings-${width}-${theme}.png`, fullPage: true });
   }
   if (process.env.IPO_SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.IPO_SCREENSHOT_DIR}/ipo-filings-mobile.png`, fullPage: true });
   delay = 250;
-  await page.locator('[data-ipo-refresh]').click(); await page.evaluate(() => window.destroyIpos());
+  await page.evaluate(() => { void import('/js/core/refresh.js').then(registry => registry.refreshOne('ipo-filings')); });
+  await page.waitForFunction(() => document.querySelector('[data-ipo-loading]').dataset.ipoLoading === 'true');
+  await page.evaluate(() => window.destroyIpos());
   await page.waitForTimeout(400);
   check('leaving stops polling and prevents late repaint', await page.locator('#root').innerText() === 'Destroyed' && await page.evaluate(() => window.pollStopped));
   check('no private lookup, legacy weekly API or production mutation', requests.every((r) => r.method === 'GET') && !requests.some((r) => /ipo-monitor|drhp-filings|\/refresh$/.test(r.path)));

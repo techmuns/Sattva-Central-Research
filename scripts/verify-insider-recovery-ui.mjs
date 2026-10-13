@@ -98,6 +98,9 @@ try {
   assert.equal(await page.evaluate(() => window.feed.rows().length),2,'an unreadable response retains history');
   const capturedAt = await page.evaluate(() => window.feed.meta().capturedAt);
   captureMode = 'failed'; await page.reload(); await page.waitForFunction(() => window.ready && window.feed.rows().length === 2);
+  // Saved insider rows can paint before the independent exchange read settles. Finish that
+  // failed opening read before advancing the frozen clock; recovery still comes from the poll.
+  await page.evaluate(async () => (await import('/js/data/exchange-deals.js')).refresh());
   assert.equal(await page.evaluate(() => window.feed.meta().capturedAt),capturedAt,'failed reload reuses the validated whole capture and original source time');
   assert(await page.evaluate(() => !!window.feed.meta().snapshotReadError),'saved bytes do not turn a failed check into success');
 

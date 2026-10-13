@@ -4,13 +4,14 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
-import { newsDay } from '../public/js/data/news-window.js';
 
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
-// Today is the IST day, including its first hours before UTC midnight.
+// Pin the source and Today selector to 00:10 IST, before the UTC day changes.
 const at = '2026-10-13T18:40:00.000Z';
-const date = newsDay(at);
+// Source dates and the Today selector use the same IST day, including after IST midnight.
+const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric',
+  month: '2-digit', day: '2-digit' }).format(new Date(at));
 const types = ['Buy', 'Sell', 'Acquisition', 'Disposal', 'Pledge', 'Revoke', 'Invoke', 'Gift'];
 const categories = ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'];
 const fullCompany = 'A Very Long Company Name With Investments Manufacturing And Telecommunications Limited';
@@ -53,8 +54,8 @@ try {
   await context.route('**/*', route => new URL(route.request().url()).origin === origin
     ? route.continue() : route.fulfill({ status: 404, body: '' }));
   const page = await context.newPage();
-  await page.clock.install({ time: new Date(at) });
   const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.clock.setFixedTime(new Date(at));
   await page.goto(origin);
   const count = page.locator('[data-row-count]');
   await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.match(/\d+/)?.[0]) === n, rows.length);

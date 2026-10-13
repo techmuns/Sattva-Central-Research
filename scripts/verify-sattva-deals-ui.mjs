@@ -35,8 +35,8 @@ try {
   await page.route('**/*', route => new URL(route.request().url()).origin === base ? route.fallback() : route.abort());
   await page.goto(`${base}/#/research/insider-trades?scope=portfolio`);
   await page.locator('[data-insider-source-link]').first().waitFor();
-  // Complete source preparation before testing the mounted toolbar. A schema arrival
-  // during the first popover gesture can replace that still-provisional control.
+  const period = () => page.getByRole('combobox', { name: 'Trade period', exact: true });
+  assert.equal(await period().inputValue(), '30');
   const expected = async scope => page.evaluate(async scope => {
     const { insider } = await import('/js/data/filings.js');
     const { filterByScope } = await import('/js/data/scope.js');
@@ -59,8 +59,7 @@ try {
       Number(document.querySelector('[data-row-count]')?.textContent.replace(/,/g, '').match(/\d+/)?.[0]) === window.expectedDealCount(scope), scope);
   };
   await settleCaptures(); await assertCount('portfolio');
-  const period = () => page.getByRole('combobox', { name: 'Trade period', exact: true });
-  assert.equal(await period().inputValue(), '30');
+  // Check the popup after opening source arrivals have finished replacing the initial table.
   for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(!await page.getByRole('combobox', { name, exact: true }).isVisible());
   await page.getByRole('button', { name: 'More filters (5)', exact: true }).click();
   for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(await page.getByRole('combobox', { name, exact: true }).isVisible());
