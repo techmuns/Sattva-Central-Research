@@ -52,7 +52,7 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
     const button = form.querySelector('[data-saved-submit]'); button.disabled = true;
     const result = await workspace.edit({ op: 'put', tab: saved, expected: tab?.revision ?? null });
     button.disabled = false;
-    if (result.confirmed || workspace.status().pending) { closeModal(); onSaved(saved); }
+    if (result.confirmed || result.pending) { closeModal(); onSaved(saved); }
     else form.querySelector('[data-saved-error]').textContent = result.error || 'The tab could not be saved.';
   });
 }
