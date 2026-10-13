@@ -124,4 +124,31 @@ await writeEntry('capture:data/announcement-identities.json', { value: { ...chan
 const malformed = await import('../public/js/data/listed-companies.js?malformed-source-cache');
 await malformed.restore();
 assert.deepEqual(malformed.all(), changedRows, 'a malformed per-source cache cannot replace the verified joined snapshot');
+
+// Returning during an older read must schedule one subsequent source check. Joining only
+// the old promise misses a listing published after that request began until the next poll.
+const overlapping = await import('../public/js/data/listed-companies.js?return-during-read');
+let deliveredBse = changedBse, overlapReads = 0, releaseOld, began;
+const oldReadHeld = new Promise(resolve => { releaseOld = resolve; });
+const readsBegan = new Promise(resolve => { began = resolve; });
+const overlapRead = async path => {
+  const value = path.includes('nse-identities') ? nse : deliveredBse;
+  const index = ++overlapReads;
+  if (index <= 2) { if (index === 2) began(); await oldReadHeld; }
+  return { value, stale: false };
+};
+const priorRead = overlapping.load({ read: overlapRead });
+await readsBegan;
+deliveredBse = { ...changedBse, capturedAt: new Date(Date.parse(changedBse.capturedAt) + 2000).toISOString(),
+  entries: [...changedBse.entries, { isin: 'INE999Z01029', ticker: 'AFTERRETURN', bseCode: '599998',
+    bseSymbol: 'AFTERRETURN', name: 'Listed After Earlier Read', status: 'Active' }] };
+const returnCheck = overlapping.load({ read: overlapRead, recheck: true });
+assert.equal(overlapping.load({ read: overlapRead, recheck: true }), returnCheck, 'overlapping return/focus events share one queued check');
+releaseOld();
+await priorRead;
+await returnCheck;
+assert.equal(overlapReads, 4, 'returning checks both exchanges once after the prior request settles');
+assert.deepEqual(overlapping.all(), buildExchangeUniverse(deliveredBse, nse).companies,
+  'the return check includes a listing published after the previous source request began');
+assert.equal(overlapping.meta().sources.find(s => s.label === 'BSE').checkedAt, deliveredBse.capturedAt);
 console.log(`PASS ${expected.size} exchange equity identities: complete union, BSE/NSE collisions, automatic enrollment, persisted exclusions and failure retention.`);

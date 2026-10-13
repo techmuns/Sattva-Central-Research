@@ -3,7 +3,7 @@ import { buildExchangeUniverseAsync } from './exchange-universe.js';
 import { readEntries, writeEntry } from '../core/store.js';
 export { buildExchangeUniverse } from './exchange-universe.js';
 
-let bse = null, nse = null, pending = null;
+let bse = null, nse = null, pending = null, nextCheck = null;
 let companies = [], status = { sources: [], errors: [] };
 let builtInputs = null, counts = {};
 const SAVED_KEY = 'snapshot:listed-companies:verified-sources:v1';
@@ -72,8 +72,17 @@ export function restore({ build = buildExchangeUniverseAsync } = {}) {
 
 // Revalidate on every editor opening and every visible poll. Failed sources retain their last
 // verified identities and original check times; a partial directory is never called complete.
-export function load({ read = capturedJson, build = buildExchangeUniverseAsync } = {}) {
-  if (pending) return pending;
+export function load({ read = capturedJson, build = buildExchangeUniverseAsync, recheck = false } = {}) {
+  if (pending) {
+    if (!recheck) return pending;
+    // A return/focus event can follow a source change while an older request is still running.
+    // Recheck after it settles; a burst of resume events shares this one follow-up read.
+    if (!nextCheck) {
+      const check = () => load({ read, build });
+      nextCheck = pending.then(check, check).finally(() => { nextCheck = null; });
+    }
+    return nextCheck;
+  }
   let previous = null;
   pending = (async () => {
     const saved = restore({ build });

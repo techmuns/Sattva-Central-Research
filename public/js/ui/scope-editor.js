@@ -338,7 +338,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
 
   async function refreshDirectory() {
     try {
-      await listedCompanies.load();
+      await listedCompanies.load({ recheck: true });
       showDirectory();
     } catch (err) {
       if (!document.body.contains(root)) return;

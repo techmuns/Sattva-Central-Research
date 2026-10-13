@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { buildExchangeUniverse } from '../public/js/data/exchange-universe.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
-let upgraded = false, failed = false, delayed = false, releaseReads;
+let upgraded = false, failed = false, delayed = false, releaseReads, onHeldRead;
 let heldReads = Promise.resolve();
 let directoryReads = 0;
 const bse = JSON.parse(readFileSync(resolve(root, 'data/announcement-identities.json')));
@@ -32,9 +32,9 @@ const server = createServer(async (req, res) => {
     if (path === '/sdk-fixture.js') { res.end('/* isolated SDK */'); return; }
     if (path === '/data/announcement-identities.json' || path === '/data/filing-capture/nse-identities.json') {
       directoryReads++;
-      if (delayed) await heldReads;
-      if (failed) { res.writeHead(503).end(); return; }
       const body = JSON.stringify(path.includes('nse-identities') ? nse : bse);
+      if (delayed) { onHeldRead?.(); await heldReads; }
+      if (failed) { res.writeHead(503).end(); return; }
       const tag = `"${createHash('sha256').update(body).digest('hex')}"`;
       res.setHeader('etag', tag);
       if (req.headers['if-none-match'] === tag) { res.writeHead(304).end(); return; }
@@ -105,9 +105,21 @@ try {
   await page.reload(); await countIs(expected.length - 1);
   await page.locator('[data-scope-search]').fill(dp.isin);
   await page.locator('[data-scope-result="0"]').click(); await countIs(expected.length);
+  await page.evaluate(async () => (await import('/js/data/listed-companies.js')).load());
+  // Hold both older HTTP replies before publishing the listing and returning to the editor.
+  // The visibility event must schedule a subsequent check, rather than reuse those old replies.
+  delayed = true;
+  heldReads = new Promise(resolve => { releaseReads = resolve; });
+  const olderReadsStarted = new Promise(resolve => {
+    let count = 0;
+    onHeldRead = () => { if (++count === 2) resolve(); };
+  });
+  await page.evaluate(() => { void import('/js/data/listed-companies.js').then(listed => { window.olderDirectoryRead = listed.load(); }); });
+  await olderReadsStarted;
   bse.entries.push({ isin: 'INE999Z01011', ticker: 'NEWLISTED', bseCode: '599999', bseSymbol: 'NEWLISTED', name: 'New Listed Company', status: 'Active' });
   bse.capturedAt = new Date().toISOString();
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  delayed = false; onHeldRead = null; releaseReads();
   await countIs(expected.length + 1);
   await page.locator('[data-scope-search]').fill('NEWLISTED');
   assert(await page.locator('[data-scope-remove="ticker:NEWLISTED"]').isVisible(), 'new listings appear on return without manual Refresh');
