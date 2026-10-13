@@ -13,7 +13,7 @@ import { AI_ALERT_WINDOW_DAYS } from '../core/alert-window.js';
 
 export const ALERT_POOL_CONTRACT = 'alert-pool-v3';
 // Derived classifications must match the reader even when source captures did not change.
-export const ALERT_POOL_POLICY = '2026-10-13-accepted-article-identities-v1';
+export const ALERT_POOL_POLICY = '2026-10-14-accepted-article-identities-ist-insider-window-v1';
 export const ALERT_POOL_ARTIFACT = 'alert-pool';
 export const ALERT_POOL_WORKFLOW = 'alert-pool-refresh.yml';
 export const ALERT_POOL_INDEX_MEMBER = 'index.json';
