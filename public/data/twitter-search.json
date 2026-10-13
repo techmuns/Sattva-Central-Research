@@ -2195,7 +2195,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0UIZ01018|BlackBuck": {
-      "lastAttemptAt": "2026-10-07T14:05:07+00:00",
+      "lastAttemptAt": "2026-10-13T00:51:12+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0UIZ01018|BLACKBUCK": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T00:16:36.163974+00:00"
+    "checkedAt": "2026-10-13T00:51:12.837321+00:00"
   }
 }
