@@ -90,7 +90,20 @@ const readFilters = () => {
   } catch { return { categories: [], mcap: 'all' }; }
 };
 const filters = readFilters();
-const saveFilters = () => { try { localStorage.setItem(FILTERS_KEY, JSON.stringify(filters)); } catch { /* this session still filters */ } };
+const saveFilters = () => { if (currentCtx?.savedView) return; try { localStorage.setItem(FILTERS_KEY, JSON.stringify(filters)); } catch { /* this session still filters */ } };
+let savedSeed = null, normalFilters = null, normalAsked = null;
+export function getSavedView() {
+  const company = asked.state?.selected;
+  return { categories: [...filters.categories], mcap: filters.mcap, period: asked.period, query: asked.q,
+    companyTicker: company?.ticker || '', companyIsin: company?.isin || '', companyBse: company?.bseCode || company?.scripCode || '', companyName: company?.name || '' };
+}
+export function applySavedView(extras = {}, reading = {}) {
+  normalFilters = { categories: [...filters.categories], mcap: filters.mcap };
+  normalAsked = { ...asked };
+  filters.categories = Array.isArray(extras.categories) ? [...extras.categories] : [];
+  filters.mcap = extras.mcap || 'all';
+  savedSeed = { extras, reading };
+}
 
 const query = createAnnouncementQuery({ pageSize: 200 });
 let currentCtx = null;
@@ -417,6 +430,14 @@ const tab = makeFilingsTab({
   searchControl,
   prepareView(ctx, view) {
     currentCtx = ctx;
+    if (savedSeed) {
+      const { extras, reading } = savedSeed;
+      const period = extras.period || reading.filters?.find(filter => filter.label === 'Announcement period (IST)')?.value || DEFAULT_PERIOD;
+      view = { q: extras.query || reading.q || '', filters: [period], savedViewKey: ctx.savedViewKey };
+      asked.state = null;
+      if (extras.companyTicker || extras.companyIsin || extras.companyBse) view.searchState = { q: view.q, selected: { ticker: extras.companyTicker || null, isin: extras.companyIsin || null, bseCode: extras.companyBse || null, name: extras.companyName || null } };
+      savedSeed = null;
+    }
     adopt(view);
     query.setQuery(questionFor(ctx));
     void loadModel();
@@ -605,4 +626,7 @@ export function destroy() {
   liveRef = null;
   currentCtx = null;
   tab.destroy();
+  savedSeed = null;
+  if (normalFilters) { filters.categories = normalFilters.categories; filters.mcap = normalFilters.mcap; normalFilters = null; }
+  if (normalAsked) { Object.assign(asked, normalAsked); normalAsked = null; }
 }
