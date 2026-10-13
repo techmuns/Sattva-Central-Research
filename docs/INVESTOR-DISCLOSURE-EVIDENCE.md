@@ -78,3 +78,26 @@ dated private capital calls/distributions or AMC scheme look-through; these rema
 unavailable. Existing public quarterly histories, official source coverage and exports stay
 intact. My Managers cards cover the whole book; Watchlist narrows eligible workspace
 securities/activity without changing the full-book weight denominator.
+
+
+### Manager transport reliability (13 October 2026)
+
+Family's `sourceRevision` is the complete serialized workbook catalogue plus its scope,
+not a fixed-length hash. Retaining or uploading workbooks grows that identity. The manager
+reader preserves it exactly and validates it inside the existing complete-message limit of
+5,000,000 characters; a separate 1,000-character revision limit rejected legitimate books.
+Nothing is truncated to make a reply fit. Required source fields, dates, record identity,
+coverage counts and all row/number guards remain in force.
+
+The shared contract is `public/js/data/managers-contract.js`. Source freshness is checked
+when the serialized bridge request actually starts, after earlier private reads finish.
+Validation failures identify only the contract section, with no private values in the error.
+Failed checks still withhold figures; the visible 60-second/focus/reconnection checks recover
+automatically. Auth/archive invalidation clears cards and workspaces immediately, and ready
+notifications schedule a new generation even while the revoked read is settling. A revoked
+result or its cleanup cannot replace/clear the new pending read.
+
+`verify-managers.mjs`, `verify-manager-reader.mjs`, `verify-super-investors-ui.mjs` and
+`verify-manager-upgrade-ui.mjs` cover catalogue-sized revisions, the full sharing bound,
+queued freshness, invalidation races, private failure handling, automatic recovery, scopes,
+workspaces and returning readers upgrading the immutable service-worker module graph.
