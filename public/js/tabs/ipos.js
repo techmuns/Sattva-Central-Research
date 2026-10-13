@@ -45,7 +45,7 @@ export function render(ctx) {
     const table = mode === 'directory' ? directoryTable(feed.companies(), view) : scoreTable({
       rows, key: ipoKey, watchKey: (r) => r.ticker || null, watchName: (r) => r.company,
       name: (r) => r.company, sub: (r) => r.ticker || r.isin || (r.board ? `${r.board} public issue` : 'Public issue filing'),
-      showRank: false, nameAfter: 1, dense: true, nameMaxPx: 280,
+      showRank: false, showWatchFilter: false, nameAfter: 1, dense: true, nameMaxPx: 280,
       stickyHead: 'max(320px, calc(100vh - 310px))', fillMode: 'auto',
       columns: [
         { label: 'Filed / document date', get: (r) => `${when(ipoDisplayDay(r))}${!r.filingDate && r.documentDate ? ' · document date' : ''}`, sortValue: (r) => ipoDisplayDay(r) || '', align: 'left' },
