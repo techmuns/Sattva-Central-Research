@@ -40,7 +40,9 @@ try {
   await one.page.locator('[data-ca-apply]').click();
   await one.page.waitForFunction(() => window.query.query().categories.includes('capital-raise') && window.query.meta().state === 'ready');
   await one.page.getByRole('combobox', { name: 'Announcement period (IST)' }).selectOption('7'); await ready(one.page);
-  await one.page.getByRole('button', { name: 'Save as tab', exact: true }).click();
+  await one.page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+  await one.page.getByRole('button', { name: 'Use current view', exact: true }).click();
+  await one.page.getByRole('button', { name: 'Current view selected', exact: true }).waitFor();
   await one.page.locator('[data-saved-title]').fill('Capital Raises');
   await one.page.locator('[data-saved-submit]').click();
   await one.page.getByRole('heading', { name: 'Capital Raises', exact: true }).waitFor(); await ready(one.page);

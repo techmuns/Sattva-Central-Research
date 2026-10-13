@@ -299,7 +299,7 @@ Readers can rearrange this main strip by dragging a tab (or its grip on touch sc
 Alt + Left/Right moves the focused tab; Alt + Home restores the catalog order.
 `ui/tab-order.js` sends shared reorder intents through `core/workspace.js` to `/api/workspace`.
 The layout is universal for this desk, including saved tabs and their filters (13 October 2026).
-Add tab creates a named blank screen or selects an existing table; Save as tab captures the current
+Add tab creates a named blank screen or selects an existing table; Use current view captures the current
 reader's scope, subview, search, filters and sort. Save filters deliberately publishes later edits.
 Saved readers retain their original data loading, source checks, archives and exports. Preferences
 contain no source rows, private holding values or credentials. Custom headings live inside the

@@ -84,6 +84,10 @@ const server = createServer((req, res) => {
       const source = readFileSync(path, 'utf8');
       res.end(previousRelease ? `${source}\nconst previousTabOrder = ${JSON.stringify(previousTabOrder)};
 researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrder.indexOf(b.meta.id));` : source);
+    } else if (pathname === '/js/core/workspace.js' && previousRelease) {
+      // The old navigation predates shared ordering. It follows the catalog rather than
+      // applying the new grouped-parent order to these deliberately ungrouped old readers.
+      res.end('export const snapshot=()=>({version:1,revision:0,tabs:[],order:[]});export const status=()=>({confirmed:false,pending:0,error:null,rejected:[]});export const onChange=()=>()=>{};export const start=()=>{};export const sync=async()=>({confirmed:false});export const edit=async()=>({confirmed:false});');
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/alert-pool-format.js') {

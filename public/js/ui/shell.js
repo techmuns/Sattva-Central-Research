@@ -112,25 +112,29 @@ async function editSavedTab(tab = null, seed = null) {
   ui.openTabEditor({ tab, seed, onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: view.scope }) });
 }
 
-async function saveReaderAsTab(tabModule, resolved, current = null) {
+async function addSavedTab() {
+  const ui = await savedTabsUI(), tab = currentTabModule;
+  const saved = tab?.meta.savedView, source = saved?.source || tab?.meta.id;
+  const readingContext = { scope: state.scope, subview: state.subview, params: router.parseHash().params };
+  ui.openTabEditor({ onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: view.scope }),
+    captureCurrent: VIEW_SOURCES.includes(source) ? async () => ui.captureSavedTab({ root: contentHost, source, ...readingContext, module: saved ? tab : await tab.load() }) : null });
+}
+
+async function saveReaderFilters(tabModule, resolved, current) {
   const ui = await savedTabsUI();
-  const source = current?.source || tabModule.meta.id;
-  const reader = current ? tabModule : await tabModule.load();
-  const seed = await ui.captureSavedTab({ root: contentHost, source, scope: resolved.scope, subview: resolved.subview, params: router.parseHash().params, module: reader });
-  if (current) {
-    const result = await workspace.edit({ op: 'put', tab: { ...current, ...seed }, expected: current.revision });
-    const status = document.querySelector('[data-workspace-status]');
-    if (status) status.textContent = result.confirmed ? 'View saved for everyone.' : result.error || 'View changes are waiting to be shared.';
-  } else await editSavedTab(null, { ...seed, title: '' });
+  const seed = await ui.captureSavedTab({ root: contentHost, source: current.source, scope: resolved.scope, subview: resolved.subview, params: router.parseHash().params, module: tabModule });
+  const result = await workspace.edit({ op: 'put', tab: { ...current, ...seed }, expected: current.revision });
+  const status = document.querySelector('[data-workspace-status]');
+  if (status) status.textContent = result.confirmed ? 'View saved for everyone.' : result.error || 'View changes are waiting to be shared.';
 }
 
 function renderSavedControls(root, tabModule, resolved) {
   const mount = root.querySelector('#saved-view-mount'), saved = tabModule.meta.savedView;
-  mount.hidden = !saved && !VIEW_SOURCES.includes(tabModule.meta.id);
+  mount.hidden = !saved;
   contentHost.toggleAttribute('data-saved-view', !!saved);
   if (mount.hidden) { mount.innerHTML = ''; return; }
-  mount.innerHTML = saved ? `<div class="saved-view-head"><div><h2>${escapeHtml(saved.title)}</h2>${saved.source ? `<p>From ${escapeHtml(WORKSPACES[0].tabs.find(tab => tab.meta.id === saved.source)?.meta.navigationTitle || WORKSPACES[0].tabs.find(tab => tab.meta.id === saved.source)?.meta.title || saved.source)}</p>` : ''}</div><div class="saved-tab-actions">${saved.source ? '<button type="button" data-save-reading>Save filters</button>' : ''}<button type="button" data-edit-saved>Edit tab</button><button type="button" data-remove-saved>Remove tab</button></div></div>` : '<div class="saved-tab-launch"><button type="button" data-save-reading>Save as tab</button></div>';
-  mount.querySelector('[data-save-reading]')?.addEventListener('click', () => void saveReaderAsTab(tabModule, resolved, tabModule.meta.savedView));
+  mount.innerHTML = `<div class="saved-view-head"><div><h2>${escapeHtml(saved.title)}</h2>${saved.source ? `<p>From ${escapeHtml(WORKSPACES[0].tabs.find(tab => tab.meta.id === saved.source)?.meta.navigationTitle || WORKSPACES[0].tabs.find(tab => tab.meta.id === saved.source)?.meta.title || saved.source)}</p>` : ''}</div><div class="saved-tab-actions">${saved.source ? '<button type="button" data-save-reading>Save filters</button>' : ''}<button type="button" data-edit-saved>Edit tab</button><button type="button" data-remove-saved>Remove tab</button></div></div>`;
+  mount.querySelector('[data-save-reading]')?.addEventListener('click', () => void saveReaderFilters(tabModule, resolved, tabModule.meta.savedView));
   mount.querySelector('[data-edit-saved]')?.addEventListener('click', () => void editSavedTab(tabModule.meta.savedView));
   mount.querySelector('[data-remove-saved]')?.addEventListener('click', () => {
     const saved = tabModule.meta.savedView;
@@ -225,7 +229,7 @@ export function mount(root) {
       const route = router.parseHash(), ws = WORKSPACES[0];
       const tab = workspaceTabs(ws).find(tab => tab.meta.id === route.tab);
       const status = workspace.status(), message = root.querySelector('[data-workspace-status]');
-      if (message) message.textContent = status.pending ? (status.error || 'Changes are waiting to be shared…') : status.error ? 'Shared tab settings are unavailable. Saved tabs remain available; checking again automatically.' : '';
+      if (message) message.textContent = status.pending ? (status.error || 'Changes are waiting to be shared…') : status.error ? 'Shared tab sync unavailable. Checking again…' : '';
       if (message && status.rejected.length) {
         message.textContent = status.error || 'A shared edit could not be saved.';
         const draft = status.rejected.at(-1), review = document.createElement('button');
@@ -341,7 +345,7 @@ function shellTemplate() {
  */
 function wireStaticHeader(root) {
   const addTab = root.querySelector('[data-add-saved-tab]');
-  addTab?.addEventListener('click', () => void editSavedTab());
+  addTab?.addEventListener('click', () => void addSavedTab());
   headerDisposer?.();
   const offTheme = mountThemeToggle(root.querySelector('[data-theme-toggle]'));
   const offNotifications = notifications.mountBell(root.querySelector('[data-notification-bell]'));

@@ -7,12 +7,13 @@ import { openModal, closeModal } from './screener.js';
 
 const sources = VIEW_SOURCES.map(id => ({ id, title: TAB_META[id]?.navigationTitle || TAB_META[id]?.title || id }));
 const field = (label, content) => `<label class="saved-tab-field"><span>${label}</span>${content}</label>`;
-export function openTabEditor({ tab = null, seed = null, onSaved }) {
+export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent = null }) {
   const value = tab || seed || { title: '', source: null, subview: null, scope: 'universe' };
   openModal(`<form data-saved-tab-form class="saved-tab-editor">
     <h2>${tab ? 'Edit shared tab' : 'Add a shared tab'}</h2>
     <p>Name a screen, then choose its table and save the filters you want to return to.</p>
     ${field('Page heading', `<input data-saved-title maxlength="80" required placeholder="Capital Raises" value="${escapeHtml(value.title)}">`)}
+    ${captureCurrent ? '<div class="saved-tab-actions"><button type="button" data-saved-current>Use current view</button></div>' : ''}
     ${field('Table', `<select data-saved-source><option value="">Blank page — choose a table later</option>${sources.map(source => `<option value="${source.id}"${source.id === value.source ? ' selected' : ''}>${escapeHtml(source.title)}</option>`).join('')}</select>`)}
     ${field('View', '<select data-saved-subview></select>')}
     ${field('Companies', `<select data-saved-scope>${['portfolio', 'watchlist', 'universe'].map(scope => `<option value="${scope}"${scope === value.scope ? ' selected' : ''}>${scope[0].toUpperCase() + scope.slice(1)}</option>`).join('')}</select>`)}
@@ -28,6 +29,18 @@ export function openTabEditor({ tab = null, seed = null, onSaved }) {
     subview.closest('label').hidden = !views.length;
   };
   source.addEventListener('change', refreshViews); refreshViews();
+  form.querySelector('[data-saved-current]')?.addEventListener('click', async event => {
+    const button = event.currentTarget; button.disabled = true;
+    try {
+      const captured = await captureCurrent();
+      if (!form.isConnected) return;
+      Object.assign(value, captured);
+      source.value = value.source;
+      form.querySelector('[data-saved-scope]').value = value.scope;
+      refreshViews(); button.textContent = 'Current view selected';
+    } catch { form.querySelector('[data-saved-error]').textContent = 'This view could not be captured. Wait for its table to finish loading, then try again.'; }
+    finally { button.disabled = false; }
+  });
   form.querySelector('[data-saved-cancel]').addEventListener('click', closeModal);
   form.addEventListener('submit', async event => {
     event.preventDefault();
