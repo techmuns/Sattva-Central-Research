@@ -7,11 +7,9 @@ import { resolve, extname, sep } from 'node:path';
 
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
-// Pin the source and Today selector to 00:10 IST, before the UTC day changes.
-const at = '2026-10-13T18:40:00.000Z';
-// Source dates and the Today selector use the same IST day, including after IST midnight.
-const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric',
-  month: '2-digit', day: '2-digit' }).format(new Date(at));
+const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+// Exercise the IST day before UTC midnight on every run, rather than only during that window.
+const at = new Date(`${date}T00:15:00+05:30`).toISOString();
 const types = ['Buy', 'Sell', 'Acquisition', 'Disposal', 'Pledge', 'Revoke', 'Invoke', 'Gift'];
 const categories = ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'];
 const fullCompany = 'A Very Long Company Name With Investments Manufacturing And Telecommunications Limited';
@@ -54,11 +52,15 @@ try {
   await context.route('**/*', route => new URL(route.request().url()).origin === origin
     ? route.continue() : route.fulfill({ status: 404, body: '' }));
   const page = await context.newPage();
+  await page.clock.install({ time: at });
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.clock.setFixedTime(new Date(at));
   await page.goto(origin);
   const count = page.locator('[data-row-count]');
-  await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.match(/\d+/)?.[0]) === n, rows.length);
+  await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.match(/\d+/)?.[0]) === n, rows.length).catch(async error => {
+    console.error('Trade fixture', { date, at }, await page.evaluate(async () => ({ day: (await import('/js/data/news-window.js')).newsDay(), rows: (await import('/js/data/filings.js')).insider.rows().map(row => row.date), text: document.querySelector('#root')?.textContent.slice(0, 650) })), errors);
+    throw error;
+  });
   assert.equal(await page.getByRole('columnheader', { name: 'Company', exact: true }).count(), 1, 'company leads without a duplicate source column');
   assert.equal(await page.getByRole('columnheader', { name: 'Insider', exact: true }).count(), 0);
   const assertFullNames = async () => {

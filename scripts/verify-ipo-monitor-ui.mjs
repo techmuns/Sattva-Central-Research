@@ -58,7 +58,7 @@ try {
     await filtered();
   };
   await ready();
-  check('IPO toolbar removes the view picker and redundant refresh control', await page.locator('[data-ipo-view], [data-ipo-refresh]').count() === 0);
+  check('IPO toolbar removes the view picker, redundant refresh and Watchlist filter', await page.locator('[data-ipo-view], [data-ipo-refresh], [data-watch-toggle]').count() === 0);
   check('date range is part of the same toolbar as search and filters', await page.locator('[data-table-toolbar] [data-ipo-history]').count() === 1);
   check('board and source share one collapsed control', await page.locator('[data-filter-group-toggle]').isVisible() &&
     !await page.locator('[data-table-filter="1"]').isVisible() && !await page.locator('[data-table-filter="2"]').isVisible());
@@ -109,7 +109,7 @@ try {
   live.companies = [{ id: '999999', company: 'Directory-only <img src=x onerror="window.ipoXss=1">', url: 'https://www.ipoplatform.com/ipo/directory-only/999999', board: 'SME', status: 'Upcoming', openingWindow: '10 Sep - 15 Sep', listingDate: '2026-09-18', observedAt: capture.checkedAt, retained: false }];
   await page.evaluate(() => window.poll.fetcher());
   await page.evaluate(() => window.showIpos({ view: 'directory' })); await ready();
-  check('issuer directory uses same native table and includes companies without filings', await page.locator('[data-score-table]').count() === 1 && (await page.locator('[data-row-count]').innerText()).startsWith('1 of 1') && (await page.locator('[data-row-key]').innerText()).includes('Upcoming'));
+  check('issuer directory uses same native table without Watchlist and includes companies without filings', await page.locator('[data-score-table]').count() === 1 && await page.locator('[data-watch-toggle]').count() === 0 && (await page.locator('[data-row-count]').innerText()).startsWith('1 of 1') && (await page.locator('[data-row-key]').innerText()).includes('Upcoming'));
   check('publisher directory metadata is labelled and HTML escaped', (await page.locator('#root').innerText()).includes('not exchange confirmations') && await page.locator('[data-row-key] img').count() === 0 && await page.evaluate(() => !window.ipoXss));
   const directoryDownload = page.waitForEvent('download'); await page.locator('[data-export]').click();
   const directoryWorkbook = new ExcelJS.Workbook(); await directoryWorkbook.xlsx.readFile(await (await directoryDownload).path());
@@ -148,11 +148,13 @@ try {
   await page.keyboard.press('Escape');
   check('combined filter closes with Escape and returns keyboard focus', await page.locator('[data-filter-group-toggle]').evaluate(el => el === document.activeElement));
   await page.evaluate(() => window.showIpos({}, { id: 'saved-ipo', reading: {
-    tableKey: 'sattva-ipo-filings', q: '', watchOnly: false, filters: [{ label: 'Boards', value: 'SME' }, { label: 'Sources', value: 'BSE SME' }],
+    tableKey: 'sattva-ipo-filings', q: '', watchOnly: true, filters: [{ label: 'Boards', value: 'SME' }, { label: 'Sources', value: 'BSE SME' }],
     extras: { ipoHistory: '30', ipoMode: 'filings' },
   } })); await ready();
   check('existing saved board/source choices and date range restore in the combined toolbar', await history.inputValue() === '30' &&
     await page.locator('[data-table-filter="1"]').inputValue() === 'SME' && await page.locator('[data-table-filter="2"]').inputValue() === 'BSE SME');
+  check('an old saved Watchlist setting cannot silently hide IPO filings', await page.evaluate(async () =>
+    (await import('/js/core/view-reading.js')).captureTableReading(document.querySelector('#root')).watchOnly === false));
   await page.evaluate(() => window.showIpos()); await ready();
   check('returning to IPO Filings restores the seven-day default', await history.inputValue() === '7');
   check('recent window excludes undated documents without inventing dates', (await page.locator('[data-row-key]').allTextContents()).every((t) => !t.includes('Date not supplied')));
@@ -196,7 +198,7 @@ try {
     await page.setViewportSize({ width, height: 850 });
     await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
     check(`IPO controls align without overlap or page overflow at ${width}px in ${theme}`, await page.locator('[data-table-toolbar]').evaluate(toolbar => {
-      const fields = [...toolbar.querySelectorAll('[data-table-search], [data-ipo-history], [data-table-filter="0"], [data-filter-group-toggle], [data-watch-toggle], [data-export]')].map(el => el.getBoundingClientRect());
+      const fields = [...toolbar.querySelectorAll('[data-table-search], [data-ipo-history], [data-table-filter="0"], [data-filter-group-toggle], [data-export]')].map(el => el.getBoundingClientRect());
       const box = toolbar.getBoundingClientRect();
       return document.documentElement.scrollWidth <= innerWidth && fields.every(field => field.height >= 43 && field.left >= box.left && field.right <= box.right) &&
         fields.every((a, i) => fields.slice(i + 1).every(b => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top));

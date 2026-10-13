@@ -261,7 +261,7 @@ function dashboardCacheKey() {
 
 // Compose column presentation with other releases without changing their version markers.
 function sharedWorkspaceCacheKey() {
-  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v2`;
+  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v6`;
 }
 
 function tableLayoutCacheKey() {
@@ -270,5 +270,5 @@ function tableLayoutCacheKey() {
 
 // Keep the IPO revision independent of other dashboard release markers.
 function ipoFilingCacheKey() {
-  return `${appReleaseCacheKey()}-single-ipo-filing-link-v6-insider-ist-v1-ipo-filter-toolbar-v1`;
+  return `${appReleaseCacheKey()}-single-ipo-filing-link-v6-insider-ist-v1-ipo-filter-toolbar-v2`;
 }
