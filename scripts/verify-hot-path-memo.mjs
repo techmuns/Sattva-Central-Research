@@ -170,6 +170,11 @@ assert.equal(articleUrlKey(article), 'example.com/other', 'an edited url is re-r
 assert.equal(articleUrlKey({}), null); assert.equal(articleUrlKey(null), null);
 const dupes = [article, { ...article, url: 'https://example.com/other' }, { ...article, title: 'Third', url: 'https://example.com/third' }];
 assert.deepEqual(dedupeArticles(dupes).map(r => r.url), [article.url, 'https://example.com/third'], 'dedupe still folds mobile and desktop addresses');
+const firstCopy = { url: 'https://example.com/copy', title: 'Story', source: 'Pub', date: '2026-10-12' };
+const rejectedCopy = { ...firstCopy, url: 'https://example.com/original' };
+const validCopy = { ...rejectedCopy, date: '2026-10-13' };
+assert.deepEqual(dedupeArticles([firstCopy, rejectedCopy, validCopy]), [firstCopy, validCopy],
+  'a rejected story copy cannot reserve a URL and erase a later valid record');
 
 // --- alert cache bytes: no byte array per event, same numbers as the encoder --------------------
 const encoder = new TextEncoder();

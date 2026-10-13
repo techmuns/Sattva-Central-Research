@@ -2127,47 +2127,41 @@
       "lastDiscoveryAt": "2026-10-12T22:32:50+00:00"
     },
     "isin:INE377N01017|Waaree Energies": {
-      "lastAttemptAt": "2026-10-08T06:26:45+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "error": null,
+      "lastResultCount": 74,
       "targetThrough": "2026-10-03T05:24:56+00:00",
       "pending": [
-        {
-          "from": "2026-09-24T05:24:56.457367+00:00",
-          "to": "2026-09-28T17:24:56.228683+00:00"
-        },
         {
           "from": "2026-09-28T17:24:56.228683+00:00",
           "to": "2026-10-03T05:24:56+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-13T20:29:00+00:00"
     },
     "isin:INE377N01017|WAAREEENER": {
-      "lastAttemptAt": "2026-10-08T07:04:52+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 26,
-      "lastSuccessAt": "2026-10-03T05:24:56+00:00",
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "error": null,
+      "lastResultCount": 24,
+      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE049B01025|Wockhardt": {
-      "lastAttemptAt": "2026-10-08T07:36:40+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "error": null,
+      "lastResultCount": 51,
       "targetThrough": "2026-10-03T05:24:56+00:00",
       "pending": [
-        {
-          "from": "2026-09-24T05:24:56.457367+00:00",
-          "to": "2026-09-28T17:24:56.228683+00:00"
-        },
         {
           "from": "2026-09-28T17:24:56.228683+00:00",
           "to": "2026-10-03T05:24:56+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-13T20:29:00+00:00"
     },
     "isin:INE049B01025|WOCKPHARMA": {
-      "lastAttemptAt": "2026-10-08T08:14:24+00:00",
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
       "error": "search-unavailable",
       "lastResultCount": 40,
       "lastSuccessAt": "2026-10-03T05:24:56+00:00",
@@ -2387,38 +2381,54 @@
       "error": "search-unavailable"
     },
     "isin:INE011K01018|Tega Industries": {
-      "lastAttemptAt": "2026-10-08T02:07:54+00:00",
+      "lastAttemptAt": "2026-10-13T18:35:25+00:00",
       "error": "search-unavailable"
     },
     "isin:INE011K01018|TEGA": {
-      "lastAttemptAt": "2026-10-08T02:38:36+00:00",
+      "lastAttemptAt": "2026-10-13T19:05:55+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0JA001018|Venus Pipes & Tubes": {
-      "lastAttemptAt": "2026-10-08T03:32:24+00:00",
+      "lastAttemptAt": "2026-10-13T19:54:21+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0JA001018|VENUSPIPES": {
-      "lastAttemptAt": "2026-10-08T04:15:39+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "error": null,
+      "lastResultCount": 42,
+      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE625G01013|Welspun Enterprises": {
-      "lastAttemptAt": "2026-10-08T04:48:36+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "error": null,
+      "lastResultCount": 39,
+      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE625G01013|WELENT": {
-      "lastAttemptAt": "2026-10-08T05:21:33+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "error": null,
+      "lastResultCount": 21,
+      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE274C01019|Wendt (India)": {
-      "lastAttemptAt": "2026-10-08T05:54:59+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "error": null,
+      "lastResultCount": 8,
+      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
+      "targetThrough": null,
+      "pending": []
     }
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 240,
-    "checkedAt": "2026-10-13T17:48:28.837406+00:00"
+    "attempted": 8,
+    "incomplete": 235,
+    "checkedAt": "2026-10-13T20:29:00.149248+00:00"
   }
 }

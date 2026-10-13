@@ -29,12 +29,22 @@ async function context(colorScheme = 'light', width = 1440) {
   return { context, page };
 }
 const ready = async page => {
-  await page.evaluate(async () => { window.query = (await import('/js/tabs/corp-announcements.js')).announcementQuery; });
+  await page.evaluate(async () => { window.query = (await import('/js/tabs/corp-announcements.js')).announcementQuery; window.workspace = await import('/js/core/workspace.js'); });
   await page.waitForFunction(() => window.query.meta().state === 'ready' && !window.query.meta().refreshing);
 };
 try {
   const one = await context(), two = await context('dark');
+  await one.context.addInitScript(() => { if (!localStorage.getItem('dashboard:tab-order:v1:research')) localStorage.setItem('dashboard:tab-order:v1:research', JSON.stringify(['news-section', 'earnings', 'alerts', 'announcements', 'breakouts', 'mutual-funds', 'super-investors'])); });
   await one.page.goto(`${server.url}#/research/corp-announcements?scope=universe`); await ready(one.page);
+  assert.deepEqual(await one.page.locator('#tabbar-mount [data-tab-id]').evaluateAll(tabs => tabs.slice(0, 3).map(tab => tab.dataset.tabId)), ['news-section', 'earnings', 'alerts'], 'an uninitialized shared workspace retains the existing browser layout');
+  await one.page.route('**/api/workspace', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false}' }));
+  await one.page.locator('#tabbar-mount [data-tab-id="alerts"]').focus(); await one.page.keyboard.press('Alt+ArrowRight');
+  await one.page.waitForFunction(() => window.workspace.status().pending === 1 && !!window.workspace.status().error);
+  await one.page.reload(); await ready(one.page);
+  assert.deepEqual(await one.page.locator('#tabbar-mount [data-tab-id]').evaluateAll(tabs => tabs.slice(0, 3).map(tab => tab.dataset.tabId)), ['news-section', 'earnings', 'announcements'], 'the first migrated move survives an offline reload');
+  await one.page.unroute('**/api/workspace'); await one.page.evaluate(() => window.workspace.sync());
+  await one.page.waitForFunction(() => window.workspace.status().confirmed && !window.workspace.status().pending && window.workspace.snapshot().revision > 0);
+  assert.deepEqual(store.snapshot().order.slice(0, 3), ['news-section', 'earnings', 'announcements'], 'the first shared drag carries forward the existing layout');
   await one.page.locator('[data-ca-open="categories"]').click();
   await one.page.locator('input[value="capital-raise"]').check();
   await one.page.locator('[data-ca-apply]').click();
@@ -62,7 +72,7 @@ try {
   }
   const tab = one.page.locator(`#tabbar-mount [data-tab-id="${view.id}"]`);
   await tab.focus(); await one.page.keyboard.press('Alt+ArrowLeft');
-  await one.page.waitForFunction(async () => { const workspace = await import('/js/core/workspace.js'); return !workspace.status().pending && workspace.status().confirmed && workspace.snapshot().order.at(-1) === 'super-investors'; });
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.status().confirmed && document.querySelector('#tabbar-mount [data-tab-list]').lastElementChild?.dataset.tabId === 'super-investors');
   await two.page.evaluate(async () => (await import('/js/core/workspace.js')).sync());
   await two.page.waitForFunction(() => document.querySelector('#tabbar-mount [data-tab-list]').lastElementChild?.dataset.tabId === 'super-investors');
   const order = page => page.locator('#tabbar-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId));
@@ -87,7 +97,7 @@ try {
   await one.page.getByRole('combobox', { name: 'Announcement period (IST)' }).selectOption('3'); await ready(one.page);
   assert.equal(store.snapshot().tabs[0].reading.extras.period, '7');
   await one.page.getByRole('button', { name: 'Save filters', exact: true }).click();
-  await one.page.waitForFunction(async () => { const workspace = await import('/js/core/workspace.js'); return !workspace.status().pending && workspace.snapshot().tabs[0]?.reading.extras.period === '3'; });
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.snapshot().tabs[0]?.reading.extras.period === '3');
   await two.page.evaluate(async () => (await import('/js/core/workspace.js')).sync());
   await two.page.waitForFunction(() => window.query.query().period === '3' && window.query.meta().state === 'ready').catch(async error => {
     console.error('Shared filter propagation', await two.page.evaluate(async () => ({ query: window.query.query(), meta: window.query.meta(), workspace: (await import('/js/core/workspace.js')).snapshot(), status: (await import('/js/core/workspace.js')).status(), period: document.querySelector('[aria-label="Announcement period (IST)"]')?.value })), errors);
@@ -98,6 +108,28 @@ try {
   await one.page.getByRole('heading', { name: 'Fundraising', exact: true }).waitFor();
   await two.page.evaluate(async () => (await import('/js/core/workspace.js')).sync());
   await two.page.getByRole('heading', { name: 'Fundraising', exact: true }).waitFor();
+  // A rejected request cannot borrow another queued edit's optimistic success.
+  for (const action of ['edit', 'remove']) {
+    await one.page.getByRole('button', { name: action === 'edit' ? 'Edit tab' : 'Remove tab', exact: true }).click();
+    const latest = store.snapshot().tabs[0];
+    store.apply({ id: `fixture-concurrent-${action}`, op: 'put', tab: latest, expected: latest.revision });
+    if (action === 'edit') await one.page.locator('[data-saved-title]').fill('Rejected editor draft');
+    let injected = false;
+    await one.page.route('**/api/workspace', async route => {
+      if (route.request().method() === 'POST' && !injected) {
+        injected = true;
+        await one.page.evaluate(async () => { void (await import('/js/core/workspace.js')).edit({ op: 'move', tabId: 'alerts', targetId: 'announcements', after: true }); });
+      }
+      await route.continue();
+    });
+    await one.page.locator(action === 'edit' ? '[data-saved-submit]' : '[data-remove-confirm]').click();
+    await one.page.locator(action === 'edit' ? '[data-saved-error]' : '[data-remove-error]').filter({ hasText: 'changed elsewhere' }).waitFor();
+    assert.equal(await one.page.evaluate(async () => (await import('/js/core/workspace.js')).status().pending), 1, 'the unrelated move stays queued');
+    assert(one.page.url().includes(view.id), 'rejection keeps the original reader route');
+    await one.page.locator(action === 'edit' ? '[data-saved-cancel]' : '[data-remove-cancel]').click();
+    await one.page.unroute('**/api/workspace');
+    await one.page.evaluate(async () => { const workspace = await import('/js/core/workspace.js'); await workspace.sync(); workspace.status().rejected.forEach(row => workspace.dismissRejected(row.intent.id)); });
+  }
   // A conflict retains the unsaved definition on its device and offers an explicit review.
   const stale = { ...store.snapshot().tabs[0], title: 'Review this draft', revision: 1 };
   const rejected = await two.page.evaluate(async tab => (await import('/js/core/workspace.js')).edit({ op: 'put', tab, expected: tab.revision }), stale);
@@ -144,7 +176,7 @@ try {
   await one.page.getByRole('button', { name: 'Remove tab', exact: true }).click();
   await one.page.locator('[data-remove-confirm]').click();
   await one.page.locator('#tabbar-mount [data-tab-id="alerts"][aria-selected="true"]').waitFor();
-  await one.page.waitForFunction(async () => !(await import('/js/core/workspace.js')).status().pending);
+  await one.page.waitForFunction(() => !window.workspace.status().pending);
   assert(!store.snapshot().tabs.some(tab => tab.title === 'My Research'));
   assert.equal(store.snapshot().tabs.length, 1, 'removing one screen preserves every other saved screen');
   assert.deepEqual(errors, []);

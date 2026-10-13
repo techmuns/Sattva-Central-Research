@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${appReleaseCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2`;
+  return `${ipoFilingCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2`;
 }
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.
@@ -261,9 +261,14 @@ function dashboardCacheKey() {
 
 // Compose column presentation with other releases without changing their version markers.
 function sharedWorkspaceCacheKey() {
-  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v2`;
+  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v6`;
 }
 
 function tableLayoutCacheKey() {
   return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1-chatter-clean-header-v2`;
+}
+
+// Keep the IPO revision independent of other dashboard release markers.
+function ipoFilingCacheKey() {
+  return `${appReleaseCacheKey()}-single-ipo-filing-link-v6-insider-ist-v1-ipo-filter-toolbar-v2`;
 }

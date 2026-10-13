@@ -1,4 +1,31 @@
 /* Shared appearance tokens. Tailwind's role palettes live in scripts/theme-palette.cjs. */
+/* IPO reading controls stay together, with a separate, consistently aligned results row. */
+[data-ipo-mode="filings"] [data-table-toolbar] { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
+[data-ipo-mode="filings"] [data-table-toolbar] > div:first-child { display: grid; grid-template-columns: minmax(200px, 1fr) 160px minmax(150px, 190px) 170px; gap: 10px; align-items: center; }
+[data-ipo-mode="filings"] [data-table-toolbar] .relative:has([data-table-search]) { min-width: 0 !important; max-width: none; }
+[data-ipo-mode="filings"] [data-table-toolbar] :where(input, select, [data-filter-group-toggle], [data-export]) { min-width: 0; min-height: 44px; border-radius: 10px; font-size: 13px; }
+[data-ipo-mode="filings"] [data-table-toolbar] > div:first-child > select { width: 100%; }
+[data-ipo-mode="filings"] [data-filter-group] { min-width: 0; }
+[data-ipo-mode="filings"] [data-table-actions] { justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid rgb(var(--edge-slate-100, 241 245 249)); }
+[data-ipo-mode="filings"] [data-table-actions] > div { display: block; min-width: 0; }
+[data-ipo-filings] [data-ipo-export-status]:empty { display: none; }
+.ipo-history-control { position: relative; min-width: 0; color: var(--ink-600); }
+.ipo-history-control svg { position: absolute; top: 50%; left: 12px; width: 16px; height: 16px; transform: translateY(-50%); pointer-events: none; }
+.ipo-history-control select { width: 100%; padding: 10px 8px 10px 36px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); background: rgb(var(--surface-slate-50, 248 250 252)); color: var(--ink-600); }
+.ipo-history-control select:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 2px; }
+@media (max-width: 1100px) {
+  [data-ipo-mode="filings"] [data-table-toolbar] > div:first-child { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  [data-ipo-mode="filings"] [data-table-toolbar] .relative:has([data-table-search]) { grid-column: 1 / -1; }
+}
+@media (max-width: 700px) {
+  [data-ipo-mode="filings"] [data-table-toolbar] > div:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-ipo-mode="filings"] [data-filter-group] { grid-column: 1 / -1; }
+}
+@media (max-width: 380px) {
+  [data-ipo-mode="filings"] [data-table-toolbar] { padding: 12px; }
+  [data-ipo-mode="filings"] [data-table-toolbar] > div:first-child { grid-template-columns: minmax(0, 1fr); }
+  [data-ipo-mode="filings"] [data-table-actions] [data-export] { padding-inline: 10px; }
+}
 /* Momentum criteria stay grouped and readable without repeating the screen name per field. */
 .momentum-controls { margin-bottom: 20px; padding: 18px 20px 12px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 16px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-600); }
 .momentum-controls-toolbar, .momentum-mode-picker { display: flex; align-items: center; gap: 16px; }

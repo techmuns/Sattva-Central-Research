@@ -33,6 +33,8 @@ export function wireTabOrder(list, key, onReorder, shareOrder = null) {
     memory.set(key, order);
     let saved = true;
     if (shareOrder) {
+      // Retain the first migrated layout through an offline reload, before its shared ack.
+      try { localStorage.setItem(PREFIX + key, JSON.stringify(order)); } catch { /* The workspace outbox owns sharing and its storage disclosure. */ }
       status.textContent = 'Saving tab order for everyone…';
       Promise.resolve().then(() => shareOrder(intent)).then(result => {
         if (!status.isConnected) return;

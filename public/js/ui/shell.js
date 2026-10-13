@@ -142,7 +142,7 @@ function renderSavedControls(root, tabModule, resolved) {
     document.querySelector('[data-remove-cancel]').addEventListener('click', closeModal);
     document.querySelector('[data-remove-confirm]').addEventListener('click', async () => {
       const result = await workspace.edit({ op: 'remove', tabId: saved.id, expected: saved.revision });
-      if (result.confirmed || workspace.status().pending) { closeModal(); goTab('alerts'); }
+      if (result.confirmed || result.pending) { closeModal(); goTab('alerts'); }
       else document.querySelector('[data-remove-error]').textContent = result.error;
     });
   });
@@ -541,6 +541,8 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
 }
 
 function renderTopNavigation(root, ws, navigationId) {
+  const shared = workspace.snapshot();
+  const sharedOrder = shared.revision > 0 ? shared.order : null;
   const tabItems = [...new Map(workspaceTabs(ws).filter((t) => t !== bookmarks && !t.meta.hideFromNavigation)
     .map(t => {
       const parent = TAB_GROUPS[t.meta.navigationGroup], id = parent?.id || t.meta.id;
@@ -548,14 +550,14 @@ function renderTopNavigation(root, ws, navigationId) {
     })).values()];
   const signature = JSON.stringify(tabItems);
   if (topTabs?.workspace === ws.id && topTabs.signature === signature) {
-    topTabs.bar.update(navigationId, workspace.snapshot().order);
+    topTabs.bar.update(navigationId, sharedOrder);
   } else {
     const focusedId = document.activeElement?.closest('#tabbar-mount [data-tab-id]')?.dataset.tabId;
     const scroll = root.querySelector('#tabbar-mount [data-tab-list]')?.scrollLeft || 0;
     topTabs?.dispose();
     // Saved events are reached from the header beside the appearance control.
     const bar = tabBar({ tabs: tabItems, activeId: navigationId, onSelect: goTab, label: 'Research sections', orderKey: ws.id,
-      sharedOrder: workspace.snapshot().order, onOrderChange: intent => workspace.edit(intent) });
+      sharedOrder, onOrderChange: intent => workspace.edit(intent) });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;
     topTabs = { workspace: ws.id, signature, bar, dispose: bar.wire(tabBarMount) };

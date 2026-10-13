@@ -28,14 +28,14 @@ export function snapshot() {
   if (!pending.length) return current;
   const value = { ...current, order: [...current.order], tabs: [...current.tabs] };
   for (const intent of pending) {
+    // A stale removal must not navigate away before the server can reject it.
+    if (intent.op === 'remove') continue;
     if (intent.op === 'put') {
       const old = value.tabs.find(tab => tab.id === intent.tab.id);
       const tab = { ...intent.tab, revision: old?.revision || 0 };
       const index = value.tabs.findIndex(item => item.id === tab.id);
       if (index >= 0) value.tabs[index] = tab; else value.tabs.push(tab);
       if (!value.order.includes(tab.id)) value.order.push(tab.id);
-    } else if (intent.op === 'remove') {
-      value.tabs = value.tabs.filter(tab => tab.id !== intent.tabId); value.order = value.order.filter(id => id !== intent.tabId);
     } else if (intent.op === 'reset') value.order = [...DEFAULT_TAB_ORDER, ...value.tabs.map(tab => tab.id)];
     else if (value.order.includes(intent.tabId) && value.order.includes(intent.targetId)) {
       value.order = value.order.filter(id => id !== intent.tabId);
@@ -106,7 +106,7 @@ export async function edit(value) {
   // An edit arriving during a read/flush is sent before this call resolves.
   await sync();
   if (pending.some(item => item.id === intent.id) && !error) await sync();
-  return { ...(results.get(intent.id) || { confirmed: false, error }), storageFailed };
+  return { ...(results.get(intent.id) || { confirmed: false, error }), pending: pending.some(item => item.id === intent.id), storageFailed };
 }
 function acknowledge(id) {
   unstored.delete(id);
