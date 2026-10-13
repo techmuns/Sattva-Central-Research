@@ -7,7 +7,9 @@ import { resolve, extname, sep } from 'node:path';
 
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
-const at = new Date().toISOString();
+// Filter intersections use a fixed trading day, shared by the capture and browser clock.
+// Noon in India avoids mixing a UTC capture day with the following IST "Today" period.
+const at = '2026-10-13T06:30:00.000Z';
 const date = at.slice(0, 10);
 const types = ['Buy', 'Sell', 'Acquisition', 'Disposal', 'Pledge', 'Revoke', 'Invoke', 'Gift'];
 const categories = ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'];
@@ -52,6 +54,7 @@ try {
     ? route.continue() : route.fulfill({ status: 404, body: '' }));
   const page = await context.newPage();
   const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.clock.setFixedTime(new Date(at));
   await page.goto(origin);
   const count = page.locator('[data-row-count]');
   await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.match(/\d+/)?.[0]) === n, rows.length);
