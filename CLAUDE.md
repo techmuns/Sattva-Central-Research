@@ -2109,6 +2109,9 @@ scrollbar drag, keep rendering the current window but defer height-estimate corr
 release: changing the scroll range or writing `scrollTop` during the gesture makes the thumb
 fall behind the pointer. On release, preserve the actual visible row and offset. Pointer release,
 cancellation, window blur and disposal must all release the gesture state/listeners.
+Table anchors start below the sticky header. `scoreTable` supplies its current height through
+the window's `viewportInset`; ordinary lists keep zero inset. Preserve the uncovered reading row
+when an arrival lands between a header-hidden row and that row, including after thumb release.
 Live updates keep existing row corrections visible while queuing only additions/reordering until
 release; counts, search and export adopt the complete current model immediately. Explicit filters
 and removed/revoked records interrupt the gesture and apply immediately. Overlay thumbs are inside

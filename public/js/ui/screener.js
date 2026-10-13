@@ -1063,6 +1063,7 @@ export function scoreTable(config) {
     const windowed = isWindowed ? mountWindowedList({
       scroller, content: body, items: current, key, rowSelector: 'tr[data-row-key]',
       renderRows: bodyHtml, renderParts: bodyParts, estimateHeight: VIRTUAL_ROW_HEIGHT, initialKey: initialRowKey,
+      viewportInset: () => head.offsetHeight,
       spacerHtml: (height, edge) => `<tr aria-hidden="true"><td data-window-spacer="${edge}" colspan="${colCount}" style="height:${height}px;padding:0;border:0"></td></tr>`,
       onScrollActivity,
       onWindow: (start, total) => {

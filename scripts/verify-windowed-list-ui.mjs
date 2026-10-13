@@ -69,6 +69,38 @@ try {
   const removed = await page.evaluate(() => { const id = held().key; rows = rows.filter(row => row.id !== id); list.update(rows); return { present: !!document.querySelector(`[data-row-key="${id}"]`), count: document.querySelectorAll('.row').length, total: rows.length }; });
   assert.equal(removed.present, false); assert(removed.count <= 100); assert.equal(removed.total, 50001);
   await page.evaluate(() => list.destroy());
+  // A new row can land between a header-hidden row and the actual reading row.
+  // Preserve the row under the sticky header, not the hidden row at the box top.
+  await page.evaluate(async () => {
+    const { mountWindowedList } = await import('/js/ui/windowed-list.js');
+    scrollBox.innerHTML = '<table style="border-spacing:0;width:100%"><thead style="position:sticky;top:0;background:white"><tr><th style="height:80px;padding:0">Sticky header</th></tr></thead><tbody></tbody></table>';
+    const body = scrollBox.querySelector('tbody'), header = scrollBox.querySelector('thead');
+    window.tableRows = Array.from({ length: 500 }, (_, i) => ({ id: `table-${i}` }));
+    const row = r => `<tr data-row-key="${r.id}" style="height:40px"><td style="padding:0">${r.id}</td></tr>`;
+    window.tableList = mountWindowedList({ scroller: scrollBox, content: body, items: tableRows,
+      key: r => r.id, rowSelector: 'tr[data-row-key]', estimateHeight: 40,
+      viewportInset: () => header.offsetHeight,
+      renderRows: (all, from, to) => all.slice(from, to).map(row).join(''),
+      renderParts: (all, from, to) => all.slice(from, to).map(row),
+      spacerHtml: (height, edge) => `<tr><td data-window-spacer="${edge}" style="height:${height}px;padding:0;border:0"></td></tr>` });
+    window.tableHeld = () => {
+      const boundary = scrollBox.getBoundingClientRect().top + header.offsetHeight;
+      const el = [...body.querySelectorAll('tr[data-row-key]')].find(row => row.getBoundingClientRect().bottom > boundary);
+      return { key: el?.dataset.rowKey, offset: el?.getBoundingClientRect().top - boundary };
+    };
+    scrollBox.scrollTop = 430; scrollBox.dispatchEvent(new Event('scroll'));
+  });
+  await page.waitForTimeout(50);
+  const sticky = await page.evaluate(() => {
+    const before = tableHeld();
+    tableRows = [...tableRows.slice(0, 9), { id: 'between-hidden-and-visible' }, ...tableRows.slice(9)];
+    tableList.update(tableRows);
+    return { before, after: tableHeld(), total: tableRows.length, mounted: scrollBox.querySelectorAll('tr[data-row-key]').length };
+  });
+  assert.equal(sticky.after.key, sticky.before.key, 'a sticky-header table retains the actual reading row');
+  assert(Math.abs(sticky.after.offset - sticky.before.offset) <= 1, 'a header-adjacent insertion retains the reading offset');
+  assert.equal(sticky.total, 501); assert(sticky.mounted <= 100);
+  await page.evaluate(() => tableList.destroy());
   assert.deepEqual(errors, []);
   console.log('PASS natural row measurement, replacement anchors, badge changes, thumb-drag additions/corrections, release and immediate removal over 50,000 records');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
