@@ -37,7 +37,10 @@ try {
   await page.locator('[data-insider-source-link]').first().waitFor();
   const period = () => page.getByRole('combobox', { name: 'Trade period', exact: true });
   assert.equal(await period().inputValue(), '30');
+  for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(!await page.getByRole('combobox', { name, exact: true }).isVisible());
+  await page.getByRole('button', { name: 'More filters (5)', exact: true }).click();
   for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(await page.getByRole('combobox', { name, exact: true }).isVisible());
+  await page.getByRole('dialog', { name: 'More filters (5)', exact: true }).getByRole('button', { name: 'Done', exact: true }).click();
   assert.equal(await page.getByRole('columnheader', { name: 'Exchange', exact: true }).count(), 1);
   assert(await page.locator('[data-insider-source-link]').count());
   const expected = async scope => page.evaluate(async scope => {

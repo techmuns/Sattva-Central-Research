@@ -875,10 +875,11 @@ export function scoreTable(config) {
               // toolbar with several filters; Insider Trades uses it so a long Mode value does not
               // force the Watchlist control onto another row.
               (_f, i) => groupedFilters.has(i)
-                ? (i === filterGroup.indices[0] ? groupControl.html : '')
+                ? (filterGroup.position !== 'end' && i === filterGroup.indices[0] ? groupControl.html : '')
                 : renderSelect(i)
             )
             .join('')}
+          ${filterGroup?.position === 'end' ? groupControl.html : ''}
           ${toolbarControls?.html || ''}
           ${showWatchFilter ? `<button type="button" data-watch-toggle title="Show only watchlisted companies"
             class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-colors hover:border-amber-200 hover:bg-amber-50">
