@@ -155,6 +155,13 @@ try {
       }
     }
     assert.equal(await theme(page), 'dark', tab);
+    if (tab === 'daily-alerts') {
+      await page.locator('[data-filter-group-toggle]').click();
+      const groupedFilters = await surface(page, '[data-filter-group-panel]');
+      assert(luma(groupedFilters.bg) < 0.05 && contrast(groupedFilters.color, groupedFilters.bg) >= 4.5, 'grouped alert filters follow the dark theme with readable labels');
+      await shot(page, 'all-alerts-filter-panel-dark');
+      await page.locator('[data-filter-group-panel]').press('Escape');
+    }
     assert(contrast((await surface(page, '[data-app-header] h1')).color, 'rgb(11,18,32)') >= 7);
     if (tab === 'ipos') {
       await page.locator('[data-table-body] tr:not([aria-hidden="true"])').first().waitFor();

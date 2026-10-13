@@ -3388,6 +3388,9 @@ The 13 October follow-up removes the Company relationship filter from All Alerts
 retain all relationship states in its stream, with accurate attribution labels on the rows.
 The redundant table Watchlist button is also removed; Watchlist is selected through the global
 scope picker, while company stars continue to edit the same shared list.
+Priority and Direction share one compact Signal & priority control. Keep the two predicates
+independent inside its panel, show active selections on the button, and retain both across refreshes.
+Clearing that control resets only those predicates, preserving search, sources, scope and date.
 Keep the global scope picker, date filter,
 source coverage and retained history available; collection and retention are unchanged.
 

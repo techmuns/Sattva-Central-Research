@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${appReleaseCacheKey()}-all-alerts-clean-header-v5`;
+  return `${appReleaseCacheKey()}-all-alerts-clean-header-v9`;
 }
 
 // Retain the shared releases and advance the returning reader for this UI cleanup.
