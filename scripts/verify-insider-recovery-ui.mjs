@@ -99,6 +99,10 @@ try {
   assert.equal(await page.evaluate(() => window.feed.meta().capturedAt),capturedAt,'failed reload reuses the validated whole capture and original source time');
   assert(await page.evaluate(() => !!window.feed.meta().snapshotReadError),'saved bytes do not turn a failed check into success');
 
+  // Screener rows can restore before the independent exchange request settles.
+  // Finish that failed check before advancing the mock minute: refresh() shares
+  // the pending read (or is a no-op inside its freshness window), not a recovery.
+  await page.evaluate(async () => { await (await import('/js/data/exchange-deals.js')).refresh(); });
   exchangeMode = 'ok';
   await page.clock.fastForward(61000);
   await page.waitForFunction(() => window.feed.rows().some(row => row.cells.Insider === 'Official fund'));
