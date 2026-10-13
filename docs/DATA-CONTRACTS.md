@@ -1256,7 +1256,9 @@ so distinct analyses of one call survive. The browser separately saves public an
 saved assessments. Exact shared documents may reconnect an otherwise document-only row to a saved
 assessment only within one ticker and one unambiguous call; unrelated documents remain separate.
 Saved assessments carry their source capture date. Original responses and their ETags stay paired
-under the original store key.
+under the original store key. The small independent calendar write completes before load/refresh
+returns, so an immediate reload can retain it; the larger analysis archive is saved in the
+background after that write and stays off the paint path.
 
 Result, Sentiment / View and Highlights show published values or a specific status: pending,
 source unavailable, coverage incomplete, no matching assessment or no published field. An absent
