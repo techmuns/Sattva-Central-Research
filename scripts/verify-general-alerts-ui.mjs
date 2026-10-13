@@ -580,7 +580,7 @@ try {
     scroller.scrollTop = Math.min(900, scroller.scrollHeight - scroller.clientHeight);
     scroller.style.removeProperty('scroll-behavior');
   });
-// Native scroll events and the virtual row measurements run on later frames. Record the
+  // Native scroll events and the virtual row measurements run on later frames. Record the
   // reader's settled position, rather than geometry from before that gesture has finished.
   await stableReadingSurface();
   const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
