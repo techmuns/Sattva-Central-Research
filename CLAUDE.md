@@ -3,6 +3,14 @@
 Read this before touching anything. `docs/SPEC.md` has the product detail;
 `docs/DATA-CONTRACTS.md` has every JSON shape.
 
+Bulk/Block Deals reading controls: search, Trade category and Trade period remain visible;
+Exchange, Transaction type and Mode live under Filters. Person Category is a source column,
+searchable and exported, with no selector or hidden predicate. The shared Watchlist scope owns
+company selection; legacy saved Watchlist intersections retain an explicit Watchlist only
+control until cleared. Keep full issuer/party names, all source columns, exact named saved filters,
+source links, bounded mounted rows and automatic arrivals. Numeric display groups digits as
+text without changing units, decimal precision, source tooltips or exported values.
+
 **Reading defaults (updated 15 September 2026):** News and All Alerts open on Today.
 News ordering (13 October 2026): Market News opens newest publication first in every scope,
 including stories within the same day. Source dates and actual publication instants own the order;

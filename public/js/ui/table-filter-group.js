@@ -24,7 +24,7 @@ export function tableFilterGroup({ label, indices, summary }, renderSelect, view
     const sync = () => {
       const value = text();
       button.querySelector('[data-filter-group-summary]').textContent = value;
-      button.setAttribute('aria-label', value === label ? label : `${label}: ${value}`);
+      button.setAttribute('aria-label', value.startsWith(label) ? value : `${label}: ${value}`);
       button.title = button.getAttribute('aria-label');
       button.dataset.active = String(indices.some(i => view.filters[i] !== 'all'));
     };

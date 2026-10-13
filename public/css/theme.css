@@ -1,4 +1,53 @@
 /* Shared appearance tokens. Tailwind's role palettes live in scripts/theme-palette.cjs. */
+/* Deals retain every source column, with compact controls and a clear reading order. */
+[data-filings-view="insider-trades"] ~ [data-score-table] { border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); box-shadow: none; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 18px; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child { display: grid; grid-template-columns: minmax(220px, 1fr) 180px 155px 110px 128px; gap: 8px; align-items: center; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child:has([data-watch-toggle]) { grid-template-columns: minmax(180px, 1fr) 180px 155px 110px 136px 128px; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-watch-toggle] { width: 100%; min-height: 42px; font-size: 13px; padding: 8px 10px; white-space: nowrap; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-watch-count] { display: none; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] .relative:has([data-table-search]) { min-width: 0 !important; max-width: none; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] :where(input, select, [data-filter-group-toggle], [data-export]) { width: 100%; min-width: 0; min-height: 42px; border-radius: 9px; font-size: 13px; box-shadow: none; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-filter-group] { min-width: 0; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-export] { justify-content: center; gap: 6px; padding: 8px 10px; white-space: nowrap; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); background: rgb(var(--surface-white, 255 255 255)); color: rgb(var(--text-slate-700, 51 65 85)); }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-export]:hover { border-color: rgb(var(--edge-indigo-200, 199 210 254)); background: rgb(var(--surface-indigo-50, 238 242 255)); color: rgb(var(--text-indigo-700, 67 56 202)); }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-actions] { min-width: 0; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-actions] > div { display: block; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-row-count] { color: rgb(var(--text-slate-500, 100 116 139)); font-size: 12px; font-weight: 500; }
+[data-filings-view="insider-trades"] ~ [data-score-table] :where(input, select, button, a):focus-visible { outline: 2px solid var(--accent-600, #4f46e5); outline-offset: 2px; }
+[data-filings-view="insider-trades"] ~ [data-score-table] thead { background: rgb(var(--surface-slate-50, 248 250 252)); box-shadow: 0 1px 0 rgb(var(--edge-slate-200, 226 232 240)); }
+[data-filings-view="insider-trades"] ~ [data-score-table] th { padding: 12px 14px; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: none; }
+[data-filings-view="insider-trades"] ~ [data-score-table] tr[data-row-key] td { padding: 12px 14px; vertical-align: top; font-size: 13px; line-height: 1.55; }
+[data-filings-view="insider-trades"] ~ [data-score-table] tr[data-row-key]:hover td { background: rgb(var(--surface-slate-50, 248 250 252)); }
+[data-filings-view="insider-trades"] ~ [data-score-table] td:first-child > div { align-items: flex-start; }
+[data-filings-view="insider-trades"] ~ [data-score-table] td:first-child .font-semibold { margin-bottom: 3px; font-size: 13px; line-height: 1.5; }
+[data-filings-view="insider-trades"] ~ [data-score-table] td:first-child span[title] { line-height: 1.5; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-insider-source-link] { border-radius: 7px; }
+.deal-control-icon { width: 17px; height: 17px; flex-shrink: 0; }
+.deal-ticker { display: inline-block; margin-top: 4px; color: rgb(var(--text-slate-500, 100 116 139)); font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+.deal-type, .deal-exchange, .deal-transaction { display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; line-height: 18px; }
+.deal-type { background: rgb(var(--surface-indigo-50, 238 242 255)); color: rgb(var(--text-indigo-700, 67 56 202)); white-space: nowrap; }
+.deal-exchange, .deal-transaction { background: rgb(var(--surface-slate-100, 241 245 249)); color: rgb(var(--text-slate-600, 71 85 105)); }
+.deal-transaction[data-direction="buy"] { background: rgb(var(--surface-emerald-50, 236 253 245)); color: rgb(var(--text-emerald-700, 4 120 87)); }
+.deal-transaction[data-direction="sell"] { background: rgb(var(--surface-rose-50, 255 241 242)); color: rgb(var(--text-rose-700, 190 18 60)); }
+.deal-number { font-variant-numeric: tabular-nums; white-space: nowrap; color: rgb(var(--text-slate-700, 51 65 85)); }
+@media (min-width: 701px) {
+  [data-filings-view="insider-trades"] ~ [data-score-table] th:first-child { position: sticky; left: 0; z-index: 2; background: rgb(var(--surface-slate-50, 248 250 252)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] tr[data-row-key] td:first-child { position: sticky; left: 0; z-index: 1; background: rgb(var(--surface-white, 255 255 255)); box-shadow: 1px 0 0 rgb(var(--edge-slate-100, 241 245 249)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] tr[data-row-key]:hover td:first-child { background: rgb(var(--surface-slate-50, 248 250 252)); }
+}
+@media (max-width: 1100px) {
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child:has([data-watch-toggle]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] .relative:has([data-table-search]) { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] { padding: 12px; }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child:has([data-watch-toggle]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-watch-toggle] + [data-export] { grid-column: 1 / -1; }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] :where(input, select, [data-filter-group-toggle], [data-export]) { min-height: 44px; }
+}
 /* IPO reading controls stay together, with a separate, consistently aligned results row. */
 [data-ipo-mode="filings"] [data-table-toolbar] { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
 [data-ipo-mode="filings"] [data-table-toolbar] > div:first-child { display: grid; grid-template-columns: minmax(200px, 1fr) 160px minmax(150px, 190px) 170px; gap: 10px; align-items: center; }
