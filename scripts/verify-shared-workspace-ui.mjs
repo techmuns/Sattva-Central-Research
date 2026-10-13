@@ -34,10 +34,15 @@ const ready = async page => {
 };
 try {
   const one = await context(), two = await context('dark');
-  await one.context.addInitScript(() => localStorage.setItem('dashboard:tab-order:v1:research', JSON.stringify(['news-section', 'earnings', 'alerts', 'announcements', 'breakouts', 'mutual-funds', 'super-investors'])));
+  await one.context.addInitScript(() => { if (!localStorage.getItem('dashboard:tab-order:v1:research')) localStorage.setItem('dashboard:tab-order:v1:research', JSON.stringify(['news-section', 'earnings', 'alerts', 'announcements', 'breakouts', 'mutual-funds', 'super-investors'])); });
   await one.page.goto(`${server.url}#/research/corp-announcements?scope=universe`); await ready(one.page);
   assert.deepEqual(await one.page.locator('#tabbar-mount [data-tab-id]').evaluateAll(tabs => tabs.slice(0, 3).map(tab => tab.dataset.tabId)), ['news-section', 'earnings', 'alerts'], 'an uninitialized shared workspace retains the existing browser layout');
+  await one.page.route('**/api/workspace', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false}' }));
   await one.page.locator('#tabbar-mount [data-tab-id="alerts"]').focus(); await one.page.keyboard.press('Alt+ArrowRight');
+  await one.page.waitForFunction(() => window.workspace.status().pending === 1 && !!window.workspace.status().error);
+  await one.page.reload(); await ready(one.page);
+  assert.deepEqual(await one.page.locator('#tabbar-mount [data-tab-id]').evaluateAll(tabs => tabs.slice(0, 3).map(tab => tab.dataset.tabId)), ['news-section', 'earnings', 'announcements'], 'the first migrated move survives an offline reload');
+  await one.page.unroute('**/api/workspace'); await one.page.evaluate(() => window.workspace.sync());
   await one.page.waitForFunction(() => window.workspace.status().confirmed && !window.workspace.status().pending && window.workspace.snapshot().revision > 0);
   assert.deepEqual(store.snapshot().order.slice(0, 3), ['news-section', 'earnings', 'announcements'], 'the first shared drag carries forward the existing layout');
   await one.page.locator('[data-ca-open="categories"]').click();
