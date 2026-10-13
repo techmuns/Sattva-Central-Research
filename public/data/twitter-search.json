@@ -2339,7 +2339,7 @@
       "error": "search-unavailable"
     },
     "isin:INE04I401011|Kpit Technologies": {
-      "lastAttemptAt": "2026-10-07T19:30:41+00:00",
+      "lastAttemptAt": "2026-10-13T11:49:13+00:00",
       "error": "search-unavailable"
     },
     "isin:INE04I401011|KPITTECH": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T11:15:53.918364+00:00"
+    "checkedAt": "2026-10-13T11:49:13.933915+00:00"
   }
 }
