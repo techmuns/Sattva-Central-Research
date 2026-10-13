@@ -2367,7 +2367,7 @@
       "error": "search-unavailable"
     },
     "isin:INE658D01029|Simplex Casting": {
-      "lastAttemptAt": "2026-10-07T23:38:50+00:00",
+      "lastAttemptAt": "2026-10-13T15:52:20+00:00",
       "error": "search-unavailable"
     },
     "isin:INE658D01029|Simplex Castings": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T15:21:22.485127+00:00"
+    "checkedAt": "2026-10-13T15:52:20.664232+00:00"
   }
 }
