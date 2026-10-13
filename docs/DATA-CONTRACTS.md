@@ -3670,8 +3670,15 @@ Source mode is `embed+permalink` unless an operator connects the optional offici
 `mtproto` collector. Only MTProto can set `latestVerifiedAt` after reading the actual
 channel head and catching up. `lastCheckedAt`, `lastRun.at`, publication dates and
 content-change time remain separate. No source-check timestamp alone proves complete
-channel history. All retained messages are counted as archived and listed; posts without
-captured text or named documents retain their publication date and original Telegram link.
+channel history. All retained messages are counted as archived; posts without captured text
+or named documents retain their publication date and original Telegram link.
+
+The Telegram table defaults to **Hide link-only posts**, a visible checkbox. It excludes only
+posts without captured text, filenames or an identified media type. Named documents and known
+images/videos remain available even without captions. Unchecking restores link-only entries.
+The checkbox combines with search and Content; counts and export use the complete filtered
+model. Live refreshes preserve the choice. Collection, stored records and source-status counts
+remain independent of the display filter.
 No company, sentiment or file content is invented. `catchupRanges` holds inclusive message-ID
 intervals independently of `historyNextId`. Delivery identifies early versus final artifacts,
 normal work in progress and degraded fallback; none changes source-check timestamps.

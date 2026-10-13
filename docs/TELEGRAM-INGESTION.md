@@ -163,17 +163,19 @@ is published as failed health, even though uploading that health artifact succee
 The integration reads only the configured public broadcast channel, with no joins,
 sending, contact access, read receipts, private-group export or file downloads. Text,
 publication dates, document filenames/sizes and original links are retained. Captionless
-messages remain visible as dated original Telegram links. The UI distinguishes the newest
+messages are retained as dated original Telegram links. The UI distinguishes the newest
 captured publication from the newest readable report; it does not invent unavailable text.
 
 ### Reading captured content
 
-Public Chatter opens with **All posts**, keeping the newest captured publications visible
-even when only their dates and links are available. The Content filter also offers
-**Readable here** (captured text/captions) and **Open in Telegram** (no captured text).
+Public Chatter opens with **All posts** and **Hide link-only posts** checked. The checkbox
+hides entries with no captured text, filename or identified media type; unchecking restores
+their dates and original links. Named documents and known images/videos remain available
+without captions. The Content filter also offers **Readable here** (captured text/captions)
+and **Open in Telegram** (no captured text).
 No archive records are removed. The archive count, newest captured publication, source-check
 time and missing-text notice remain visible in every view, and search/export follow the selected
-filter. A named file without a caption is a filename, not a readable report. Files remain
+filters. A named file without a caption is a filename, not a readable report. Files remain
 in Telegram and are not downloaded or rendered by this integration.
 Rows, post dialogs and exports explicitly label known **Image**, **Video** and **Document**
 media. A captured caption is readable here even though its media opens in Telegram.

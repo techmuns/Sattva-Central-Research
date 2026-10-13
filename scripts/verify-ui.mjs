@@ -3949,7 +3949,8 @@ const tg = await evalSafe(async () => {
     pillTag: host.querySelector('[data-telegram-live]')?.tagName || '',
     idsDescending: ids.every((id, k) => k === 0 || ids[k - 1] > id),
     uniqueKeys: new Set(keys).size === keys.length,
-    everyPostHasText: rows.every((r) => r.text || r.publishedAt),
+    hideLinks: !!host.querySelector('[data-chatter-panel="telegram"] input[type="checkbox"]')?.checked,
+    linkOnlyPlaceholders: [...host.querySelectorAll('[data-chatter-panel="telegram"] tbody tr')].filter(row => row.textContent.includes('Post link captured')).length,
     noPublishedAt: rows.every((r) => r.publishedAt === null),
     // A DATE CELL MUST NEVER CARRY `firstSeenAt`. That is when OUR scraper saw the post, and
     // rendering it as the post's time would stamp our reading time onto somebody else's words.
@@ -3968,7 +3969,7 @@ if (!tg?.ok) {
     /not available|no capture|could not be read/i.test(named), named.slice(0, 100));
 } else {
   ok('the Telegram capture is present', tg.count > 0, `${tg.count} posts from @${tg.channel}`);
-  ok('...every post carries text, so no empty row is drawn', tg.everyPostHasText);
+  ok('...the checked link-only filter hides generic placeholders', tg.hideLinks && tg.linkOnlyPlaceholders === 0);
   ok('...ordered by message id, newest first', tg.idsDescending);
   ok('...with unique, content-derived row keys', tg.uniqueKeys, `${tg.count} keys`);
 

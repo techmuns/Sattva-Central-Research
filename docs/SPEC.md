@@ -394,6 +394,7 @@ Deep Dive — were removed rather than kept behind a ribbon; see `docs/HANDOFF.m
 Community sentiment.
 - Simple in-page tabs: **Coverage** (default) and **Telegram**, each owning its independent feed and table
 - **Telegram** is a second, independent feed on the tab: posts from a public research channel, reproduced as published, ordered by message number because the route publishes no post times. Either feed may be down without taking the other's section with it
+- Telegram has a **Hide link-only posts** checkbox, checked by default. Unchecking restores saved date/link entries; named files, captured text and identified media remain available.
 - Clicking a company or its mention count opens the underlying mentions, newest first, with a direct link to every source item
 - No summary-card row; coverage, posts, market mood and scrape timing appear as footnotes below the tables
 - Real-time ValuePickr thread crawler with dedup
