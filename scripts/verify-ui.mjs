@@ -3642,8 +3642,8 @@ const chatterState = await evalSafe(async () => {
 // page. That would have taken the Telegram section down with an outage in an upstream it does not
 // read: one feed's outage reported as another's absence. So the tab strip must be there whether or
 // not the chatter API answered, which in this sandbox it usually has not.
-ok('Public Chatter offers Coverage, Not in coverage and Telegram tabs',
-  chatterState.tabs.join(' | ') === 'Coverage | Not in coverage | Telegram', chatterState.tabs.join(' | '));
+ok('Public Chatter offers Coverage and Telegram tabs',
+  chatterState.tabs.join(' | ') === 'Coverage | Telegram', chatterState.tabs.join(' | '));
 
 if (!chatterState.ok) {
   // The chatter API is EXTERNAL and called straight from the browser, so unlike every other feed
@@ -3772,33 +3772,13 @@ if (!chatterState.ok) {
     coverageBullishRows.length > 0 && coverageBullishRows.every((sentiment) => sentiment === 'bullish'),
     coverageBullishRows.join(' | '));
 
-  await page.locator('[data-chatter-section-tabs] [data-tab-id="not-in-coverage"]').click();
-  await page.waitForTimeout(300);
-  const notCoveredTab = await evalSafe(() => {
-    const host = document.querySelector('#content-host');
-    return {
-      panel: host.querySelector('[data-chatter-panel]')?.dataset.chatterPanel || '',
-      selected: host.querySelector('[data-chatter-section-tabs] [role="tab"][aria-selected="true"]')?.textContent?.trim() || '',
-      tables: host.querySelectorAll('[data-table-scroll]').length,
-      rows: host.querySelectorAll('tbody tr').length,
-      mostDiscussed: /Most discussed/i.test(host.textContent || ''),
-      footnotes: host.querySelector('[data-chatter-footnotes]')?.textContent || '',
-    };
-  });
-  ok('Not in coverage replaces the covered-company view with its own table',
-    notCoveredTab.panel === 'not-in-coverage' && notCoveredTab.selected === 'Not in coverage' && notCoveredTab.tables === 1 && notCoveredTab.rows > 0,
-    `${notCoveredTab.selected} · ${notCoveredTab.tables} table · ${notCoveredTab.rows} rows`);
-  ok('...does not repeat the Most Discussed ranking', !notCoveredTab.mostDiscussed);
-  ok('...and retains the shared footnotes', /Coverage:.*Posts:.*Market mood:.*Last scrape:/is.test(notCoveredTab.footnotes));
-
+  await coverageSentiment.selectOption('all');
   const mentionTarget = await evalSafe(async () => {
     const c = await import('/js/data/chatter-live.js');
-    const row = c.uncovered()[0];
-    return { slug: row.slug, name: row.name, mentions: row.mentions };
+    const row = c.forScope('universe').filter(row => row.mentions > 0).sort((a, b) => a.mentions - b.mentions)[0];
+    return { slug: row.slug, ticker: row.ticker, name: row.name, mentions: row.mentions };
   });
-  ok('every Not in coverage row makes its mention count visibly clickable',
-    (await page.locator('#content-host [data-chatter-mentions-trigger]').count()) === notCoveredTab.rows,
-    `${await page.locator('#content-host [data-chatter-mentions-trigger]').count()} of ${notCoveredTab.rows}`);
+  await page.locator('#content-host [data-table-search]').fill(mentionTarget.ticker);
   await page.locator(`#content-host tr[data-row-key="${mentionTarget.slug}"]`).click();
   await page.locator('[data-chatter-mention-row]').first().waitFor({ state: 'visible' });
   const mentionDetail = await evalSafe(() => {
@@ -3831,14 +3811,9 @@ if (!chatterState.ok) {
   ok('the popup shows only short excerpts rather than copying full posts', mentionDetail.shortExcerpts);
   await page.locator('#modal-content [data-modal-close]').click();
 
-  const uncoveredSentiment = page.locator('#content-host [data-chatter-panel] select[aria-label="Sentiment"]');
-  await uncoveredSentiment.selectOption('bullish');
-  await page.waitForTimeout(150);
-  const uncoveredBullishRows = await visibleChatterSentiments();
-  ok('Not in coverage owns a Bullish selector that shows only bullish companies in its table',
-    uncoveredBullishRows.length > 0 && uncoveredBullishRows.every((sentiment) => sentiment === 'bullish'),
-    uncoveredBullishRows.join(' | '));
-
+  await page.locator('#content-host [data-table-search]').fill('');
+  await coverageSentiment.selectOption('bullish');
+  await page.locator('[data-chatter-section-tabs] [data-tab-id="telegram"]').click();
   await page.locator('[data-chatter-section-tabs] [data-tab-id="coverage"]').click();
   await page.waitForTimeout(300);
   ok('returning to Coverage restores its selected tab',
@@ -5475,17 +5450,6 @@ for (const [hash, label] of [
     ok('...with a coverage-specific workbook name',
       /^sattva-public-chatter-coverage-\d{4}-\d{2}-\d{2}\.xlsx$/.test(file.suggestedFilename()),
       file.suggestedFilename());
-    await page.locator('#content-host [data-chatter-section-tabs] [data-tab-id="not-in-coverage"]').click();
-    await page.waitForSelector('#content-host [data-chatter-panel="not-in-coverage"]');
-    await settleTables();
-    const otherBtn = page.locator('#content-host button:has-text("Export")').first();
-    const otherDl = page.waitForEvent('download', { timeout: 25000 }).catch(() => null);
-    await otherBtn.click();
-    const otherFile = await otherDl;
-    await downloadOrSkip('not-in-coverage chatter export downloads', otherFile);
-    if (otherFile) ok('...with an uncovered-topic workbook name',
-      /^sattva-public-chatter-not-in-coverage-\d{4}-\d{2}-\d{2}\.xlsx$/.test(otherFile.suggestedFilename()),
-      otherFile.suggestedFilename());
   }
 }
 

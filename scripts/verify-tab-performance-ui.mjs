@@ -71,7 +71,7 @@ try {
   await frame.locator('[data-tab-id="news"][aria-selected="true"]').waitFor();
   const routes = process.env.TAB_PERF_ROUTES?.split(',') || ['news?scope=portfolio', 'earnings-hub?scope=universe',
     'earnings-hub?scope=universe&view=calendar', 'earnings-hub?scope=universe&view=filings', 'concall?scope=universe',
-    'public-chatter?scope=universe', 'public-chatter?scope=universe|Not in coverage', 'public-chatter?scope=universe|Telegram',
+    'public-chatter?scope=universe', 'public-chatter?scope=universe|Telegram',
     'breakouts/strong-breakouts?scope=universe', 'breakouts/technical-scanner?scope=universe',
     'breakouts/fii-accumulation?scope=universe',
     'super-investors/superstar-investors?scope=universe', 'super-investors/institutions?scope=universe',
