@@ -41,6 +41,7 @@ try{
  await page.clock.install({time:new Date(at)});
  await page.goto(origin+'/#/research/news?scope=universe');
  await page.waitForFunction(()=>document.querySelector('[data-news-count]')?.textContent.includes('1,20'));
+ await page.waitForFunction(()=>!document.querySelector('[data-table-loading]'));
  const search=page.getByRole('textbox',{name:'Search company, ticker or headline'});
  assert(!requests.includes('/data/announcement-identities.json'),'full directory stays off initial News load');
  for(const width of [1280,1024,390]){
@@ -56,12 +57,15 @@ try{
  }
  await page.setViewportSize({width:1280,height:800});
  await search.fill('LTIM guidance');
- await page.waitForFunction(()=>document.querySelector('[data-news-key]')?.textContent.includes('LTI Mindtree raises guidance'));
+ await page.waitForFunction(()=>!document.querySelector('[data-table-loading]') && document.querySelector('[data-news-key]')?.textContent.includes('LTI Mindtree raises guidance'));
  await page.waitForFunction(()=>document.querySelectorAll('[data-news-key]').length===2);
  assert.equal(await page.evaluate(async()=>(await import('/js/data/twitter-news.js')).rows()[0].ticker),undefined,'text search does not attribute a post to a company');
  await page.getByRole('combobox',{name:'Source',exact:true}).selectOption('publishers');
  await page.waitForFunction(()=>document.querySelectorAll('[data-news-key]').length===1);
  assert.equal(await page.locator('[data-news-key]').count(),1,'ticker plus headline keyword expands to canonical company name');
+ await search.fill('LTI Mindtree Limited guidance');
+ await page.waitForFunction(()=>!document.querySelector('[data-table-loading]') && document.querySelector('[data-news-key]')?.textContent.includes('LTI Mindtree raises guidance'));
+ assert.equal(await page.locator('[data-news-key]').count(),1,'full legal company name plus keyword matches a headline without the legal suffix');
  await search.fill('545678');await page.waitForFunction(()=>document.querySelector('[data-news-key]')?.textContent.includes('Harbor Textiles'));
  assert.equal(await page.locator('[data-news-key]').count(),1,'BSE-only suspended company is searchable by code');
  await search.fill('mindtree');await page.waitForFunction(()=>document.querySelector('[data-news-key]')?.textContent.includes('guidance'));

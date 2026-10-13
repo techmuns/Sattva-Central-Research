@@ -17,7 +17,8 @@ function* companyIndex(companies) {
     const reviewed = reviewedNewsIdentity({ ticker: raw.ticker, isin: raw.isin });
     const names = [company.name, company.legalName, ...(company.formerNames || []),
       ...(company.brands || []), ...(reviewed.aliases || []),
-      ...(company.aliases || []).filter(a => /\s/.test(a))].map(shortName).filter(Boolean);
+      ...(company.aliases || []).filter(a => /\s/.test(a))]
+      .flatMap(name => [normalizeNewsText(name), shortName(name)]).filter(Boolean);
     const symbols = (raw.matchTickers || [raw.ticker, raw.bseCode]).map(normalizeNewsText).filter(Boolean);
     const terms = [...new Set([...names, ...symbols])];
     const owner = raw.isin || verifiedTickers.get(raw.ticker) || raw.entityId || raw.ticker || shortName(raw.name);
@@ -50,17 +51,29 @@ export function prepareNewsSearch() {
 // One normalized reading per retained row/accessor; updates supply new immutable row objects.
 export function createNewsMatcher(text) {
   const readings = new WeakMap();
-  let previous, needle = '', words = [];
+  let previous, previousIndex, needle = '', words = [], parts = [];
   return (row, query) => {
-    if (query !== previous) {
-      previous = query; needle = normalizeNewsText(query); words = needle.split(' ').filter(Boolean);
+    if (query !== previous || previousIndex !== index) {
+      previous = query; previousIndex = index;
+      needle = normalizeNewsText(query); words = needle.split(' ').filter(Boolean); parts = [];
+      // Keep a full company name together; remaining words narrow its matching stories.
+      for (let start = 0; start < words.length;) {
+        let end = words.length, company;
+        for (; end > start; end--) {
+          company = index.get(words.slice(start, end).join(' '));
+          if (company?.terms.length) break;
+        }
+        parts.push(company?.terms.length ? { company } : { word: words[start] });
+        start = company?.terms.length ? end : start + 1;
+      }
     }
     if (!needle) return true;
     if (!readings.has(row)) readings.set(row, normalizeNewsText(text(row)));
     const value = readings.get(row);
     if (words.every(word => value.includes(word))) return true;
-    const company = index.get(needle);
-    const mentions = company => !!company?.terms.some(term => ` ${value} `.includes(` ${term} `));
-    return mentions(company) || words.every(word => value.includes(word) || mentions(index.get(word)));
+    const reading = ` ${value} `;
+    return parts.every(part => part.company
+      ? part.company.terms.some(term => reading.includes(` ${term} `))
+      : value.includes(part.word));
   };
 }
