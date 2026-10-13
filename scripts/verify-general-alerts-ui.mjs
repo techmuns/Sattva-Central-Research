@@ -557,9 +557,10 @@ try {
   assert(virtualContract.elements < 3000, `bounded timeline DOM has ${virtualContract.elements} elements`);
   assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
   assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
+  await stableReadingSurface();
   await page.locator('[data-filter-group-toggle]').click();
   await page.locator('[data-table-scroll]').evaluate(node => { node.scrollTop = 120; });
-  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await stableReadingSurface();
   assert(await page.locator('[data-filter-group-panel]').isVisible(), 'table scrolling does not detach the toolbar or close its filter panel');
   await page.getByRole('combobox', { name:'Priority',exact:true }).selectOption('low');
   await page.waitForFunction(() => document.querySelector('[data-table-scroll]')?.scrollTop === 0);
