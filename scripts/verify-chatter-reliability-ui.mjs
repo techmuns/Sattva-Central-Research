@@ -93,6 +93,10 @@ try {
   assert.equal(await page.evaluate(() => chatter.meta().total), 3, 'every dashboard page is included');
   assert.equal(await page.locator('#root tbody tr[data-row-key]').count(), 2);
   assert.equal(calls, 2, 'two pages, with no duplicate initial read');
+  assert.equal(await page.locator('[data-top-cards]').count(), 0, 'Coverage opens directly on its table');
+  await page.locator('[data-chatter-source-details]').click();
+  assert((await page.locator('[data-chatter-source-dialog]').innerText()).includes('Source coverage and captured history can have gaps'));
+  await page.getByRole('button', { name: 'Close source details', exact: true }).click();
   const search = page.locator('#root [data-table-search]');
   await search.fill('Tata');
   await search.evaluate(input => { window.originalSearch = input; });
@@ -138,7 +142,9 @@ try {
   await dialog.evaluate(node => { node.scrollTop = node.scrollHeight; });
   await page.waitForFunction(() => document.querySelectorAll('[data-chatter-mention-row]').length === 80);
   assert.equal(await page.locator('[data-mention-id]').nth(40).getAttribute('data-mention-id'), 'post-39', 'scroll continues with the next older card');
-  await page.locator('[data-chatter-more]').click();
+  const more = page.locator('[data-chatter-more]');
+  await more.evaluate(button => button.focus({ preventScroll: true }));
+  await more.press('Enter');
   assert.equal(await page.locator('[data-chatter-mention-row]').count(), 120, 'keyboard-accessible pagination remains available');
   // New arrivals go first without replacing the mention currently being read.
   await dialog.evaluate(node => { node.scrollTop = 1600; });
