@@ -339,7 +339,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-lazy-tabs-ui.mjs
+        run: node scripts/verify-lazy-tabs-ui.mjs && node scripts/verify-tab-order-ui.mjs
       - name: Verify bounded Earnings ownership and unchanged scrolling work
         if: ${{ matrix.part == 2 }}
         env:

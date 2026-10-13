@@ -409,7 +409,7 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
         const id = parent?.id || t.meta.id;
         return [id, { id, label: parent?.title || t.meta.navigationTitle || t.meta.title }];
       })).values()];
-    const bar = tabBar({ tabs: tabItems, activeId: navigationId, onSelect: goTab, label: 'Research sections' });
+    const bar = tabBar({ tabs: tabItems, activeId: navigationId, onSelect: goTab, label: 'Research sections', orderKey: ws.id });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;
     topTabs = { workspace: ws.id, bar, dispose: bar.wire(tabBarMount) };
