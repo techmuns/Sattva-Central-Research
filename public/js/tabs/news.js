@@ -28,8 +28,8 @@ import { TAB_META } from './catalog.js';
 // amount it states against that size, whether it names the company, and the desk's shared Important
 // / Not important votes). No label is printed and no story is hidden by its rank. Scoring a headline
 // as positive or negative would still be a judgement of ours beside somebody else's reporting, and
-// this tab still does not do it. The row keeps opening the article; the small ⋯ beside it is a
-// separate control for the vote.
+// this tab still does not do it. The row keeps opening the article; visible controls beneath it
+// let the reader vote separately.
 
 import { escapeHtml } from '../core/dom.js';
 import { formatDate, formatNumber } from '../core/format.js';
@@ -47,7 +47,7 @@ import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 import { surfaceReading, feedbackItemFor, rankedKey, istClock, relevanceRevision, onRelevanceChange, primeRelevance, warmReadings } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel as categoryLabelOf } from '../data/announcement-categories.js';
-import { feedbackMenuButton, installFeedbackMenus } from '../ui/relevance-feedback-ui.js';
+import { newsFeedbackBar, installNewsFeedback } from '../ui/relevance-feedback-ui.js';
 import { newsSearchControl } from '../ui/news-search.js';
 import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
 
@@ -84,10 +84,9 @@ function readingFor(row) {
 // and whether the story names the company (company-news-attribution.js).
 const newsRelevance = (r) => surfaceReading(r, { surface: 'news', kind: 'news', context: { match: attributionFor(r).status } });
 
-// Under the headline: the category tags, and the ⋯ that asks Important / Not important. The row's
-// own link still opens the article; the ⋯ never does.
+// Under the headline: category tags, then visible importance controls outside the article link.
 export function newsRowExtras(entry, r) {
-  return `<div class="news-row-extras">${categoryChips(entry.categories, { weak: entry.weak, max: 3 })}${feedbackMenuButton(feedbackItemFor(entry, r))}</div>`;
+  return `<div class="news-row-extras">${categoryChips(entry.categories, { weak: entry.weak, max: 3 })}</div>${newsFeedbackBar(feedbackItemFor(entry, r))}`;
 }
 
 function deliveryDetails(meta) {
@@ -409,7 +408,7 @@ let offRelevance = null;
 
 export function render(ctx) {
   lastCtx = ctx;
-  installFeedbackMenus();
+  installNewsFeedback();
   primeRelevance();
   // A vote anywhere, or company sizes arriving, re-orders the day; repaint whichever half is mounted.
   offRelevance ||= onRelevanceChange(() => { if (lastCtx && mounted) render(lastCtx); });

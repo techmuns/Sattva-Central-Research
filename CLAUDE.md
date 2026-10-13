@@ -4617,7 +4617,7 @@ question is answered in the browser by the same code, in slices. News and All Al
 last seven IST days by relevance, read within a 120 ms budget per sort and the rest in slices
 (`surface-relevance.js`): a large retained history must never be read inside one task. Important /
 Not important (+ optional Why?) on all three surfaces trains ONE shared `relevance-feedback:v1`
-preference; News keeps its click-to-article behaviour and puts the vote behind a separate ⋯. Do not
+preference; News keeps its click-to-article behaviour and shows vote controls directly below each story. Do not
 add per-example rules: a new case is a category rule or a reading weight. Verify with
 `verify-relevance.mjs`, `verify-announcements-ui.mjs` and `verify-announcements-runtime.mjs`.
 
