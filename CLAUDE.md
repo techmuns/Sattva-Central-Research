@@ -292,17 +292,18 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
-Navigation update (12 October 2026): the tab strip is ordered Alerts,
+Navigation update (13 October 2026): the tab strip is ordered Alerts,
 Announcements, Earnings, Breakouts / Technical,
-Bulk/Block Deal, Mutual Funds, News, Super Investors.
+Mutual Funds, News, Super Investors.
 `meta.navigationTitle` optionally changes the tab label without changing its page title or route.
 Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still resolve.
 Alerts contains AI Alerts and All Alerts as pill subtabs, using `meta.navigationGroup` and
 `TAB_GROUPS` in the catalog. Both retain their existing routes and independent reader lifecycles.
 AI Alerts remains the first/default reader. Hidden navigation metadata does not remove route support.
-Announcements uses the same grouping for Corporate Announcements, Corporate Actions and IPOs,
+Announcements uses the same grouping for Corporate Announcements, Corporate Actions, IPOs and Bulk/Block Deal,
 in that order, defaulting to Corporate Announcements when entering from another section.
 Each reader keeps its saved routes, scope behavior and independent data lifecycle.
+Bulk/Block Deal retains the `insider-trades` route and all four disclosure categories.
 Earnings contains Results (the existing Earnings Hub reader, selected by default) and Concall,
 in that order. Both keep their existing routes, reader controls and data lifecycles.
 News contains Market News (the existing News reader, selected by default) and Public Chatter.
