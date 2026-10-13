@@ -30,18 +30,25 @@ const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">�
 const looksLikeDate = (h) => /date|when/i.test(h);
 const looksLikeInsiderName = (h) => /person|insider|holder|acquirer/i.test(h);
 const looksLikeName = (h) => /name/i.test(h) || looksLikeInsiderName(h);
+const looksLikeCompany = (h) => /^\s*(?:company|issuer)(?:\s+name)?\s*$/i.test(h);
 const looksLikeSource = (h) => /^\s*(source|exchange)\s*$/i.test(h);
 const looksLikeLink = (h) => /^\s*(link|url|source[\s_-]*url|filing[\s_-]*(link|url)|document[\s_-]*(link|url))\s*$/i.test(h);
 
 const nameKeyFor = (row) => {
   const keys = Object.keys(row?.cells || {});
-  return keys.find(looksLikeInsiderName) || keys.find(looksLikeName) || null;
+  return keys.find(looksLikeInsiderName) || keys.find(h => looksLikeName(h) && !looksLikeCompany(h)) || null;
 };
 
 const insiderNameFor = (row) => {
   const key = nameKeyFor(row);
   const value = key ? row?.cells?.[key] : null;
   return value == null ? null : String(value).trim() || null;
+};
+
+// Use the issuer named by this disclosure; a missing company name remains an identifying ticker.
+const companyNameFor = (row) => {
+  const company = String(pickField(row.cells, ['company', 'company name', 'issuer', 'issuer name']) || row.company || '').trim();
+  return company || row.ticker || '(not named)';
 };
 
 function sourceCell(row) {
@@ -141,13 +148,13 @@ const tab = makeFilingsTab({
   ...TAB_META['insider-trades'],
   feed,
   noun: 'trades',
-  nameLabel: 'Insider',
+  nameLabel: 'Company',
   nameMaxPx: 260,
-  rowName: (r) => {
-    return insiderNameFor(r) || r.ticker || '(not named)';
-  },
-  rowSub: (r) => r.ticker || '',
-  searchable: (r) => `${r.ticker || ''} ${Object.values(r.cells || {}).join(' ')}`,
+  nameWrap: true,
+  rowName: companyNameFor,
+  rowSub: (r) => insiderNameFor(r) || '(not named)',
+  afterSub: (r) => r.ticker ? `<div class="text-xs text-slate-500">${escapeHtml(r.ticker)}</div>` : '',
+  searchable: (r) => `${companyNameFor(r)} ${r.ticker || ''} ${Object.values(r.cells || {}).join(' ')}`,
   // The whole row, because these rows have no id of their own: no URL, no headline, and two filings
   // on one day by two people are a legitimate pair. NEVER the row's index — see the note beside the
   // key builder in filings-tab.js for what that cost the News tab.
@@ -191,7 +198,7 @@ const tab = makeFilingsTab({
   // identity/date fields and the source/link fields consolidated into the one Source arrow below.
   // A source that adds any other column still gets a column.
   columns: (m) => {
-    const headers = (m.headers || []).filter((h) => !looksLikeName(h) && !looksLikeSource(h) && !looksLikeLink(h));
+    const headers = (m.headers || []).filter((h) => !looksLikeName(h) && !looksLikeCompany(h) && !looksLikeSource(h) && !looksLikeLink(h));
     const cols = [
       { label: 'Exchange', get: (r) => r.cells?.Exchange || '—' },
       {

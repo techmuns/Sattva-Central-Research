@@ -53,7 +53,7 @@ const server = createServer((req, res) => {
     let body = readFileSync(file);
     if (path === '/sw.js') {
       body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
-      if (!upgraded) body = body.replace(/-insider-more-filters-v\d+/, '-previous-insider-capture');
+      if (!upgraded) body = body.replace(/-insider-company-first-v\d+/, '-previous-insider-capture');
     }
     if (path === '/js/tabs/insider-trades.js' && !upgraded) body = `export const meta={};export const destroy=()=>{};export function render(ctx){ctx.root.innerHTML='<h2>This feed needs the Worker</h2>';}`;
     res.setHeader('content-type', {'.js':'text/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'}[extname(file)] || 'application/octet-stream');
@@ -144,6 +144,7 @@ try {
   assert.doesNotMatch(await warm.locator('#root').innerText(),/needs the Worker/);
   assert(await warm.getByRole('button',{name:'More filters (5)',exact:true}).isVisible(),'returning readers receive the compact toolbar');
   assert(!await warm.getByLabel('Transaction type',{exact:true}).isVisible());
+  assert.equal(await warm.getByRole('columnheader',{name:'Company',exact:true}).count(),1,'returning readers receive company-first identities');
   assert.equal(await warm.evaluate(() => localStorage.getItem('insider-reader-preference')),'retained');
   assert(!(await warm.evaluate(() => caches.keys())).some(key => key.includes('previous-insider-capture')));
   assert.deepEqual(errors,[]);
