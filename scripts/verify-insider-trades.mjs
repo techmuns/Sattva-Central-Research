@@ -14,6 +14,7 @@ import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
 import { buildScreenerTradesSnapshot, hasScreenerTradeOverlap, indexPriorScreenerTradeIdentities, normaliseScreenerTrade, SCREENER_TRADE_SOURCES } from './lib/screener-trades.mjs';
 import { fetchInsiderTrades } from '../worker/muns.mjs';
 import { createFeed } from '../public/js/data/filings.js';
+import { newsDay } from '../public/js/data/news-window.js';
 import { clearAll, readEntry, writeEntry, KEYS } from '../public/js/core/store.js';
 
 const now = Date.now();
@@ -197,7 +198,7 @@ try {
     const url = new URL(path, 'http://localhost');
     assert.equal(url.pathname, '/api/insider-trades/TEST');
     assert.equal(url.searchParams.get('from'), window.from);
-    assert.equal(url.searchParams.get('to'), window.to);
+    assert.equal(url.searchParams.get('to'), newsDay(), 'company queries include the current Indian day');
     return Response.json(live, { headers: { etag: `"live-${tag}"` } });
   };
   const feed = createFeed('insider');
