@@ -1,3 +1,5 @@
+import { liftColumn, columnViewport, columnPositions, animateColumnPositions } from './column-drag.js';
+
 // Device-local table layouts. No dependencies, polling, data reads, or per-cell listeners.
 // Only mounted cells move, once on drop. A single child-list observer restores new/replaced
 // rows before paint; it is disconnected during our writes, so it cannot observe itself.
@@ -201,13 +203,16 @@ export function installColumnOrder(root = document) {
     const keys = siblings.map(item => item.key), present = new Set(keys), remaining = [...keys];
     // Keep temporarily absent columns in the preference, so a scope/schema round trip retains them.
     state.saved[node.parent.key] = (state.saved[node.parent.key] || []).map(key => present.has(key) ? remaining.shift() : key).concat(remaining);
+    const before = columnPositions(state.table);
     quiet(() => apply(state)); save(state);
+    animateColumnPositions(before);
     node.cell.focus({ preventScroll: true });
   }
   function mark(target, after) {
     gesture.target?.cell.removeAttribute('data-column-drop');
     gesture.target = target; gesture.after = after;
     if (target) target.cell.dataset.columnDrop = after ? 'after' : 'before';
+    gesture.preview?.mark(target, after);
   }
   function track() {
     frame = 0;
@@ -215,10 +220,14 @@ export function installColumnOrder(root = document) {
     const { state, node, x, y } = gesture;
     if (!gesture.cell.isConnected) { finish(); return; }
     // Hit-test only the header; moving the pointer never walks or rebuilds data rows.
-    const hit = document.elementFromPoint(x, y)?.closest('[data-column-reorder]');
-    const target = state.nodes.find(item => item.cell === hit && item.parent === node.parent && item !== node);
-    if (target) { const box = hit.getBoundingClientRect(); mark(target, x > box.left + box.width / 2); }
+    const clip = columnViewport(state.table);
+    const target = y >= clip.top && y <= clip.bottom ? state.nodes.find(item => {
+      if (item.parent !== node.parent || item === node) return false;
+      const box = item.cell.getBoundingClientRect(); return x >= box.left && x <= box.right;
+    }) : null;
+    if (target) { const box = target.cell.getBoundingClientRect(); mark(target, x > box.left + box.width / 2); }
     else mark(null, false);
+    gesture.preview?.move(x, y);
     // Auto-scroll wide tables only while the pointer is held near their visible edge.
     let scroller = state.table.parentElement;
     while (scroller && scroller.scrollWidth <= scroller.clientWidth) scroller = scroller.parentElement;
@@ -231,12 +240,13 @@ export function installColumnOrder(root = document) {
       }
     }
   }
-  function finish() {
+  function finish(preservePreview = false) {
     if (!gesture) return;
     if (frame) cancelAnimationFrame(frame); frame = 0;
     const old = gesture; gesture = null;
     old.target?.cell.removeAttribute('data-column-drop');
     old.cell.removeAttribute('data-column-dragging');
+    if (preservePreview !== true) old.preview?.cancel();
     if (old.cell.hasPointerCapture?.(old.id)) old.cell.releasePointerCapture(old.id);
     if (old.active) suppressClick = { until: performance.now() + 500, table: old.state.table };
     return old;
@@ -258,6 +268,7 @@ export function installColumnOrder(root = document) {
       if (Math.abs(gesture.x - gesture.startX) < 6 || Math.abs(gesture.x - gesture.startX) < Math.abs(gesture.y - gesture.startY)) return;
       gesture.active = true; gesture.cell.setPointerCapture(event.pointerId);
       gesture.cell.dataset.columnDragging = '';
+      gesture.preview = liftColumn(gesture.state, gesture.node, gesture.startX, gesture.startY);
     }
     event.preventDefault();
     if (!frame) frame = requestAnimationFrame(track);
@@ -265,8 +276,11 @@ export function installColumnOrder(root = document) {
   listen(root, 'pointerup', event => {
     if (!gesture || event.pointerId !== gesture.id) return;
     if (gesture.active) { if (frame) cancelAnimationFrame(frame); track(); }
-    const old = finish();
-    if (old?.active) { event.preventDefault(); commit(old.state, old.node, old.target, old.after); }
+    const old = finish(true);
+    if (old?.active) {
+      event.preventDefault(); commit(old.state, old.node, old.target, old.after);
+      old.preview?.settle();
+    }
   }, { capture: true });
   listen(root, 'pointercancel', finish, { capture: true });
   listen(window, 'blur', finish);

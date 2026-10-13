@@ -98,7 +98,7 @@ try {
   await period.selectOption('all');
   await page.waitForFunction(() => window.__ca.query().period === 'all' && window.__ca.meta().state === 'ready');
   const heads = await page.locator('thead th').allInnerTexts();
-  for (const head of ['SUBJECT', 'DATE', 'CATEGORIES', 'MARKET CAP', 'SOURCE']) assert(heads.map((h) => h.trim().toUpperCase()).includes(head), `column ${head}`);
+  assert.deepEqual(heads.map(h => h.trim().toUpperCase()), ['COMPANY', 'SUBJECT', 'DATE', 'CATEGORIES', 'MARKET CAP', 'LINK'], 'company leads and exchange links replace the separate Source column');
   const meta = await caMeta();
   assert.equal(meta.total, index.counts.rows, 'All time counts every filing');
   assert.equal(srv.stats.queries, 2, 'one page request per selected period, not the history');
@@ -172,7 +172,7 @@ try {
   const target = feedbackPair(await caRows(), { pdf: true })?.row;
   assert(target, 'the page holds an exchange PDF with a comparable same-day peer for the read and feedback checks');
   const targetRow = page.locator(`tbody tr[data-row-key="${target.id}"]`);
-  await targetRow.locator('td').nth(1).click();
+  await targetRow.locator('.ca-company-cell').click();
   const popup = page.locator('#modal-content [data-ann-read]');
   await popup.waitFor();
   assert.deepEqual(await popup.locator('.ann-read-section h3').allInnerTexts().then((t) => t.map((s) => s.trim().toLowerCase())),
@@ -183,7 +183,7 @@ try {
   assert.match(await popup.locator('[data-slot="why"]').innerText(), /Investment impact/);
   assert.equal(counts.model, 1, 'one model read');
   await page.locator('#modal-content [data-modal-close]').first().click();
-  await targetRow.locator('td').nth(1).click();
+  await targetRow.locator('.ca-company-cell').click();
   await popup.locator('[data-slot="what"]').filter({ hasText: 'read in full' }).waitFor();
   assert.equal(counts.model, 1, 'reopening costs nothing');
   ok('AI Read on click: five fixed sections, the exchange subject, Open Original Filing, read once and kept');
@@ -352,7 +352,7 @@ try {
     await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
     await page.setViewportSize({ width: 390, height: 844 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme}: no sideways page scroll at 390px`);
-    await page.locator('tbody tr[data-row-key]').first().locator('td').nth(1).click();
+    await page.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
     await popup.waitFor();
     const box = await popup.boundingBox();
     assert(box.x >= 0 && box.x + box.width <= 390 + 1, `${theme}: the popup fits the phone`);
@@ -376,7 +376,7 @@ try {
   assert.equal(await local.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'fallback opens on Last 3 days');
   assert.equal(await local.evaluate(() => window.__ca.query().period), '3', 'fallback query uses Last 3 days');
   assert(await local.locator('tbody .category-chip').count() > 0, 'categories still show');
-  await local.locator('tbody tr[data-row-key]').first().locator('td').nth(1).click();
+  await local.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
   await local.locator('#modal-content [data-ann-read]').waitFor();
   await local.locator('.ann-read-unavailable').waitFor();
   assert.match(await local.locator('.ann-read-unavailable').innerText(), /AI reading unavailable/);
