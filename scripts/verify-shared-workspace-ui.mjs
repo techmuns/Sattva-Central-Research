@@ -87,7 +87,10 @@ try {
   await one.page.getByRole('button', { name: 'Save filters', exact: true }).click();
   await one.page.waitForFunction(async () => { const workspace = await import('/js/core/workspace.js'); return !workspace.status().pending && workspace.snapshot().tabs[0]?.reading.extras.period === '3'; });
   await two.page.evaluate(async () => (await import('/js/core/workspace.js')).sync());
-  await two.page.waitForFunction(() => window.query.query().period === '3' && window.query.meta().state === 'ready');
+  await two.page.waitForFunction(() => window.query.query().period === '3' && window.query.meta().state === 'ready').catch(async error => {
+    console.error('Shared filter propagation', await two.page.evaluate(async () => ({ query: window.query.query(), meta: window.query.meta(), workspace: (await import('/js/core/workspace.js')).snapshot(), status: (await import('/js/core/workspace.js')).status(), period: document.querySelector('[aria-label="Announcement period (IST)"]')?.value })), errors);
+    throw error;
+  });
   await one.page.getByRole('button', { name: 'Edit tab', exact: true }).click();
   await one.page.locator('[data-saved-title]').fill('Fundraising'); await one.page.locator('[data-saved-submit]').click();
   await one.page.getByRole('heading', { name: 'Fundraising', exact: true }).waitFor();
@@ -139,6 +142,7 @@ try {
   await one.page.getByRole('button', { name: 'Remove tab', exact: true }).click();
   await one.page.locator('[data-remove-confirm]').click();
   await one.page.locator('#tabbar-mount [data-tab-id="alerts"][aria-selected="true"]').waitFor();
+  await one.page.waitForFunction(async () => !(await import('/js/core/workspace.js')).status().pending);
   assert(!store.snapshot().tabs.some(tab => tab.title === 'My Research'));
   assert.equal(store.snapshot().tabs.length, 1, 'removing one screen preserves every other saved screen');
   assert.deepEqual(errors, []);
