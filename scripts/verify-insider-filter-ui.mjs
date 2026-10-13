@@ -54,6 +54,7 @@ try {
   const page = await context.newPage();
   await page.clock.install({ time: at });
   const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.clock.setFixedTime(new Date(at));
   await page.goto(origin);
   const count = page.locator('[data-row-count]');
   await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.match(/\d+/)?.[0]) === n, rows.length).catch(async error => {

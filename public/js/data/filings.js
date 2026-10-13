@@ -49,7 +49,7 @@
 // report an outage as an absence of events.
 
 import { conditionalJson, readEntry, readEntries, writeEntry, KEYS, isPersistent } from '../core/store.js';
-import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
+import { mergeInsiderTrades, mergeInsiderHeaders, insiderRetentionWindow } from './insider-history.js';
 import { withFilingArchive } from './filing-archives.js';
 import { withAnnouncementLookups } from './announcements-extra.js';
 import { dedupeArticles, dedupeArticlesAsync } from './filings-shared.js';
@@ -57,7 +57,7 @@ import { attributeNewsRow } from './company-news-attribution.js';
 import { withTradingViewNews } from './tradingview-news.js';
 import { withNewsHistory } from './news-history.js';
 import { withPortfolioPublisherNews } from './portfolio-publisher-news.js';
-import { newsPeriodBounds, newsDay } from './news-window.js';
+import { newsPeriodBounds } from './news-window.js';
 import * as marketNews from './market-news.js';
 import { createNewsWorkingSet } from './news-working-set.js';
 import { holdsTicker } from './row-ticker-index.js';
@@ -659,7 +659,7 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
 
   function storeRows(ticker, incoming) {
     const list = kind === 'insider'
-      ? mergeInsiderTrades(state.rows.get(ticker) || [], incoming, { from: newsDay(Date.now() - WINDOW_DAYS.insider * 86400000), to: newsDay() })
+      ? mergeInsiderTrades(state.rows.get(ticker) || [], incoming, insiderRetentionWindow(WINDOW_DAYS.insider))
       : kind === 'news' ? dedupeArticles([...incoming, ...(state.rows.get(ticker) || [])])
       : incoming;
     state.rows.set(ticker, list);
@@ -966,9 +966,9 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     if (kind === 'insider') await seedFromDevice([t]);
     state.asked.add(t);
 
-    const range = kind === 'insider'
-      ? `from=${newsDay(Date.now() - WINDOW_DAYS[kind] * 86400000)}&to=${newsDay()}`
-      : `from=${daysAgo(WINDOW_DAYS[kind])}&to=${iso(Date.now())}`;
+    const bounds = kind === 'insider' ? insiderRetentionWindow(WINDOW_DAYS.insider)
+      : { from: daysAgo(WINDOW_DAYS[kind]), to: iso(Date.now()) };
+    const range = `from=${bounds.from}&to=${bounds.to}`;
     const path = ROUTE[kind](kind === 'news' ? queryFor(t) : t, range);
     let res;
     const abort = new AbortController();
