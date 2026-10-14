@@ -65,6 +65,7 @@ try {
     await page.goto(`${origin}/#/research/breakouts/${view}?scope=universe`);
     await rowsAre(view === 'technical-scanner' ? 'ABCDEF' : 'ABCEF');
     if (view === 'technical-scanner') {
+      assert.equal(await page.locator('[data-row-open]').count(), 6, 'every scored row exposes a keyboard-accessible drilldown');
       // Hold the view replacement between the filter click and its render. The old search
       // control must not accept input for a view that is about to be replaced.
       await page.evaluate(() => {
@@ -98,8 +99,28 @@ try {
     await page.waitForFunction(() => Array.isArray(window.exportedRows));
     assert.deepEqual(await page.evaluate(() => exportedRows.map(row => row.ticker).sort()), tickers('AC'));
     if (view === 'technical-scanner') {
-      assert.equal(await page.locator('[data-top-idx]').count(), 2, 'top cards obey market filters');
+      assert.equal(await page.locator('[data-top-idx]').count(), 0, 'Technical Scanner focuses on the scored table without top cards');
+      assert.equal(await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).count(), 0);
+      assert(await page.locator('[data-score-table]').evaluate(el => /companies match these filters\./.test(el.previousElementSibling?.textContent)), 'the table follows the filter match count directly');
       assert.equal(quoteTickers.length,0,'view reads saved capture without spending Muns requests');
+      assert.equal(await page.getByRole('button', { name: 'Open technical details for Filter fixture A', exact: true }).count(), 1);
+      // Compare the current focus by identity in one browser evaluation; a refresh may
+      // legitimately replace the node between a locator match and its evaluation.
+      const detailsFocused = () => page.evaluate(ticker => document.activeElement?.matches('button[data-row-open]') && document.activeElement.dataset.rowOpen === ticker, identities[0].ticker);
+      await page.locator(`[data-row-key="${identities[0].ticker}"] [data-watch]`).focus();
+      await page.keyboard.press('Tab');
+      assert(await detailsFocused(), 'Tab reaches the company drilldown button');
+      for (const key of ['Enter', 'Space']) {
+        await page.keyboard.press(key);
+        await page.locator('#drill-panel [data-drill-close]').waitFor();
+        assert((await page.locator('#drill-panel').innerText()).includes('Filter fixture A'));
+        // The original opener is replaced while the details panel is open.
+        await page.evaluate(async () => (await import('/js/data/technicals.js')).refresh());
+        await page.keyboard.press('Escape');
+        assert(await detailsFocused(), 'closing details returns focus to its company button');
+        await page.evaluate(async () => (await import('/js/data/breakout-live.js')).refresh());
+        assert(await detailsFocused(), 'price repaint preserves the focused company button');
+      }
       await page.locator('[data-table-filter]').selectOption('below200'); await rowsAre('');
       await choose('volume', 'all', 'vol');
       assert.equal(await page.locator('[data-table-filter]').inputValue(), 'below200', 'score selection survives chip changes');
@@ -135,5 +156,5 @@ try {
   await rowsAre('C');
   assert(await chip('volume', '1.5').evaluate(el => el.classList.contains('bg-indigo-50')), 'refresh preserves the selected filter');
   assert.deepEqual(errors, []);
-  console.log('PASS shared filter UI: intersections, contextual counts, saved URLs, all scopes, score/search and FII controls, cards/export/quotes, refreshed data and responsive themes');
+  console.log('PASS shared filter UI: intersections, contextual counts, saved URLs, all scopes, score/search and FII controls, table focus/export/quotes, refreshed data and responsive themes');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

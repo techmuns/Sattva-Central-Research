@@ -45,6 +45,12 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 function trapFocus(el, { label } = {}) {
   if (!el) return () => {};
   const previous = document.activeElement;
+  // A source refresh may replace a table opener while the dialog is open.
+  // Keep its identity so closing can return to the current row button.
+  const previousRow = previous?.matches('[data-row-open]') ? {
+    host: previous.closest('[data-score-table]')?.parentElement,
+    key: previous.dataset.rowOpen,
+  } : null;
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   if (label) el.setAttribute('aria-label', label);
@@ -82,7 +88,8 @@ function trapFocus(el, { label } = {}) {
     // elsewhere, yanking it back would be the more surprising behaviour.
     const wasInside = el.contains(document.activeElement);
     if (!wasInside && document.activeElement !== document.body) return;
-    if (previous?.isConnected && typeof previous.focus === 'function') previous.focus({ preventScroll: true });
+    const returnTarget = previous?.isConnected ? previous : previousRow?.host?.querySelector(`[data-row-open="${CSS.escape(previousRow.key)}"]`);
+    if (typeof returnTarget?.focus === 'function') returnTarget.focus({ preventScroll: true });
     // The opener is often a table row, which is not focusable, so the focus() above is a no-op
     // and focus would stay parked inside a panel the user can no longer see. Blur out of it so
     // the next Tab restarts from the document rather than from an invisible dialog.
@@ -361,6 +368,7 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *  showSignals   default false. When true, supply signals(row) => [{ label, status }]
  *  link          (row) => url for the right-aligned ↗, or null to omit the column
  *  onRowClick    (row) => void
+ *  rowActionLabel optional (row) => accessible label; makes the company name a native drilldown button.
  *  filters       { label, options: [{ value, label }], match(row, value), value? } — toolbar filters.
  *                Pass an ARRAY for several controls; they AND together. `type: 'checkbox'`
  *                toggles between 'all' and the single other option, including restored views.
@@ -415,6 +423,7 @@ export function scoreTable(config) {
     signals = null,
     link = null,
     onRowClick = null,
+    rowActionLabel = null,
     // All record tables can save a snapshot. A specialized adapter may replace the default.
     bookmark = null,
     showBookmarks = true,
@@ -711,6 +720,10 @@ export function scoreTable(config) {
 
   function rowHtml(row, slug, isWatched, watchSlug = null, watchLabel = null, rowIndex = null) {
         const label = String(name(row));
+        const nameClasses = `${nameWrap ? 'whitespace-normal break-words' : 'truncate'} font-semibold text-slate-900`;
+        const nameCell = onRowClick && rowActionLabel
+          ? `<button type="button" data-row-open="${escapeHtml(slug)}" aria-label="${escapeHtml(rowActionLabel(row))}" title="${escapeHtml(label)}" class="block max-w-full rounded-sm text-left ${nameClasses} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${escapeHtml(label)}</button>`
+          : `<div class="${nameClasses}" title="${escapeHtml(label)}">${escapeHtml(label)}</div>`;
         const { color, initials } = avatarFor(label);
         const sc = showScore && score ? score(row) : null;
         const redFlag = !!(sc && sc.redFlag);
@@ -747,7 +760,7 @@ export function scoreTable(config) {
                 ${showRank ? '' : star}
                 ${showAvatar ? `<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-xs font-bold text-white shadow-sm">${escapeHtml(initials)}</div>` : ''}
                 <div class="min-w-0">
-                  <div class="${nameWrap ? 'whitespace-normal break-words' : 'truncate'} font-semibold text-slate-900" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+                  ${nameCell}
                   <div class="flex items-center gap-1"><span class="${nameWrap ? 'min-w-0 whitespace-normal break-words' : 'truncate'} text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${showBookmarks ? bookmarkButton(bookmarkEntry(row)) : ''}</div>
                   ${afterSub ? afterSub(row) || '' : ''}
                 </div>

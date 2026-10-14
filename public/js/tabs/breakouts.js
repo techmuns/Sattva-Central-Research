@@ -1,7 +1,7 @@
 import { TAB_META } from './catalog.js';
 import * as live from '../data/breakout-live.js';
 import { filterByScope, scopeTickers } from '../data/scope.js';
-import { topCards, scoreTable, sectionHead, openModal, statStrip } from '../ui/screener.js';
+import { scoreTable, sectionHead, openModal, statStrip } from '../ui/screener.js';
 import { legendStrip } from '../ui/visual.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
@@ -79,7 +79,7 @@ export function render(ctx) {
 function loadingHtml(subview) {
   return `
     ${sectionHead({ title: meta.title, description: meta.subtitle })}
-    ${subview === 'momentum-scanner' ? '' : `<div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+    ${subview === 'momentum-scanner' || subview === 'technical-scanner' ? '' : `<div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
       ${Array.from({ length: 4 }).map(() => '<div class="skeleton-shimmer h-24 rounded-2xl bg-slate-100"></div>').join('')}
     </div>`}
     <div class="skeleton-shimmer h-96 rounded-2xl bg-slate-100"></div>`;
@@ -97,7 +97,9 @@ function paint(ctx) {
   const active = ctx.root.contains(document.activeElement) ? document.activeElement : null;
   const selection = active?.selectionStart;
   const selectionEnd = active?.selectionEnd, selectionDirection = active?.selectionDirection;
-  const selector = active?.matches('input[type="search"]') ? 'input[type="search"]' : active?.getAttribute('placeholder') ? `input[placeholder="${CSS.escape(active.getAttribute('placeholder'))}"]` : null;
+  const selector = active?.matches('input[type="search"]') ? 'input[type="search"]'
+    : active?.matches('[data-row-open]') ? `[data-row-open="${CSS.escape(active.dataset.rowOpen)}"]`
+    : active?.getAttribute('placeholder') ? `input[placeholder="${CSS.escape(active.getAttribute('placeholder'))}"]` : null;
   const rows = filterByScope(live.decorate(technicals.all(), extraScopeTickers(ctx)), ctx.scope, coverage.holdings(), s => s.company.ticker);
   const view = {
     'strong-breakouts': renderStrongBreakouts,
@@ -109,7 +111,7 @@ function paint(ctx) {
   view(ctx, rows);
   if (scrollTop != null) ctx.root.closest('main').scrollTop = scrollTop;
   window.scrollTo(0, pageY);
-  if (selector) { const input = ctx.root.querySelector(selector); input?.focus({preventScroll:true}); if (selection != null) input?.setSelectionRange(selection, selectionEnd ?? selection, selectionDirection || 'none'); }
+  if (selector) { const control = ctx.root.querySelector(selector); control?.focus({preventScroll:true}); if (selection != null) control?.setSelectionRange(selection, selectionEnd ?? selection, selectionDirection || 'none'); }
 }
 
 // ---- shared cell formatters ---------------------------------------------------------------
@@ -257,22 +259,9 @@ function renderScanner(ctx, rows) {
     more: { label: 'How the 16-rule score works', open: () => openModal(scoringHelpModalBody(), { size: 'wide' }) },
   });
 
-  const cards = topCards({
-    title: 'Top 10 by Technicals Score',
-    items: scored.slice(0, 10).map((s) => ({
-      name: s.company.name || s.company.ticker,
-      sub: s.company.sector || s.company.ticker,
-      value: fmtPoints(s.totalPoints),
-      max: s.totalMax,
-      warn: s.hardFails.length ? s.hardFails.join(', ') : null,
-      payload: s,
-    })),
-    valueFormat: 'score',
-    onSelect: (item) => openTechnicalsDrill(item.payload),
-  });
-
   const table = scoreTable({
     ...tableBase(filtered, ctx),
+    rowActionLabel: (s) => `Open technical details for ${s.company.name || s.company.ticker}`,
     // `?company=` from a citation or an AI Alerts card opens the scanner searched for it.
     initialView: tableViews.get(ctx.subview) || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
     showScore: true,
@@ -322,13 +311,11 @@ function renderScanner(ctx, rows) {
     })}
     ${chipBar(TECHNICAL_FILTERS, state, counts)}
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${rows.length}</span> companies match these filters.</div>
-    ${cards.html}
     ${table.html}
     ${legendStrip({ note: `Scored from Muns API daily OHLCV plus NSE delivery data. ${m?.failures || 0} of ${m?.company_count || 0} companies have no usable price history and score 0 of 0.` })}
   `;
 
   pill.wire(ctx.root);
-  cards.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);
 
