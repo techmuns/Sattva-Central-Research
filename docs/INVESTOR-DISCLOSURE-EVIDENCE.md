@@ -32,8 +32,9 @@ enter the coverage review. Search and exports use the same disclosure predicate.
 The Tracked investors group selects the retained investor directory; the company scope and
 trade-date period still apply. The scope control and period selector name both filters. The
 manager and tracked-investor Changes views keep period explanations, directory counts, exchange check status
-and history limits in its collapsed Sources & coverage section, leaving the reported trades
-directly below the heading. Opening that section exposes the same actual check times, failures
+and history limits in the collapsed Sources & coverage section. My Managers also keeps its
+activity heading and counts there, so the table follows the filters directly. Opening that
+section exposes the same actual check times, failures
 and retained-history bounds. If there are no matched
 trades in that slice, it offers the available same-period Universe trades and retained
 same-scope ITD history explicitly. It never silently widens the selected scope or period.

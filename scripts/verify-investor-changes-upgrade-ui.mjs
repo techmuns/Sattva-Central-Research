@@ -93,6 +93,13 @@ try {
   await page.reload(); await page.waitForSelector('[data-changes-ready="true"]');
   assert.equal(await page.locator('[data-changes-period]').inputValue(), 'itd', 'reader preferences survive reload');
   assert.equal(await page.locator('[data-changes-activity] [data-table-search]').inputValue(), 'owned');
+  await page.locator('[data-investor-audience] [data-tab-id="my-managers"]').click();
+  await page.waitForSelector('[data-changes-panel="my-managers"]');
+  assert.equal(await page.locator('[data-changes-panel] > [data-changes-summary], [data-changes-panel] > p').count(), 0, 'warm upgrade removes the My Managers text block too');
+  assert.equal(await page.locator('[data-changes-summary]').isVisible(), false);
+  await page.locator('[data-changes-sources] summary').click();
+  assert.match(await page.locator('[data-changes-summary]').innerText(), /Your managers · ledger events & reported deals/);
+  assert.equal(await page.locator('[data-exchange-status]').isVisible(), true);
   assert.deepEqual(errors, []);
   console.log('PASS returning investor Changes: immutable-cache upgrade, scope/history shortcuts, failed-check retention and automatic capture recovery with filters');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

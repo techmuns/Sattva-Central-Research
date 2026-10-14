@@ -355,6 +355,12 @@ try {
   await page.locator('[data-changes-audience] [role="tab"]').filter({ hasText: 'My Managers' }).click();
   await page.locator('[data-changes-period]').selectOption('itd');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '2');
+  assert.equal(await page.locator('[data-changes-panel] > [data-changes-summary], [data-changes-panel] > p').count(), 0, 'My Managers starts with the activity table, without heading, count or reading notes');
+  for (const note of await page.locator('[data-changes-summary], [data-changes-period-note], [data-exchange-status], [data-changes-coverage]').all()) assert.equal(await note.isVisible(), false, 'My Managers keeps the removed text in collapsed source coverage');
+  await page.locator('[data-changes-sources] summary').click();
+  assert.match(await page.locator('[data-changes-sources] [data-changes-summary]').innerText(), /Your managers · ledger events & reported deals/);
+  assert.match(await page.locator('[data-changes-period-note]').innerText(), /Family ledger events/);
+  assert.match(await page.locator('[data-exchange-status]').innerText(), /checked.*IST/);
   assert.match(await page.locator('[data-changes-coverage]').innerText(), /Retained ledger \/ reported deal dates.*transfers and unverified carried purchase dates/);
   assert.doesNotMatch(await page.locator('[data-changes-coverage]').innerText(), /Matched trade dates/);
   await page.locator('[data-changes-activity] [data-table-search]').fill('Portfolio');
