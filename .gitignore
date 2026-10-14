@@ -3,6 +3,9 @@
 # megabytes, and nothing in the deploy reads it.
 .wrangler/
 
+# Local browser results, traces and temporary test configurations stay in the checkout.
+.cache/
+
 # `npx wrangler dev` reads this for local secrets. It holds a real API token in normal use,
 # so it is machine-local and never committed. Production values go in `wrangler secret put`.
 .dev.vars

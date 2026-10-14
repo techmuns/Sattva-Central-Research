@@ -10,6 +10,26 @@ export const VIEW_ID = /^view-[a-f0-9-]{36}$/;
 const scopes = new Set(['portfolio', 'watchlist', 'universe']);
 const text = (value, max) => typeof value === 'string' && value.length <= max ? value : '';
 const plain = value => value && typeof value === 'object' && !Array.isArray(value);
+export const SHARED_COLUMN_TABLES = ['corp-announcements', 'corporate-actions', 'ipos', 'ipo-directory', 'insider-trades'];
+const columnId = value => typeof value === 'string' && value.startsWith('$/') && value.length <= 500;
+export function cleanColumnLayout(value) {
+  if (!plain(value) || Object.keys(value).length > 20) throw Error('Invalid workspace columns');
+  const layout = {};
+  for (const [group, order] of Object.entries(value)) {
+    if (!(group === '$' || columnId(group)) || !Array.isArray(order) || order.length > 200 || !order.every(columnId)) throw Error('Invalid workspace columns');
+    layout[group] = [...new Set(order)];
+  }
+  return layout;
+}
+// Relative moves compose against the latest desk layout, retaining temporarily absent columns.
+export function moveWorkspaceColumn(layout, intent) {
+  if (intent.op === 'columns-reset') return {};
+  const next = cleanColumnLayout(layout ?? intent.seedLayout);
+  const order = [...new Set([...(next[intent.group] || []), ...intent.siblings])].filter(key => key !== intent.column);
+  order.splice(order.indexOf(intent.target) + (intent.after ? 1 : 0), 0, intent.column);
+  next[intent.group] = order;
+  return cleanColumnLayout(next);
+}
 export function cleanReading(value = {}) {
   if (!plain(value)) throw Error('Invalid workspace reading');
   if ((value.q !== undefined && (typeof value.q !== 'string' || value.q.length > 500)) || (value.filters !== undefined && (!Array.isArray(value.filters) || value.filters.length > 40)) || (value.extras !== undefined && (!plain(value.extras) || Object.keys(value.extras).length > 40))) throw Error('Invalid workspace reading');
@@ -54,6 +74,15 @@ export function workspaceIntent(value) {
   if (value.op === 'put') return { id: value.id, op: 'put', tab: cleanSavedTab(value.tab), expected: Number.isSafeInteger(value.expected) ? value.expected : null, afterIntent };
   if (value.op === 'remove' && VIEW_ID.test(value.tabId)) return { id: value.id, op: 'remove', tabId: value.tabId, expected: Number.isSafeInteger(value.expected) ? value.expected : null, afterIntent };
   if (value.op === 'reset') return { id: value.id, op: 'reset' };
+  if (SHARED_COLUMN_TABLES.includes(value.table)) {
+    if (value.op === 'columns-reset') return { id: value.id, op: value.op, table: value.table };
+    if (value.op === 'columns-move' && (value.group === '$' || columnId(value.group)) && columnId(value.column) && columnId(value.target) && value.column !== value.target) {
+      const seedLayout = cleanColumnLayout(value.seedLayout || {});
+      const siblings = cleanColumnLayout({ [value.group]: value.siblings })[value.group];
+      if (!siblings.includes(value.column) || !siblings.includes(value.target) || !siblings.every(key => key.startsWith(`${value.group}/`) && !key.slice(value.group.length + 1).includes('/'))) throw Error('Invalid workspace columns');
+      return { id: value.id, op: value.op, table: value.table, group: value.group, column: value.column, target: value.target, after: value.after === true, siblings, seedLayout };
+    }
+  }
   const validId = id => DEFAULT_TAB_ORDER.includes(id) || VIEW_ID.test(id);
   if (value.op === 'move' && validId(value.tabId) && validId(value.targetId) && value.tabId !== value.targetId) return {
     id: value.id, op: 'move', tabId: value.tabId, targetId: value.targetId, after: value.after === true,
@@ -68,5 +97,11 @@ export function workspaceSnapshot(value) {
   const ids = new Set([...DEFAULT_TAB_ORDER, ...tabs.map(tab => tab.id)]);
   const order = [...new Set(value.order.filter(id => ids.has(id)))];
   for (const id of ids) if (!order.includes(id)) order.push(id);
-  return { version: 1, revision: value.revision, updatedAt: text(value.updatedAt, 40) || null, order, tabs };
+  const columnLayouts = {};
+  if (value.columnLayouts !== undefined) {
+    if (!plain(value.columnLayouts) || Object.keys(value.columnLayouts).some(key => !SHARED_COLUMN_TABLES.includes(key))) throw Error('Invalid workspace columns');
+    for (const [key, layout] of Object.entries(value.columnLayouts)) columnLayouts[key] = cleanColumnLayout(layout);
+  }
+  const navigationRevision = Number.isSafeInteger(value.navigationRevision) && value.navigationRevision >= 0 && value.navigationRevision <= value.revision ? value.navigationRevision : value.revision;
+  return { version: 1, revision: value.revision, navigationRevision, updatedAt: text(value.updatedAt, 40) || null, order, tabs, columnLayouts };
 }

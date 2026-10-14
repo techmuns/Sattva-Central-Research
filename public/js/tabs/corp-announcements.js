@@ -470,6 +470,10 @@ const tab = makeFilingsTab({
   nameLabel: 'Subject',
   nameAfter: 1,
   nameMaxPx: 560,
+  nameWrap: true,
+  watchColumn: 'Company',
+  bookmarkPlacement: 'trailing',
+  rowActionLabel: (row) => `Read announcement: ${cleanFilingText(row.title || row.headline) || '(no subject)'}`,
   // The subject is the exchange's own words, exactly as filed.
   rowName: (r) => cleanFilingText(r.title || r.headline) || '(no subject)',
   rowSub: (r) => [r.category && r.category !== r.subCategory ? r.category : null, r.subCategory, r.documentUnavailable ? 'Source supplied no document link' : null].filter(Boolean).join(' · '),

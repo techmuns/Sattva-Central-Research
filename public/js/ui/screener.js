@@ -383,6 +383,8 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *  showRank      default true. false drops the leading rank column; the watchlist star moves
  *                inside the identity cell so the first column can be a real column.
  *  nameAfter     default 0. How many of `columns` render before the identity column.
+ *  watchColumn   optional data-column label owning the company watch control when rank is hidden.
+ *  bookmarkPlacement  default subline; trailing keeps the record bookmark beside the first title line.
  *  nameMaxPx     default null. Hard px cap on the identity column so long names/subs truncate
  *                instead of widening the table.
  *  nameWrap      default false. Wrap complete names/subs within the identity column's cap.
@@ -412,6 +414,7 @@ export function scoreTable(config) {
     // The name recorded alongside the ticker, so the Watchlist scope can print "Reliance
     // Industries" for a company whose feed has not loaded yet rather than echoing the symbol.
     watchName = null,
+    watchColumn = null, // Place the company control beside its own data column.
     name = (r) => r.name,
     searchPlaceholder = 'Search company...',
     nameLabel = 'Company', // header for the identity column — set it when rows aren't companies
@@ -427,6 +430,7 @@ export function scoreTable(config) {
     // All record tables can save a snapshot. A specialized adapter may replace the default.
     bookmark = null,
     showBookmarks = true,
+    bookmarkPlacement = 'subline',
     bookmarkSection = activeView()?.source || state.tab || '',
     bookmarkDate = null,
     bookmarkSource = null,
@@ -439,6 +443,7 @@ export function scoreTable(config) {
     countNoun = '',
     countLabel = null,
     columnLayoutKey = null,
+    sharedColumnLayout = null,
     exportName = 'sattva-export',
     onExport = null, // (visibleRows, exportName) => void — see ui/export.js
     // Drop the leading rank column. The watchlist star does NOT go with it — the watchlist filter
@@ -655,6 +660,8 @@ export function scoreTable(config) {
   // Columns rendered before / after the identity column. See `nameAfter`.
   const leadCols = columns.slice(0, nameAfter);
   const restCols = columns.slice(nameAfter);
+  const watchInColumn = !showRank && columns.some(column => column.label === watchColumn);
+  const trailingBookmark = bookmarkPlacement === 'trailing';
 
   function headHtml() {
     if (rowContent) return `<tr><th scope="col">${escapeHtml(nameLabel)}</th></tr>`;
@@ -726,8 +733,8 @@ export function scoreTable(config) {
         const label = String(name(row));
         const nameClasses = `${nameWrap ? 'whitespace-normal break-words' : 'truncate'} font-semibold text-slate-900`;
         const nameCell = onRowClick && rowActionLabel
-          ? `<button type="button" data-row-open="${escapeHtml(slug)}" aria-label="${escapeHtml(rowActionLabel(row))}" title="${escapeHtml(label)}" class="block max-w-full rounded-sm text-left ${nameClasses} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${escapeHtml(label)}</button>`
-          : `<div class="${nameClasses}" title="${escapeHtml(label)}">${escapeHtml(label)}</div>`;
+          ? `<button type="button" data-record-name data-row-open="${escapeHtml(slug)}" aria-label="${escapeHtml(rowActionLabel(row))}" title="${escapeHtml(label)}" class="block max-w-full rounded-sm text-left ${nameClasses} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${escapeHtml(label)}</button>`
+          : `<div data-record-name class="${nameClasses}" title="${escapeHtml(label)}">${escapeHtml(label)}</div>`;
         const { color, initials } = avatarFor(label);
         const sc = showScore && score ? score(row) : null;
         const redFlag = !!(sc && sc.redFlag);
@@ -736,6 +743,7 @@ export function scoreTable(config) {
         // a company. The span keeps the cell's layout identical either way.
         const star = watchSlug
           ? `<button type="button" data-watch="${escapeHtml(watchSlug)}" data-watch-name="${escapeHtml(watchLabel || '')}"
+                  ${watchInColumn ? `aria-label="${escapeHtml(`${isWatched ? 'Remove' : 'Add'} ${watchLabel || watchSlug} ${isWatched ? 'from' : 'to'} your watchlist`)}" aria-pressed="${isWatched}"` : ''}
                   title="${isWatched ? `Remove ${escapeHtml(watchLabel || watchSlug)} from your watchlist` : `Add ${escapeHtml(watchLabel || watchSlug)} to your watchlist`}"
                   class="watch-star flex-shrink-0 text-base leading-none transition-colors ${isWatched ? 'text-amber-400' : 'text-slate-300 hover:text-amber-400'}">${isWatched ? '★' : '☆'}</button>`
           : '<span class="watch-star flex-shrink-0 text-base leading-none text-transparent" aria-hidden="true">☆</span>';
@@ -749,8 +757,13 @@ export function scoreTable(config) {
         const td = (content, classes = '') => `<td class="${PX} ${isFixed ? '' : 'py-3'} ${classes}"${isFixed ? ' style="padding-top:0;padding-bottom:0"' : ''}>${isFixed
           ? `<div data-virtual-cell style="height:${VIRTUAL_ROW_HEIGHT - 1}px;display:flex;align-items:center;overflow:hidden"><div style="width:100%;min-width:0;max-height:${VIRTUAL_ROW_HEIGHT - 25}px;overflow:hidden">${content}</div></div>`
           : content}</td>`;
-        const dataTd = (c) =>
-          td(c.html ? c.get(row) : escapeHtml(c.get(row)), `whitespace-nowrap text-sm text-slate-700 ${c.align === 'right' ? 'text-right tabular-nums' : ''}`);
+        const dataTd = (c) => {
+          const content = c.html ? c.get(row) : escapeHtml(c.get(row));
+          const ownsWatch = watchInColumn && c.label === watchColumn;
+          return td(ownsWatch ? `<div class="record-company-actions"><div class="record-company-copy">${content}</div>${star}</div>` : content,
+            `${ownsWatch ? 'record-company-column ' : ''}whitespace-nowrap text-sm text-slate-700 ${c.align === 'right' ? 'text-right tabular-nums' : ''}`);
+        };
+        const subText = sub(row);
         const styles = [];
         if (redFlag) styles.push('box-shadow: inset 3px 0 0 #f43f5e');
         if (isFixed) styles.push(`height:${VIRTUAL_ROW_HEIGHT}px`);
@@ -763,15 +776,16 @@ export function scoreTable(config) {
                 : ''
             }
             ${leadCols.map(dataTd).join('')}
-            ${td(`<div class="flex items-center gap-2"${nameMaxPx ? ` style="max-width:${nameMaxPx}px${nameWrap ? `;width:${nameMaxPx}px` : ''}"` : ''}>
-                ${showRank ? '' : star}
+            ${td(`<div data-record-identity class="flex items-center gap-2${trailingBookmark ? ' record-identity-trailing' : ''}"${nameMaxPx ? ` style="max-width:${nameMaxPx}px${nameWrap && !trailingBookmark ? `;width:${nameMaxPx}px` : ''}"` : ''}>
+                ${showRank || watchInColumn ? '' : star}
                 ${showAvatar ? `<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-xs font-bold text-white shadow-sm">${escapeHtml(initials)}</div>` : ''}
-                <div class="min-w-0">
+                <div class="min-w-0${trailingBookmark ? ' record-identity-copy' : ''}">
                   ${nameCell}
-                  <div class="flex items-center gap-1"><span class="${nameWrap ? 'min-w-0 whitespace-normal break-words' : 'truncate'} text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${showBookmarks ? bookmarkButton(bookmarkEntry(row)) : ''}</div>
+                  ${!trailingBookmark || subText ? `<div class="flex items-center gap-1${trailingBookmark ? ' record-identity-subline' : ''}"><span class="${nameWrap ? 'min-w-0 whitespace-normal break-words' : 'truncate'} text-xs text-slate-500" title="${escapeHtml(subText)}">${escapeHtml(subText)}</span>${showBookmarks && !trailingBookmark ? bookmarkButton(bookmarkEntry(row)) : ''}</div>` : ''}
                   ${afterSub ? afterSub(row) || '' : ''}
                 </div>
-              </div>`)}
+                ${showBookmarks && trailingBookmark ? `<div class="record-identity-actions">${bookmarkButton(bookmarkEntry(row))}</div>` : ''}
+              </div>`, trailingBookmark ? 'record-subject-column' : '')}
             ${
               sc
                 ? td(`<div class="flex items-center gap-2">
@@ -925,7 +939,7 @@ export function scoreTable(config) {
       </div>
 
       <div class="table-scroll-surface scrollbar-thin overflow-x-auto" data-table-scroll tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}" ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto${isVirtual ? ';overflow-anchor:none' : ''}"` : ''}>
-        <table data-column-layout="${escapeHtml(columnLayoutKey || `${exportName.replace(/\d{4}-\d{2}-\d{2}/g, 'date')}:${nameLabel}`)}" class="w-full text-sm${rowContent ? ' news-card-table' : ''}"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
+        <table data-column-layout="${escapeHtml(columnLayoutKey || `${exportName.replace(/\d{4}-\d{2}-\d{2}/g, 'date')}:${nameLabel}`)}"${sharedColumnLayout ? ` data-shared-column-layout="${escapeHtml(sharedColumnLayout)}"` : ''} class="w-full text-sm${rowContent ? ' news-card-table' : ''}"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
           <thead data-table-head class="sticky top-0 z-10 ${stickyHead ? 'bg-white shadow-sm' : 'bg-slate-50/70'}">${headHtml()}</thead>
           <tbody data-table-body>${isVirtual ? virtualBodyHtml(initialList, initialVirtualStart) : bodyHtml(initialList, 0, FIRST_PAINT_ROWS)}</tbody>
         </table>
