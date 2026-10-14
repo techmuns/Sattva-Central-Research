@@ -291,6 +291,14 @@ try {
   await one.page.keyboard.press('Escape');
   await two.page.evaluate(() => window.workspace.sync()); await two.page.reload(); await ready(two.page);
   assert.deepEqual(await order(two.page), await order(one.page), 'overflow panel moves survive across devices and reload');
+  await one.page.locator('[data-tab-picker-toggle]').click();
+  const firstId = store.snapshot().order[0];
+  await one.page.locator(`[data-tab-move="${firstId}"][data-direction="1"]`).click();
+  await one.page.waitForFunction(() => !window.workspace.status().pending);
+  await one.page.locator(`[data-tab-move="${firstId}"][data-direction="-1"]`).click();
+  await one.page.waitForFunction(() => !window.workspace.status().pending);
+  assert.equal(await one.page.evaluate(() => document.activeElement?.dataset.tabPick), firstId, 'moving to an order boundary keeps focus in the panel');
+  await one.page.keyboard.press('Escape');
   if (process.env.WORKSPACE_SCREENSHOT) {
     await one.page.locator('[data-tab-picker-toggle]').click();
     await one.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-many-light.png` });

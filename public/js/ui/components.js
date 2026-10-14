@@ -248,7 +248,10 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
         }).join('') || '<p class="tab-picker-empty">No tabs match your search.</p>';
         picker.querySelector('[data-tab-picker-live]').textContent = `${matches.length} tabs found`;
         // Keep keyboard focus when moving within the full shared order, even during a search.
-        if (focusKey) [...results.querySelectorAll('button')].find(button => (button.dataset.tabPick || button.dataset.tabMove) === focusKey && button.dataset.direction === direction)?.focus({ preventScroll: true });
+        if (focusKey) {
+          const target = [...results.querySelectorAll('button')].find(button => (button.dataset.tabPick || button.dataset.tabMove) === focusKey && button.dataset.direction === direction);
+          (target?.disabled ? [...results.querySelectorAll('[data-tab-pick]')].find(button => button.dataset.tabPick === focusKey) : target)?.focus({ preventScroll: true });
+        }
       };
       const positionPicker = () => {
         const rect = toggle.getBoundingClientRect(), width = Math.min(420, innerWidth - 24);
@@ -270,7 +273,8 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
         if (move && !move.disabled) {
           const id = move.dataset.tabMove, direction = move.dataset.direction;
           disposeOrder?.moveById(id, Number(direction));
-          [...results.querySelectorAll('[data-tab-move]')].find(button => button.dataset.tabMove === id && button.dataset.direction === direction)?.focus({ preventScroll: true });
+          const target = [...results.querySelectorAll('[data-tab-move]')].find(button => button.dataset.tabMove === id && button.dataset.direction === direction);
+          (target?.disabled ? [...results.querySelectorAll('[data-tab-pick]')].find(button => button.dataset.tabPick === id) : target)?.focus({ preventScroll: true });
         }
       });
       listen(picker, 'keydown', event => {
