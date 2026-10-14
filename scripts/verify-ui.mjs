@@ -5505,15 +5505,17 @@ console.log('\n— header status and live alerts —');
   // leaving the registry with no caller at all was not, because CLAUDE.md goes on to say canonical
   // provenance "remains in the source registry". The door is a footer, BELOW the content, so the
   // chrome stays gone and the claim stays reachable — see section 17.
+  await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon());
   const registryDoor = await evalSafe(() => {
     const btn = document.querySelector('[data-sources-open]');
     const main = document.getElementById('dashboard-main');
     if (!btn || !main) return { present: false };
-    return { present: true, inHeader: !!btn.closest('header'), belowContent: !!(main.compareDocumentPosition(btn) & Node.DOCUMENT_POSITION_FOLLOWING) };
+    return { present: true, inHeader: !!btn.closest('[data-app-header]'), inSourceFooter: !!btn.closest('.beacon-panel-foot') };
   });
-  ok('...but the source registry is reachable, from a footer rather than the chrome',
-    registryDoor.present && !registryDoor.inHeader && registryDoor.belowContent,
+  ok('...but the source registry is reachable from the source panel footer',
+    registryDoor.present && !registryDoor.inHeader && registryDoor.inSourceFooter,
     JSON.stringify(registryDoor));
+  await page.keyboard.press('Escape');
   ok('one status pill, not two competing chips', header.pills === 1 && header.updatedChip === 0, `${header.pills} pill(s), ${header.updatedChip} legacy chip(s)`);
   ok('...reading "Connected · checked <when>"', /^Connected · checked /.test(header.pillText) || /connecting/.test(header.pillText), header.pillText);
   ok('...and a refresh button beside it', header.refresh === 1);

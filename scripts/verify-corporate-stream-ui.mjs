@@ -43,8 +43,11 @@ const bodies = {
 };
 bodies['/data/corp-announcements.json'].byTicker.KAMATS = [{ ...filing('KAMATS', 1), scripCode: '539659' }];
 bodies['/data/corp-announcements.json'].byTicker.ASHIKAG = [{ ...filing('ASHIKAG', 1), scripCode: '543766' }];
-const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>#modal-overlay.is-open #modal-container{opacity:1}</style><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"></head><body class="bg-slate-50 p-4"><main id="root"></main><div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div><script type="module">
+const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
+const beaconStyles = indexHtml.slice(indexHtml.indexOf('.beacon-root {'), indexHtml.indexOf('/* Fullscreen Workspace Support */'));
+const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>#modal-overlay.is-open #modal-container{opacity:1}${beaconStyles}</style><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"></head><body class="bg-slate-50 p-4"><main id="root"></main><div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div><script type="module">
 import * as tab from '/js/tabs/corp-announcements.js';
+import { mount, openBeacon } from '/js/ui/source-beacon.js';
 import * as live from '/js/core/live.js';
 import * as coverage from '/js/data/coverage.js';
 import * as watchlist from '/js/core/watchlist.js';
@@ -52,7 +55,7 @@ import {corporateAnnouncements as feed} from '/js/data/corporate-announcements.j
 import {startWatchlistCapture,watchlistCapture} from '/js/data/watchlist-capture.js';
 coverage.prime({holdings:[{ticker:'TCS',name:'TCS Test Company'}, {isin:'INE564S01019',ticker:null,name:'Vikram Kamats Hospitality'}, {isin:'INE094B01013',ticker:null,name:'Ashika Credit Capital'}]}); watchlist.add('INFY','INFY Test Company');
 window.renderScope=(scope)=>{const root=document.querySelector('#root');root.innerHTML='';tab.render({root,scope,live,data:{universe:[{ticker:'TCS'},{ticker:'INFY'}]},params:{}});};
-window.stream=feed;window.caQuery=tab.announcementQuery;window.destroyStream=()=>tab.destroy();window.renderScope('portfolio');
+window.stream=feed;window.caQuery=tab.announcementQuery;window.destroyStream=()=>tab.destroy();window.renderScope('portfolio');mount();window.openSources=()=>openBeacon();
 window.addFutureHolding=()=>coverage.prime({holdings:[...coverage.holdings(),{isin:'INE000Z01019',ticker:null,name:'Future SME'}]});
 window.addWatch=watchlist.add;window.enrollment=watchlistCapture;startWatchlistCapture();
 </script></body></html>`;
@@ -178,8 +181,10 @@ try {
   await refreshStream();
   assert.equal(await page.evaluate(() => window.stream.meta().sourceCheck.error.message), 'Latest BSE request failed.', 'a newer failed attempt is adopted even when the last successful capture time did not move');
   assert.equal(await page.locator('[data-section-head] [data-filings-info]').count(), 0, 'collection status does not occupy the table header');
-  assert.match(await page.locator('[data-filings-method]').innerText(), /Partial source coverage/, 'partial health stays visible below the table');
-  await page.locator('[data-filings-method]').click();
+  assert.equal(await page.locator('#root [data-filings-method]').count(), 0, 'collection details leave the reading column');
+  await page.evaluate(() => window.openSources());
+  assert.match(await page.locator('#source-beacon-panel [data-filings-method]').innerText(), /Partial source coverage/, 'partial health remains visible in the source panel');
+  await page.locator('#source-beacon-panel [data-filings-method]').click();
   assert.match(await page.locator('#modal-content').innerText(), /latest BSE check is stale or incomplete/);
   assert.match(await page.locator('#modal-content').innerText(), /Latest BSE request failed/);
   await page.keyboard.press('Escape');
@@ -270,7 +275,8 @@ try {
   assert(await page.evaluate(() => window.stream.rows().some(r => r.title === 'Just arrived')));
   assert(await page.evaluate(() => !!window.stream.meta().nse.degraded));
   await fillSearch('');
-  await page.locator('[data-filings-method]').click();
+  await page.evaluate(() => window.openSources());
+  await page.locator('#source-beacon-panel [data-filings-method]').click();
   assert(await page.locator('#modal-content [data-capture-coverage]').isVisible());
   assert.match(await page.locator('#modal-content').innerText(), /live exchange feed|live NSE/i);
   await page.locator('[data-modal-close]').click();
