@@ -475,6 +475,11 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
 .saved-tab-error { color: rgb(var(--text-rose-700, 190 18 60)); }
 :is(.saved-tab-editor, .saved-tab-actions, .workspace-navigation, .saved-tab-blank) :is(button, input, select):focus-visible { outline: 2px solid var(--accent-600); outline-offset: 2px; }
 @media (max-width: 600px) { .saved-tab-add { padding-inline: 8px; font-size: 12px; } .saved-view-head h2 { font-size: 20px; } }
+@media (max-width: 479px) {
+  .saved-tab-add { width: 44px; min-height: 44px; }
+  .saved-tab-add span { display: none; }
+  [data-app-nav] .tab-scroll-btn { width: 32px; }
+}
 
 .ca-company-cell { min-width: 150px; max-width: 220px; white-space: normal; }
 .ca-company-cell strong { display: block; color: var(--ink-900); font-size: 13px; line-height: 1.5; font-weight: 700; }

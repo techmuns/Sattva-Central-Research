@@ -290,7 +290,7 @@ function shellTemplate() {
     </header>
 
     <nav data-app-nav data-app-frame class="mx-auto max-w-[1400px] px-6" aria-label="Research navigation">
-      <div class="workspace-navigation"><div id="tabbar-mount" class="min-w-0"></div><button type="button" class="saved-tab-add" data-add-saved-tab>+ Add tab</button></div>
+      <div class="workspace-navigation"><div id="tabbar-mount" class="min-w-0"></div><button type="button" class="saved-tab-add" data-add-saved-tab aria-label="+ Add tab" title="Add tab">+ <span>Add tab</span></button></div>
       <div class="workspace-status" data-workspace-status role="status"></div>
     </nav>
 
