@@ -11,7 +11,7 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
 });
 // Keep the shortened parent strip overflowing so native scrolling remains exercised.
-const context = await browser.newContext({ viewport: { width: 768, height: 800 } });
+const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 768, height: 800 } });
 await context.route('**/*', (route) => {
   const url = new URL(route.request().url());
   if (url.origin === new URL(BASE).origin && !url.pathname.startsWith('/api/')) return route.continue();

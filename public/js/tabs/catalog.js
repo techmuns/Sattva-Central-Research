@@ -131,7 +131,7 @@ export const TAB_META = Object.freeze({
     subtitle: '',
     subviews: [],
   },
-  'mutual-funds': {id:'mutual-funds',title:'Mutual Funds',subtitle:'Fund returns, category comparisons and company ownership.',layout:'table',subviewNavigation:'toolbar',subviews:[
+  'mutual-funds': {id:'mutual-funds',title:'Mutual Funds',subtitle:'Fund returns, category comparisons and company ownership.',layout:'table',subviewNavigation:'tabs',subviews:[
     {id:'company-holdings',label:'Company Holdings'}, {id:'all-schemes',label:'All Schemes'}, {id:'category-performance',label:'Category Performance'}
   ]}
 });

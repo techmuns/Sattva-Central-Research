@@ -95,10 +95,7 @@
 
 .table-sticky-head { box-shadow: inset 0 -1px 0 rgb(var(--edge-slate-200, 226 232 240)); }
 
-/* All Alerts is a reading workspace: spend the viewport on records, not chrome. Other tabs
-   retain their existing framing. No row typography, virtual stride or data policy changes. */
-[data-reading-layout="table"] [data-app-header] { padding-top: 12px; padding-bottom: 4px; }
-[data-reading-layout="table"] [data-app-content] { max-width: 1800px; padding-left: 24px; padding-right: 24px; padding-top: 8px; padding-bottom: 0; }
+/* Table density belongs inside the reader; the shared shell owns navigation spacing. */
 .alerts-workspace [data-section-head] { margin-bottom: 4px; }
 .alerts-workspace [data-section-head] > div { align-items: center; gap: 8px; }
 .alerts-workspace [data-section-head] h2 { font-size: 20px; }
@@ -158,8 +155,6 @@
   .alerts-workspace [data-export] { padding-left: 10px; padding-right: 10px; }
 }
 @media (max-width: 767px) {
-  [data-reading-layout="table"] [data-app-frame] { padding-left: 12px; padding-right: 12px; }
-  [data-reading-layout="table"] [data-app-content] { padding-top: 8px; }
   .alerts-workspace [data-section-head] { margin-bottom: 8px; }
   .alerts-controls { gap: 8px 6px; margin-bottom: 8px; }
   .alerts-view-controls { width: 100%; justify-content: space-between; gap: 6px; }
