@@ -307,6 +307,9 @@ Navigation update (13 October 2026): the tab strip is ordered Alerts,
 Announcements, Earnings, Breakouts / Technical,
 Mutual Funds, News, Super Investors.
 Readers can rearrange this main strip by dragging a tab (or its grip on touch screens).
+Dragging lifts a pointer-following copy above the strip; neighbours shift around a visible landing
+slot and the copy settles into place on release. Escape and cancelled/outside drops restore the
+original order. Reduced motion keeps the copy and slot without lift or settling animations.
 Alt + Left/Right moves the focused tab; Alt + Home restores the catalog order.
 `ui/tab-order.js` sends shared reorder intents through `core/workspace.js` to `/api/workspace`.
 The layout is universal for this desk, including saved tabs and their filters (13 October 2026).

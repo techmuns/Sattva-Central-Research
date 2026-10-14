@@ -75,7 +75,15 @@ try {
     await two.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-dark.png` });
   }
   const tab = one.page.locator(`#tabbar-mount [data-tab-id="${view.id}"]`);
-  await tab.focus(); await one.page.keyboard.press('Alt+ArrowLeft');
+  const source = await tab.boundingBox();
+  const target = await one.page.locator('#tabbar-mount [data-tab-id="super-investors"]').boundingBox();
+  const priorOrder = [...store.snapshot().order];
+  await one.page.mouse.move(source.x + source.width / 2, source.y + source.height / 2); await one.page.mouse.down();
+  await one.page.mouse.move(target.x + target.width / 4, target.y + target.height / 2, { steps: 12 });
+  await one.page.locator('.tab-drag-ghost').waitFor();
+  assert.deepEqual(store.snapshot().order, priorOrder, 'animated drag previews are not written to the shared workspace');
+  await one.page.mouse.up();
+  await one.page.locator('.tab-drag-ghost').waitFor({ state: 'detached' });
   await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.status().confirmed && document.querySelector('#tabbar-mount [data-tab-list]').lastElementChild?.dataset.tabId === 'super-investors');
   await two.page.evaluate(async () => (await import('/js/core/workspace.js')).sync());
   await two.page.waitForFunction(() => document.querySelector('#tabbar-mount [data-tab-list]').lastElementChild?.dataset.tabId === 'super-investors');

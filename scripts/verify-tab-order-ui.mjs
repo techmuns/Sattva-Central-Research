@@ -1,7 +1,7 @@
 // Real pointer/touch gestures, browser preferences and a warm service-worker upgrade.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
@@ -58,11 +58,45 @@ const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath
 const order = page => page.locator('[data-tab-list] [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId));
 const tab = (page, id) => page.locator(`[data-tab-id="${id}"]`);
 async function drag(page, from, to, after = false) {
+  const before = await order(page);
   const a = await tab(page, from).boundingBox(), b = await tab(page, to).boundingBox();
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
-  await page.mouse.move(b.x + b.width * (after ? .75 : .25), b.y + b.height / 2, { steps: 12 });
+  assert.equal(await page.locator('.tab-drag-ghost').count(), 0, 'a click alone does not lift the tab');
+  const x = b.x + b.width * (after ? .75 : .25), y = b.y + b.height / 2;
+  await page.mouse.move(x, y, { steps: 12 });
   await page.waitForFunction(() => document.querySelector('[data-tab-drop]'));
+  assert.deepEqual(await order(page), before, 'the drag preview does not publish a provisional order');
+  const ghost = page.locator('.tab-drag-ghost'), slot = page.locator('.tab-drop-slot');
+  assert(await ghost.isVisible() && await slot.isVisible(), 'the lifted tab and landing slot are visible');
+  assert.equal(await ghost.getAttribute('aria-hidden'), 'true');
+  assert(await ghost.evaluate(node => node.inert), 'the decorative copy cannot take focus');
+  assert.equal(await ghost.locator('[data-tab-id]').count(), 0, 'the copy cannot masquerade as another tab');
+  const box = await ghost.boundingBox();
+  assert(Math.abs(box.x - (a.x + x - a.x - a.width / 2)) < 1, 'the tab follows the horizontal pointer offset');
+  assert(Math.abs(box.y - (a.y + y - a.y - a.height / 2)) < 1, 'the tab follows the vertical pointer offset');
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-tab-shift]')].some(node => Math.abs(new DOMMatrix(getComputedStyle(node).transform).m41) > 1));
+  await page.waitForFunction(() => new DOMMatrix(getComputedStyle(document.querySelector('.tab-drag-surface')).transform).m42 < -5);
+  assert.equal(await tab(page, from).evaluate(node => getComputedStyle(node).opacity), '0', 'the source leaves a gap instead of a second label');
+  // A stable pointer must not bounce the destination as neighbouring labels animate.
+  const destination = await page.locator('[data-tab-drop]').getAttribute('data-tab-id');
+  await page.mouse.move(x, y); await page.mouse.move(x, y);
+  assert.equal(await page.locator('[data-tab-drop]').getAttribute('data-tab-id'), destination);
+  if (process.env.TAB_DRAG_SCREENSHOTS) {
+    const folder = resolve('.cache/tab-drag'); mkdirSync(folder, { recursive: true });
+    await page.screenshot({ path: resolve(folder, `${await page.evaluate(() => document.documentElement.dataset.theme || 'light')}-${from}-${after ? 'right' : 'left'}.png`) });
+  }
+  await page.waitForFunction(() => !document.querySelector('.tab-drop-slot').getAnimations().some(animation => animation.playState === 'running'));
+  const landingBox = await slot.boundingBox();
+  await page.evaluate(() => window.addEventListener('pointerup', () => {
+    window.dropVisual = { settling: document.querySelectorAll('[data-tab-settling]').length,
+      animation: !!document.querySelector('.tab-drag-ghost')?.getAnimations().some(item => item.playState === 'running') };
+  }, { once: true }));
   await page.mouse.up();
+  assert.deepEqual(await page.evaluate(() => window.dropVisual), { settling: 1, animation: true }, 'release lowers the lifted copy into its final position');
+  await ghost.waitFor({ state: 'detached' });
+  const landed = await tab(page, from).boundingBox();
+  assert(Math.abs(landed.x - landingBox.x) < 1 && Math.abs(landed.width - landingBox.width) < 1, 'the preview slot matches the committed tab');
+  assert.equal(await page.locator('.tab-drop-slot, [data-tab-settling], [data-tab-shift], [data-tab-sorting]').count(), 0, 'all drag decoration is cleaned after settling');
 }
 try {
   for (const colorScheme of ['light', 'dark']) {
@@ -93,7 +127,27 @@ try {
     const a = await tab(page, 'news-section').boundingBox(), b = await tab(page, 'alerts').boundingBox();
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
     await page.mouse.move(b.x + 25, b.y + 20, { steps: 8 }); await page.keyboard.press('Escape'); await page.mouse.up();
+    await page.locator('.tab-drag-ghost').waitFor({ state: 'detached' });
     assert.deepEqual(await order(page), ids, 'Escape cancels a drag');
+    for (const cancel of ['outside', 'pointercancel', 'blur', 'dispose']) {
+      const from = await tab(page, 'news-section').boundingBox(), to = await tab(page, 'alerts').boundingBox();
+      const saved = await page.evaluate(() => localStorage.getItem('dashboard:tab-order:v1:research'));
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await page.mouse.down();
+      await page.mouse.move(to.x + 25, to.y + to.height / 2, { steps: 8 });
+      await page.locator('.tab-drag-ghost').waitFor();
+      if (cancel === 'outside') await page.mouse.move(to.x + 25, to.y + to.height + 100, { steps: 4 });
+      else if (cancel === 'pointercancel') await page.evaluate(() => {
+        const node = document.querySelector('[data-tab-dragging]');
+        // Capture belongs to this real mouse pointer; cancellation must not save its preview.
+        node.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 }));
+      });
+      else if (cancel === 'blur') await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+      else await page.evaluate(() => window.mount());
+      await page.mouse.up(); await page.locator('.tab-drag-ghost').waitFor({ state: 'detached' });
+      assert.deepEqual(await order(page), ids, `${cancel} restores the original order`);
+      assert.equal(await page.evaluate(() => localStorage.getItem('dashboard:tab-order:v1:research')), saved, `${cancel} does not persist a provisional move`);
+      assert.equal(await page.locator('.tab-drop-slot, [data-tab-settling], [data-tab-shift], [data-tab-sorting], [data-tab-dragging]').count(), 0);
+    }
     await tab(page, 'earnings').click(); assert.equal(await tab(page, 'earnings').getAttribute('aria-selected'), 'true', 'a deliberate next click is not suppressed');
     // Storage failures remain usable and visibly disclose that persistence is unavailable.
     await page.evaluate(() => { Storage.prototype.setItem = () => { throw Error('disabled'); }; });
@@ -115,6 +169,7 @@ try {
   await touch('touchEnd');
   await page.waitForFunction(() => document.querySelector('[data-tab-list]').scrollLeft > 20);
   assert.deepEqual(await order(page), ids, 'swiping the label scrolls without reordering');
+  assert.equal(await page.locator('.tab-drag-ghost').count(), 0, 'a native touch swipe has no lifted tab');
   // Finish the swipe fixture before measuring a fresh grip; native momentum otherwise
   // moves its hit target between the geometry read and the next touch start.
   await page.evaluate(() => window.mount());
@@ -122,7 +177,9 @@ try {
   const b = await tab(page, 'alerts').boundingBox();
   await touch('touchStart', a.x + a.width / 2, a.y + a.height / 2);
   for (let i = 1; i <= 8; i++) await touch('touchMove', a.x + a.width / 2 + (b.x + 25 - a.x - a.width / 2) * i / 8, b.y + b.height / 2);
+  assert(await page.locator('.tab-drag-ghost').isVisible(), 'the touch grip lifts the tab');
   await touch('touchEnd');
+  await page.locator('.tab-drag-ghost').waitFor({ state: 'detached' });
   assert.deepEqual((await order(page)).slice(0, 2), ['announcements', 'alerts'], 'touch grip reorders');
   await tab(page, 'alerts').focus(); await page.keyboard.press('Alt+Home');
   await page.evaluate(() => document.querySelector('[data-tab-list]').scrollLeft = 0);
@@ -134,6 +191,26 @@ try {
   await page.mouse.up();
   assert((await order(page)).indexOf('alerts') > 1, 'edge dragging reaches offscreen destinations');
   await context.close();
+
+  const reduced = await browser.newContext({ viewport: { width: 1440, height: 800 }, reducedMotion: 'reduce', serviceWorkers: 'block' });
+  const quiet = await reduced.newPage();
+  await quiet.goto(`${origin}/fixture.html`); await quiet.waitForFunction(() => window.ready);
+  const from = await tab(quiet, 'news-section').boundingBox(), to = await tab(quiet, 'alerts').boundingBox();
+  await quiet.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await quiet.mouse.down();
+  await quiet.mouse.move(to.x + 25, to.y + to.height / 2, { steps: 8 });
+  await quiet.locator('.tab-drop-slot').waitFor();
+  assert(await quiet.locator('.tab-drag-ghost').isVisible(), 'reduced motion keeps the pointer-following copy');
+  assert.equal(await quiet.locator('.tab-drag-surface').evaluate(node => getComputedStyle(node).transform), 'none');
+  // Focus/colour transitions may still appear in getAnimations for 0.01ms.
+  const moving = () => document.getAnimations().filter(item => item.effect.getTiming().duration > 1)
+    .map(item => ({ target: item.effect.target.className, duration: item.effect.getTiming().duration }));
+  assert.deepEqual(await quiet.evaluate(moving), [], 'reduced motion removes lift and preview animations');
+  await quiet.mouse.up();
+  assert.equal((await order(quiet))[0], 'news-section');
+  assert.equal(await quiet.locator('.tab-drag-ghost, .tab-drop-slot, [data-tab-settling]').count(), 0);
+  // The shell permits 0.01ms focus/colour transitions under reduced motion.
+  assert.deepEqual(await quiet.evaluate(moving), [], 'reduced motion has no settling animation');
+  await reduced.close();
 
   // A saved layout is normalized safely as the catalog grows, with no hidden/missing tab.
   const clean = await browser.newContext({ serviceWorkers: 'block' }), fresh = await clean.newPage();
@@ -180,5 +257,5 @@ try {
   assert.equal((await order(returning))[0], 'news-section', 'upgraded reader retains its layout');
   assert(!(await returning.evaluate(() => caches.keys())).some(key => key.includes('previous-tab-release')));
   assert.deepEqual(errors, []); await warm.close();
-  console.log('PASS tab dragging, click isolation, keyboard order/reset, light/dark, touch scrolling/grips, edge scrolling, storage recovery, shell routes and warm-session upgrade');
+  console.log('PASS lifted pointer-following tabs, stable animated landing slots, settling/cancellation, reduced motion, click isolation, keyboard order/reset, light/dark, touch scrolling/grips, edge scrolling, storage recovery, shell routes and warm-session upgrade');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
