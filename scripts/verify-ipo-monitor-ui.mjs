@@ -58,6 +58,7 @@ try {
     await filtered();
   };
   await ready();
+  check('Company is the first IPO filing column by default', (await page.locator('thead th').first().innerText()).trim() === 'COMPANY');
   check('IPO toolbar removes the view picker, redundant refresh and Watchlist filter', await page.locator('[data-ipo-view], [data-ipo-refresh], [data-watch-toggle]').count() === 0);
   check('date range is part of the same toolbar as search and filters', await page.locator('[data-table-toolbar] [data-ipo-history]').count() === 1);
   check('board and source share one collapsed control', await page.locator('[data-filter-group-toggle]').isVisible() &&

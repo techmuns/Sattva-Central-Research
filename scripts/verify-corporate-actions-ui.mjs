@@ -90,7 +90,7 @@ try {
   assert.match(await page.locator('[data-row-count]').innerText(), /^1 action · 1 company$/);
   assert.match(await page.locator('tbody').innerText(), /Dividend - Rs 10 Per Share/);
   assert.match(await page.locator('tbody').innerText(), /Interim · 100.00%/);
-  assert.deepEqual(await page.locator('thead th').allInnerTexts(), ['PURPOSE', 'TYPE', 'EX DATE ▾', 'RECORD / END DATE', 'TERMS', 'SOURCE']);
+  assert.deepEqual(await page.locator('thead th').allInnerTexts(), ['COMPANY', 'PURPOSE', 'TYPE', 'EX DATE ▾', 'RECORD / END DATE', 'TERMS', 'SOURCE']);
   assert.equal(await page.locator('tbody a[href*="nseindia.com"]').count(), 1);
   assert.equal(await page.locator('tbody a[href*="screener.in"]').count(), 0);
   assert(await page.evaluate(() => window.pollStarted && window.poll.intervalMs === 90000));
@@ -180,7 +180,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('tbody tr[data-row-key]').length === 1);
   const splitRow = page.locator('tbody tr[data-row-key]');
   assert.equal((await splitRow.innerText()).match(/Face value ₹10\.00 → ₹5\.00/g)?.length, 1, 'generated action details appear once, in Terms');
-  assert.equal(await splitRow.locator('td').first().locator('[title="Stock split"]').count(), 1);
+  assert.equal(await splitRow.locator('[title="Stock split"]').count(), 1);
   assert.equal(await page.evaluate(() => window.feed.rows().find(r => r.ticker === 'SPLITCO').purpose), splitPurpose, 'the original action purpose remains retained');
 
   // Exercise the disk-clone/validation cost too: all real retained fields and rows,

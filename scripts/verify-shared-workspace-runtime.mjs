@@ -24,9 +24,11 @@ try {
   await start(); assert.equal((await call()).tabs.length, 0);
   await call({ id: 'runtime-create', op: 'put', tab });
   await call({ id: 'runtime-reorder', op: 'move', tabId: tab.id, targetId: 'alerts', after: false });
+  await call({ id: 'runtime-columns', op: 'columns-move', table: 'corp-announcements', group: '$', column: '$/Company:0', target: '$/Subject:0', siblings: ['$/Company:0', '$/Subject:0'], after: true });
   await worker.dispose(); await start();
   let snapshot = await call(); assert.equal(snapshot.order[0], tab.id); assert.equal(snapshot.tabs[0].title, 'Capital Raises');
   assert.deepEqual(snapshot.tabs[0].reading.extras.categories, ['capital-raise']);
+  assert.deepEqual(snapshot.columnLayouts['corp-announcements'].$, ['$/Subject:0', '$/Company:0'], 'shared columns survive a real Worker restart');
   await call({ id: 'runtime-remove', op: 'remove', tabId: tab.id, expected: snapshot.tabs[0].revision });
   await worker.dispose(); await start();
   snapshot = await call({ id: 'runtime-create', op: 'put', tab });

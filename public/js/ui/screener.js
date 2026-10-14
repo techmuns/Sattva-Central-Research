@@ -439,6 +439,7 @@ export function scoreTable(config) {
     countNoun = '',
     countLabel = null,
     columnLayoutKey = null,
+    sharedColumnLayout = null,
     exportName = 'sattva-export',
     onExport = null, // (visibleRows, exportName) => void — see ui/export.js
     // Drop the leading rank column. The watchlist star does NOT go with it — the watchlist filter
@@ -918,7 +919,7 @@ export function scoreTable(config) {
       </div>
 
       <div class="table-scroll-surface scrollbar-thin overflow-x-auto" data-table-scroll tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}" ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto${isVirtual ? ';overflow-anchor:none' : ''}"` : ''}>
-        <table data-column-layout="${escapeHtml(columnLayoutKey || `${exportName.replace(/\d{4}-\d{2}-\d{2}/g, 'date')}:${nameLabel}`)}" class="w-full text-sm"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
+        <table data-column-layout="${escapeHtml(columnLayoutKey || `${exportName.replace(/\d{4}-\d{2}-\d{2}/g, 'date')}:${nameLabel}`)}"${sharedColumnLayout ? ` data-shared-column-layout="${escapeHtml(sharedColumnLayout)}"` : ''} class="w-full text-sm"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
           <thead data-table-head class="sticky top-0 z-10 ${stickyHead ? 'bg-white shadow-sm' : 'bg-slate-50/70'}">${headHtml()}</thead>
           <tbody data-table-body>${isVirtual ? virtualBodyHtml(initialList, initialVirtualStart) : bodyHtml(initialList, 0, FIRST_PAINT_ROWS)}</tbody>
         </table>

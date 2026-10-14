@@ -1,4 +1,4 @@
-import { DEFAULT_TAB_ORDER, WORKSPACE_LIMIT, WORKSPACE_TOTAL_BYTES, workspaceIntent } from '../public/js/data/workspace-shared.js';
+import { DEFAULT_TAB_ORDER, WORKSPACE_LIMIT, WORKSPACE_TOTAL_BYTES, workspaceIntent, moveWorkspaceColumn } from '../public/js/data/workspace-shared.js';
 
 export class WorkspaceStore {
   constructor(storage, { now = Date.now } = {}) { this.storage = storage; this.now = now; }
@@ -18,6 +18,7 @@ export class WorkspaceStore {
     this.init();
     return this.storage.transactionSync(() => {
       const state = this.snapshot();
+      state.navigationRevision ??= state.revision;
       const previous = this.storage.sql.exec('SELECT outcome FROM workspace_edits WHERE id=?', intent.id).toArray()[0];
       if (previous) return { snapshot: state, outcome: previous.outcome, replay: true };
       let outcome = 'unchanged';
@@ -42,17 +43,24 @@ export class WorkspaceStore {
       } else if (intent.op === 'reset') {
         const order = [...DEFAULT_TAB_ORDER, ...state.tabs.map(tab => tab.id)];
         if (JSON.stringify(order) !== JSON.stringify(state.order)) { state.order = order; outcome = 'moved'; }
+      } else if (intent.op === 'columns-move' || intent.op === 'columns-reset') {
+        state.columnLayouts ||= {};
+        const next = moveWorkspaceColumn(state.columnLayouts[intent.table], intent);
+        if (JSON.stringify(next) !== JSON.stringify(state.columnLayouts[intent.table])) {
+          state.columnLayouts[intent.table] = next; outcome = 'moved';
+        }
       } else if (intent.op === 'move') {
         if (!state.order.includes(intent.tabId) || !state.order.includes(intent.targetId)) return { snapshot: state, outcome: 'missing' };
         const before = JSON.stringify(state.order);
         // The first intentional reorder can carry the reader's pre-existing local layout.
-        if (state.revision === 0 && intent.seedOrder.length) state.order = [...intent.seedOrder.filter(id => state.order.includes(id)), ...state.order.filter(id => !intent.seedOrder.includes(id))];
+        if (state.navigationRevision === 0 && intent.seedOrder.length) state.order = [...intent.seedOrder.filter(id => state.order.includes(id)), ...state.order.filter(id => !intent.seedOrder.includes(id))];
         state.order = state.order.filter(id => id !== intent.tabId);
         state.order.splice(state.order.indexOf(intent.targetId) + (intent.after ? 1 : 0), 0, intent.tabId);
         if (before !== JSON.stringify(state.order)) outcome = 'moved';
       }
       if (outcome !== 'unchanged') {
         state.revision++; state.updatedAt = new Date(this.now()).toISOString();
+        if (!intent.op.startsWith('columns-')) state.navigationRevision = state.revision;
         if (new TextEncoder().encode(JSON.stringify(state)).byteLength > WORKSPACE_TOTAL_BYTES) return { snapshot: this.snapshot(), outcome: 'capacity' };
         this.storage.sql.exec("INSERT INTO workspace_state(key,value) VALUES ('research',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", JSON.stringify(state));
       }

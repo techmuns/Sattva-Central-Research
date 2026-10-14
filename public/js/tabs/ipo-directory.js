@@ -7,6 +7,7 @@ const date = (s) => s || 'Not supplied';
 export function directoryTable(rows, view) {
   const options = (key, label) => ({ label, options: [{ value: 'all', label: `All ${label.toLowerCase()}` }, ...[...new Set(rows.map((r) => r[key] || 'Not supplied'))].sort().map((v) => ({ value: v, label: v }))], match: (r, v) => (r[key] || 'Not supplied') === v });
   return scoreTable({ rows, key: (r) => r.id, watchKey: (r) => r.ticker || null, watchName: (r) => r.company,
+    sharedColumnLayout: 'ipo-directory',
     name: (r) => r.company, sub: (r) => `${r.board} · ${r.retained ? 'Retained; not in latest list' : 'IPOPlatform'}`,
     showRank: false, showWatchFilter: false, dense: true, nameMaxPx: 260, stickyHead: 'max(320px, calc(100vh - 310px))', fillMode: 'auto',
     columns: [

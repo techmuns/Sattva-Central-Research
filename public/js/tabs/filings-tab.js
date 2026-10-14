@@ -350,6 +350,7 @@ export function makeFilingsTab(cfg) {
       name: (r) => cfg.rowName(r),
       nameLabel: cfg.nameLabel || 'Headline',
       nameAfter: cfg.nameAfter || 0,
+      sharedColumnLayout: ['corp-announcements', 'corporate-actions', 'insider-trades'].includes(cfg.id) ? cfg.id : null,
       sub: (r) => cfg.rowSub(r),
       showRank: false,
       showAvatar: false,

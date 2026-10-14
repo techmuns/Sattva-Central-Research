@@ -1,6 +1,8 @@
 import { liftColumn, columnViewport, columnPositions, animateColumnPositions } from './column-drag.js';
+import * as workspace from '../core/workspace.js';
+import { SHARED_COLUMN_TABLES } from '../data/workspace-shared.js';
 
-// Device-local table layouts. No dependencies, polling, data reads, or per-cell listeners.
+// Announcements use the existing shared desk sync; other table layouts remain device-local.
 // Only mounted cells move, once on drop. A single child-list observer restores new/replaced
 // rows before paint; it is disconnected during our writes, so it cannot observe itself.
 const PREFIX = 'dashboard:column-layout:v1:';
@@ -29,6 +31,8 @@ function readLayout(key) {
 export function installColumnOrder(root = document) {
   if (installations.has(root)) return installations.get(root);
   const tables = new WeakMap(), rowCells = new WeakMap();
+  const sharedTables = new Set();
+  let sharedDeferred = false, saveSequence = 0;
   let gesture = null, suppressClick = null, frame = 0;
   const abort = new AbortController();
   const listen = (target, type, fn, options = {}) => target.addEventListener(type, fn, { ...options, signal: abort.signal });
@@ -104,6 +108,7 @@ export function installColumnOrder(root = document) {
     if (state && state.nodes.every(node => head.contains(node.cell)) &&
       state.nodes.length === [...head.rows].reduce((n, row) => n + row.cells.length, 0)) return state;
     if (gesture?.state === state) finish();
+    if (state) sharedTables.delete(state);
     const tree = { key: '$', children: [] }, nodes = [], occupied = [];
     for (const [r, row] of [...head.rows].entries()) {
       let col = 0;
@@ -127,7 +132,10 @@ export function installColumnOrder(root = document) {
     const route = location.hash.split('?')[0];
     const identity = table.dataset.columnLayout || nodes.map(node => node.key).sort().join('|');
     const key = `${route}|${identity}`;
-    state = { table, nodes, tree, key, saved: readLayout(key) };
+    const shared = SHARED_COLUMN_TABLES.includes(table.dataset.sharedColumnLayout) ? table.dataset.sharedColumnLayout : null;
+    const layout = shared && workspace.snapshot().columnLayouts?.[shared];
+    state = { table, nodes, tree, key, shared, saved: structuredClone(layout || readLayout(key)) };
+    if (shared) sharedTables.add(state);
     tables.set(table, state);
     for (const node of nodes) {
       const cell = node.cell;
@@ -177,15 +185,42 @@ export function installColumnOrder(root = document) {
   }
   const observer = new MutationObserver(changed);
   quiet(() => root.querySelectorAll('table').forEach(setup));
+  function refreshShared() {
+    if (abort.signal.aborted) return;
+    if (gesture) { sharedDeferred = true; return; }
+    sharedDeferred = false;
+    const layouts = workspace.snapshot().columnLayouts || {};
+    quiet(() => {
+      for (const state of sharedTables) {
+        if (!state.table.isConnected) { sharedTables.delete(state); continue; }
+        const layout = layouts[state.shared];
+        if (layout && JSON.stringify(layout) !== JSON.stringify(state.saved)) {
+          const focused = document.activeElement;
+          state.saved = structuredClone(layout); apply(state);
+          if (state.table.contains(focused)) focused.focus({ preventScroll: true });
+        }
+      }
+    });
+  }
+  const stopShared = workspace.onChange(refreshShared);
   function targetNode(cell) {
     const state = tables.get(cell?.closest('table'));
     return state && { state, node: state.nodes.find(node => node.cell === cell) };
   }
-  function save(state) {
+  function save(state, intent) {
     memory.set(state.key, state.saved);
     let persisted = true;
     try { localStorage.setItem(PREFIX + state.key, JSON.stringify(state.saved)); } catch { persisted = false; }
-    announce(persisted ? 'Column order saved for this browser.' : 'Column order changed. Browser storage is unavailable; this layout lasts for this visit.', !persisted);
+    if (!state.shared) {
+      announce(persisted ? 'Column order saved for this browser.' : 'Column order changed. Browser storage is unavailable; this layout lasts for this visit.', !persisted);
+      return;
+    }
+    const sequence = ++saveSequence;
+    announce('Column order changed. Sharing with the Announcements section…');
+    void workspace.edit({ ...intent, table: state.shared }).then(result => {
+      if (sequence !== saveSequence || abort.signal.aborted) return;
+      announce(result.confirmed ? 'Column order shared with everyone in Announcements.' : result.error || 'Column order changed. Waiting to share with everyone in Announcements.', !result.confirmed);
+    }).catch(() => { if (sequence === saveSequence && !abort.signal.aborted) announce('Column order changed. Sharing is unavailable; try moving the column again.', true); });
   }
   let status;
   function announce(text, unavailable = false) {
@@ -198,13 +233,15 @@ export function installColumnOrder(root = document) {
   }
   function commit(state, node, target, after) {
     if (!target || node === target || node.parent !== target.parent || !node.cell.isConnected) return;
+    const intent = { op: 'columns-move', group: node.parent.key, column: node.key, target: target.key, after,
+      siblings: node.parent.ordered.map(item => item.key), seedLayout: structuredClone(state.saved) };
     const siblings = node.parent.ordered.filter(item => item !== node);
     siblings.splice(siblings.indexOf(target) + (after ? 1 : 0), 0, node);
     const keys = siblings.map(item => item.key), present = new Set(keys), remaining = [...keys];
     // Keep temporarily absent columns in the preference, so a scope/schema round trip retains them.
     state.saved[node.parent.key] = (state.saved[node.parent.key] || []).map(key => present.has(key) ? remaining.shift() : key).concat(remaining);
     const before = columnPositions(state.table);
-    quiet(() => apply(state)); save(state);
+    quiet(() => apply(state)); save(state, intent);
     animateColumnPositions(before);
     node.cell.focus({ preventScroll: true });
   }
@@ -249,6 +286,7 @@ export function installColumnOrder(root = document) {
     if (preservePreview !== true) old.preview?.cancel();
     if (old.cell.hasPointerCapture?.(old.id)) old.cell.releasePointerCapture(old.id);
     if (old.active) suppressClick = { until: performance.now() + 500, table: old.state.table };
+    if (sharedDeferred) queueMicrotask(refreshShared);
     return old;
   }
   listen(root, 'pointerdown', event => {
@@ -299,13 +337,13 @@ export function installColumnOrder(root = document) {
     event.preventDefault(); event.stopPropagation();
     const { state, node } = match;
     if (event.key === 'Home') {
-      state.saved = {}; quiet(() => apply(state)); save(state); node.cell.focus({ preventScroll: true }); return;
+      state.saved = {}; quiet(() => apply(state)); save(state, { op: 'columns-reset' }); node.cell.focus({ preventScroll: true }); return;
     }
     const siblings = node.parent.ordered, index = siblings.indexOf(node);
     const after = event.key === 'ArrowRight';
     commit(state, node, siblings[index + (after ? 1 : -1)], after);
   }, { capture: true });
-  const dispose = () => { finish(); observer.disconnect(); abort.abort(); status?.remove(); installations.delete(root); };
+  const dispose = () => { finish(); stopShared(); sharedTables.clear(); observer.disconnect(); abort.abort(); status?.remove(); installations.delete(root); };
   installations.set(root, dispose);
   return dispose;
 }
