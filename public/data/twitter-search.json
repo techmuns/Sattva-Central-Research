@@ -363,7 +363,7 @@
       "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE522F01014|COALINDIA": {
-      "lastAttemptAt": "2026-10-09T03:17:22+00:00",
+      "lastAttemptAt": "2026-10-14T10:30:30+00:00",
       "lastResultCount": 108,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-10-14T09:44:15.765792+00:00"
+    "checkedAt": "2026-10-14T10:30:30.490686+00:00"
   }
 }
