@@ -589,7 +589,7 @@ function renderTopNavigation(root, ws, navigationId) {
     topTabs?.dispose();
     // Saved events are reached from the header beside the appearance control.
     const bar = tabBar({ tabs: tabItems, activeId: navigationId, onSelect: goTab, label: 'Research sections', orderKey: ws.id,
-      sharedOrder, onOrderChange: intent => workspace.edit(intent), searchable: true, draft });
+      sharedOrder, onOrderChange: intent => workspace.edit(intent), draft });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;
     topTabs = { workspace: ws.id, signature, bar, dispose: bar.wire(tabBarMount) };
