@@ -6779,7 +6779,7 @@ console.log('\n— news, announcements and insider trades —');
     if (st.rows) {
       ok('the page body carries no permanent freshness paragraph', !/Showing the (news|filings)/i.test(strip));
       ok('...and collection status is absent from the header', (await page.locator('[data-filings-info]').count()) === 0);
-      ok('...and provenance remains reachable below the table', (await page.locator('[data-filings-method]').count()) === 1);
+      ok('...and provenance leaves the reading column', (await page.locator('#content-host [data-filings-method]').count()) === 0);
       ok('...and labels the company count as companies with filings',
         /announcements? · .*compan(?:y|ies) with filings/i.test(await page.locator('#content-host [data-row-count]').innerText()));
       ok('...and the global Refresh control remains available', (await page.locator('[data-header-refresh]').count()) === 1);
@@ -8069,13 +8069,14 @@ console.log('\n— 17. provenance is reachable, without the chrome that was remo
 const registryModal = await (async () => {
   await go('/#/research/ai-alerts?scope=portfolio', 4000);
   await waitForPanel();
+  await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon());
   await page.locator('[data-sources-open]').click({ timeout: 4000 }).catch(() => {});
   await page.waitForTimeout(800);
   const text = await page.locator('#modal-content').innerText().catch(() => '');
   if (text) await page.keyboard.press('Escape');
   return text;
 })();
-ok('the footer opens the source registry', registryModal.length > 2000, `${registryModal.length} chars`);
+ok('the source panel footer opens the source registry', registryModal.length > 2000, `${registryModal.length} chars`);
 // The registry is a FUNCTION called on open, which is what lets a static footer reach live figures
 // without going stale — the rule that killed the old hand-typed source array.
 ok('...and it names the upstreams it is canonical for',
@@ -8098,20 +8099,24 @@ for (const [route, title, scope] of [
   await go(route, 4000);
   await waitForPanel();
   await settleTables();
+  if (title === 'Corp Announcements') await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon());
   const placement = await evalSafe(() => {
-    const btn = document.querySelector('#content-host [data-filings-method]');
+    const sourceButton = document.querySelector('#source-beacon-panel [data-filings-method]:not([hidden])');
+    const contentButton = document.querySelector('#content-host [data-filings-method]');
+    const btn = sourceButton || contentButton;
     const table = document.querySelector('#content-host [data-score-table]') || document.querySelector('#content-host table');
     if (!btn) return { present: false };
     return {
       present: true,
+      inSourceFooter: !!sourceButton?.closest('.beacon-panel-foot') && !contentButton,
       belowTable: !table || !!(table.compareDocumentPosition(btn) & Node.DOCUMENT_POSITION_FOLLOWING),
       pillTag: document.querySelector('#content-host [data-filings-info]')?.tagName || null,
     };
   });
-  ok(`${title} carries a method link under its table`, placement.present && placement.belowTable, JSON.stringify(placement));
+  ok(`${title} keeps its collection details reachable`, placement.present && (title === 'Corp Announcements' ? placement.inSourceFooter : placement.belowTable), JSON.stringify(placement));
   ok(`...and ${title}'s header keeps its expected status placement`,
     title === 'Corp Announcements' ? placement.pillTag === null : placement.pillTag === 'SPAN');
-  await page.locator('#content-host [data-filings-method]').click({ timeout: 4000 }).catch(() => {});
+  await page.locator(title === 'Corp Announcements' ? '#source-beacon-panel [data-filings-method]' : '#content-host [data-filings-method]').click({ timeout: 4000 }).catch(() => {});
   await page.waitForTimeout(700);
   const text = await page.locator('#modal-content').innerText().catch(() => '');
   ok(`...and it opens ${title}'s own provenance`, text.length > 1200, `${text.length} chars`);

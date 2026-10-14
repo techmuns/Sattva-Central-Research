@@ -228,6 +228,10 @@ try {
   // the popup was even opened, despite the navigation satisfying its documented budget.
   await page.getByRole('heading', { name: 'AI Alerts', exact: true }).waitFor({ timeout: TAB_INTERACTION_LIMIT_MS });
 
+  assert.equal(await page.locator('[data-app-content] > footer').count(), 0, 'source registry occupies the beacon, not the reading column');
+  await page.locator('[data-beacon-toggle]').hover();
+  await page.locator('#source-beacon-panel [data-sources-open]').waitFor({ timeout: POPUP_INTERACTION_LIMIT_MS });
+
   const started = Date.now();
   await page.locator('[data-sources-open]').click();
   await page.waitForSelector('#modal-overlay:not(.hidden)', { timeout: POPUP_INTERACTION_LIMIT_MS });

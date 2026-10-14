@@ -456,7 +456,8 @@ const tab = makeFilingsTab({
   toolbarControls,
   belowTable,
   wireBelowTable,
-  // Collection diagnostics belong in the information panel below the table.
+  // Collection diagnostics are reached from the source beacon, outside the table.
+  methodInSources: true,
   status: () => '',
   methodLabel: (m) => {
     const status = announcementCoverage(m);

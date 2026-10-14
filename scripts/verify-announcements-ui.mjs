@@ -95,8 +95,35 @@ try {
   assert.equal(await page.evaluate(() => window.__ca.query().period), '3', 'the initial query uses Last 3 days');
   assert.equal(srv.stats.queries, 1, 'one initial page request');
   ok('Last 3 days is the default dropdown and server query');
+  assert.equal(await page.locator('[data-app-content] > footer, #content-host [data-filings-method]').count(), 0,
+    'collection and registry links leave the reading column');
+  await period.focus();
+  await page.locator('[data-beacon-toggle]').hover();
+  await page.clock.runFor(400);
+  const sources = page.locator('#source-beacon-panel');
+  await sources.waitFor();
+  assert(await period.evaluate(el => document.activeElement === el), 'hover does not take focus from the reader');
+  const method = sources.locator('.beacon-panel-foot [data-filings-method]');
+  assert((await method.innerText()).startsWith('Collection details · '));
+  assert(await sources.locator('.beacon-panel-foot [data-sources-open]').isVisible());
+  await method.click();
+  const collection = await page.locator('#modal-content').innerText();
+  assert(collection.includes('Collection status:') && collection.includes('How this list is served:') && /companies appear on this feed/.test(collection),
+    'the relocated link retains live collection, serving and measured coverage details');
+  assert.equal(await page.locator('[data-filings-provenance]').getAttribute('data-scope'), 'universe', 'collection details use the active scope');
+  assert.equal(await sources.count(), 0, 'the source panel closes before its details dialog opens');
+  await page.keyboard.press('Escape');
+  assert(await page.locator('[data-beacon-toggle]').evaluate(el => el === document.activeElement), 'closing details restores the source launcher');
+  await page.locator('[data-beacon-toggle]').click();
+  await page.locator('#source-beacon-panel [data-sources-open]').click();
+  assert((await page.locator('#modal-content').innerText()).includes('Google News search'), 'the canonical registry remains reachable from the panel footer');
+  await page.keyboard.press('Escape');
+  assert.equal(srv.stats.queries, 1, 'source presentation starts no announcement query');
+  ok('table footer links move into the hover panel; measured details, registry and keyboard return remain available');
+  await period.focus();
   await period.selectOption('all');
   await page.waitForFunction(() => window.__ca.query().period === 'all' && window.__ca.meta().state === 'ready');
+  assert(await period.evaluate(el => el === document.activeElement), 'arriving query rows preserve the focused period control');
   const heads = await page.locator('thead th').allInnerTexts();
   assert.deepEqual(heads.map(h => h.trim().toUpperCase()), ['COMPANY', 'SUBJECT', 'DATE', 'CATEGORIES', 'MARKET CAP', 'LINK'], 'company leads and exchange links replace the separate Source column');
   const meta = await caMeta();
@@ -223,6 +250,10 @@ try {
 
   // ---- News: visible controls below the story, separate from the article link ----------------
   await page.goto(`${srv.url}#/research/news?scope=universe`);
+  await page.locator('[data-active-tab="news"]').waitFor();
+  await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon());
+  assert(await page.locator('#source-beacon-panel [data-filings-method]').isHidden(), 'leaving Announcements clears its collection action');
+  await page.keyboard.press('Escape');
   await page.waitForSelector('[data-news-key] [data-news-feedback]', { timeout: 60000 });
   await page.evaluate(async () => {
     const { relevanceSettled } = await import('/js/data/surface-relevance.js');
@@ -375,6 +406,12 @@ try {
   await local.waitForFunction(() => window.__ca?.meta().mode === 'local' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 180000 });
   assert.equal(await local.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'fallback opens on Last 3 days');
   assert.equal(await local.evaluate(() => window.__ca.query().period), '3', 'fallback query uses Last 3 days');
+  await local.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon());
+  assert.equal(await local.locator('#source-beacon-panel [data-filings-method]').innerText(), 'Collection details · Partial source coverage',
+    'the moved action still discloses local fallback coverage');
+  await local.locator('#source-beacon-panel [data-filings-method]').click();
+  assert((await local.locator('#modal-content').innerText()).includes('server index could not be read'), 'fallback diagnostics remain reachable');
+  await local.keyboard.press('Escape');
   assert(await local.locator('tbody .category-chip').count() > 0, 'categories still show');
   await local.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
   await local.locator('#modal-content [data-ann-read]').waitFor();

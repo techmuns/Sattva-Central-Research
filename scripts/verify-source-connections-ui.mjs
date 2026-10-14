@@ -80,6 +80,9 @@ try {
     return connected > 0 && automatic > connected && document.querySelector('[data-beacon-launch-count]').textContent === `${total} research sources` && document.querySelector('[data-beacon-connected]').textContent === `${connected} connected`;
   }));
   const details = page.locator('[data-beacon-source="tradingview-news"]');
+  await page.evaluate(() => { document.querySelector('main').dataset.fullscreenWorkspace = ''; });
+  check('full-height table workspaces keep the source panel footer visible', await page.locator('.beacon-panel-foot [data-sources-open]').isVisible());
+  await page.evaluate(() => { delete document.querySelector('main').dataset.fullscreenWorkspace; });
   await details.locator('summary').click();
   check('expanded source explains server and dashboard refresh cadences', (await details.innerText()).includes('Every 15 minutes') && (await details.innerText()).includes('every 2 minutes'));
   check('dated and unavailable sources use calm, distinct labels without a green indicator', await page.locator('[data-beacon-source="nse-equity"] > summary').evaluate(el => el.innerText.includes('Refresh due') && !el.classList.contains('is-live')) && await page.locator('[data-beacon-source="bse-sme"] > summary').evaluate(el => el.innerText.includes('Connection paused') && !el.classList.contains('is-live')));

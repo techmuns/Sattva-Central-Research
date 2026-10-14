@@ -24,6 +24,7 @@ import { scoreTable, sectionHead, openModal, closeModal, companySeededView } fro
 import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatRelativeTime } from '../core/format.js';
 import { deliveryNote } from '../ui/sources.js';
+import { setCollectionDetails, notifyCollectionDetails, clearCollectionDetails } from '../ui/source-details.js';
 import * as coverage from '../data/coverage.js';
 import { filterByScope, scopePossessive } from '../data/scope.js';
 import * as watchlist from '../core/watchlist.js';
@@ -77,6 +78,7 @@ const REASONS = {
  * @param {Function|false} [cfg.link] custom row-link getter, or false when the tab owns its link cell
  */
 export function makeFilingsTab(cfg) {
+  const detailsOwner = Symbol(cfg.id);
   const meta = { id: cfg.id, title: cfg.title, subtitle: cfg.subtitle, subviews: [] };
 
   let token = 0;
@@ -129,9 +131,34 @@ export function makeFilingsTab(cfg) {
     return scopeLists.apply('universe', out);
   }
 
+  function viewCoverage(ctx, m, rows) {
+    const scoped = tickersFor(ctx);
+    return {
+      inScope: scoped.length,
+      withRows: new Set(rows.map((r) => cfg.id === 'news' ? newsRowEntityKey(r) : String(r.ticker || '').toUpperCase()).filter(Boolean)).size,
+      askedEmpty: scoped.filter((c) => cfg.feed.wasAskedEmpty(c.key || c.ticker)).length,
+      failed: scoped.filter((c) => cfg.feed.failureFor(c.key || c.ticker)).length,
+      unlisted: ctx.scope === 'portfolio' && cfg.id !== 'news' ? coverage.meta().uncovered || 0 : 0,
+      noun: cfg.noun,
+      windowDays: m.windowDays,
+      coversUniverse: m.coversUniverse,
+    };
+  }
+
   function render(ctx) {
     const t = ++token;
     ctxRef = ctx;
+    if (cfg.methodInSources) setCollectionDetails(detailsOwner, () => ctxRef?.isCancelled ? null : ({
+      label: methodLabel(cfg, cfg.feed.meta()),
+      open: () => {
+        if (!ctxRef || ctxRef.isCancelled) return;
+        const m = cfg.feed.meta();
+        let all = cfg.feed.rows();
+        if (cfg.keepRow) all = all.filter(cfg.keepRow);
+        const rows = (cfg.filterByScope || filterByScope)(all, ctxRef.scope, coverage.holdings());
+        openProvenance(m, viewCoverage(ctxRef, m, rows), ctxRef.scope, rows);
+      },
+    }));
     renderedRows = null;
     const seeded = companySeededView(ctx, routeCompany, view);
     routeCompany = seeded.company;
@@ -202,6 +229,7 @@ export function makeFilingsTab(cfg) {
   }
 
   function paint(ctx) {
+    if (cfg.methodInSources) notifyCollectionDetails(detailsOwner);
     const ownsView = !!ctx.root.querySelector(`[data-filings-view="${cfg.id}"]`);
     const oldScroller = cfg.preserveReadingPosition && ownsView && ctx.root.querySelector('[data-table-scroll]');
     const oldRows = oldScroller ? [...oldScroller.querySelectorAll('tbody tr[data-row-key]')] : [];
@@ -212,6 +240,8 @@ export function makeFilingsTab(cfg) {
     const oldSearch = cfg.preserveReadingPosition && ownsView && ctx.root.querySelector('[data-table-search]');
     const selection = oldSearch && document.activeElement === oldSearch
       ? { value: oldSearch.value, start: oldSearch.selectionStart, end: oldSearch.selectionEnd } : null;
+    const focusedFilter = cfg.preserveReadingPosition && ownsView && ctx.root.contains(document.activeElement) &&
+      document.activeElement.matches('[data-table-filter]') ? document.activeElement.getAttribute('aria-label') : null;
     const m = cfg.feed.meta();
     let all = cfg.feed.rows();
 
@@ -258,17 +288,7 @@ export function makeFilingsTab(cfg) {
     // and 62 genuinely had none, while insider looked short only because a company answering "no
     // trades" was written nowhere. So the strip states the breakdown rather than leaving a
     // subtraction on screen for the reader to misread.
-    const scoped = tickersFor(ctx);
-    const cov = {
-      inScope: scoped.length,
-      withRows: new Set(rows.map((r) => cfg.id === 'news' ? newsRowEntityKey(r) : String(r.ticker || '').toUpperCase()).filter(Boolean)).size,
-      askedEmpty: scoped.filter((c) => cfg.feed.wasAskedEmpty(c.key || c.ticker)).length,
-      failed: scoped.filter((c) => cfg.feed.failureFor(c.key || c.ticker)).length,
-      unlisted: ctx.scope === 'portfolio' && cfg.id !== 'news' ? coverage.meta().uncovered || 0 : 0,
-      noun: cfg.noun,
-      windowDays: m.windowDays,
-      coversUniverse: m.coversUniverse,
-    };
+    const cov = viewCoverage(ctx, m, rows);
 
     // NOTHING AT ALL, AND A REASON WHY. Distinguished from "no rows in this window", which is a
     // real answer and renders as an empty table with its own message.
@@ -430,6 +450,8 @@ export function makeFilingsTab(cfg) {
       search.focus({ preventScroll: true });
       search.setSelectionRange(selection.start, selection.end);
     }
+    if (focusedFilter) [...ctx.root.querySelectorAll('[data-table-filter]')]
+      .find(control => control.getAttribute('aria-label') === focusedFilter)?.focus({ preventScroll: true });
     disposers.push(cfg.wireAboveTable?.(ctx.root, ctx));
     disposers.push(cfg.wireBelowTable?.(ctx.root, ctx));
     wireMethod(ctx.root, m, cov, ctx.scope, rows);
@@ -490,6 +512,7 @@ export function makeFilingsTab(cfg) {
   }
 
   function destroy() {
+    clearCollectionDetails(detailsOwner);
     token++;
     ctxRef = null;
     renderedRows = null;
@@ -514,22 +537,12 @@ export function makeFilingsTab(cfg) {
 
 
 /**
- * The tab's own provenance, reachable — one muted line UNDER the table.
- *
- * `cfg.provenance` was built by all three of these tabs and NOTHING EVER OPENED IT. The only
- * candidate trigger was the freshness pill, which CLAUDE.md deliberately made a passive `<span>`
- * that "must not open a provenance explainer" — so the content was written, maintained, and
- * unreachable, which is worse than absent because it reads as documentation of a working feature.
- *
- * This is not that decision being undone. The pill stays passive and stays where it is; what
- * changes is that the explanation gets a door of its own, placed AFTER the content so it cannot
- * compete with the table for the top of the page — which was the whole reason the chrome was
- * removed. It carries what no static registry can: the MEASURED coverage for the rows on screen —
- * how many companies answered, how many had nothing, how many could not be read at all. CLAUDE.md's
- * denominator rule says that number has to stay reachable, not that it has to stay on the page.
+ * Collection details retain measured coverage and source failures. Announcements
+ * supplies its active reader to the source beacon; other readers keep their
+ * existing footer link. Status pills remain passive.
  */
 const methodLabel = (cfg, m) => cfg.methodLabel?.(m) || `How ${cfg.title} is collected, and what this view covers`;
-const methodFooter = (cfg, m) => `
+const methodFooter = (cfg, m) => cfg.methodInSources ? '' : `
   <div class="mt-6 border-t border-slate-100 pt-4 text-center">
     <button type="button" data-filings-method
       class="text-xs font-semibold text-slate-400 underline decoration-slate-200 underline-offset-4 transition-colors hover:text-indigo-600 hover:decoration-indigo-300">
@@ -705,7 +718,7 @@ function coverageSentence(m, cov) {
 function openProvenanceFactory(cfg, refreshLabelRef, onRefresh) {
   return function openProvenance(m, cov, scope, rows) {
     openModal(
-      `<div style="max-height:calc(100dvh - 8rem);overflow-y:auto">
+      `<div data-filings-provenance data-scope="${escapeHtml(scope)}" style="max-height:calc(100dvh - 8rem);overflow-y:auto">
        ${cfg.provenance(m, { scope })}
        <div class="border-t border-slate-100 px-7 py-5">
          <p class="text-xs leading-relaxed text-slate-600">${freshnessLine(m)}${coverageSentence(m, cov)}</p>
