@@ -419,7 +419,10 @@ try {
   assert(localTarget, 'a verified issuer exercises fallback profile refresh');
   const capFixture = JSON.parse(readFileSync(resolve(publicDir, 'data/market-caps.json')));
   // Warm a real service-worker-held data response, then replace the server's capture.
-  await local.waitForFunction(() => navigator.serviceWorker.controller);
+  // Install explicitly in this fixture: the application's deferred registration may still
+  // be waiting for its complete static-history preparation after the first rows appear.
+  await local.evaluate(() => navigator.serviceWorker.register('/sw.js'));
+  await local.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 90000 });
   await local.evaluate(() => fetch('/data/market-caps.json').then(r => r.json()));
   let capPhase = 1;
   fallbackCaps = () => {

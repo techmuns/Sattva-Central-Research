@@ -144,6 +144,7 @@ export function industryGroup(industry) {
 
 const upper = (v) => String(v ?? '').trim().toUpperCase();
 const bseKey = (v) => (/^\d{6}$/.test(String(v ?? '').trim()) ? `BSE:${String(v).trim()}` : null);
+export const profileIsin = company => upper(company?.isin) || /^isin:(IN[A-Z0-9]{10})$/i.exec(String(company?.entityId || ''))?.[1].toUpperCase() || '';
 
 /**
  * Build the lookup. Every input is optional; pass what is loaded.
@@ -219,7 +220,7 @@ export function buildCompanyProfiles({ marketCaps = null, tickerMap = null, earn
   const profileOf = (company = {}) => {
     const bse = bseKey(company.scripCode || company.bseCode || company.bseId);
     const ticker = upper(company.ticker) || (bse ? aliases.get(bse) : '') || '';
-    const isin = upper(company.isin);
+    const isin = profileIsin(company);
     const keys = [bse, ticker].filter(k => k && (!isin || !ownersByKey.has(k) || ownersByKey.get(k)?.isin === isin));
     let cap = null, group = null;
     for (const k of keys) { cap ||= byKey.get(k) || null; group ||= groups.get(k) || null; }

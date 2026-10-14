@@ -523,7 +523,8 @@ const tab = makeFilingsTab({
         a screen that supplies no price date stays undated. Failed checks retain the last figure and its original check time.
         A company with no known figure shows “—” and is never treated as small or zero.</p>
       ${marketCaps ? `<p><strong>Market-cap coverage:</strong> ${escapeHtml(marketCaps.known)} of ${escapeHtml(marketCaps.companies)} directory companies have a saved public figure;
-        ${escapeHtml(marketCaps.checked)} were checked in the latest collection attempt. ${escapeHtml(marketCaps.unavailable)} still have no figure from this source.
+        ${escapeHtml(marketCaps.checked)} source checks were verified in the latest collection attempt${marketCaps.attempted != null ? ` (${escapeHtml(marketCaps.attempted)} attempted)` : ''}.
+        ${escapeHtml(marketCaps.unavailable)} still have no figure from this source.
         ${marketCaps.directoryPartial || marketCaps.directFailures > 0 || marketCaps.refused || !marketCaps.screenComplete || marketCaps.directRead < marketCaps.directTotal ? 'The latest collection is partial; previous figures retain their own check times.' : ''}
         ${marketCaps.directFailures ? `${escapeHtml(marketCaps.directFailures)} company-page checks failed.` : ''}</p>` : ''}
       ${capDirectory ? `<p><strong>Market-cap directory checks:</strong> BSE ${escapeHtml(capDirectory.bse?.checkedAt || 'unavailable')}${capDirectory.bse?.error ? ` (failed: ${escapeHtml(capDirectory.bse.error)})` : ''};

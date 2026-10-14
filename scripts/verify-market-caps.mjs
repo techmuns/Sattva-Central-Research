@@ -52,6 +52,7 @@ const profiles = buildCompanyProfiles({ marketCaps, technicals: { price_date: '2
 assert.equal(profiles.profileOf(entities[1]).mcapCr, 1468);
 assert.equal(profiles.profileOf({ bseCode: '513472' }).mcapCr, 567.89);
 assert.equal(profiles.profileOf(entities[2]).mcapCr, 567.89);
+assert.equal(profiles.profileOf({ ticker: 'SIMPLEXCAS', entityId: `isin:${entities[2].isin}` }).mcapCr, 567.89, 'news entity IDs retain exact BSE-only identity');
 assert.equal(profiles.profileOf({ ticker: 'SIMPLEXCAS' }).mcapCr, null, 'a BSE-only symbol cannot identify another NSE issuer');
 assert.equal(buildCompanyProfiles({ marketCaps }).profileOf({ ticker: 'PRIZOR', isin: 'INE002A01018' }).mcapCr, 567.89, 'exact ISIN wins over a conflicting symbol');
 assert.equal(buildCompanyProfiles({ marketCaps }).profileOf({ ticker: 'PRIZOR', isin: 'INE999A01018' }).mcapCr, null, 'a conflicting unknown ISIN cannot borrow a symbol cap');
@@ -74,10 +75,13 @@ assert.equal(table.profileOf({ ticker: 'SEL', isin: entities[1].isin }).mcapCr, 
 assert.equal(table.profileOf({ ticker: 'SEL', bseCode: '500371' }).mcapCr, 11.33);
 assert.equal(table.profileOf({ ticker: 'SEL' }).mcapCr, null, 'a colliding symbol has no unqualified owner');
 assert.equal(table.profileOf({ ticker: 'SEL', isin: 'INE999A01018' }).mcapCr, null);
+assert.equal(table.profileOf({ ticker: 'SEL', entityId: `isin:${entities[1].isin}` }).mcapCr, 73.94);
 const directory = { source: 'reference-files', builtAt: stamp, profileOf: profiles.profileOf };
 const combined = mergeProfileLookups(table, directory);
 assert.equal(combined.profileOf(entities[2]).mcapCr, 567.89, 'an index absent issuer still receives its directory cap');
 assert.equal(combined.profileOf({ ticker: 'SEL', isin: entities[1].isin }).mcapCr, 73.94, 'saved index values survive a partial directory');
+assert.equal(combined.profileOf({ ticker: 'SEL', entityId: `isin:${entities[0].isin}` }).mcapCr, 11.33);
+assert.equal(combined.profileOf({ ticker: 'SEL', entityId: `isin:${entities[1].isin}` }).mcapCr, 73.94, 'the memoized lookup separates colliding entity IDs');
 const verified = marketCapDirectoryChecks({ capturedAt: stamp }, { attemptedAt: '2026-10-14T00:00:00Z', directories: { equity: { checkedAt: stamp }, sme: { checkedAt: '2026-10-01T00:00:00Z', error: 'HTTP 503' } } });
 assert.equal(verified.nse.sme.checkedAt, '2026-10-01T00:00:00Z');
 assert.equal(verified.nse.sme.error, 'HTTP 503');
@@ -144,8 +148,13 @@ try {
   assert.equal(unavailable.entries.find(e => e.ticker === 'PRIZOR').checkState, 'unavailable');
   assert.equal(unavailable.coverage.directFailures, 0);
   assert.equal(unavailable.coverage.directUnavailable, 1);
+  assert.equal(unavailable.coverage.checked, 3, 'verified pages without figures count as completed source checks');
+  assert.equal(unavailable.coverage.refreshedFigures, 2);
+  assert.equal(unavailable.coverage.attempted, 3);
   const transport = run({ 1: screen({ keys: ['MAIN', '513472'] }), company: 503 });
   assert.equal(transport.coverage.directFailures, 1, 'a finished walk with a transport failure remains partial');
+  assert.equal(transport.coverage.checked, 2);
+  assert.equal(transport.coverage.attempted, 3);
   assert.equal(transport.coverage.directRead, transport.coverage.directTotal);
   assert.equal(transport.coverage.screenComplete, true);
 } finally { rmSync(tmp, { recursive: true, force: true }); }

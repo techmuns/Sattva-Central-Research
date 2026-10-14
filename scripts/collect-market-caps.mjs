@@ -79,7 +79,8 @@ function checkpoint() {
   const body = { version: 1, source: 'Screener public company market capitalisation, ₹ crore',
     generated_at: new Date().toISOString(), startedAt,
     directoryAsOf,
-    coverage: { companies: universe.length, known, checked: seen.size, unavailable: universe.length - known,
+    coverage: { companies: universe.length, known, checked: seen.size + directUnavailable,
+      attempted: seen.size + directUnavailable + directFailures, refreshedFigures: seen.size, unavailable: universe.length - known,
       screenComplete, sourceTotal, pagesRead, directRead, directTotal, directFailures, directUnavailable,
       refused, retryAt, directoryPartial, errors },
     entries: [...entries.values()].sort((a, b) => a.isin.localeCompare(b.isin)) };

@@ -87,7 +87,6 @@ export function loadProfiles() {
         if (body?.ok && Array.isArray(body.rows) && body.rows.length) indexProfiles = profileTable(body);
       }
     } catch { /* fall back to the committed files below */ }
-    publishProfiles(); // Filing issuers are usable while the larger lazy supplement is prepared.
     // Even a successful index only knows its filing issuers. Supplement the full directory,
     // and keep each last-good component when its own revalidation fails.
     const nextDirectory = await directoryRead;
