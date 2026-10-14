@@ -136,7 +136,7 @@ export function datedPerformance(row, eventDate = null) {
     closeRupees: Number.isFinite(verified ? row.move_close : row.cmp) ? (verified ? row.move_close : row.cmp) : null,
     latestSession: date && previous && previous < date && Date.parse(date) - Date.parse(previous) <= 4 * 86_400_000 && Number.isFinite(row.pct_change_today)
       ? { from: previous, to: date, changePct: row.pct_change_today, verification: row.move_check || 'single-source' } : null,
-    source: 'Breakouts / Technical' };
+    source: 'Screens' };
   if (!eventDate) return out;
   out.afterEvent = { status: 'unavailable', eventDate,
     reason: date && date <= eventDate ? 'No captured post-publication close.' : 'Matching pre-event adjusted close unavailable.' };

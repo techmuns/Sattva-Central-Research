@@ -72,7 +72,7 @@ export const TAB_META = Object.freeze({
   },
   'breakouts': {
     id: 'breakouts',
-    title: 'Breakouts / Technical',
+    title: 'Screens',
     subtitle: 'Daily technical scoring and captured prices across the NSE 500 and every listed holding — 16 rules, 24 points.',
     subviewNavigation: 'tabs',
     subviews: [

@@ -79,7 +79,7 @@ the shared service worker's data-freshness policy; only its module release revis
 | Con-call | Held-call analysis, full source tags and market-wide scheduled calls |
 | Portfolio calendar | Upcoming AGMs, postal ballots, results, calls and other dated events from the authenticated S Screen dashboard; available only in Portfolio scope |
 | Public Chatter | Every company/topic summary, including unresolved topics; individual posts already requested in the source tab |
-| Breakouts / Technical | Every real technical snapshot, including unavailable-price rows and below-threshold price changes; material price/volume/breakout events retain existing labels |
+| Screens | Every real technical snapshot, including unavailable-price rows and below-threshold price changes; material price/volume/breakout events retain existing labels |
 | Super Investors | Disclosed changes, every retained holding (including unchanged/filing-due states), and institutional/AMC disclosures |
 | News | Retained company stories, all available market-news archive shards, and captured posts from currently monitored X accounts |
 | Corp Announcements | Every retained BSE announcement |

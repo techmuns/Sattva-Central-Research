@@ -450,7 +450,7 @@ try {
   assert.equal(await answerArticle.locator('.research-cite-unresolved').count(), 0, 'slash spacing in a valid tab citation still resolves');
   assert.equal(await answerArticle.locator('.research-answer-references a').count(), 6, 'repeated citations share one source reference');
   assert.equal(await answerArticle.getByRole('link', { name: 'Source 1: News', exact: true }).count(), 2);
-  assert.equal(await answerArticle.getByRole('link', { name: 'Source 3: Breakouts / Technical', exact: true }).getAttribute('href'), '#/research/breakouts?scope=portfolio&company=JAYNECOIND');
+  assert.equal(await answerArticle.getByRole('link', { name: 'Source 3: Screens', exact: true }).getAttribute('href'), '#/research/breakouts?scope=portfolio&company=JAYNECOIND', 'citations saved with the former tab name open Screens');
   assert.equal(await answerArticle.getByRole('link', { name: 'Source 5: Telegram', exact: true }).getAttribute('href'), '#/research/public-chatter?section=telegram&scope=portfolio&company=JAYNECOIND');
   assert.equal(await answerArticle.getByRole('link', { name: 'Source 6: Public Chatter posts', exact: true }).getAttribute('href'), '#/research/public-chatter?open=mentions&scope=portfolio&company=JAYNECOIND');
   assert.match(await answerArticle.locator('.research-answer-freshness').innerText(), /2026-08-31/);
