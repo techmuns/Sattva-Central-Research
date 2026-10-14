@@ -867,6 +867,33 @@ try {
   assert.equal(await page.locator('[data-chatter-mention-row]').filter({ hasText: 'Source: Bearish' }).count(), 3);
   await page.screenshot({ path: '/tmp/sattva-chatter-dialog.png' });
   console.log('PASS: an actual AI chatter line opens Coforge’s dialog with the full mixed split, latest bullish mention and original source links.');
+  const savedReader = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  savedReader.on('pageerror', error => errors.push(error.message));
+  await savedReader.route('**/*', route => route.request().url() === `${familyOrigin}/research-bridge`
+    ? route.fulfill({ contentType: 'text/html', body: familyHtml.replace('window.holdPositions=true', 'window.holdPositions=false') })
+    : route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
+  await savedReader.clock.install({ time: new Date('2026-09-04T10:00:00+05:30') });
+  await savedReader.goto(origin);
+  await waitFor(savedReader, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  const originalReading = await savedReader.evaluate(async () => (await import('/js/tabs/ai-alerts.js')).getSavedView());
+  const savedFilters = { aiPriority: 'all', aiQuery: 'Zenith', aiSort: 'priority', aiEventTypes: ['results'], aiHideRoutine: true };
+  await savedReader.evaluate(async extras => {
+    const tab = await import('/js/tabs/ai-alerts.js');
+    tab.destroy(); tab.applySavedView(extras);
+    tab.render({ root: document.querySelector('#root'), scope: 'universe', params: {}, savedView: { reading: { extras } } });
+  }, savedFilters);
+  await waitFor(savedReader, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  assert.deepEqual(await savedReader.evaluate(async () => (await import('/js/tabs/ai-alerts.js')).getSavedView()), savedFilters);
+  assert.equal(await savedReader.locator('[data-ai-search]').inputValue(), 'Zenith');
+  assert.equal(await savedReader.locator('[data-ai-type="results"]').isChecked(), true);
+  await savedReader.locator('[data-ai-sort]').selectOption('newest');
+  await savedReader.locator('[data-ai-hide-routine]').uncheck();
+  await savedReader.evaluate(async () => { const tab = await import('/js/tabs/ai-alerts.js'); tab.destroy(); window.show('universe'); });
+  await waitFor(savedReader, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  assert.deepEqual(await savedReader.evaluate(async () => (await import('/js/tabs/ai-alerts.js')).getSavedView()), originalReading, 'saved AI screen choices do not leak into the ordinary reader');
+  assert.equal(await savedReader.evaluate(() => localStorage.getItem('sattva:ai-alerts:sort:v1')), null, 'saved sort edits do not overwrite the native preference');
+  await savedReader.close();
+  console.log('PASS: saved AI screens preserve priority, search, sort and event-type filters while restoring the ordinary reader');
   assert.deepEqual(errors, []);
   console.log('PASS: responsive search/cards at 320–1440px, calendar cleanup and zero application errors.');
 } catch (error) {

@@ -504,6 +504,7 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
 #content-host[data-saved-view] [data-section-head] h2 { display: none; }
 .saved-tab-editor { padding: 24px; }
 .saved-tab-field { display: flex; flex-direction: column; gap: 6px; margin: 18px 0; color: var(--ink-600); font-size: 13px; font-weight: 600; }
+.saved-tab-field[hidden], .saved-tab-actions button[hidden] { display: none; }
 .saved-tab-field input, .saved-tab-field select { width: 100%; padding: 10px 12px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 8px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-900); font-weight: 400; }
 .saved-tab-blank { padding: 40px 24px; border: 1px dashed rgb(var(--edge-slate-300, 203 213 225)); border-radius: 16px; text-align: center; background: rgb(var(--surface-white, 255 255 255)); }
 .saved-tab-blank h3 { color: var(--ink-900); font-size: 18px; font-weight: 700; }

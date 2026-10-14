@@ -27,7 +27,7 @@ import * as sourceBeacon from './source-beacon.js';
 import * as notifications from './notifications.js';
 import * as newsletter from './newsletter.js';
 import * as workspace from '../core/workspace.js';
-import { enterView } from '../core/view-reading.js';
+import { enterView, hasTableReading, captureTableReading } from '../core/view-reading.js';
 import { VIEW_ID, VIEW_SOURCES } from '../data/workspace-shared.js';
 
 // The nav model in one place: each workspace an ordered list of tab modules. Every module's
@@ -68,13 +68,15 @@ let releaseRouteLoading = null;
 const customModules = new Map();
 let workspaceDisposer = null;
 let workspaceFrame = 0;
+let viewDraft = null;
 const savedTabsUI = () => import('./saved-tabs.js');
 
 function workspaceTabs(ws) {
-  return [...ws.tabs, ...workspace.snapshot().tabs.map(view => {
+  return [...ws.tabs, ...[...workspace.snapshot().tabs.filter(view => view.id !== viewDraft?.view.id), ...(viewDraft ? [viewDraft.view] : [])].map(view => {
     const cached = customModules.get(view.id);
-    if (cached?.revision === view.revision && cached.definition === JSON.stringify(view)) return cached.module;
-    const readingSignature = JSON.stringify([view.source, view.scope, view.subview, view.params, view.reading]);
+    if (cached) cached.module.meta.hideFromNavigation = viewDraft?.view.id === view.id;
+    if (cached && cached.revision === view.revision && cached.definition === JSON.stringify(view)) return cached.module;
+    const readingSignature = JSON.stringify([view.source, view.subview, view.params, view.reading]);
     if (cached?.readingSignature === readingSignature) {
       cached.module.meta.title = view.title; cached.module.meta.navigationTitle = view.title; cached.module.meta.savedView = view;
       cached.revision = view.revision; cached.definition = JSON.stringify(view);
@@ -83,7 +85,7 @@ function workspaceTabs(ws) {
     const source = ws.tabs.find(tab => tab.meta.id === view.source);
     let ui, reader, applied = false;
     const module = {
-      meta: { ...(source?.meta || {}), id: view.id, title: view.title, navigationTitle: view.title, navigationGroup: null, hideFromNavigation: false, subviews: source?.meta.subviews || [], allowEmptyScope: source?.meta.allowEmptyScope || !source, savedView: view,
+      meta: { ...(source?.meta || {}), id: view.id, title: view.title, navigationTitle: view.title, navigationGroup: null, hideFromNavigation: viewDraft?.view.id === view.id, subviews: source?.meta.subviews || [], allowEmptyScope: source?.meta.allowEmptyScope || !source, savedView: view,
         readingKey: `${view.id}:${(cached?.generation || 0) + 1}` },
       async load() { ui = await savedTabsUI(); if (source) reader = await source.load(); },
       render(ctx) {
@@ -108,14 +110,48 @@ function workspaceTabs(ws) {
 
 async function editSavedTab(tab = null, seed = null) {
   const ui = await savedTabsUI();
-  ui.openTabEditor({ tab, seed, onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: view.scope }) });
+  ui.openTabEditor({ tab, seed, onPreview: beginViewDraft, onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: state.scope }) });
+}
+
+function beginViewDraft(view, original = null) {
+  const previous = viewDraft;
+  const returnRoute = viewDraft?.returnRoute || router.parseHash();
+  const base = original || viewDraft?.original || null;
+  viewDraft = { view: { ...view, id: previous?.view.id || `view-${crypto.randomUUID()}` }, original: base, returnRoute };
+  router.navigate({ workspace: 'research', tab: viewDraft.view.id, subview: view.subview, scope: state.scope, params: view.params });
+  if (previous) handleRoute(document.querySelector('#app'), router.parseHash());
+}
+
+async function publishViewDraft() {
+  const draft = viewDraft, module = currentTabModule;
+  const emptyScope = !module && !!contentHost.querySelector('[data-watchlist-add]');
+  if (!draft || router.parseHash().tab !== draft.view.id || (!emptyScope && module?.meta.id !== draft.view.id)) return;
+  const button = document.querySelector('[data-builder-save]'), status = document.querySelector('[data-builder-status]');
+  // Source controls must be mounted before capturing. No partial empty definition
+  // can replace the view while its original reader is still loading.
+  if (!emptyScope && draft.view.source && !hasTableReading(contentHost) && !contentHost.querySelector('[data-ai-search], [data-news-search], [data-live-section-tabs]')) {
+    status.textContent = 'Wait for this view to finish opening, then save its filters.'; return;
+  }
+  button.disabled = true;
+  const ui = await savedTabsUI();
+  const seed = emptyScope ? { scope: state.scope } : await ui.captureSavedTab({ root: contentHost, source: draft.view.source, scope: state.scope, subview: state.subview, params: router.parseHash().params, module });
+  const saved = { ...draft.view, ...seed, id: draft.original?.id || draft.view.id };
+  const result = await workspace.edit({ op: 'put', tab: saved, expected: draft.original?.revision ?? null });
+  if (viewDraft !== draft) return;
+  button.disabled = false;
+  if (result.confirmed || result.pending) {
+    viewDraft = null;
+    router.navigate({ workspace: 'research', tab: saved.id, subview: saved.subview, scope: state.scope });
+    // New drafts keep their ID when published, so no hashchange is needed.
+    handleRoute(document.querySelector('#app'), router.parseHash());
+  } else status.textContent = result.error || 'This tab could not be saved. Your filters remain here.';
 }
 
 async function addSavedTab() {
   const ui = await savedTabsUI(), tab = currentTabModule;
   const saved = tab?.meta.savedView, source = saved?.source || tab?.meta.id;
   const readingContext = { scope: state.scope, subview: state.subview, params: router.parseHash().params };
-  ui.openTabEditor({ onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: view.scope }),
+  ui.openTabEditor({ onPreview: beginViewDraft, onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: state.scope }),
     captureCurrent: VIEW_SOURCES.includes(source) ? async () => ui.captureSavedTab({ root: contentHost, source, ...readingContext, module: saved ? tab : await tab.load() }) : null });
 }
 
@@ -132,6 +168,21 @@ function renderSavedControls(root, tabModule, resolved) {
   mount.hidden = !saved;
   contentHost.toggleAttribute('data-saved-view', !!saved);
   if (mount.hidden) { mount.innerHTML = ''; return; }
+  if (viewDraft?.view.id === saved.id) {
+    mount.innerHTML = `<div class="saved-view-head" data-view-builder><div><h2>${escapeHtml(saved.title)}</h2><p>Choose filters in the live view below, then save this tab for everyone. Company scope follows the Scope filter above.</p><p data-builder-status role="status"></p></div><div class="saved-tab-actions"><button type="button" data-builder-choose>Choose view</button><button type="button" data-builder-cancel>Cancel</button><button type="button" data-builder-save>Save tab</button></div></div>`;
+    mount.querySelector('[data-builder-save]').addEventListener('click', () => void publishViewDraft());
+    mount.querySelector('[data-builder-choose]').addEventListener('click', async () => {
+      const ui = await savedTabsUI(), draft = viewDraft;
+      const reading = await ui.captureSavedTab({ root: contentHost, source: saved.source, scope: state.scope, subview: state.subview, params: router.parseHash().params, module: tabModule });
+      if (viewDraft !== draft) return;
+      ui.openTabEditor({ seed: { ...saved, ...reading }, onPreview: beginViewDraft, draftOnly: true });
+    });
+    mount.querySelector('[data-builder-cancel]').addEventListener('click', () => {
+      const route = viewDraft.returnRoute; viewDraft = null;
+      router.navigate({ ...route, scope: state.scope });
+    });
+    return;
+  }
   mount.innerHTML = `<div class="saved-view-head"><div><h2>${escapeHtml(saved.title)}</h2>${saved.source ? `<p>From ${escapeHtml(WORKSPACES[0].tabs.find(tab => tab.meta.id === saved.source)?.meta.navigationTitle || WORKSPACES[0].tabs.find(tab => tab.meta.id === saved.source)?.meta.title || saved.source)}</p>` : ''}</div><div class="saved-tab-actions">${saved.source ? '<button type="button" data-save-reading>Save filters</button>' : ''}<button type="button" data-edit-saved>Edit tab</button><button type="button" data-remove-saved>Remove tab</button></div></div>`;
   mount.querySelector('[data-save-reading]')?.addEventListener('click', () => void saveReaderFilters(tabModule, resolved, tabModule.meta.savedView));
   mount.querySelector('[data-edit-saved]')?.addEventListener('click', () => void editSavedTab(tabModule.meta.savedView));
@@ -237,14 +288,14 @@ export function mount(root) {
           if (draft.intent.op === 'put') {
             const latest = workspace.snapshot().tabs.find(tab => tab.id === draft.intent.tab.id);
             void savedTabsUI().then(ui => ui.openTabEditor({ tab: latest ? { ...draft.intent.tab, revision: latest.revision } : null, seed: draft.intent.tab,
-              onSaved: view => { workspace.dismissRejected(draft.intent.id); router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: view.scope }); } }));
+              onPreview: beginViewDraft, onSaved: view => { workspace.dismissRejected(draft.intent.id); router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: state.scope }); } }));
           } else workspace.dismissRejected(draft.intent.id);
         });
         message.append(' ', review);
       }
       if (tab) {
         renderTopNavigation(root, ws, TAB_GROUPS[tab.meta.navigationGroup]?.id || tab.meta.id);
-        if (VIEW_ID.test(route.tab) && currentTabModule !== tab) handleRoute(root, { ...route, scope: tab.meta.savedView.scope, subview: tab.meta.savedView.subview, params: tab.meta.savedView.params });
+        if (VIEW_ID.test(route.tab) && currentTabModule !== tab) handleRoute(root, { ...route, scope: route.scope || state.scope, subview: tab.meta.savedView.subview, params: tab.meta.savedView.params });
         else if (VIEW_ID.test(route.tab) && root.querySelector('.saved-view-head h2')?.textContent !== tab.meta.title) {
           renderSavedControls(root, tab, route); document.title = `${tab.meta.title} · Sattva Central Research`;
         }
@@ -361,6 +412,7 @@ function wireStaticHeader(root) {
 // ---- Route-dependent chrome: workspace dropdown, rail, top tabs, scope toggle ---------------
 
 function handleRoute(root, rawRoute) {
+  if (viewDraft && rawRoute.tab !== viewDraft.view.id) viewDraft = null;
   const ws = WORKSPACES.find((w) => w.id === rawRoute.workspace) || WORKSPACES[0];
   const tabModule = workspaceTabs(ws).find((t) => t.meta.id === rawRoute.tab) || (VIEW_ID.test(rawRoute.tab) ? null : ws.tabs[0]);
   if (!tabModule) {
@@ -379,7 +431,7 @@ function handleRoute(root, rawRoute) {
   const requestedSubview = rawRoute.subview || tabModule.meta.savedView?.subview;
   const subviewValid = subviews.some((s) => s.id === requestedSubview);
   const subview = subviewValid ? requestedSubview : subviews[0]?.id || null;
-  const scope = rawRoute.scope || tabModule.meta.savedView?.scope || state.scope;
+  const scope = rawRoute.scope || state.scope;
 
   // Tab-owned filter params ride along in the query string so a filtered view is shareable.
   // The shell doesn't interpret them — it just preserves them across route changes.
@@ -655,7 +707,7 @@ function mountTab(root, tabModule, resolved) {
       if (ctx.isCancelled) return;
       releaseRouteLoading?.(); releaseRouteLoading = null;
       contentHost.setAttribute('data-active-tab', tabModule.meta.id);
-      enterView({ key: tabModule.meta.readingKey || null, source: tabModule.meta.savedView?.source || tabModule.meta.id, preset: tabModule.meta.savedView || null });
+      enterView({ root: contentHost, key: tabModule.meta.readingKey || null, source: tabModule.meta.savedView?.source || tabModule.meta.id, preset: tabModule.meta.savedView || null });
       tabModule.render(ctx);
     } catch (err) {
       if (ctx.isCancelled) return;
@@ -683,7 +735,7 @@ function goTab(tabId) {
   const activeModule = workspaceTabs(ws).find((t) => t.meta.id === state.tab);
   if (TAB_GROUPS[tabId] && activeModule?.meta.navigationGroup === tabId) return;
   const tabModule = workspaceTabs(ws).find((t) => t.meta.id === tabId || t.meta.navigationGroup === tabId) || ws.tabs[0];
-  router.navigate({ workspace: ws.id, tab: tabModule.meta.id, subview: tabModule.meta.savedView?.subview || tabModule.meta.subviews?.[0]?.id || null, scope: tabModule.meta.savedView?.scope || state.scope });
+  router.navigate({ workspace: ws.id, tab: tabModule.meta.id, subview: tabModule.meta.savedView?.subview || tabModule.meta.subviews?.[0]?.id || null, scope: state.scope });
 }
 
 // Filter params belong to a specific sub-view, so switching sub-view (or tab, or workspace)
@@ -693,6 +745,11 @@ function goSubview(subviewId) {
 }
 
 function goScope(scope) {
+  if (viewDraft && currentTabModule?.meta.id === viewDraft.view.id && (hasTableReading(contentHost) || contentHost.querySelector('[data-ai-search], [data-news-search]'))) {
+    const reading = captureTableReading(contentHost);
+    reading.extras = currentTabModule.getSavedView();
+    viewDraft.view = { ...viewDraft.view, reading, subview: state.subview, params: router.parseHash().params };
+  }
   router.navigate({ workspace: state.workspace, tab: state.tab, subview: state.subview, scope, params: router.parseHash().params });
 }
 

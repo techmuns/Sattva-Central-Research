@@ -24,6 +24,7 @@ export const TAB_META = Object.freeze({
     title: 'Ask Research',
     // Removed from the tab strip; saved research and newsletter links still resolve.
     hideFromNavigation: true,
+    savedViewAvailable: false,
     subtitle: 'Ask across every dashboard tab.',
     subviews: [],
     allowEmptyScope: true,
@@ -38,7 +39,7 @@ export const TAB_META = Object.freeze({
     // collapse — the feed filter in the toolbar does that job without costing a navigation.
     subviews: [],
   },
-  'bookmarks': { id: 'bookmarks', title: 'Bookmarks', subtitle: 'Your saved research, kept together.', subviews: [], allowEmptyScope: true, scopeIndependent: true },
+  'bookmarks': { id: 'bookmarks', title: 'Bookmarks', subtitle: 'Your saved research, kept together.', subviews: [], allowEmptyScope: true, scopeIndependent: true, savedViewAvailable: false },
   'earnings-hub': {
     id: 'earnings-hub',
     title: 'Earnings Hub',

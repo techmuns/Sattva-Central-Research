@@ -261,7 +261,7 @@ function dashboardCacheKey() {
 
 // Compose column presentation with other releases without changing their version markers.
 function sharedWorkspaceCacheKey() {
-  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v6`;
+  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v7-builder`;
 }
 
 function tableLayoutCacheKey() {
