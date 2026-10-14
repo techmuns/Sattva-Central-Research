@@ -789,3 +789,9 @@ html[data-theme="dark"] .ann-read-original, html[data-theme="dark"] .relevance-v
 html[data-theme] .chatter-toolbar .tab-btn { color: var(--ink-600); }
 html[data-theme] .chatter-toolbar .tab-btn.is-active { color: var(--accent-600); }
 html[data-theme] [data-chatter-panel] [data-score-table] tbody tr { border-color: rgb(var(--edge-slate-100, 241 245 249)); }
+
+/* Keep the publisher's artwork on its original light canvas in either theme. */
+.manager-avatar { position: relative; display: inline-flex; flex: 0 0 44px; width: 44px; height: 44px; overflow: hidden; border-radius: 12px; box-shadow: 0 0 0 1px rgb(var(--edge-slate-200, 226 232 240)); }
+.manager-avatar-fallback { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; }
+.manager-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.manager-image[data-manager-image="sattva"] { padding: 6px; }
