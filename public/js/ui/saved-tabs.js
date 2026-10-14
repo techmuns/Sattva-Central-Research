@@ -20,7 +20,7 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
   const value = structuredClone(tab || seed || { title: '', source: null, subview: null, scope: state.scope });
   const sources = viewChoices(), groups = [...new Map(sources.map(source => [source.group, source])).values()];
   openModal(`<form data-saved-tab-form class="saved-tab-editor">
-    <h2>${tab ? 'Edit tab' : 'Build a Tab'}</h2>
+    <h2 class="saved-tab-dialog-title">${tab ? 'Edit tab' : 'Build a Tab'}</h2>
     <p>Choose a live view, select its filters, then save your tab for everyone.</p>
     ${field('Tab heading', `<input data-saved-title maxlength="80" required placeholder="Capital Raises" value="${escapeHtml(value.title)}">`)}
     ${captureCurrent ? '<div class="saved-tab-actions"><button type="button" data-saved-current>Use current view</button></div>' : ''}
@@ -30,6 +30,7 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
     <p data-saved-scope-note>Company scope follows the Scope filter above (currently ${escapeHtml(scopeLabel(state.scope))}).</p>
     <p class="saved-tab-error" data-saved-error role="status"></p>
     <div class="saved-tab-actions"><button type="button" data-saved-cancel>Cancel</button>${onPreview ? '<button type="button" data-saved-preview>Choose filters</button>' : ''}<button type="submit" data-saved-submit></button></div>
+    <button type="button" class="saved-tab-close" data-modal-close aria-label="Close tab dialog" title="Close tab dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke-linecap="round" /></svg></button>
   </form>`, { size: 'default' });
   const form = document.querySelector('[data-saved-tab-form]');
   const group = form.querySelector('[data-saved-group]'), source = form.querySelector('[data-saved-source]'), subview = form.querySelector('[data-saved-subview]');
