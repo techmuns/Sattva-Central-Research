@@ -515,7 +515,11 @@ try {
   await returning.waitForFunction(() => window.caQuery.meta().state === 'ready' && !window.caQuery.meta().refreshing);
   await returning.locator('[data-table-search]').fill('Bharat');
   await returning.waitForFunction(() => window.caQuery.query().q === 'bharat' && window.caQuery.meta().state === 'ready' && !window.caQuery.meta().refreshing);
-  await returning.getByRole('option', { name: /Bharat Parenterals/ }).click();
+  await returning.getByRole('option', { name: /Bharat Parenterals/ }).waitFor();
+  // Mouse selection is covered above. Use the native keyboard flow here: the
+  // warm-cache fixture's floating menu can move during Playwright's auto-scroll.
+  await returning.locator('[data-table-search]').press('ArrowDown');
+  await returning.locator('[data-table-search]').press('Enter');
   assert.match(await returning.locator('[data-announcement-company-chip]').innerText(), /Bharat Parenterals/);
   assert((await returning.evaluate(() => caches.keys())).every(key => key.includes('announcement-company-search-v1') && key.includes('announcement-recovery-v1') && key.includes('announcement-search-clarity-v1')));
   await returning.waitForFunction(() => window.stream.rows().some(r => r.title.includes('recovered arrival')));

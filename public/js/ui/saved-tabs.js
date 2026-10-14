@@ -20,11 +20,11 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
   const value = structuredClone(tab || seed || { title: '', source: null, subview: null, scope: state.scope });
   const sources = viewChoices(), groups = [...new Map(sources.map(source => [source.group, source])).values()];
   openModal(`<form data-saved-tab-form class="saved-tab-editor">
-    <h2>${tab ? 'Edit shared tab' : 'Add a shared tab'}</h2>
-    <p>Choose a tab and subtab, then use that live view's filters to build your screen.</p>
-    ${field('Page heading', `<input data-saved-title maxlength="80" required placeholder="Capital Raises" value="${escapeHtml(value.title)}">`)}
+    <h2>${tab ? 'Edit tab' : 'Build a Tab'}</h2>
+    <p>Choose a live view, select its filters, then save your tab for everyone.</p>
+    ${field('Tab heading', `<input data-saved-title maxlength="80" required placeholder="Capital Raises" value="${escapeHtml(value.title)}">`)}
     ${captureCurrent ? '<div class="saved-tab-actions"><button type="button" data-saved-current>Use current view</button></div>' : ''}
-    ${field('Tab', `<select data-saved-group><option value="">Blank page — choose a view later</option>${groups.map(source => `<option value="${source.group}">${escapeHtml(source.groupTitle)}</option>`).join('')}</select>`)}
+    ${field('Tab', `<select data-saved-group required>${groups.map(source => `<option value="${source.group}">${escapeHtml(source.groupTitle)}</option>`).join('')}</select>`)}
     ${field('Subtab', '<select data-saved-source></select>')}
     ${field('View', '<select data-saved-subview></select>')}
     <p data-saved-scope-note>Company scope follows the Scope filter above (currently ${escapeHtml(scopeLabel(state.scope))}).</p>
@@ -35,9 +35,9 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
   const group = form.querySelector('[data-saved-group]'), source = form.querySelector('[data-saved-source]'), subview = form.querySelector('[data-saved-subview]');
   const sameReading = () => source.value === (value.source || '') && (subview.value || null) === (value.subview || TAB_META[value.source]?.subviews?.[0]?.id || null);
   const refreshAction = () => {
-    form.querySelector('[data-saved-submit]').textContent = draftOnly || (onPreview && source.value && !sameReading()) ? 'Choose filters' : tab ? 'Save tab' : 'Add tab';
+    form.querySelector('[data-saved-submit]').textContent = draftOnly || !tab || (onPreview && !sameReading()) ? 'Select filters →' : 'Save tab';
     const preview = form.querySelector('[data-saved-preview]');
-    if (preview) preview.hidden = !source.value || !sameReading();
+    if (preview) preview.hidden = draftOnly || !tab || !source.value || !sameReading();
   };
   const refreshViews = () => {
     const views = TAB_META[source.value]?.subviews || [];
@@ -54,7 +54,7 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
     subview.closest('label').querySelector('span').textContent = children.length > 1 ? 'View' : 'Subtab';
     refreshViews();
   };
-  group.value = sources.find(source => source.id === value.source)?.group || '';
+  group.value = sources.find(source => source.id === value.source)?.group || groups[0].group;
   group.addEventListener('change', () => refreshSources());
   source.addEventListener('change', refreshViews); subview.addEventListener('change', refreshAction);
   refreshSources(value.source);
@@ -64,7 +64,7 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
       const captured = await captureCurrent();
       if (!form.isConnected) return;
       Object.assign(value, captured);
-      group.value = sources.find(source => source.id === value.source)?.group || '';
+      group.value = sources.find(source => source.id === value.source)?.group || groups[0].group;
       refreshSources(value.source); button.textContent = 'Current view selected';
     } catch { form.querySelector('[data-saved-error]').textContent = 'This view could not be captured. Wait for its table to finish loading, then try again.'; }
     finally { button.disabled = false; }
@@ -73,13 +73,14 @@ export function openTabEditor({ tab = null, seed = null, onSaved, captureCurrent
   const selection = () => cleanSavedTab({ id: tab?.id || `view-${crypto.randomUUID()}`, title: form.querySelector('[data-saved-title]').value.trim() || 'New shared tab',
     source: source.value || null, subview: subview.value || null, scope: state.scope,
     params: sameReading() ? value.params || {} : {}, reading: sameReading() ? value.reading || {} : {} });
-  const preview = () => { const selected = selection(); closeModal(); onPreview(selected, tab); };
+  const preview = () => { if (!form.reportValidity()) return; const selected = selection(); closeModal(); onPreview(selected, tab); };
   form.querySelector('[data-saved-preview]')?.addEventListener('click', preview);
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const title = form.querySelector('[data-saved-title]').value.trim();
     if (!title) return;
-    if (draftOnly || (onPreview && source.value && !sameReading())) { preview(); return; }
+    if (!source.value) return;
+    if (onPreview && (draftOnly || !tab || !sameReading())) { preview(); return; }
     const saved = selection();
     const button = form.querySelector('[data-saved-submit]'); button.disabled = true;
     const result = await workspace.edit({ op: 'put', tab: saved, expected: tab?.revision ?? null });

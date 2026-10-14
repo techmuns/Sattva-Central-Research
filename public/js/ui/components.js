@@ -97,7 +97,7 @@ export function scopeSummary({ scope, count, noun = 'companies', book = null }) 
 }
 
 // Scrollable tabs with explicit overflow controls and manual keyboard activation.
-export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey = null, sharedOrder = null, onOrderChange = null }) {
+export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey = null, sharedOrder = null, onOrderChange = null, searchable = false, draft = null }) {
   const defaults = tabs.map(tab => tab.id);
   if (sharedOrder) {
     const rank = new Map(sharedOrder.map((id, index) => [id, index]));
@@ -106,6 +106,7 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
   let list = null;
   let revealActive = () => {};
   let syncButtonOrder = () => {};
+  let renderPicker = () => {};
   const tabStopId = () => tabs.some((tab) => tab.id === activeId) ? activeId : tabs[0]?.id;
   const html = `
     <div class="tab-bar" data-tab-bar${orderKey ? ' data-tab-reorderable' : ''}>
@@ -121,6 +122,7 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
         </button>`
         )
         .join('')}
+      ${draft ? `<button type="button" role="tab" class="tab-btn tab-draft" data-tab-draft aria-selected="${draft.id === activeId}" tabindex="${draft.id === activeId ? 0 : -1}" title="${escapeHtml(draft.label)} — unsaved. Select filters below, then Save tab."><span>${escapeHtml(draft.label)}</span><small>Unsaved</small></button>` : ''}
       </div>
       <div class="tab-scroll-controls" data-tab-scroll-controls hidden>
         <button type="button" class="tab-scroll-btn" data-tab-scroll="-1" aria-label="Scroll tabs left" title="Scroll tabs left">
@@ -130,16 +132,27 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
       </div>
+      ${searchable ? `<button type="button" class="tab-picker-toggle" data-tab-picker-toggle aria-label="All tabs, ${tabs.length} tabs" aria-haspopup="dialog" aria-expanded="false">All tabs <span>${tabs.length}</span><span aria-hidden="true">⌄</span></button>
+      <div class="tab-picker" data-tab-picker popover="auto" role="dialog" aria-label="All tabs">
+        <div class="tab-picker-head"><strong>All tabs <span>${tabs.length}</span></strong><button type="button" data-tab-picker-close aria-label="Close all tabs">×</button></div>
+        <label class="tab-picker-search"><span class="sr-only">Search tabs</span><input type="search" data-tab-picker-search placeholder="Search tabs…" autocomplete="off"></label>
+        <p class="tab-picker-hint">Open a tab, or use the arrows to rearrange it for everyone.</p>
+        <div class="tab-picker-results" data-tab-picker-results></div>
+        <p class="tab-picker-live sr-only" data-tab-picker-live role="status"></p>
+      </div>` : ''}
     </div>`;
 
   function wire(root) {
     const bar = root.querySelector('[data-tab-bar]');
     list = bar.querySelector('[data-tab-list]');
     const buttons = [...list.querySelectorAll('[data-tab-id]')];
+    const draftButton = list.querySelector('[data-tab-draft]');
+    const navigable = () => [...buttons, ...(draftButton ? [draftButton] : [])];
     syncButtonOrder = () => {
       buttons.splice(0, buttons.length, ...list.querySelectorAll('[data-tab-id]'));
       const byId = new Map(tabs.map(tab => [tab.id, tab]));
       tabs = buttons.map(button => byId.get(button.dataset.tabId));
+      renderPicker();
     };
     const controls = bar.querySelector('[data-tab-scroll-controls]');
     const previous = bar.querySelector('[data-tab-scroll="-1"]');
@@ -167,16 +180,19 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
     const measure = () => {
       // Compare against the FULL available width, including the space controls would release.
       // Otherwise controls can keep themselves visible after the viewport grows to fit all tabs.
-      controls.hidden = list.scrollWidth <= bar.clientWidth - 12 + 1;
+      const pickerWidth = bar.querySelector('[data-tab-picker-toggle]')?.offsetWidth || 0;
+      controls.hidden = list.scrollWidth <= bar.clientWidth - pickerWidth - 12 + 1;
       const focused = buttons.includes(document.activeElement) ? document.activeElement : null;
       reveal(focused || buttons.find((button) => button.dataset.tabId === activeId), false);
       syncEdges();
     };
     revealActive = () => {
-      reveal(buttons.find((button) => button.dataset.tabId === activeId));
+      // A search can jump across dozens of tabs. Reveal the selected destination
+      // immediately instead of animating the reader through the entire collection.
+      reveal(buttons.find((button) => button.dataset.tabId === activeId), false);
       syncEdges();
     };
-    const tabStop = (button) => buttons.forEach((item) => { item.tabIndex = item === button ? 0 : -1; });
+    const tabStop = (button) => navigable().forEach((item) => { item.tabIndex = item === button ? 0 : -1; });
     const onClick = (event) => {
       const button = event.target.closest('[data-tab-id]');
       if (!button) return;
@@ -184,13 +200,13 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
       onSelect(button.dataset.tabId);
     };
     const onKeydown = (event) => {
-      const index = buttons.indexOf(event.target);
+      const items = navigable(), index = items.indexOf(event.target);
       if (index < 0 || event.altKey || event.ctrlKey || event.metaKey) return;
       let target;
-      if (event.key === 'ArrowRight') target = buttons[(index + 1) % buttons.length];
-      else if (event.key === 'ArrowLeft') target = buttons[(index - 1 + buttons.length) % buttons.length];
-      else if (event.key === 'Home') target = buttons[0];
-      else if (event.key === 'End') target = buttons.at(-1);
+      if (event.key === 'ArrowRight') target = items[(index + 1) % items.length];
+      else if (event.key === 'ArrowLeft') target = items[(index - 1 + items.length) % items.length];
+      else if (event.key === 'Home') target = items[0];
+      else if (event.key === 'End') target = items.at(-1);
       else return; // Enter/Space activate the native button; arrows only move focus.
       event.preventDefault();
       tabStop(target);
@@ -210,9 +226,71 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
       buttons.splice(0, buttons.length, ...list.querySelectorAll('[data-tab-id]'));
       const byId = new Map(tabs.map(tab => [tab.id, tab]));
       tabs = buttons.map(button => byId.get(button.dataset.tabId));
+      renderPicker();
       if (buttons.includes(document.activeElement)) tabStop(document.activeElement);
       measure();
     }, onOrderChange) : null;
+
+    const picker = bar.querySelector('[data-tab-picker]'), toggle = bar.querySelector('[data-tab-picker-toggle]');
+    const pickerAbort = new AbortController();
+    if (picker) {
+      const input = picker.querySelector('[data-tab-picker-search]'), results = picker.querySelector('[data-tab-picker-results]');
+      const listen = (target, type, fn) => target.addEventListener(type, fn, { signal: pickerAbort.signal });
+      renderPicker = () => {
+        const focused = results.contains(document.activeElement) ? document.activeElement : null;
+        const focusKey = focused?.dataset.tabPick || focused?.dataset.tabMove;
+        const direction = focused?.dataset.direction;
+        const query = input.value.trim().toLocaleLowerCase();
+        const matches = tabs.filter(tab => tab.label.toLocaleLowerCase().includes(query));
+        results.innerHTML = matches.map(tab => {
+          const index = tabs.indexOf(tab), selected = tab.id === activeId;
+          return `<div class="tab-picker-row${selected ? ' is-current' : ''}"><button type="button" class="tab-picker-item" data-tab-pick="${escapeHtml(tab.id)}" ${selected ? 'aria-current="page"' : ''}><span>${escapeHtml(tab.label)}</span><small>${tab.saved ? 'Saved tab' : 'Research tab'}${selected ? ' · Current' : ''}</small></button>${orderKey ? `<div class="tab-picker-moves"><button type="button" data-tab-move="${escapeHtml(tab.id)}" data-direction="-1" aria-label="Move ${escapeHtml(tab.label)} earlier" title="Move before ${escapeHtml(tabs[index - 1]?.label || 'first tab')}" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-tab-move="${escapeHtml(tab.id)}" data-direction="1" aria-label="Move ${escapeHtml(tab.label)} later" title="Move after ${escapeHtml(tabs[index + 1]?.label || 'last tab')}" ${index === tabs.length - 1 ? 'disabled' : ''}>↓</button></div>` : ''}</div>`;
+        }).join('') || '<p class="tab-picker-empty">No tabs match your search.</p>';
+        picker.querySelector('[data-tab-picker-live]').textContent = `${matches.length} tabs found`;
+        // Keep keyboard focus when moving within the full shared order, even during a search.
+        if (focusKey) {
+          const target = [...results.querySelectorAll('button')].find(button => (button.dataset.tabPick || button.dataset.tabMove) === focusKey && button.dataset.direction === direction);
+          (target?.disabled ? [...results.querySelectorAll('[data-tab-pick]')].find(button => button.dataset.tabPick === focusKey) : target)?.focus({ preventScroll: true });
+        }
+      };
+      const positionPicker = () => {
+        const rect = toggle.getBoundingClientRect(), width = Math.min(420, innerWidth - 24);
+        picker.style.width = `${width}px`;
+        picker.style.left = `${Math.max(12, Math.min(rect.right - width, innerWidth - width - 12))}px`;
+        picker.style.top = `${Math.max(12, Math.min(rect.bottom + 8, innerHeight - Math.min(520, innerHeight * .7) - 12))}px`;
+      };
+      listen(toggle, 'click', () => {
+        if (picker.matches(':popover-open')) { picker.hidePopover(); return; }
+        input.value = ''; renderPicker(); positionPicker(); picker.showPopover(); input.focus();
+      });
+      listen(picker, 'toggle', event => { toggle.setAttribute('aria-expanded', String(event.newState === 'open')); });
+      listen(input, 'input', renderPicker);
+      listen(picker, 'click', event => {
+        if (event.target.closest('[data-tab-picker-close]')) { picker.hidePopover(); toggle.focus(); return; }
+        const choice = event.target.closest('[data-tab-pick]');
+        if (choice) { picker.hidePopover(); onSelect(choice.dataset.tabPick); buttons.find(button => button.dataset.tabId === choice.dataset.tabPick)?.focus({ preventScroll: true }); return; }
+        const move = event.target.closest('[data-tab-move]');
+        if (move && !move.disabled) {
+          const id = move.dataset.tabMove, direction = move.dataset.direction;
+          disposeOrder?.moveById(id, Number(direction));
+          const target = [...results.querySelectorAll('[data-tab-move]')].find(button => button.dataset.tabMove === id && button.dataset.direction === direction);
+          (target?.disabled ? [...results.querySelectorAll('[data-tab-pick]')].find(button => button.dataset.tabPick === id) : target)?.focus({ preventScroll: true });
+        }
+      });
+      listen(picker, 'keydown', event => {
+        // Search inputs consume Escape to clear text in some browsers. Close this
+        // navigator explicitly so one press always returns to the tab strip.
+        if (event.key === 'Escape') { event.preventDefault(); picker.hidePopover(); toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); return; }
+        if (!['ArrowDown', 'ArrowUp'].includes(event.key) || event.altKey) return;
+        const choices = [...results.querySelectorAll('[data-tab-pick]')];
+        if (!choices.length) return;
+        event.preventDefault();
+        const index = choices.indexOf(document.activeElement);
+        choices[index < 0 ? (event.key === 'ArrowDown' ? 0 : choices.length - 1) : (index + (event.key === 'ArrowDown' ? 1 : -1) + choices.length) % choices.length].focus();
+      });
+      listen(window, 'resize', () => { if (picker.matches(':popover-open')) positionPicker(); });
+      renderPicker();
+    }
 
     list.addEventListener('click', onClick);
     list.addEventListener('keydown', onKeydown);
@@ -226,6 +304,9 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
 
     return () => {
       disposeOrder?.();
+      pickerAbort.abort();
+      if (picker?.matches(':popover-open')) picker.hidePopover();
+      renderPicker = () => {};
       observer.disconnect();
       cancelAnimationFrame(frame);
       list.removeEventListener('click', onClick);
@@ -254,8 +335,11 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
       button.setAttribute('aria-selected', String(selected));
       button.classList.toggle('is-active', selected);
       // Header destinations have no selected tab, but the strip stays keyboard-accessible.
-      button.tabIndex = button.dataset.tabId === tabStopId() ? 0 : -1;
+      button.tabIndex = activeId === draft?.id ? -1 : button.dataset.tabId === tabStopId() ? 0 : -1;
     }
+    const draftButton = list.querySelector('[data-tab-draft]');
+    if (draftButton) { draftButton.setAttribute('aria-selected', String(activeId === draft.id)); draftButton.tabIndex = activeId === draft.id ? 0 : -1; }
+    renderPicker();
     revealActive();
   }
 
