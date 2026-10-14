@@ -565,7 +565,7 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
 
 function renderTopNavigation(root, ws, navigationId) {
   const shared = workspace.snapshot();
-  const sharedOrder = shared.revision > 0 ? shared.order : null;
+  const sharedOrder = (shared.navigationRevision ?? shared.revision) > 0 ? shared.order : null;
   const tabItems = [...new Map(workspaceTabs(ws).filter((t) => t !== bookmarks && !t.meta.hideFromNavigation)
     .map(t => {
       const parent = TAB_GROUPS[t.meta.navigationGroup], id = parent?.id || t.meta.id;

@@ -66,12 +66,18 @@ const now = () => clock.getTime();
 const srv = await startAnnouncementServer({ indexDir: tmp, publicDir, readFetcher, now });
 let fallbackCaps = null, capReads = 0;
 const fallback = await startAnnouncementServer({ indexDir: null, publicDir, readFetcher: async () => new Response('down', { status: 503 }), now,
-  transformAsset(path, bytes) { if (path === '/data/market-caps.json' && fallbackCaps) { capReads++; return Buffer.from(JSON.stringify(fallbackCaps())); } return bytes; } });
+  transformAsset(path, bytes) {
+    if (path === '/sw.js') return bytes.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/assets/brand/favicon.svg', self.location).href;");
+    if (path === '/data/market-caps.json' && fallbackCaps) { capReads++; return Buffer.from(JSON.stringify(fallbackCaps())); }
+    return bytes;
+  } });
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const errors = [];
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  // Reader/data behavior is independent of asset prefetch. Dedicated cache-upgrade suites
+  // verify controlled sessions; keep their background precache out of these source fixtures.
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 900 } });
   // Nothing leaves the machine: CDNs and publishers answer empty, new windows are noted and closed.
   await context.route('**/*', (route) => (route.request().url().startsWith('http://127.0.0.1') ? route.continue() : route.fulfill({ status: 200, body: '' })));
   const opened = [];
@@ -132,7 +138,7 @@ try {
   assert.equal(meta.total, index.counts.rows, 'All time counts every filing');
   assert.equal(srv.stats.queries, 2, 'one page request per selected period, not the history');
   const rows = await caRows();
-  const firstSubject = await page.locator('tbody tr[data-row-key]').first().locator('div.truncate.font-semibold').getAttribute('title');
+  const firstSubject = await page.locator('tbody tr[data-row-key]').first().locator('[data-record-name]').getAttribute('title');
   assert.equal(firstSubject, rows[0].title.replace(/\s+/g, ' ').trim(), 'the subject is the exchange’s own words');
   assert.doesNotMatch(await page.locator('tbody').innerText(), /\b(?:High|Medium|Low) (?:priority|relevance|importance)\b/i, 'no rank label is printed');
   for (let i = 1; i < rows.length; i++) {
@@ -143,6 +149,31 @@ try {
   assert(await page.locator('tbody .category-chip').count() > 0, 'category tags are visible');
   assert(await page.locator('tbody td.text-right').filter({ hasText: /₹/ }).count() > 0, 'market caps are visible');
   ok(`server mode: ${meta.total} real filings, one page request, exchange subjects, categories, market cap, ranked within day, no labels`);
+
+  const subjects = await page.locator('tbody tr[data-row-key]').evaluateAll(items => items.map(row => {
+    const subject = row.querySelector('[data-record-name]'), bookmark = row.querySelector('.record-identity-actions [data-bookmark-key]');
+    const text = subject.getBoundingClientRect(), action = bookmark.getBoundingClientRect();
+    return { title: subject.textContent, height: text.height, line: parseFloat(getComputedStyle(subject).lineHeight),
+      wraps: getComputedStyle(subject).whiteSpace === 'normal', actionRight: action.left >= text.right - 1,
+      aligned: Math.abs(action.top + action.height / 2 - text.top - parseFloat(getComputedStyle(subject).lineHeight) / 2) < 7,
+      misplacedWatch: !!row.querySelector('.record-subject-column [data-watch]'),
+      companyWatch: !row.querySelector('[data-watch]') || !!row.querySelector('.record-company-column [data-watch]') };
+  }));
+  assert(subjects.every(item => item.wraps && item.actionRight && item.aligned && !item.misplacedWatch && item.companyWatch), 'actions stay beside their own content, aligned with the first title line');
+  assert(subjects.some(item => item.height > item.line * 1.5), 'a real long exchange subject wraps completely');
+  const firstRow = page.locator('tbody tr[data-row-key]').first();
+  const readCount = srv.stats.reads;
+  await firstRow.locator('.record-identity-actions [data-bookmark-key]').focus(); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key] [data-bookmark-key]')?.getAttribute('aria-pressed') === 'true');
+  assert.equal(srv.stats.reads, readCount, 'bookmarking does not open the announcement reader');
+  await firstRow.locator('[data-bookmark-key]').click();
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key] [data-bookmark-key]')?.getAttribute('aria-pressed') === 'false');
+  await page.locator('[data-notebook-toast] [aria-label="Dismiss"]').click();
+  await page.locator('.record-company-column [data-watch]').first().click();
+  await page.locator('[data-watch-attribution]').waitFor();
+  assert.equal(srv.stats.reads, readCount, 'the company watch control keeps its own interaction');
+  await page.keyboard.press('Escape');
+  ok('complete wrapped subjects, fixed first-line bookmarks, company watch controls, keyboard saving and independent actions');
 
   // Category filter (multi-select).
   await page.locator('[data-ca-open="categories"]').click();
@@ -201,7 +232,7 @@ try {
   const target = feedbackPair(await caRows(), { pdf: true })?.row;
   assert(target, 'the page holds an exchange PDF with a comparable same-day peer for the read and feedback checks');
   const targetRow = page.locator(`tbody tr[data-row-key="${target.id}"]`);
-  await targetRow.locator('.ca-company-cell').click();
+  await targetRow.locator('[data-row-open]').focus(); await page.keyboard.press('Enter');
   const popup = page.locator('#modal-content [data-ann-read]');
   await popup.waitFor();
   assert.deepEqual(await popup.locator('.ann-read-section h3').allInnerTexts().then((t) => t.map((s) => s.trim().toLowerCase())),
@@ -215,7 +246,7 @@ try {
   await targetRow.locator('.ca-company-cell').click();
   await popup.locator('[data-slot="what"]').filter({ hasText: 'read in full' }).waitFor();
   assert.equal(counts.model, 1, 'reopening costs nothing');
-  ok('AI Read on click: five fixed sections, the exchange subject, Open Original Filing, read once and kept');
+  ok('AI Read by keyboard and click: five fixed sections, the exchange subject, Open Original Filing, read once and kept');
 
   // Important / Not important inside the popup trains the shared model and re-orders the list.
   const beforeRows = await caRows();
@@ -381,10 +412,23 @@ try {
   // Phone width and dark appearance.
   await page.goto(`${srv.url}#/research/corp-announcements?scope=universe`);
   await ready();
+  await settle();
   for (const theme of ['light', 'dark']) {
     await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
     await page.setViewportSize({ width: 390, height: 844 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme}: no sideways page scroll at 390px`);
+    // Resolve the mounted row inside the same browser task as its measurements: arriving
+    // rows can replace a locator's earlier element handle while the viewport is resized.
+    const controls = await page.evaluate(() => {
+      const row = document.querySelector('table[data-shared-column-layout="corp-announcements"] tbody tr[data-row-key]');
+      return {
+        subjectWatch: row.querySelector('.record-subject-column [data-watch]') !== null,
+        bookmark: row.querySelector('.record-identity-actions [data-bookmark-key]').getBoundingClientRect().width,
+        bookmarkStyle: getComputedStyle(row.querySelector('.record-identity-actions [data-bookmark-key]')).width,
+        wrap: getComputedStyle(row.querySelector('[data-record-name]')).whiteSpace,
+      };
+    });
+    assert(!controls.subjectWatch && controls.bookmark >= 28 && controls.wrap === 'normal', `${theme}: mobile keeps separate reachable actions and complete title wrapping ${JSON.stringify(controls)}`);
     await page.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
     await popup.waitFor();
     const box = await popup.boundingBox();
@@ -400,10 +444,14 @@ try {
   ok('phone width and dark appearance');
 
   // ---- No index: the browser answers from the captures, and says so ---------------------------
-  const local = await context.newPage();
+  // This part explicitly tests a service-worker-held source capture. Give it a separate
+  // controlled context so the reader fixture's disabled precache and fake clock cannot leak in.
+  const fallbackContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await fallbackContext.route('**/*', route => route.request().url().startsWith(fallback.url) ? route.continue() : route.fulfill({ status: 200, body: '' }));
+  const local = await fallbackContext.newPage();
   local.on('pageerror', (e) => errors.push(String(e)));
   await local.clock.install({ time: clock });
-  await local.goto(`${fallback.url}#/research/corp-announcements?scope=universe`);
+  await local.goto(`${fallback.url}#/research/corp-announcements?scope=universe`, { waitUntil: 'domcontentloaded' });
   await hold(local);
   await local.waitForFunction(() => window.__ca?.meta().mode === 'local' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 180000 });
   assert.equal(await local.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'fallback opens on Last 3 days');

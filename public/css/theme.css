@@ -446,9 +446,18 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
 .tab-drag-handle { display: inline-flex; vertical-align: middle; margin-right: 4px; padding: 4px 2px; touch-action: none; opacity: .5; }
 .tab-drag-handle svg { width: 10px; height: 16px; pointer-events: none; }
 [data-tab-reorderable] .tab-btn:hover .tab-drag-handle { opacity: 1; }
-[data-tab-reorderable] [data-tab-dragging] { cursor: grabbing; opacity: .55; }
-[data-tab-drop="before"] { box-shadow: inset 3px 0 var(--accent-600); }
-[data-tab-drop="after"] { box-shadow: inset -3px 0 var(--accent-600); }
+[data-tab-reorderable] :is([data-tab-dragging], [data-tab-settling]) { opacity: 0; }
+[data-tab-sorting], [data-tab-sorting] .tab-btn { cursor: grabbing; }
+[data-tab-shift] { transform: translateX(var(--tab-reorder-x, 0px)); }
+.tab-drag-ghost { position: fixed; z-index: 110; pointer-events: none; }
+.tab-drag-surface { width: 100%; height: 100%; margin: 0; color: var(--accent-600); background: rgb(var(--surface-white, 255 255 255)); box-shadow: 0 12px 28px rgb(15 23 42 / .22), 0 0 0 2px var(--accent-600); }
+.tab-drag-surface .tab-drag-handle { opacity: 1; }
+.tab-drop-slot { position: absolute; left: 0; pointer-events: none; border: 2px dashed var(--accent-600); border-radius: 10px; background: rgb(var(--surface-indigo-100, 224 231 255) / .5); }
+@media (prefers-reduced-motion: no-preference) {
+  [data-tab-sorting] .tab-btn, .tab-drop-slot { transition: transform 180ms cubic-bezier(.2,.8,.2,1); }
+  .tab-drag-surface { animation: tab-lift 160ms cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes tab-lift { from { transform: none; } to { transform: translateY(-6px) scale(1.035); } }
+}
 .tab-order-status { position: fixed; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .tab-order-status[data-unavailable] { width: auto; height: auto; clip-path: none; bottom: 16px; left: 16px; right: 16px; padding: 12px; z-index: 100; border-radius: 8px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-900); box-shadow: 0 2px 12px rgb(0 0 0 / .15); }
 .workspace-navigation { display: flex; align-items: stretch; gap: 8px; }
@@ -485,6 +494,22 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
 .ca-company-cell { min-width: 150px; max-width: 220px; white-space: normal; }
 .ca-company-cell strong { display: block; color: var(--ink-900); font-size: 13px; line-height: 1.5; font-weight: 700; }
 .ca-company-cell small { display: block; margin-top: 3px; color: var(--ink-400); font-size: 11px; }
+/* Actions own a stable place beside their content; title length never creates an icon-only line. */
+table[data-shared-column-layout="corp-announcements"] tbody td { vertical-align: top; }
+.record-company-column, .record-subject-column { vertical-align: top; }
+.record-company-actions { display: flex; align-items: flex-start; gap: 8px; }
+.record-company-copy { flex: 1; min-width: 0; }
+.record-company-actions .watch-star { display: inline-flex; align-items: center; justify-content: center; width: 28px; min-width: 28px; height: 28px; margin-top: -4px; border-radius: 7px; font-size: 20px; touch-action: manipulation; }
+.record-company-actions button.watch-star:hover { background: rgb(var(--surface-amber-50, 255 251 235)); }
+.record-company-actions .watch-star:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 2px; }
+.record-identity-trailing { align-items: flex-start; width: clamp(260px, 34vw, 560px); gap: 12px; }
+.record-identity-copy { flex: 1; min-width: 0; }
+.record-identity-trailing [data-record-name] { width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+.record-identity-subline { margin-top: 4px; }
+.record-identity-actions { flex: none; display: flex; align-items: flex-start; margin-top: -4px; }
+@media (pointer: coarse) {
+  .record-company-actions .watch-star { width: 36px; min-width: 36px; height: 36px; }
+}
 .ca-exchange-links { display: flex; flex-wrap: wrap; gap: 6px 12px; max-width: 180px; }
 .ca-exchange-link { color: var(--accent-600); font-weight: 600; white-space: nowrap; }
 .ca-exchange-link:hover { text-decoration: underline; text-underline-offset: 3px; }

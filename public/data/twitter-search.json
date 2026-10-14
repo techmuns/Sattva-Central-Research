@@ -384,7 +384,7 @@
       "lastDiscoveryAt": "2026-09-20T20:53:41+00:00"
     },
     "isin:INE591G01025|Coforge": {
-      "lastAttemptAt": "2026-10-09T03:50:01+00:00",
+      "lastAttemptAt": "2026-10-14T10:52:32+00:00",
       "lastResultCount": 109,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -405,7 +405,7 @@
       "lastDiscoveryAt": "2026-09-20T20:53:41+00:00"
     },
     "isin:INE591G01025|COFORGE": {
-      "lastAttemptAt": "2026-10-09T04:23:07+00:00",
+      "lastAttemptAt": "2026-10-14T11:24:49+00:00",
       "lastResultCount": 106,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -421,7 +421,7 @@
       ]
     },
     "isin:INE338H01029|Concord Biotech": {
-      "lastAttemptAt": "2026-10-09T04:56:11+00:00",
+      "lastAttemptAt": "2026-10-14T12:01:34+00:00",
       "error": "search-unavailable"
     },
     "isin:INE338H01029|CONCORDBIO": {
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-10-14T10:30:30.490686+00:00"
+    "checkedAt": "2026-10-14T12:01:34.412937+00:00"
   }
 }

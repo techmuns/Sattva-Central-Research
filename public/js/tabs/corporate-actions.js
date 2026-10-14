@@ -78,6 +78,7 @@ const tab = makeFilingsTab({
   filterByScope: feed.filterByScope,
   noun: 'actions',
   nameLabel: 'Purpose',
+  nameAfter: 1,
   nameMaxPx: 560,
   // Screener-only purposes are our generated labels. Show their terms once in Terms; retain
   // every original purpose in the model/search/export, and keep NSE's wording exactly as filed.
@@ -116,6 +117,7 @@ const tab = makeFilingsTab({
   },
   emptyMessage: 'No corporate actions match this scope and filter.',
   columns: () => [
+    { label: 'Company', get: (row) => `<span class="font-semibold text-slate-900">${escapeHtml(row.company || row.ticker || 'Company not supplied')}</span>`, html: true, sortValue: (row) => row.company || row.ticker || '' },
     { label: 'Type', get: (row) => badge(row.actionType), html: true, sortValue: (row) => LABELS[row.actionType] || 'Other' },
     { label: 'Ex date', get: (row) => dateCell(row.exDate, 'NSE supplied no ex date'), html: true, sortValue: (row) => row.exDate || '' },
     { label: 'Record / end date', get: (row) => dateCell(row.recordDate || row.screener?.endDate, 'Neither source supplied a record or end date'), html: true, sortValue: (row) => row.recordDate || row.screener?.endDate || '' },

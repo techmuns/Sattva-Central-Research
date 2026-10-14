@@ -307,6 +307,9 @@ Navigation update (13 October 2026): the tab strip is ordered Alerts,
 Announcements, Earnings, Breakouts / Technical,
 Mutual Funds, News, Super Investors.
 Readers can rearrange this main strip by dragging a tab (or its grip on touch screens).
+Dragging lifts a pointer-following copy above the strip; neighbours shift around a visible landing
+slot and the copy settles into place on release. Escape and cancelled/outside drops restore the
+original order. Reduced motion keeps the copy and slot without lift or settling animations.
 Alt + Left/Right moves the focused tab; Alt + Home restores the catalog order.
 `ui/tab-order.js` sends shared reorder intents through `core/workspace.js` to `/api/workspace`.
 The layout is universal for this desk, including saved tabs and their filters (13 October 2026).
@@ -2125,10 +2128,16 @@ wired as if it were live. The pattern for any feed in that state:
 
 `ui/column-order.js` enhances every table with pointer dragging and Alt + Left/Right;
 Alt + Home restores the default. `data-column-layout` identifies custom tables, while
-`columnLayoutKey` can override a shared renderer's default identity. Preferences stay in
-this browser's local storage, independently per route/table and across scopes, refreshes and
-reloads. Date-stamped exports must not create a fresh layout every day. Cleared or disabled
-browser storage cannot provide permanent retention; a failed save is disclosed visibly.
+`columnLayoutKey` can override a shared renderer's default identity. Announcements readers
+mark their main table with `sharedColumnLayout`: Corporate Announcements, Corporate Actions,
+IPO filings/directory and Bulk/Block Deal use Company first by default. An explicit column
+move or Alt + Home reset is shared through `/api/workspace` across users, scopes, saved copies
+and devices, using bounded relative moves and the existing durable outbox/polling. A shared
+layout, including an empty reset, overrides old local layouts; opening a table never publishes
+its legacy browser preference. Until a table has a shared layout, existing user moves remain
+usable locally. Other dashboard tables retain device-local orders independently per route/table.
+Date-stamped exports must not create a fresh layout every day. Pending or failed sharing is
+disclosed visibly. Remote updates reorder only mounted cells and defer during a column gesture.
 
 Keep this presentation-only: do not change source rows, searches, exports or collection.
 Only the drop moves mounted cells. Pointer movement moves a lifted visual copy of the visible
@@ -2139,9 +2148,16 @@ The single child-list observer handles new/replaced rows before paint and discon
 Do not add per-row listeners or full-dataset work. Grouped headings move with their descendants;
 individual child columns move within their group so month attribution remains correct.
 Preserve semantic cell styles (never style the identity cell by its current position).
+Corporate Announcements uses `watchColumn: 'Company'` and `bookmarkPlacement: 'trailing'`:
+the company watch control stays beside the company name, while the bookmark has a fixed action
+area beside the first line of the fully wrapped Subject. Omit empty subtitle lines; keep related
+filings below the subject and retain the keyboard-operable announcement read button. Other
+readers keep their existing action placement. Size and style the owning cells semantically so
+shared column moves do not change this layout.
 Sorting buttons may opt into heading drags with `data-column-drag-handle`; ordinary header
 links and controls keep their own interactions. A completed drag must not trigger sorting.
-Verify with `verify-column-order-ui.mjs` and `verify-column-order-upgrade-ui.mjs`.
+Verify with `verify-column-order-ui.mjs`, `verify-column-order-upgrade-ui.mjs`, and the shared
+workspace UI/runtime suites (two devices, offline retry, reset and returning-cache upgrade).
 
 ### Performance on large tables
 
