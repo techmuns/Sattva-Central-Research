@@ -1,8 +1,8 @@
 {
  "source": "fastapi.muns.io/market_data",
  "keep_days": 10,
- "updated_at": "2026-10-14T02:11:30.771Z",
- "count": 235,
+ "updated_at": "2026-10-14T02:20:58.320Z",
+ "count": 236,
  "checks": {
   "AARTIPHARM@2026-10-08": {
    "pct": -7.793568961629574,
@@ -73,6 +73,13 @@
    "prevClose": 1460.199951171875,
    "prevDate": "2026-10-07",
    "checkedAt": "2026-10-09T03:49:48.989Z"
+  },
+  "AEGISLOG@2026-10-13": {
+   "pct": -4,
+   "close": 1392,
+   "prevClose": 1450,
+   "prevDate": "2026-10-12",
+   "checkedAt": "2026-10-14T02:20:58.320Z"
   },
   "AEQUS@2026-10-08": {
    "pct": -6.992883679783489,
