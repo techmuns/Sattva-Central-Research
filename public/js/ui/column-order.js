@@ -32,7 +32,7 @@ export function installColumnOrder(root = document) {
   if (installations.has(root)) return installations.get(root);
   const tables = new WeakMap(), rowCells = new WeakMap();
   const sharedTables = new Set();
-  let sharedDeferred = false, saveSequence = 0;
+  let sharedDeferred = false, waitingToShare = false, saveSequence = 0;
   let gesture = null, suppressClick = null, frame = 0;
   const abort = new AbortController();
   const listen = (target, type, fn, options = {}) => target.addEventListener(type, fn, { ...options, signal: abort.signal });
@@ -201,6 +201,11 @@ export function installColumnOrder(root = document) {
         }
       }
     });
+    const sync = workspace.status();
+    if (waitingToShare && sync.confirmed && !sync.pending && !sync.error) {
+      waitingToShare = false;
+      announce('Column order shared with everyone in Announcements.');
+    }
   }
   const stopShared = workspace.onChange(refreshShared);
   function targetNode(cell) {
@@ -208,6 +213,7 @@ export function installColumnOrder(root = document) {
     return state && { state, node: state.nodes.find(node => node.cell === cell) };
   }
   function save(state, intent) {
+    waitingToShare = !!state.shared;
     memory.set(state.key, state.saved);
     let persisted = true;
     try { localStorage.setItem(PREFIX + state.key, JSON.stringify(state.saved)); } catch { persisted = false; }
@@ -219,6 +225,7 @@ export function installColumnOrder(root = document) {
     announce('Column order changed. Sharing with the Announcements section…');
     void workspace.edit({ ...intent, table: state.shared }).then(result => {
       if (sequence !== saveSequence || abort.signal.aborted) return;
+      waitingToShare = !result.confirmed && result.pending;
       announce(result.confirmed ? 'Column order shared with everyone in Announcements.' : result.error || 'Column order changed. Waiting to share with everyone in Announcements.', !result.confirmed);
     }).catch(() => { if (sequence === saveSequence && !abort.signal.aborted) announce('Column order changed. Sharing is unavailable; try moving the column again.', true); });
   }

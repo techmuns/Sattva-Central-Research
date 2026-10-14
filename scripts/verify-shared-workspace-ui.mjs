@@ -110,6 +110,14 @@ try {
   assert.equal((await headers(one.page))[0], 'Company', 'shared reset overrides old browser orders');
   await one.page.reload(); await ready(one.page);
   assert.equal((await headers(one.page))[0], 'Company', 'reset remains authoritative after reload');
+  await one.page.route('**/api/workspace', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false}' }));
+  await column(one.page, 'Company').focus(); await one.page.keyboard.press('Alt+ArrowRight');
+  await one.page.locator('.column-layout-status[data-unavailable]').waitFor();
+  await one.page.unroute('**/api/workspace'); await one.page.evaluate(() => window.workspace.sync());
+  assert.equal(await one.page.locator('.column-layout-status[data-unavailable]').count(), 0, 'recovery clears the visible failed-sharing notice without a reload');
+  await column(one.page, 'Company').focus(); await one.page.keyboard.press('Alt+Home');
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.status().confirmed);
+  await two.page.evaluate(() => window.workspace.sync());
   if (process.env.WORKSPACE_SCREENSHOT) {
     await one.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-light.png` });
     await two.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-dark.png` });
@@ -237,7 +245,15 @@ try {
   assert((await returning.evaluate(() => caches.keys())).some(key => key.includes('previous-shared-workspace')));
   oldModules = false;
   await returning.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-  await returning.locator(`#tabbar-mount [data-tab-id="${view.id}"]`).waitFor();
+  await returning.locator(`#tabbar-mount [data-tab-id="${view.id}"]`).waitFor().catch(async error => {
+    console.error('Warm workspace upgrade', await returning.evaluate(async () => ({
+      controller: navigator.serviceWorker.controller?.scriptURL,
+      registrations: (await navigator.serviceWorker.getRegistrations()).map(reg => ({ active: reg.active?.state, installing: reg.installing?.state, waiting: reg.waiting?.state })),
+      caches: await caches.keys(), tabs: [...document.querySelectorAll('#tabbar-mount [data-tab-id]')].map(tab => tab.dataset.tabId),
+      status: (await import('/js/core/workspace.js')).status(),
+    })), errors);
+    throw error;
+  });
   await returning.locator(`#tabbar-mount [data-tab-id="${view.id}"]`).click();
   await returning.getByRole('heading', { name: 'Fundraising', exact: true }).waitFor(); await ready(returning);
   assert.equal((await returning.locator('table[data-shared-column-layout="corp-announcements"] thead th').first().textContent()).trim(), 'Company', 'warm cache upgrade receives Company-first shared columns');
