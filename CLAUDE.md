@@ -327,6 +327,9 @@ Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still re
 Alerts contains AI Alerts and All Alerts as pill subtabs, using `meta.navigationGroup` and
 `TAB_GROUPS` in the catalog. Both retain their existing routes and independent reader lifecycles.
 AI Alerts remains the first/default reader. Hidden navigation metadata does not remove route support.
+Both alert readers use the same compact shell and centered 1400px frame as the header and main
+navigation, including loading and empty scopes. Table columns scroll within their own surface;
+switching readers must not move the alert subtabs or change their horizontal padding.
 Announcements uses the same grouping for Corporate Announcements, Corporate Actions, IPOs and Bulk/Block Deal,
 in that order, defaulting to Corporate Announcements when entering from another section.
 Each reader keeps its saved routes, scope behavior and independent data lifecycle.

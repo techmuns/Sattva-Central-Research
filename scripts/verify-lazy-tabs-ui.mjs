@@ -28,8 +28,35 @@ assert.equal(destroyed, 1);
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const reads = [];
+async function alertFrame(page) {
+  return page.evaluate(() => {
+    const box = selector => {
+      const el = document.querySelector(selector), rect = el.getBoundingClientRect();
+      const css = getComputedStyle(el);
+      return { x: rect.x, width: rect.width, left: rect.x + parseFloat(css.paddingLeft),
+        right: rect.right - parseFloat(css.paddingRight) };
+    };
+    const header = box('[data-app-header]'), nav = box('[data-app-nav]'), content = box('[data-app-content]');
+    const subtabs = box('#subview-mount');
+    return { header, nav, content, subtabs, subtabTop: document.querySelector('#subview-mount').getBoundingClientRect().top,
+      overflow: document.documentElement.scrollWidth > innerWidth + 1 };
+  });
+}
+function alignedAlerts(frame) {
+  for (const part of [frame.header, frame.content]) {
+    assert.equal(part.left, frame.nav.left, 'alert reader starts at the main navigation edge');
+    assert.equal(part.right, frame.nav.right, 'alert reader ends at the main navigation edge');
+  }
+  assert.equal(frame.subtabs.x, frame.content.left, 'subtabs stay inside the common frame');
+  assert.equal(frame.overflow, false, 'wide table columns do not widen the page');
+}
 const server = createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
+  if (pathname === '/embed') {
+    res.setHeader('content-type', 'text/html');
+    res.end('<!doctype html><body style="margin:0"><iframe src="/#/research/ai-alerts?scope=universe" title="Research" style="position:fixed;inset:48px 16px 16px 64px;width:calc(100% - 80px);height:calc(100% - 64px);border:0"></iframe>');
+    return;
+  }
   if (pathname === '/data/portfolio-companies.json') {
     res.setHeader('content-type', 'application/json');
     res.end(JSON.stringify({ holdings: [{ ticker: 'SYNTHETIC', name: 'Synthetic company',
@@ -58,7 +85,7 @@ try {
   browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
   for (const colorScheme of ['light', 'dark']) {
     reads.length = 0;
-    const context = await browser.newContext({ serviceWorkers: 'block', colorScheme });
+    const context = await browser.newContext({ serviceWorkers: 'block', colorScheme, viewport: { width: 2048, height: 1000 } });
     await context.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue()
       : route.fulfill({ status: 200, body: '', contentType: 'text/javascript' }));
     const page = await context.newPage();
@@ -98,12 +125,27 @@ try {
     await page.locator('#subview-mount [data-tab-id="ai-alerts"]').focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#content-host').getAttribute('data-active-tab'), 'ai-alerts', 'arrows only move focus');
+    const aiFrame = await alertFrame(page);
+    alignedAlerts(aiFrame);
+    // Hold the first All Alerts renderer download: framing must already be correct
+    // while loading, rather than changing when the table mounts.
+    let releaseAlerts, alertsRequested;
+    const alertsHeld = new Promise(done => { releaseAlerts = done; });
+    const alertsArrived = new Promise(done => { alertsRequested = done; });
+    await page.route('**/js/tabs/daily-alerts.js', async route => {
+      alertsRequested(); await alertsHeld; await route.continue();
+    });
     await page.keyboard.press('Enter');
+    await alertsArrived;
+    assert.deepEqual(await alertFrame(page), aiFrame, 'switching to a loading All Alerts reader keeps the entire shell still');
+    releaseAlerts();
     await page.locator('[data-active-tab="daily-alerts"]').waitFor();
+    assert.deepEqual(await alertFrame(page), aiFrame, 'mounting the table does not shift the shell');
     assert(await page.evaluate(() => window.alertSubtabs === document.querySelector('#subview-mount [data-tab-list]')));
     assert(await page.locator('#subview-mount [data-tab-id="daily-alerts"]').evaluate(tab => document.activeElement === tab));
     await page.evaluate(() => { location.hash = '#/research/daily-alerts?scope=watchlist&company=SYNTHETIC'; });
     await page.waitForFunction(() => document.querySelector('#scope-toggle-mount [aria-pressed="true"]')?.textContent.trim() === 'Watchlist');
+    alignedAlerts(await alertFrame(page));
     await page.locator('#tabbar-mount [data-tab-id="alerts"]').click();
     assert.match(page.url(), /daily-alerts\?scope=watchlist&company=SYNTHETIC/, 'active parent retains the reader and filters');
     await page.evaluate(() => { location.hash = '#/research/daily-alerts?scope=universe&company=SYNTHETIC'; });
@@ -225,6 +267,30 @@ try {
     await page.evaluate(() => { location.hash = '#/research/ask-research?scope=universe'; });
     await page.locator('[data-active-tab="ask-research"]').waitFor();
     assert.equal(requests.filter(path => path === '/js/tabs/ask-research.js').length, 1, 'repeat visits reuse the loaded interface');
+    for (const width of [320, 390, 1024, 1440, 2048]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.evaluate(() => { location.hash = '#/research/ai-alerts?scope=universe'; });
+      await page.locator('[data-active-tab="ai-alerts"]').waitFor();
+      const before = await alertFrame(page);
+      alignedAlerts(before);
+      await page.locator('#subview-mount [data-tab-id="daily-alerts"]').click();
+      await page.locator('[data-active-tab="daily-alerts"]').waitFor();
+      assert.deepEqual(await alertFrame(page), before, `${width}px: both alert selections retain the same frame and subtab position`);
+      await page.locator('#subview-mount [data-tab-id="ai-alerts"]').click();
+      await page.locator('[data-active-tab="ai-alerts"]').waitFor();
+      assert.deepEqual(await alertFrame(page), before, `${width}px: returning to AI Alerts keeps its frame`);
+    }
+    await page.setViewportSize({ width: 1024, height: 700 });
+    const embedded = await context.newPage();
+    await embedded.goto(`${origin}/embed`);
+    const frame = embedded.frames().find(frame => frame.url().includes('/#/research/ai-alerts'));
+    await frame.locator('[data-active-tab="ai-alerts"]').waitFor();
+    const embeddedAI = await alertFrame(frame);
+    alignedAlerts(embeddedAI);
+    await frame.locator('#subview-mount [data-tab-id="daily-alerts"]').click();
+    await frame.locator('[data-active-tab="daily-alerts"]').waitFor();
+    assert.deepEqual(await alertFrame(frame), embeddedAI, 'both readers stay aligned inside a short host iframe');
+    await embedded.close();
     await page.route('**/js/tabs/ipos.js', route => route.fulfill({ status: 503, body: '' }));
     await page.locator('#tabbar-mount [data-tab-id="announcements"]').click();
     await page.locator('[data-active-tab="corp-announcements"]').waitFor();

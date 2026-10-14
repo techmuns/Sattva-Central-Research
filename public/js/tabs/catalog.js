@@ -4,7 +4,7 @@ import { AI_ALERT_WINDOW_DAYS } from '../core/alert-window.js';
 
 // Navigation groups share chrome while their readers retain their own routes and lifecycles.
 export const TAB_GROUPS = Object.freeze({
-  alerts: { id: 'alerts', title: 'Alerts' },
+  alerts: { id: 'alerts', title: 'Alerts', layout: 'table' },
   announcements: { id: 'announcements', title: 'Announcements' },
   earnings: { id: 'earnings', title: 'Earnings' },
   // Keep the parent distinct from the saved `news` reader route.
