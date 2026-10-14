@@ -66,12 +66,18 @@ const now = () => clock.getTime();
 const srv = await startAnnouncementServer({ indexDir: tmp, publicDir, readFetcher, now });
 let fallbackCaps = null, capReads = 0;
 const fallback = await startAnnouncementServer({ indexDir: null, publicDir, readFetcher: async () => new Response('down', { status: 503 }), now,
-  transformAsset(path, bytes) { if (path === '/data/market-caps.json' && fallbackCaps) { capReads++; return Buffer.from(JSON.stringify(fallbackCaps())); } return bytes; } });
+  transformAsset(path, bytes) {
+    if (path === '/sw.js') return bytes.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/assets/brand/favicon.svg', self.location).href;");
+    if (path === '/data/market-caps.json' && fallbackCaps) { capReads++; return Buffer.from(JSON.stringify(fallbackCaps())); }
+    return bytes;
+  } });
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const errors = [];
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  // Reader/data behavior is independent of asset prefetch. Dedicated cache-upgrade suites
+  // verify controlled sessions; keep their background precache out of these source fixtures.
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 900 } });
   // Nothing leaves the machine: CDNs and publishers answer empty, new windows are noted and closed.
   await context.route('**/*', (route) => (route.request().url().startsWith('http://127.0.0.1') ? route.continue() : route.fulfill({ status: 200, body: '' })));
   const opened = [];
@@ -406,16 +412,23 @@ try {
   // Phone width and dark appearance.
   await page.goto(`${srv.url}#/research/corp-announcements?scope=universe`);
   await ready();
+  await settle();
   for (const theme of ['light', 'dark']) {
     await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
     await page.setViewportSize({ width: 390, height: 844 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme}: no sideways page scroll at 390px`);
-    const controls = await page.locator('tbody tr[data-row-key]').first().evaluate(row => ({
-      subjectWatch: row.querySelector('.record-subject-column [data-watch]') !== null,
-      bookmark: row.querySelector('.record-identity-actions [data-bookmark-key]').getBoundingClientRect().width,
-      wrap: getComputedStyle(row.querySelector('[data-record-name]')).whiteSpace,
-    }));
-    assert(!controls.subjectWatch && controls.bookmark >= 28 && controls.wrap === 'normal', `${theme}: mobile keeps separate reachable actions and complete title wrapping`);
+    // Resolve the mounted row inside the same browser task as its measurements: arriving
+    // rows can replace a locator's earlier element handle while the viewport is resized.
+    const controls = await page.evaluate(() => {
+      const row = document.querySelector('table[data-shared-column-layout="corp-announcements"] tbody tr[data-row-key]');
+      return {
+        subjectWatch: row.querySelector('.record-subject-column [data-watch]') !== null,
+        bookmark: row.querySelector('.record-identity-actions [data-bookmark-key]').getBoundingClientRect().width,
+        bookmarkStyle: getComputedStyle(row.querySelector('.record-identity-actions [data-bookmark-key]')).width,
+        wrap: getComputedStyle(row.querySelector('[data-record-name]')).whiteSpace,
+      };
+    });
+    assert(!controls.subjectWatch && controls.bookmark >= 28 && controls.wrap === 'normal', `${theme}: mobile keeps separate reachable actions and complete title wrapping ${JSON.stringify(controls)}`);
     await page.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
     await popup.waitFor();
     const box = await popup.boundingBox();
@@ -431,7 +444,11 @@ try {
   ok('phone width and dark appearance');
 
   // ---- No index: the browser answers from the captures, and says so ---------------------------
-  const local = await context.newPage();
+  // This part explicitly tests a service-worker-held source capture. Give it a separate
+  // controlled context so the reader fixture's disabled precache and fake clock cannot leak in.
+  const fallbackContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await fallbackContext.route('**/*', route => route.request().url().startsWith(fallback.url) ? route.continue() : route.fulfill({ status: 200, body: '' }));
+  const local = await fallbackContext.newPage();
   local.on('pageerror', (e) => errors.push(String(e)));
   await local.clock.install({ time: clock });
   await local.goto(`${fallback.url}#/research/corp-announcements?scope=universe`, { waitUntil: 'domcontentloaded' });
