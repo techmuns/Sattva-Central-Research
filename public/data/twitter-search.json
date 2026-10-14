@@ -633,7 +633,7 @@
       "error": "search-unavailable"
     },
     "isin:INE077F01035|GOCL Corporation": {
-      "lastAttemptAt": "2026-10-09T17:04:09+00:00",
+      "lastAttemptAt": "2026-10-14T23:25:46+00:00",
       "error": "search-unavailable"
     },
     "isin:INE077F01035|GOCLCORP": {
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-14T22:52:15.685691+00:00"
+    "checkedAt": "2026-10-14T23:25:46.809749+00:00"
   }
 }
