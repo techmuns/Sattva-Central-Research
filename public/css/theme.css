@@ -781,8 +781,8 @@ html[data-theme="dark"] .ann-read-original, html[data-theme="dark"] .relevance-v
 .chatter-highlight:hover > span:last-child { text-decoration: underline; }
 .chatter-highlight:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 3px; border-radius: 3px; }
 .chatter-highlight-dot { flex: 0 0 5px; width: 5px; height: 5px; margin-top: 5px; border-radius: 50%; background: var(--ink-400); }
-.chatter-highlight[data-source-tag="bullish"] .chatter-highlight-dot { background: var(--positive-600, #059669); }
-.chatter-highlight[data-source-tag="bearish"] .chatter-highlight-dot { background: var(--negative-600, #e11d48); }
+.chatter-highlight[data-highlight-tone="positive"] .chatter-highlight-dot { background: var(--positive-600, #059669); }
+.chatter-highlight[data-highlight-tone="negative"] .chatter-highlight-dot { background: var(--negative-600, #e11d48); }
 .chatter-highlight-status { color: var(--ink-400); font-size: 10px; white-space: normal; }
 @media (max-width: 640px) { .chatter-source-facts > div { grid-template-columns: minmax(90px, 110px) minmax(0, 1fr); gap: 8px; } }
 

@@ -265,7 +265,7 @@ function sharedWorkspaceCacheKey() {
 }
 
 function tableLayoutCacheKey() {
-  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1-chatter-clean-header-v2-chatter-source-highlights-v1`;
+  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1-chatter-clean-header-v2-chatter-source-highlights-v1-chatter-text-colours-v1`;
 }
 
 // Keep the IPO revision independent of other dashboard release markers.

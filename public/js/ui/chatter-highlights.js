@@ -1,11 +1,12 @@
 import { escapeHtml } from '../core/dom.js';
 import { formatDate, formatTime } from '../core/format.js';
 import { newestMentions } from '../data/chatter-mentions.js';
+import { chatterHighlightReading, shortChatterHighlight } from '../data/chatter-highlight-reading.js';
 import * as chatter from '../data/chatter-live.js';
 
 // Only visible companies read detail pages; never put a universe-wide detail walk on startup.
 // Shared slots also bound requests across a scope change while old reads finish.
-const saved = new Map(), pumps = new Set(), markup = new WeakMap();
+const saved = new Map(), pumps = new Set(), markup = new WeakMap(), readings = new WeakMap();
 let active = 0;
 const revision = entry => `${chatter.meta()?.generatedAt || ''}:${entry.mentions}`;
 const retryMs = 5 * 60000;
@@ -19,18 +20,19 @@ function contents(entry) {
   const state = saved.get(entry.slug), posts = latestChatterHighlights(entry);
   if (!posts.length) return `<span class="chatter-highlight-status">${state?.error ? 'Excerpts unavailable · click company to retry' : state?.payload?.complete ? 'No mentions returned by the source' : 'Reading latest mentions…'}</span>`;
   const bullets = posts.map(post => {
-    const words = String(post.text || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
-    const text = words.length ? `${words.slice(0, 24).join(' ')}${words.length > 24 ? '…' : ''}` : 'No excerpt published';
-    const href = sourceUrl(post.url), tag = ['bullish', 'bearish'].includes(post.sentiment) ? post.sentiment : 'neutral';
+    let reading = readings.get(post);
+    if (!reading) { reading = chatterHighlightReading(post.text); readings.set(post, reading); }
+    const text = shortChatterHighlight(post.text, reading) || 'No excerpt published';
+    const href = sourceUrl(post.url), tag = post.sentiment || 'unclassified';
     const when = Number.isFinite(Date.parse(post.at)) ? `${formatDate(post.at)} · ${formatTime(post.at)}` : 'Time not published';
-    const title = `${post.sourceLabel || post.community || 'Source'} · ${when} · Source: ${post.sentiment || 'unclassified'}${href ? '' : ' · Original link unavailable; open captured mention'}`;
-    const attrs = `class="chatter-highlight" data-chatter-highlight data-highlight-id="${escapeHtml(post.id)}" data-source-tag="${tag}" title="${escapeHtml(title)}"`;
+    const title = `${post.sourceLabel || post.community || 'Source'} · ${when} · Text: ${reading.label} (${reading.reason}) · Source tag: ${tag}${href ? '' : ' · Original link unavailable; open captured mention'}`;
+    const attrs = `class="chatter-highlight" data-chatter-highlight data-highlight-id="${escapeHtml(post.id)}" data-highlight-tone="${reading.tone}" data-source-tag="${escapeHtml(tag)}" title="${escapeHtml(title)}"`;
     const body = `<span class="chatter-highlight-dot" aria-hidden="true"></span><span>${escapeHtml(text)}</span>`;
     return `<li>${href ? `<a ${attrs} href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${body}</a>` : `<button type="button" ${attrs} data-norow data-chatter-highlight-open>${body}</button>`}</li>`;
   }).join('');
   const older = Date.parse(state.payload.generatedAt) < Date.parse(chatter.meta()?.generatedAt);
   const status = state.error ? 'Update unavailable · saved excerpts' : state.pending || state.revision !== revision(entry) ? 'Updating saved excerpts…' : older ? 'Saved excerpts · earlier source snapshot' : '';
-  return `<ul class="chatter-highlight-list" aria-label="Latest source excerpts; colours are source tags">${bullets}</ul>${status ? `<span class="chatter-highlight-status">${status}</span>` : ''}`;
+  return `<ul class="chatter-highlight-list" aria-label="Latest excerpts; green is positive wording, red is negative, grey is mixed or unclear">${bullets}</ul>${status ? `<span class="chatter-highlight-status">${status}</span>` : ''}`;
 }
 export const chatterHighlightsCell = entry => `<div data-chatter-highlights="${escapeHtml(entry.slug)}" class="chatter-highlights">${contents(entry)}</div>`;
 

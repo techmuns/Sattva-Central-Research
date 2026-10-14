@@ -11,8 +11,8 @@ const stocks = Array.from({ length: 200 }, (_, i) => ({ ticker: `company-${i}`, 
   sentiment: { bullish: 1, bearish: 1, neutral: 1, label: 'bullish' }, sources: { valuepickr: 3 } }));
 let posts = [
   { id: 'older', text: 'Older neutral observation', timestamp: '2026-10-13T11:57:00Z', sentiment: 'neutral', url: 'https://example.test/old' },
-  { id: 'green', text: 'Exact positive source <script>window.bad=true</script>', timestamp: '2026-10-13T17:29:00+05:30', sentiment: 'bullish', url: 'https://example.test/topic/42/7?original=1' },
-  { id: 'red', text: 'Exact negative source observation', timestamp: '2026-10-13T06:59:30-05:00', sentiment: 'bearish', url: 'https://example.test/topic/42/9#post' },
+  { id: 'green', text: 'Company <script>window.bad=true</script> shares rally 5% after profits beat estimates', timestamp: '2026-10-13T17:29:00+05:30', sentiment: 'neutral', url: 'https://example.test/topic/42/7?original=1' },
+  { id: 'red', text: 'Company shares drop 15% as Nomura slashes target price', timestamp: '2026-10-13T06:59:30-05:00', sentiment: 'neutral', url: 'https://example.test/topic/42/9#post' },
 ].map(post => ({ ...post, source: 'valuepickr', sourceLabel: 'ValuePickr', author: 'Fixture' }));
 // The newest post is beyond page one, and source pages deliberately ignore sort=newest.
 posts.unshift(...Array.from({ length: 998 }, (_, i) => ({ ...posts[0], id: `old-${i}`, timestamp: '2026-10-01T00:00:00Z' })));
@@ -58,7 +58,10 @@ try {
   await cell.waitFor();
   await cell.locator('[data-chatter-highlight]').first().waitFor();
   assert.deepEqual(await cell.locator('[data-chatter-highlight]').evaluateAll(nodes => nodes.map(node => node.dataset.highlightId)), ['red', 'green']);
-  assert.deepEqual(await cell.locator('[data-chatter-highlight]').evaluateAll(nodes => nodes.map(node => node.dataset.sourceTag)), ['bearish', 'bullish']);
+  assert.deepEqual(await cell.locator('[data-chatter-highlight]').evaluateAll(nodes => nodes.map(node => node.dataset.highlightTone)), ['negative', 'positive'], 'wording colours directional headlines even when the provider labels both neutral');
+  assert.deepEqual(await cell.locator('[data-chatter-highlight]').evaluateAll(nodes => nodes.map(node => node.dataset.sourceTag)), ['neutral', 'neutral'], 'original provider tags remain intact');
+  assert.match(await cell.locator('a').first().getAttribute('title'), /Text: Negative.*Source tag: neutral/);
+  assert(await cell.locator('[data-chatter-highlight]').evaluateAll(nodes => nodes.every(node => node.textContent.trim().split(/\s+/).length <= 16)));
   assert.equal(await cell.locator('a').first().getAttribute('href'), 'https://example.test/topic/42/9#post');
   assert.equal(await cell.locator('a').nth(1).getAttribute('href'), 'https://example.test/topic/42/7?original=1');
   assert.match(await cell.locator('a').nth(1).innerText(), /<script>/);
@@ -76,7 +79,7 @@ try {
   generation = '2026-10-13T12:02:00Z';
   await page.evaluate(() => chatter.refresh());
   await page.waitForFunction(() => document.querySelector('[data-chatter-highlights="company-0"] [data-chatter-highlight]')?.dataset.highlightId === 'new-neutral');
-  assert.equal(await cell.locator('[data-chatter-highlight]').first().getAttribute('data-source-tag'), 'neutral');
+  assert.equal(await cell.locator('[data-chatter-highlight]').first().getAttribute('data-highlight-tone'), 'unclear');
   assert(await input.evaluate(node => document.activeElement === node), 'highlight arrivals retain search focus');
   const missingLink = cell.locator('[data-chatter-highlight-open]');
   assert.equal(await missingLink.getAttribute('href'), null, 'unsafe URLs never become links');
