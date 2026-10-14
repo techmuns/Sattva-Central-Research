@@ -434,7 +434,7 @@ try {
   const local = await context.newPage();
   local.on('pageerror', (e) => errors.push(String(e)));
   await local.clock.install({ time: clock });
-  await local.goto(`${fallback.url}#/research/corp-announcements?scope=universe`);
+  await local.goto(`${fallback.url}#/research/corp-announcements?scope=universe`, { waitUntil: 'domcontentloaded' });
   await hold(local);
   await local.waitForFunction(() => window.__ca?.meta().mode === 'local' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 180000 });
   assert.equal(await local.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'fallback opens on Last 3 days');
