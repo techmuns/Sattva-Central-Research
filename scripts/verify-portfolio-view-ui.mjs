@@ -373,9 +373,11 @@ try {
       const brand = await frame.locator('[data-brand-mark] img').evaluate(async image => { await image.decode(); return image.getBoundingClientRect().width; });
       assert(brand >= 180, `the full wordmark remains legible in the compact table header (${brand}px at ${size.width}px)`);
       assert(normal.controls <= 52, `desktop view controls fit on one row: ${JSON.stringify(normal)}`);
+      // Shared navigation reserves space above the reader. Keep the table usable in the
+      // remaining frame rather than requiring the former compressed header's 55% budget.
       assert(normal.navigationGap >= 20 && normal.readerGap >= 19, `main tabs, subtabs and content keep dedicated space: ${JSON.stringify(normal)}`);
-      assert(normal.height >= 320, `the table keeps enough height for readable rows: ${JSON.stringify(normal)}`);
-      assert(normal.bottom <= Math.max(normal.viewport, normal.top + 320) + 2, `table fits the remaining frame or keeps its readable floor in a short window: ${JSON.stringify(normal)}`);
+      assert(normal.height >= Math.min(240, Math.max(120, normal.viewport - normal.top)) - 2, `the table keeps readable rows in the remaining viewport: ${JSON.stringify(normal)}`);
+      assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
     }
     // Native details updates `open` now but queues `toggle` for a later task. Force the
     // same repaint a source arrival can cause before that event, in both directions.
