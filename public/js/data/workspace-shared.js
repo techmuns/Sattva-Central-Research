@@ -1,10 +1,11 @@
 // Shared presentation definitions only. Source rows, holdings and credentials never enter this store.
+import { TAB_META } from '../tabs/catalog.js';
 export const WORKSPACE_OBJECT = 'research-workspace:v1';
 export const WORKSPACE_LIMIT = 50;
 export const WORKSPACE_BYTES = 64 * 1024;
 export const WORKSPACE_TOTAL_BYTES = 512 * 1024;
 export const DEFAULT_TAB_ORDER = ['alerts', 'announcements', 'earnings', 'breakouts', 'insider-trades', 'mutual-funds', 'news-section', 'super-investors'];
-export const VIEW_SOURCES = ['corp-announcements', 'corporate-actions', 'ipos', 'earnings-hub', 'breakouts', 'insider-trades', 'mutual-funds', 'concall', 'news', 'public-chatter', 'super-investors', 'daily-alerts', 'nse-filings'];
+export const VIEW_SOURCES = Object.values(TAB_META).filter(meta => meta.savedViewAvailable !== false).map(meta => meta.id);
 export const VIEW_ID = /^view-[a-f0-9-]{36}$/;
 const scopes = new Set(['portfolio', 'watchlist', 'universe']);
 const text = (value, max) => typeof value === 'string' && value.length <= max ? value : '';
@@ -41,6 +42,13 @@ export function cleanReading(value = {}) {
   out.tableKey = text(value.tableKey, 200);
   // Reader-specific choices are scalar filter settings. No arbitrary object or row snapshot.
   out.extras = {};
+  if (value.tables !== undefined) {
+    if (!Array.isArray(value.tables) || value.tables.length > 20) throw Error('Invalid workspace tables');
+    out.tables = value.tables.map(table => {
+      if (!plain(table) || table.tables !== undefined || table.extras !== undefined) throw Error('Invalid workspace table');
+      const reading = cleanReading(table); delete reading.extras; return reading;
+    });
+  }
   if (plain(value.extras) && Object.keys(value.extras).length <= 40) for (const [key, item] of Object.entries(value.extras)) {
     if (!/^[a-zA-Z][\w-]{0,60}$/.test(key)) throw Error('Invalid workspace filter');
     if (typeof item === 'string' && item.length <= 500) out.extras[key] = item;
@@ -56,7 +64,7 @@ export function cleanSavedTab(value) {
   if (!title || (value.source !== null && !VIEW_SOURCES.includes(value.source)) || !scopes.has(value.scope)) throw Error('Invalid workspace tab');
   const params = {};
   // Save reader filters, never transport/authentication settings or open/paid overlays.
-  const allowed = new Set(['company', 'view', 'period', 'date', 'range', 'topic', 'type', 'category', 'q', 'sector', 'mcap', 'vol', 'near', 'dma', 'rsi', 'ma', 'country', 'bo', 'side', 'mag', 'mgate', 'mrd1', 'mrw', 'mrm', 'mrd2', 'mvm', 'pattern', 'trend', 'strength', 'quality', 'signals']);
+  const allowed = new Set(['company', 'fund', 'section', 'view', 'period', 'date', 'range', 'topic', 'type', 'category', 'q', 'sector', 'mcap', 'vol', 'near', 'dma', 'rsi', 'ma', 'country', 'bo', 'side', 'mag', 'mgate', 'mrd1', 'mrw', 'mrm', 'mrd2', 'mvm', 'pattern', 'trend', 'strength', 'quality', 'signals']);
   for (const [key, val] of Object.entries(plain(value.params) ? value.params : {})) if (allowed.has(key) && typeof val === 'string' && val.length <= 500) params[key] = val;
   return { id: value.id, title, source: value.source, scope: value.scope, subview: text(value.subview, 80) || null, params, reading: cleanReading(value.reading || {}) };
 }

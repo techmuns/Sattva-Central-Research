@@ -15,7 +15,11 @@ date, filing time, check time and source links. Conflicting exchange figures sta
 enter the coverage review. Search and exports use the same disclosure predicate.
 
 The All Investors audience selects the tracked investor directory; the company scope and
-trade-date period still apply. The Changes view names both filters. If there are no matched
+trade-date period still apply. The scope control and period selector name both filters. The
+All Investors Changes view keeps period explanations, directory counts, exchange check status
+and history limits in its collapsed Sources & coverage section, leaving the reported trades
+directly below the heading. Opening that section exposes the same actual check times, failures
+and retained-history bounds. If there are no matched
 trades in that slice, it offers the available same-period Universe trades and retained
 same-scope ITD history explicitly. It never silently widens the selected scope or period.
 Matched trade dates are separate from exchange capture coverage: an August last match does

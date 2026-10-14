@@ -201,6 +201,61 @@ try {
   assert(await two.page.getByRole('heading', { name: 'Fundraising', exact: true }).isVisible());
   assert.deepEqual(await two.page.evaluate(() => window.query.query().categories), ['capital-raise']);
   await two.page.unroute('**/api/workspace');
+  // Hierarchy selection opens the actual source renderer before publishing anything.
+  await one.page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+  await one.page.locator('[data-saved-title]').fill('Built Capital Raises');
+  assert.equal(await one.page.locator('[data-saved-scope]').count(), 0, 'scope has one authoritative header control');
+  const expectedChoices = await one.page.evaluate(async () => {
+    const { viewChoices } = await import('/js/ui/saved-tabs.js');
+    return viewChoices();
+  });
+  for (const group of [...new Set(expectedChoices.map(choice => choice.group))]) {
+    await one.page.locator('[data-saved-group]').selectOption(group);
+    assert.equal(await one.page.locator('[data-saved-source]').isVisible(), expectedChoices.filter(choice => choice.group === group).length > 1);
+    assert.deepEqual(await one.page.locator('[data-saved-source] option').evaluateAll(options => options.map(option => option.value)), expectedChoices.filter(choice => choice.group === group).map(choice => choice.id));
+    for (const choice of expectedChoices.filter(choice => choice.group === group)) {
+      if (expectedChoices.filter(choice => choice.group === group).length > 1) await one.page.locator('[data-saved-source]').selectOption(choice.id);
+      assert.equal(await one.page.locator('[data-saved-subview]').isVisible(), choice.views.length > 0, 'views without subtabs hide the redundant default selector');
+      assert.deepEqual(await one.page.locator('[data-saved-subview] option').evaluateAll(options => options.map(option => option.value)), choice.views.length ? choice.views.map(view => view.id) : ['']);
+    }
+  }
+  await one.page.locator('[data-saved-group]').selectOption('announcements');
+  assert.deepEqual(await one.page.locator('[data-saved-source] option').allTextContents(), ['Corporate Announcements', 'Corporate Actions', 'IPOs', 'Bulk/Block Deal']);
+  await one.page.locator('[data-saved-source]').selectOption('corp-announcements');
+  await one.page.locator('[data-saved-submit]').click();
+  await one.page.locator('[data-view-builder]').waitFor().catch(async error => {
+    console.error('Builder opening', one.page.url(), await one.page.locator('body').innerText(), errors, store.snapshot().tabs.map(tab => ({ title: tab.title, source: tab.source }))); throw error;
+  }); await ready(one.page);
+  assert.equal(store.snapshot().tabs.length, 1, 'choosing filters never publishes an unfinished tab');
+  await one.page.locator('[data-ca-open="categories"]').click();
+  await one.page.locator('input[value="capital-raise"]').check(); await one.page.locator('[data-ca-apply]').click();
+  await one.page.getByRole('combobox', { name: 'Announcement period (IST)' }).selectOption('7'); await ready(one.page);
+  const builtIds = await one.page.evaluate(() => window.query.rows().map(row => row.id));
+  await one.page.locator('#scope-toggle-mount [data-value="watchlist"]').click();
+  await one.page.waitForFunction(() => document.querySelector('#scope-toggle-mount [data-value="watchlist"]')?.getAttribute('aria-pressed') === 'true');
+  if (!await one.page.locator('[data-watchlist-add]').count()) await ready(one.page);
+  await one.page.locator('[data-builder-save]').click();
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.snapshot().tabs.some(tab => tab.title === 'Built Capital Raises'));
+  await one.page.locator('[data-save-reading]').waitFor();
+  const built = store.snapshot().tabs.find(tab => tab.title === 'Built Capital Raises');
+  assert.deepEqual(built.reading.extras.categories, ['capital-raise']);
+  assert.equal(built.scope, 'watchlist', 'even an empty selected scope can publish a screen without discarding its filters');
+  await one.page.locator('#scope-toggle-mount [data-value="universe"]').click(); await ready(one.page);
+  assert.deepEqual(await one.page.evaluate(() => window.query.rows().map(row => row.id)), builtIds, 'publishing preserves the complete eligible source reading');
+  await one.page.locator('#scope-toggle-mount [data-value="portfolio"]').click(); await ready(one.page);
+  await one.page.waitForFunction(() => window.query.query().scope === 'portfolio' && window.query.meta().state === 'ready');
+  await one.page.locator('#tabbar-mount [data-tab-id="announcements"]').click(); await ready(one.page);
+  await one.page.locator(`#tabbar-mount [data-tab-id="${built.id}"]`).click(); await ready(one.page);
+  assert.equal(await one.page.locator('#scope-toggle-mount [data-value="portfolio"]').getAttribute('aria-pressed'), 'true', 'opening a saved Watchlist definition retains the currently selected Portfolio scope');
+  assert.equal(await one.page.evaluate(() => window.query.query().scope), 'portfolio');
+  assert.deepEqual(await one.page.evaluate(() => window.query.query().categories), ['capital-raise']);
+  await one.page.locator('#scope-toggle-mount [data-value="universe"]').click(); await ready(one.page);
+  await one.page.reload(); await ready(one.page);
+  assert.deepEqual(await one.page.evaluate(() => window.query.rows().map(row => row.id)), builtIds);
+  await one.page.getByRole('button', { name: 'Remove tab', exact: true }).click(); await one.page.locator('[data-remove-confirm]').click();
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.snapshot().tabs.length === 1);
+  await one.page.goto(`${server.url}#/research/${view.id}?scope=universe`); await ready(one.page);
+  console.log('PASS builder: navigation-derived tab/subtab/view mapping, all four Announcements readers, native category selection, complete row parity, unpublished preview, reload and header scope inheritance');
   await one.page.getByRole('button', { name: '+ Add tab', exact: true }).click();
   await one.page.locator('[data-saved-title]').fill('My Research'); await one.page.locator('[data-saved-submit]').click();
   await one.page.getByRole('heading', { name: 'My Research', exact: true }).waitFor();
@@ -221,16 +276,46 @@ try {
   await one.page.setViewportSize({ width: 390, height: 800 });
   assert(await one.page.getByRole('button', { name: '+ Add tab', exact: true }).isVisible());
   await one.page.getByRole('button', { name: 'Choose a table', exact: true }).click();
+  await one.page.locator('[data-saved-group]').selectOption('announcements');
   await one.page.locator('[data-saved-source]').selectOption('corp-announcements'); await one.page.locator('[data-saved-submit]').click();
+  await one.page.locator('[data-view-builder]').waitFor();
   await one.page.waitForFunction(() => window.query.query().categories.length === 0 && window.query.meta().state === 'ready');
   await ready(one.page);
   assert.deepEqual(await one.page.evaluate(() => window.query.query().categories), [], 'another saved screen does not inherit Capital Raises filters');
+  await one.page.locator('[data-builder-save]').click();
+  await one.page.locator('[data-remove-saved]').waitFor();
   await one.page.getByRole('button', { name: 'Remove tab', exact: true }).click();
   await one.page.locator('[data-remove-confirm]').click();
   await one.page.locator('#tabbar-mount [data-tab-id="alerts"][aria-selected="true"]').waitFor();
   await one.page.waitForFunction(() => !window.workspace.status().pending);
   assert(!store.snapshot().tabs.some(tab => tab.title === 'My Research'));
   assert.equal(store.snapshot().tabs.length, 1, 'removing one screen preserves every other saved screen');
+  const multiTable = await one.page.evaluate(async () => {
+    const { scoreTable } = await import('/js/ui/screener.js');
+    const readings = await import('/js/core/view-reading.js'), prior = readings.activeView();
+    const root = document.createElement('section'); document.body.append(root);
+    const disposers = [], definitions = ['activity', 'holdings'].map((key, index) => ({
+      rows: [{ id: 'synthetic-first', name: 'First' }, { id: 'synthetic-second', name: 'Second' }], key: row => row.id, name: row => row.name,
+      exportName: `synthetic-${key}`, initialView: { q: index ? 'Second' : 'First', filters: [index ? 'second' : 'first'] },
+      filters: [{ label: 'Fixture choice', options: [{ value: 'all', label: 'All' }, { value: 'first', label: 'First' }, { value: 'second', label: 'Second' }], match: (row, value) => row.id === `synthetic-${value}` }],
+    }));
+    const mount = seeded => {
+      disposers.splice(0).forEach(dispose => dispose?.()); root.replaceChildren();
+      readings.enterView({ root, key: seeded ? 'multi-table-saved' : null, preset: seeded ? { reading: seeded } : null });
+      for (const definition of definitions) {
+        const host = document.createElement('div'); root.append(host);
+        const table = scoreTable({ ...definition, initialView: seeded ? null : definition.initialView });
+        host.innerHTML = table.html; disposers.push(table.wire(host));
+      }
+    };
+    mount(null); const original = readings.captureTableReading(root);
+    mount(original); const restored = readings.captureTableReading(root);
+    disposers.forEach(dispose => dispose?.()); root.remove(); readings.enterView(prior);
+    return { original, restored };
+  });
+  assert.equal(multiTable.original.tables.length, 2);
+  assert.deepEqual(multiTable.restored.tables, multiTable.original.tables, 'each mounted table independently restores its own search and filters');
+  assert(!JSON.stringify(multiTable.original).includes('synthetic-first'), 'saved multi-table readings contain no source rows');
   assert.deepEqual(errors, []);
   console.log('PASS shared screens: real Capital Raises filters, two devices, universal order, deep links/reload, deliberate shared saves, rename, failed reads, blank page/configuration, responsive controls and removal without source changes');
   await one.context.close(); await two.context.close();

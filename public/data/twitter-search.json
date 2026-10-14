@@ -283,7 +283,7 @@
       "pending": []
     },
     "isin:INE736A01011|Central Depository Services": {
-      "lastAttemptAt": "2026-10-08T23:48:27+00:00",
+      "lastAttemptAt": "2026-10-14T06:51:17+00:00",
       "lastResultCount": 10,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-03T21:01:00+00:00",
@@ -291,7 +291,7 @@
       "pending": []
     },
     "isin:INE736A01011|CDSL": {
-      "lastAttemptAt": "2026-10-09T00:28:01+00:00",
+      "lastAttemptAt": "2026-10-14T07:29:57+00:00",
       "lastResultCount": 100,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -308,7 +308,7 @@
       "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE067A01029|Cg Power and Ind Sol": {
-      "lastAttemptAt": "2026-10-09T01:03:02+00:00",
+      "lastAttemptAt": "2026-10-14T08:09:18+00:00",
       "lastResultCount": 0,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-03T21:01:00+00:00",
@@ -316,7 +316,7 @@
       "pending": []
     },
     "isin:INE067A01029|CG Power & Ind": {
-      "lastAttemptAt": "2026-10-09T01:34:26+00:00",
+      "lastAttemptAt": "2026-10-14T08:40:55+00:00",
       "lastResultCount": 0,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-03T21:01:00+00:00",
@@ -324,7 +324,7 @@
       "pending": []
     },
     "isin:INE067A01029|CGPOWER": {
-      "lastAttemptAt": "2026-10-09T02:09:16+00:00",
+      "lastAttemptAt": "2026-10-14T09:12:32+00:00",
       "lastResultCount": 57,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-06T22:10:33+00:00",
@@ -338,7 +338,7 @@
       "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE522F01014|Coal India": {
-      "lastAttemptAt": "2026-10-09T02:44:08+00:00",
+      "lastAttemptAt": "2026-10-14T09:44:15+00:00",
       "lastResultCount": 104,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -363,7 +363,7 @@
       "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE522F01014|COALINDIA": {
-      "lastAttemptAt": "2026-10-09T03:17:22+00:00",
+      "lastAttemptAt": "2026-10-14T10:30:30+00:00",
       "lastResultCount": 108,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-10-14T06:14:13.256472+00:00"
+    "checkedAt": "2026-10-14T10:30:30.490686+00:00"
   }
 }

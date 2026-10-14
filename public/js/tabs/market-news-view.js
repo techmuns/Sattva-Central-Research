@@ -50,6 +50,7 @@ import { surfaceReading, feedbackItemFor, relevanceRevision } from '../data/surf
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel } from '../data/announcement-categories.js';
 import { newsFeedbackBar } from '../ui/relevance-feedback-ui.js';
+import { newsStoryHtml, newsLinkable } from '../ui/news-story.js';
 import { createNewsMatcher, prepareNewsSearch } from '../data/news-search.js';
 import { newsSearchText } from '../data/company-news-attribution.js';
 import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
@@ -340,7 +341,7 @@ function visibleRows(rows) {
 // same rule the Deep Dive panel follows applies: external content may not decide what a click does.
 // A story that fails it still renders — with its headline and its standfirst — as a plain block
 // saying the link could not be used, because dropping the row would report a bad URL as no story.
-const linkable = (u) => /^https?:\/\//i.test(String(u || ''));
+const linkable = newsLinkable;
 
 const sectionLabel = (value) => String(value || '').replace(/-/g, ' ');
 
@@ -407,35 +408,12 @@ function cardHtml(r) {
     .filter(Boolean)
     .join('<span class="text-slate-300">·</span>');
 
-  // `onerror` rather than a broken-image icon: the thumbnails are on the publisher's CDN, and a
-  // reader offline (or a verification run with no egress) should get a clean placeholder.
-  const thumb = r.image
-    ? `<img src="${escapeHtml(r.image)}" alt="" loading="lazy" decoding="async"
-           class="h-full w-full object-cover" onerror="this.style.display='none'">`
-    : '';
-
-  const body = isPost(r) ? postBody(r, canLink) : `
-      <div class="h-[62px] w-[110px] flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 sm:h-[76px] sm:w-[135px]">${thumb}</div>
-      <div class="min-w-0 max-w-4xl flex-1">
-        <h3 class="font-display text-[15px] font-bold leading-snug text-slate-900 ${canLink ? 'group-hover:text-indigo-700' : ''}">${escapeHtml(r.title || '(untitled)')}</h3>
-        ${r.summary ? `<p class="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500">${escapeHtml(r.summary)}</p>` : ''}
-        <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">${meta}</div>
-      </div>`;
-  const key = escapeHtml(String(r.id || r.url));
-  const shell = 'group flex gap-4 px-5 py-4 transition-colors';
-
-  const feedback = newsFeedbackBar(feedbackItemFor(relevanceOf(r), r));
-  const bookmark = bookmarkButton(snapshotForRow(r, { section: 'news' }));
-  // Controls live below the story and outside its link, including records without a usable URL.
-  const content = canLink
-    ? `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer"
-         class="${shell} min-w-0 flex-1 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">${body}</a>`
-    : `<div data-news-unlinkable class="${shell} min-w-0 flex-1">${body}</div>`;
-  return `<article data-news-key="${key}"${canLink ? '' : ' data-news-unlinkable'} class="news-story hover:bg-slate-50">
-    <div class="news-story-content">${content}<span class="news-story-bookmark">${bookmark}</span></div>
-    ${canLink ? '' : '<span class="news-story-no-link">No link available</span>'}
-    <div class="news-story-feedback">${feedback}</div>
-  </article>`;
+  return newsStoryHtml(r, {
+    meta,
+    body: isPost(r) ? postBody(r, canLink) : null,
+    feedback: newsFeedbackBar(feedbackItemFor(relevanceOf(r), r)),
+    bookmark: bookmarkButton(snapshotForRow(r, { section: 'news' })),
+  });
 }
 
 /**

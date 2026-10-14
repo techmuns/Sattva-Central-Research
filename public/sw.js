@@ -50,7 +50,12 @@ function releaseCacheKey() {
 
 // Compose this UI revision without editing another release's version marker.
 function appReleaseCacheKey() {
-  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-reorder-research-tabs-v1-manager-images-v1`;
+  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-reorder-research-tabs-v1-manager-images-v2-all-investors-clean-layout-v1`;
+}
+
+// Keep the News presentation release independent of other UI version markers.
+function newsCardCacheKey() {
+  return `${appReleaseCacheKey()}-news-card-parity-v1`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
@@ -261,7 +266,7 @@ function dashboardCacheKey() {
 
 // Compose column presentation with other releases without changing their version markers.
 function sharedWorkspaceCacheKey() {
-  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v6-shared-navigation-spacing-v2-announcements-shared-columns-v3-subject-actions-v1`;
+  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v7-builder-shared-navigation-spacing-v2-announcements-shared-columns-v3-subject-actions-v1`;
 }
 
 function tableLayoutCacheKey() {
@@ -270,5 +275,5 @@ function tableLayoutCacheKey() {
 
 // Keep the IPO revision independent of other dashboard release markers.
 function ipoFilingCacheKey() {
-  return `${appReleaseCacheKey()}-single-ipo-filing-link-v6-insider-ist-v1-ipo-filter-toolbar-v2`;
+  return `${newsCardCacheKey()}-single-ipo-filing-link-v6-insider-ist-v1-ipo-filter-toolbar-v2`;
 }

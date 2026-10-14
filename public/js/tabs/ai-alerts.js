@@ -62,6 +62,18 @@ let displayedCards = [];
 let cardGrid = null;
 let resetCardScroll = false;
 let query = '';
+let normalSavedReading = null;
+export function getSavedView() {
+  return { aiPriority: filter, aiQuery: query, aiSort: sortOrder, aiEventTypes: [...eventFilters.selected], aiHideRoutine: eventFilters.hideRoutine };
+}
+export function applySavedView(extras = {}) {
+  normalSavedReading ||= { filter, query, sortOrder, eventFilters: structuredClone(eventFilters) };
+  filter = ['all', 'must-see', 'important', 'archived'].includes(extras.aiPriority) ? extras.aiPriority : 'all';
+  query = typeof extras.aiQuery === 'string' ? extras.aiQuery : '';
+  sortOrder = Object.hasOwn(SORTS, extras.aiSort) ? extras.aiSort : 'newest';
+  eventFilters = { selected: (Array.isArray(extras.aiEventTypes) ? extras.aiEventTypes : []).filter(id => AI_EVENT_TYPES.some(type => type.id === id)), hideRoutine: extras.aiHideRoutine === true };
+  eventViews = new WeakMap();
+}
 let sizeController = null;
 let sizesLoading = false;
 let sizeError = '';
@@ -257,6 +269,10 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  if (normalSavedReading) {
+    ({ filter, query, sortOrder, eventFilters } = normalSavedReading);
+    normalSavedReading = null; eventViews = new WeakMap();
+  }
   cardGrid?.destroy(); cardGrid = null;
   clearTimelines({ history: true });
   alerts.clearRankingCache();
@@ -417,6 +433,8 @@ function paint(ctx) {
     });
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
+  const searchInput = ctx.root.querySelector('[data-ai-search]');
+  if (searchInput.value !== query) searchInput.value = query;
   ctx.root.querySelector('[data-ai-layout]').setAttribute('data-ai-collecting', String(collecting));
   reconcileMarkup(ctx.root.querySelector('[data-ai-heading]'), head(ctx));
   reconcileMarkup(ctx.root.querySelector('[data-ai-position-status]'), positionStatus() + kpiStatusMarkup());
@@ -1067,7 +1085,7 @@ function wire(ctx) {
   if (sort) sort.onchange = () => {
     if (!Object.hasOwn(SORTS, sort.value)) return;
     sortOrder = sort.value;
-    try { localStorage.setItem(SORT_KEY, sortOrder); } catch { /* Keep the session preference. */ }
+    if (!ctx.savedView) try { localStorage.setItem(SORT_KEY, sortOrder); } catch { /* Keep the session preference. */ }
     resetCardScroll = true;
     paint(ctxRef);
     ctxRef?.root.querySelector('[data-ai-sort]')?.focus({ preventScroll: true });
@@ -1236,7 +1254,7 @@ function eventView(card) {
 
 function changeEventFilters(ctx) {
   clearTimelines();
-  saveAIEventFilters(eventFilters);
+  if (!ctx.savedView) saveAIEventFilters(eventFilters);
   eventViews = new WeakMap();
   resetCardScroll = true;
   paint(ctx);

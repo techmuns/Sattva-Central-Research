@@ -52,6 +52,16 @@ let managersView = { query: '', sourcesOpen: false };
 // Institutions mirrors that contract: the fund tables remain the default, while Quarterly Changes
 // is a cross-book destination whose selection survives a scope repaint but not leaving the view.
 let filedSection = 'institutions';
+export function getSavedView() {
+  return { investorSection: liveSection, institutionSection: filedSection, investorAudience: changesView.audience,
+    investorPeriod: changesView.period, investorHoldingsOpen: changesView.holdingsOpen === true, managerQuery: managersView.query || '' };
+}
+export function applySavedView(extras = {}) {
+  liveSection = ['quarterly-changes', 'my-managers', 'data-table', 'investors'].includes(extras.investorSection) ? extras.investorSection : 'quarterly-changes';
+  filedSection = extras.institutionSection === 'quarterly-changes' ? 'quarterly-changes' : 'institutions';
+  changesView = { audience: extras.investorAudience === 'investors' ? 'investors' : 'my-managers', period: extras.investorPeriod || 'quarter', holdingsOpen: extras.investorHoldingsOpen === true };
+  managersView = { query: extras.managerQuery || '', sourcesOpen: false };
+}
 
 // ---------------------------------------------------------------------------------------
 // Entry
