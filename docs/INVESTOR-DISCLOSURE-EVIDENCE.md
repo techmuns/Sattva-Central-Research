@@ -100,6 +100,12 @@ unavailable. Existing public quarterly histories, official source coverage and e
 intact. My Managers cards cover the whole book; Watchlist narrows eligible workspace
 securities/activity without changing the full-book weight denominator.
 
+Manager cards use locally served public firm logos, with Sattva's mark for direct
+holdings. `investors/manager-images.js` matches bounded name aliases and card kinds;
+it never changes workbook identities or merges repeated investments. Artwork provenance
+is retained in `public/assets/managers/README.md`. Unknown names and failed images keep
+a same-size gradient avatar. Images require no external service or private-name requests.
+
 
 ### Manager transport reliability (13 October 2026)
 
