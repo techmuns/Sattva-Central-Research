@@ -445,7 +445,12 @@ stay bounded. Verify with `verify-exchange-universe.mjs` and `verify-exchange-un
 ## Performance vs. Data Integrity
 
 Shared saved screens (13 October 2026) store reading definitions rather than copied datasets.
-Reopening a named screen applies its source table, scope and filters to the current retained data;
+Reopening a named screen applies its source table and filters to the current retained data,
+using the dashboard header's currently selected scope rather than forcing the creation scope.
+The builder derives its tab/subtab/view choices from the original navigation metadata and
+opens the original live renderer to configure filters before publishing a definition;
+reader controls must not be reimplemented as a second, drifting filter catalogue.
+Screens with multiple tables retain each table's filter reading, without saving source rows;
 normal source revalidation, partial/failed states, pagination and exports remain authoritative.
 Relative date windows advance in IST and cannot become frozen snapshots. Workspace confirmation
 does not establish source freshness or completeness. Layout changes cannot alter collector budgets,
