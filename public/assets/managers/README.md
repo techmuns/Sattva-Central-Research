@@ -44,6 +44,7 @@ vector is the publisher's annual-report mark reproduced on Wikimedia Commons.
 | capier.webp | [Source](https://venture.angellist.com/samit-khanna/syndicate) | [Original](https://cdn.angellist.com/syndicates/11502-medium?1634636003) |
 | kettleborough.webp | [Source](https://kettleborough.vc/) | [Original](https://www.kettleborough.vc/assets/kettleborough.b57b3512.webp) |
 | sparrow.webp | [Source](https://sparrowvc.com/) | embedded PNG in masthead |
+| mirae-asset.webp | [Source](https://www.amfiindia.com/member/45) | [Original](https://www.amfiindia.com/uploads/mirae_230x60_5fe177e4f5.svg) |
 
 Aliases preserve workbook spelling and fund/series suffixes; they do not rename or
 merge investments. Matrix Partners India is now [Z47](https://www.z47.com/legal/fund-details);

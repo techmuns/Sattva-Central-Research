@@ -36,6 +36,7 @@ export const MANAGER_IMAGES = [
   ['hdfc', 'HDFC Mutual Fund', ['hdfc'], ['listed-fund']],
   ['nippon', 'Nippon India Mutual Fund', ['nippon india'], ['listed-fund']],
   ['icici-prudential', 'ICICI Prudential Mutual Fund', ['icici prudential'], ['listed-fund']],
+  ['mirae-asset', 'Mirae Asset Mutual Fund', ['mirae asset'], ['listed-fund']],
 ].map(([id, name, aliases, kinds]) => ({ id, name, aliases, kinds, src: `/assets/managers/${id}.webp` }));
 
 const normalise = name => String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
