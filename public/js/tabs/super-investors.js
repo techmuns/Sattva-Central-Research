@@ -1,270 +1,175 @@
+// One audience choice, shared tasks, distinct books and dates. Legacy routes remain readable.
 import { TAB_META } from './catalog.js';
-// tabs/super-investors.js — who owns what, from two live sources and nothing else.
-//
-//   Superstar Investors  every tracked investor's book, live off Ticker Finology  → investors/live.js
-//   Institutions         funds, from shareholding filings and AMC portfolios      → investors/filed.js
-//
-// THIS MODULE IS A DISPATCHER AND ALMOST NOTHING ELSE. Both sub-views own their own rendering,
-// provenance and export; all that is left here is the tab contract, the two lifetimes, and the
-// loading state.
-//
-// THE SYNTHETIC HALF IS GONE, AND ITS MACHINERY WITH IT. There used to be a third sub-view, Fund
-// Flows, running on `superinvestors.json` / `institutions.json` — real names against generated
-// positions, held together by an amber ribbon, plus a four-tab per-investor workspace on the same
-// invented data. Both live sub-views are now real, so the tab had one synthetic surface and two
-// genuine ones sharing a rail.
-//
-// That is the situation CLAUDE.md already has an answer for, learned on the Con-call tab: when a
-// tab acquires two provenances, the preferred resolution is to remove the synthetic one, not to
-// write a better ribbon. So the sub-view, `js/data/investors.js`, `js/investors/deep-dive.js`,
-// `scripts/gen-mock-investors.mjs` and the two mock payloads are deleted rather than deprecated.
-// Every number on this tab is now somebody's disclosure. If aggregate flow data is ever wanted,
-// AMFI publish the real monthly figures and it comes back pointed at those.
-
-import { sectionHead, companySeededView } from '../ui/screener.js';
-import { renderFiled } from '../investors/filed.js';
 import { renderLive } from '../investors/live.js';
-import * as liveInvestors from '../data/super-investors.js';
-import * as refreshRegistry from '../core/refresh.js';
+import { renderFiled } from '../investors/filed.js';
+import { renderManagerHoldings } from '../investors/manager-holdings.js';
+import { investorNavigation, navigationPreferences, contextKey, VIEWS } from '../investors/navigation.js';
+import * as investors from '../data/super-investors.js';
 import * as filed from '../data/institution-holdings.js';
 import * as managers from '../data/managers.js';
+import * as refreshRegistry from '../core/refresh.js';
+import { PERIODS } from '../data/investor-changes.js';
+import { escapeHtml as esc } from '../core/dom.js';
 
 export const meta = TAB_META['super-investors'];
+const PREFERENCE_KEY = 'sattva:investor-navigation:v1';
+let stored;
+try { stored = JSON.parse(localStorage.getItem(PREFERENCE_KEY) || 'null'); } catch {}
+const state = navigationPreferences(stored || {});
+let ctxRef = null, navigation = null, panelDisposers = [], unsubs = [], stopRefresh = null;
+let routeKey = null, savedApplied = false, legacyInstitutionSection = null, generation = 0, institutionPending = null, institutionError = '';
+let institutionTimer = null, institutionLastCheck = 0;
+const active = () => state.contexts[contextKey(state)];
+function remember() {
+  try { localStorage.setItem(PREFERENCE_KEY, JSON.stringify(navigationPreferences(state))); } catch {}
+}
+function changeReading(key, value) { active()[key] = value; remember(); navigation?.update(); }
+function navigate(focus) {
+  remember(); navigation?.update();
+  if (ctxRef?.setParams) {
+    const params = { ...ctxRef.params, type: state.audience, category: state.group, view: state.view, ...(active().fund && state.group === 'institutions' ? { fund: active().fund } : {}) };
+    delete params.company;
+    ctxRef.setParams(params);
+  } else paint();
+  const selector = focus === 'audience' ? '[data-investor-audience] [aria-selected="true"]' : focus === 'view' ? '[data-investor-view-tabs] [aria-selected="true"]' : '[data-investor-group]';
+  ctxRef?.root.querySelector(selector)?.focus({ preventScroll: true });
+}
 
-let renderToken = 0;
-let ctxRef = null;
-// Disposers from the tables' global listeners. `scoreTable.wire()` returns one when it registers
-// anything on the document, and it has to be released on nav away or every visit stacks another.
-let disposers = [];
-// The live Superstar view's own lifetime: a subscription that survives repaints (books arrive one
-// at a time) and the table's search/sort/filter state, carried across those repaints so a book
-// landing mid-read does not throw away what the reader had set up.
-let liveUnsub = null;
-let liveUnregister = null;
-let liveView = null;
-let liveRouteCompany = null;
-// The Superstar sub-view has four in-page destinations. Keep the reader on the one they
-// chose while scope changes and live-book arrivals repaint the tab; switching to Institutions or
-// leaving Super Investors resets it.
-let liveSection = 'quarterly-changes';
-let changesView = { audience: 'my-managers', period: 'quarter' };
-let managersView = { query: '', sourcesOpen: false };
-// Institutions mirrors that contract: the fund tables remain the default, while Quarterly Changes
-// is a cross-book destination whose selection survives a scope repaint but not leaving the view.
-let filedSection = 'institutions';
 export function getSavedView() {
-  return { investorSection: liveSection, institutionSection: filedSection, investorAudience: changesView.audience,
-    investorPeriod: changesView.period, investorHoldingsOpen: changesView.holdingsOpen === true, managerQuery: managersView.query || '' };
+  const reading = active();
+  return { investorAudience: state.audience, investorGroup: state.group, investorView: state.view,
+    investorPeriod: reading.changes.period, investorHoldingsOpen: reading.changes.holdingsOpen === true,
+    investorSourcesOpen: reading.changes.sourcesOpen === true, investorQuery: reading.overview.query,
+    managerQuery: state.contexts['my-managers'].overview.query, institutionFund: state.contexts.institutions.fund };
 }
 export function applySavedView(extras = {}) {
-  liveSection = ['quarterly-changes', 'my-managers', 'data-table', 'investors'].includes(extras.investorSection) ? extras.investorSection : 'quarterly-changes';
-  filedSection = extras.institutionSection === 'quarterly-changes' ? 'quarterly-changes' : 'institutions';
-  changesView = { audience: extras.investorAudience === 'investors' ? 'investors' : 'my-managers', period: extras.investorPeriod || 'quarter', holdingsOpen: extras.investorHoldingsOpen === true };
-  managersView = { query: extras.managerQuery || '', sourcesOpen: false };
+  // Saved screens from before consolidation still open the same audience and task.
+  const legacy = extras.investorSection;
+  state.audience = extras.investorAudience === 'investors' || ['investors', 'data-table'].includes(legacy) ? 'investors' : 'my-managers';
+  if (legacy === 'my-managers') state.audience = 'my-managers';
+  state.group = extras.investorGroup === 'institutions' ? 'institutions' : 'tracked';
+  state.view = VIEWS.some(v => v.id === extras.investorView) ? extras.investorView : legacy === 'data-table' ? 'holdings' : ['investors', 'my-managers'].includes(legacy) ? 'overview' : 'changes';
+  const reading = active();
+  reading.changes.period = PERIODS.some(p => p.id === extras.investorPeriod) ? extras.investorPeriod : 'quarter';
+  reading.changes.holdingsOpen = extras.investorHoldingsOpen === true;
+  reading.changes.sourcesOpen = extras.investorSourcesOpen === true;
+  reading.overview.query = typeof extras.investorQuery === 'string' ? extras.investorQuery : '';
+  state.contexts['my-managers'].overview.query = typeof extras.managerQuery === 'string' ? extras.managerQuery : '';
+  state.contexts.institutions.fund = typeof extras.institutionFund === 'string' ? extras.institutionFund : '';
+  legacyInstitutionSection = !extras.investorView ? extras.institutionSection : null;
+  savedApplied = true;
 }
 
-// ---------------------------------------------------------------------------------------
-// Entry
-// ---------------------------------------------------------------------------------------
+function applyRoute(ctx) {
+  const params = ctx.params || {};
+  const nextKey = JSON.stringify([ctx.subview, params.type, params.category, params.view, params.company, params.fund]);
+  if (nextKey === routeKey) return;
+  routeKey = nextKey;
+  if (savedApplied && ctx.subview === 'institutions' && legacyInstitutionSection) {
+    state.audience = 'investors'; state.group = 'institutions'; state.view = legacyInstitutionSection === 'quarterly-changes' ? 'changes' : 'holdings';
+  }
+  if (!savedApplied) {
+    if (['my-managers', 'investors'].includes(params.type)) state.audience = params.type;
+    else if (ctx.subview === 'institutions') { state.audience = 'investors'; state.group = 'institutions'; state.view = 'holdings'; }
+    if (['tracked', 'institutions'].includes(params.category)) state.group = params.category;
+    if (VIEWS.some(v => v.id === params.view)) state.view = params.view;
+    if (params.company) {
+      state.audience = 'investors'; state.view = 'holdings';
+      active().holdings = { ...active().holdings, q: String(params.company).trim().toUpperCase() };
+      for (const reading of Object.values(active().fundTables)) reading.q = String(params.company).trim().toUpperCase();
+    }
+    if (params.fund) state.contexts.institutions.fund = String(params.fund);
+  }
+  savedApplied = false;
+}
 
 export function render(ctx) {
-  // A `?company=` link lands on the disclosed-positions table, searched for that company — the
-  // cards and the quarterly roll-up cannot be narrowed to one name.
-  const seeded = companySeededView(ctx, liveRouteCompany, liveView);
-  if (seeded.company && seeded.company !== liveRouteCompany) liveSection = 'data-table';
-  liveRouteCompany = seeded.company;
-  liveView = seeded.view;
-  // A sub-view change does not destroy this module. Reset here when the reader leaves Superstar
-  // Investors so returning from Institutions opens on Changes.
-  if (ctxRef?.subview === 'superstar-investors' && ctx.subview !== 'superstar-investors') { liveSection = 'quarterly-changes'; changesView = { audience: 'my-managers', period: 'quarter' }; managersView = { query: '', sourcesOpen: false }; }
-  if (ctxRef?.subview === 'institutions' && ctx.subview !== 'institutions') filedSection = 'institutions';
-  renderToken++;
-  ctxRef = ctx;
-  if (!liveUnregister) liveUnregister = refreshRegistry.register('superstar-investors', {
-    label: 'Investors', refresh: async () => {
-      if (ctxRef?.subview === 'superstar-investors' && (liveSection === 'my-managers' || liveSection === 'quarterly-changes' && changesView.audience === 'my-managers')) {
-        const snapshot = await managers.load({ force: true });
-        if (!snapshot) throw Error(managers.failureInfo() || 'Manager coverage could not be checked.');
-        return { checked: snapshot.managers.length };
-      }
-      if (ctxRef?.subview !== 'institutions') return liveInvestors.refresh();
-      await filed.refresh();
-      if (ctxRef?.subview === 'institutions') renderInstitutions(ctxRef);
-      return { checked: 1 };
-    },
-  });
-  const view = { institutions: renderInstitutions }[ctx.subview] || renderIndividuals;
-  view(ctx);
+  ctxRef = ctx; applyRoute(ctx);
+  if (!navigation || navigation.content.parentElement !== ctx.root || !navigation.content.isConnected) {
+    navigation?.destroy();
+    navigation = investorNavigation(ctx.root, state, {
+      onAudience: audience => { state.audience = audience; navigate('audience'); },
+      onView: view => { state.view = view; navigate('view'); },
+      onGroup: group => { state.group = group; navigate('group'); },
+      onPeriod: period => { active().changes.period = period; remember(); paint(); ctxRef.root.querySelector('[data-changes-period]')?.focus({ preventScroll: true }); },
+      onReadingChange: remember,
+    });
+  }
+  if (!unsubs.length) {
+    unsubs.push(investors.onChange(() => { if (ctxRef && state.audience === 'investors' && state.group === 'tracked') paint(); }),
+      filed.onChange(() => { if (ctxRef && state.audience === 'investors' && state.group === 'institutions') paint(); }));
+    const resume = () => { if (!document.hidden && ctxRef && state.audience === 'investors' && state.group === 'institutions') void checkInstitutions(); };
+    document.addEventListener('visibilitychange', resume); window.addEventListener('focus', resume);
+    institutionTimer = setInterval(resume, 60000);
+    unsubs.push(() => { clearInterval(institutionTimer); document.removeEventListener('visibilitychange', resume); window.removeEventListener('focus', resume); });
+  }
+  if (!stopRefresh) stopRefresh = refreshRegistry.register('superstar-investors', { label: 'Investors', refresh: async () => {
+    if (state.audience === 'my-managers') {
+      const snapshot = await managers.load({ force: true });
+      if (!snapshot) throw Error(managers.failureInfo() || 'Manager coverage could not be checked.');
+      return { checked: snapshot.managers.length };
+    }
+    if (state.group === 'institutions') { await checkInstitutions(true); if (institutionError) throw Error(institutionError); return { checked: filed.all().length }; }
+    return investors.refresh();
+  } });
+  paint();
+}
+
+async function checkInstitutions(force = false) {
+  if (institutionPending) return institutionPending;
+  if (!force && Date.now() - institutionLastCheck < 55000) return;
+  institutionLastCheck = Date.now();
+  institutionPending = filed.refresh().then(() => { institutionError = ''; }).catch(() => { institutionError = 'Institutional source could not be re-checked; retained disclosures are shown.'; })
+    .finally(() => { institutionPending = null; if (ctxRef && state.audience === 'investors' && state.group === 'institutions') paint(); });
+  return institutionPending;
+}
+
+function paint() {
+  if (!ctxRef || !navigation?.content.isConnected) return;
+  const token = ++generation, root = navigation.content;
+  const searches = [...root.querySelectorAll('input[type="search"], [data-table-search], [data-manager-search]')];
+  const index = searches.indexOf(document.activeElement), search = searches[index];
+  const selection = search ? [search.selectionStart, search.selectionEnd, search.selectionDirection] : null;
+  const scrolls = [...root.querySelectorAll('[data-table-scroll]')].map(el => [el.scrollLeft, el.scrollTop]);
+  navigation.reclaimGroup(); panelDisposers.forEach(fn => fn?.()); panelDisposers = [];
+  navigation.update();
+  const ctx = { ...ctxRef, root }, reading = active();
+  if (state.audience === 'investors' && state.group === 'institutions') {
+    if (!filed.isLoaded()) {
+      root.innerHTML = '<div class="investor-loading" aria-busy="true">Loading institutional disclosures…</div>';
+      filed.load().then(() => {
+        if (token !== generation || !ctxRef) return;
+        if (filed.isLoaded()) { paint(); void checkInstitutions(); }
+        else root.innerHTML = '<p class="text-sm text-slate-500">Institutional holdings could not be read. Please check back.</p>';
+      });
+      return;
+    }
+    const panel = renderFiled(ctx, { disposers: panelDisposers, embedded: true, section: state.view === 'changes' ? 'quarterly-changes' : state.view === 'overview' ? 'overview' : 'institutions',
+      toolbarControls: navigation.toolbarControls, view: state.view === 'overview' ? reading.overview : reading,
+      onView: () => remember(), onFund: fund => { reading.fund = fund; state.view = 'holdings'; navigate('view'); } });
+    root.innerHTML = panel.html; panel.wire(root);
+    if (institutionError) root.insertAdjacentHTML('beforeend', `<p class="mt-3 text-xs text-slate-500" data-institution-delivery-error>${esc(institutionError)}</p>`);
+    void checkInstitutions();
+  } else if (state.audience === 'my-managers' && state.view === 'holdings') {
+    const panel = renderManagerHoldings(ctx, { view: reading.holdings, onView: view => changeReading('holdings', view), toolbarControls: navigation.toolbarControls });
+    root.innerHTML = panel.html; panel.wire(root, panelDisposers);
+  } else {
+    const section = state.view === 'changes' ? 'quarterly-changes' : state.view === 'holdings' ? 'data-table' : state.audience === 'my-managers' ? 'my-managers' : 'investors';
+    renderLive(ctx, { disposers: panelDisposers, embedded: true, section, toolbarControls: navigation.toolbarControls,
+      tableView: reading.holdings, onView: view => changeReading('holdings', view),
+      changesView: { ...reading.changes, audience: state.audience }, onChangesView: view => changeReading('changes', view),
+      managersView: reading.overview, onManagersView: view => changeReading('overview', view),
+      overviewView: reading.overview, onOverviewView: view => changeReading('overview', view) });
+    if (!investors.isLoaded()) investors.load().catch(() => {});
+  }
+  root.querySelectorAll('[data-table-scroll]').forEach((el, i) => { if (scrolls[i]) [el.scrollLeft, el.scrollTop] = scrolls[i]; });
+  if (selection) { const input = root.querySelectorAll('input[type="search"], [data-table-search], [data-manager-search]')[index]; input?.focus({ preventScroll: true }); input?.setSelectionRange(...selection); }
+  navigation.update(); remember();
 }
 
 export function destroy() {
-  renderToken++;
-  ctxRef = null;
-  disposers.forEach((d) => d && d());
-  disposers = [];
-  // The book-arrival subscription outlives a repaint by design, so leaving the tab is the only
-  // place it can be released. Without this, every visit stacks another repainter on a dead ctx.
-  liveUnsub?.();
-  liveUnsub = null;
-  liveUnregister?.();
-  liveUnregister = null;
-  // Leaving is a deliberate exit; coming back should be a clean table rather than last visit's
-  // half-applied filter. Only a repaint mid-load carries the view forward.
-  liveView = null;
-  changesView = { audience: 'my-managers', period: 'quarter' };
-  managersView = { query: '', sourcesOpen: false };
-  liveSection = 'quarterly-changes';
-  filedSection = 'institutions';
+  generation++; remember(); navigation?.reclaimGroup(); panelDisposers.forEach(fn => fn?.()); panelDisposers = [];
+  navigation?.destroy(); navigation = null; unsubs.forEach(fn => fn()); unsubs = [];
+  stopRefresh?.(); stopRefresh = null; ctxRef = null; routeKey = null;
 }
-
-function loadingHtml() {
-  return `
-    ${sectionHead({ title: meta.title, description: meta.subtitle })}
-    <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-      ${Array.from({ length: 3 }).map(() => '<div class="skeleton-shimmer h-24 rounded-2xl bg-slate-100"></div>').join('')}
-    </div>
-    <div class="skeleton-shimmer h-96 rounded-2xl bg-slate-100"></div>`;
-}
-
-// ---------------------------------------------------------------------------------------
-// Superstar Investors — live off Ticker Finology
-// ---------------------------------------------------------------------------------------
-
-/**
- * The books arrive one at a time — each is a separate page on Finology's side — so this subscribes
- * and repaints as they land rather than blocking the whole view on the slowest one.
- *
- * A SECOND VISIT PAINTS IMMEDIATELY. `isLoaded()` is true for the rest of the session once the list
- * has landed, and the feed's own cache means even a fresh page load paints from the device before
- * it asks the network anything. See js/data/super-investors.js.
- */
-function renderIndividuals(ctx) {
-  disposers.forEach((d) => d && d());
-  disposers = [];
-
-  // Private manager reads and navigation must remain usable even when the public
-  // directory is slow. Only the public holdings destinations show its loading state.
-  paintIndividuals(ctx);
-
-  // Repaint as each book lands. The subscription is a mount-lifetime thing, so it is released in
-  // destroy() and not by the next repaint — otherwise the first arrival would tear down the
-  // subscription that produced it.
-  // THE HEADER'S REFRESH BUTTON RE-READS THE BOOKS, and nothing else does. Ninety-one round trips
-  // is not work to do on a page load: the grid is painted from the committed snapshot and this
-  // device, and asking the server about all of it is what the reader presses a button for.
-
-
-  // THE GUARD IS `ctxRef`, NOT A CAPTURED TOKEN. `renderToken` increments on every render — which a
-  // scope toggle always causes — so a handler holding the value it had at subscribe time goes deaf
-  // the first time the reader touches the toggle, and the grid stops updating with nothing on
-  // screen to say so. Same bug, and same fix, as the three filings tabs.
-  if (!liveUnsub) {
-    liveUnsub = liveInvestors.onChange(() => {
-      if (ctxRef?.subview !== 'superstar-investors') return;
-      // A re-read from the Live pill discards the whole feed and starts again, so for a moment
-      // there is no list. Rendering the panel then would put "the API returned an error" on screen
-      // for something the reader just asked for and which has not failed. The skeleton is the
-      // honest state: this is loading.
-      if (liveSection === 'my-managers' || liveSection === 'quarterly-changes' && changesView.audience === 'my-managers') return;
-      const root = ctxRef.root, searches = [...root.querySelectorAll('[data-table-search]')];
-      const index = searches.indexOf(document.activeElement), search = searches[index];
-      const selection = search ? [search.selectionStart, search.selectionEnd, search.selectionDirection] : null;
-      const scrolls = [...root.querySelectorAll('[data-table-scroll]')].map(el => [el.scrollLeft, el.scrollTop]);
-      paintIndividuals(ctxRef);
-      root.querySelectorAll('[data-table-scroll]').forEach((el, i) => { if (scrolls[i]) [el.scrollLeft, el.scrollTop] = scrolls[i]; });
-      if (selection) { const input = root.querySelectorAll('[data-table-search]')[index]; input?.focus({ preventScroll: true }); input?.setSelectionRange(...selection); }
-    });
-  }
-  if (!liveInvestors.isLoaded()) liveInvestors.load().catch(() => {});
-}
-
-function paintIndividuals(ctx) {
-  disposers.forEach((d) => d && d());
-  disposers = [];
-  renderLive(ctx, {
-    disposers,
-    section: liveSection,
-    tableView: liveView,
-    changesView,
-    managersView,
-    onManagersView: (view) => { managersView = view; },
-    onChangesView: (view) => { changesView = view; },
-    onView: (v) => (liveView = v),
-    onSection: (section) => {
-      if (section === liveSection || ctxRef?.subview !== 'superstar-investors') return;
-      liveSection = section;
-      paintIndividuals(ctxRef);
-      // The click removed the button that held focus when it repainted the root. Put focus on its
-      // selected replacement so a keyboard reader can continue from the in-page tabs.
-      ctxRef.root.querySelector('[data-live-section-tabs] [role="tab"][aria-selected="true"]')?.focus();
-    },
-  });
-}
-
-// ---------------------------------------------------------------------------------------
-// Institutions — filed shareholdings and AMC portfolios
-// ---------------------------------------------------------------------------------------
-
-/**
- * One table per fund, with a picker across the top.
- *
- * Two kinds of fund sit behind that picker and they measure different things — see the header of
- * js/investors/filed.js. This function does not know or care which; `renderFiled` branches.
- */
-function renderInstitutions(ctx) {
-  disposers.forEach((d) => d && d());
-  disposers = [];
-
-  // The holdings file is 347KB and this is the only view that reads it, so it is no longer in
-  // front of the shell's first paint (see js/app.js). `filed.load()` is idempotent and resolves at
-  // once when the bootstrap pass has already primed it — so on any visit but a cold one this is a
-  // resolved promise and the shimmer never renders. It must be awaited rather than raced: an
-  // unprimed `filed.all()` is empty, and an empty book on screen is a claim that nobody holds
-  // anything, which is exactly the failure the panel below is written to avoid.
-  if (!filed.all().length) {
-    const token = renderToken;
-    ctx.root.innerHTML = loadingHtml();
-    filed.load().then(() => {
-      if (token === renderToken) paintInstitutions(ctx);
-    });
-    return;
-  }
-  paintInstitutions(ctx);
-}
-
-function paintInstitutions(ctx) {
-  disposers.forEach((d) => d && d());
-  disposers = [];
-  const panel = renderFiled(ctx, {
-    disposers,
-    section: filedSection,
-    onSection: (section) => {
-      if (section === filedSection || ctxRef?.subview !== 'institutions') return;
-      filedSection = section;
-      paintInstitutions(ctxRef);
-      ctxRef.root.querySelector('[data-filed-section-tabs] [role="tab"][aria-selected="true"]')?.focus();
-    },
-  });
-  if (!panel.html) {
-    // No holdings file on disk. Say so rather than rendering an empty table, which would read as a
-    // fund that holds nothing.
-    ctx.root.innerHTML = `
-      ${sectionHead({ title: 'Institutions', description: 'Fund holdings, from shareholding filings and AMC portfolio disclosures.' })}
-      <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-        <h3 class="font-display text-base font-bold text-slate-900">Institution holdings unavailable</h3>
-        <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
-          The captured institution holdings could not be read. Please check back.
-        </p>
-        <p class="mt-3 text-xs text-slate-500">
-          Holdings have not been verified. This does not mean the institutions have no holdings.
-        </p>
-      </div>`;
-    return;
-  }
-
-  ctx.root.innerHTML = panel.html;
-  panel.wire(ctx.root);
-}
-
-/** Exposed for the verification suite, which asserts the two kinds never merge. */
 export const _funds = () => filed.all();

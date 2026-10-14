@@ -22,6 +22,10 @@ const books = {
 };
 const investors = [...Object.keys(books), 'missing'].map(slug => ({ slug, name: slug }));
 const snapshot = { capturedAt: at, investors, books };
+const institutionalFixture = { generated_at: at, institutions: [
+  { investorId: 'institution-fixture', name: 'Example Institution', disclosure: 'shareholding', house: 'Example', sourceUrl: 'https://example.test/filings', quarters: ['Q1FY27', 'Q4FY26'], quarterLabels: ['Jun 2026', 'Mar 2026'], stocksHeld: 1, portfolioValueCr: 1, holdings: [{ ticker: 'ONLY', name: 'Portfolio Only Ltd.', qty: 100, holdingPct: 1.2, valueCr: 1, changePp: .2, pctByQuarter: { Q1FY27: 1.2, Q4FY26: 1 } }], former: [] },
+  { investorId: 'amc-fixture', name: 'Example AMC Fund', disclosure: 'portfolio', house: 'Example AMC', sourceUrl: 'https://example.test/amc', periods: ['2026-06', '2026-05'], periodLabels: ['Jun 2026', 'May 2026'], stocksHeld: 1, portfolioValueCr: 2, holdings: [{ ticker: 'ONLY', name: 'Portfolio Only Ltd.', weightPct: 5, valueCr: 2, changePp: 1, pctByPeriod: { '2026-06': 5, '2026-05': 4 }, assetClass: 'Equity' }], former: [] },
+] };
 const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2027-03-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-09-01T00:00:00Z', null])) + '|whole-family',
   privateWorkbook: { source: 'fixture.xlsx', received: '2026-09-02', saved: null }, coverage: { transactionAsOf: '2026-08-31', sourceCount: 6, privateCount: 1, note: 'Fixture custodians, retained ledger events and private funds; no PMS statement return series.' },
   managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: '2027-03-31',
@@ -73,6 +77,7 @@ const server = createServer(async (req, res) => {
   if (path === '/dispatcher') { res.setHeader('content-type', 'text/html'); res.end(dispatcherHtml); return; }
   if (path === '/data/public-holdings.json') { publicReads++; if (publicFail) res.statusCode = 503; return json(publicFail ? {} : publicPayload); }
   if (path === '/data/holding-evidence.json') return json(relationshipEvidence);
+  if (path === '/data/institution-holdings.json') return json(institutionalFixture);
   if (path === '/data/insider-trades.json') return json(trades);
   if (path === '/data/exchange-deals.json' || path === '/api/bulk-block-deals' || path.startsWith('/api/exchange-deals')) return json(exchangeFixture);
   if (path === '/data/super-investors.json') { if (holdPublic) await holdPublic; return json(snapshot); }
@@ -380,12 +385,26 @@ try {
   coldPage.on('pageerror', e => coldErrors.push(e.message));
   await coldPage.clock.install({ time:new Date(at) });
   await coldPage.goto(origin + '/dispatcher', { waitUntil:'domcontentloaded' });
-  await coldPage.locator('[data-changes-audience] [data-tab-id="investors"]').click();
+  await coldPage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
   assert.match(await coldPage.locator('[data-changes-panel]').innerText(), /Investor directory is loading/);
   assert.doesNotMatch(await coldPage.locator('[data-changes-panel]').innerText(), /0 buys · 0 sells/);
-  await coldPage.locator('[data-live-section-tabs] [data-tab-id="data-table"]').click();
+  await coldPage.locator('[data-investor-view-tabs] [data-tab-id="holdings"]').click();
   assert.equal(await coldPage.locator('[data-live-panel] [aria-busy="true"]').count(), 1);
-  await coldPage.locator('[data-live-section-tabs] [data-tab-id="my-managers"]').click();
+  await coldPage.locator('[data-investor-audience] [data-tab-id="my-managers"]').click();
+  await coldPage.waitForSelector('[data-manager-holdings] [data-row-key]');
+  assert.equal(await coldPage.locator('[data-manager-holdings] [data-row-key]').count(), 2, 'held fund-unit projections do not duplicate the original custodian positions');
+  await coldPage.locator('[data-manager-holdings] [data-table-search]').fill('Portfolio');
+  await coldPage.evaluate(() => {
+    window.exportedNavigation = [];
+    window.ExcelJS = { Workbook: class { constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array([1]) }; } addWorksheet() { return { addRow: row => window.exportedNavigation.push(row), getRow: () => ({}) }; } } };
+  });
+  await coldPage.locator('[data-manager-holdings] [data-export]').click();
+  await coldPage.waitForFunction(() => window.exportedNavigation.length > 0);
+  assert.match(await coldPage.evaluate(() => JSON.stringify(window.exportedNavigation)), /Portfolio Only.*Example Custodian/, 'filtered manager export keeps the named custodian and source basis');
+  assert.doesNotMatch(await coldPage.evaluate(() => JSON.stringify(window.exportedNavigation)), /Example ETF/, 'export respects the security search');
+  await coldPage.locator('[data-manager-holdings] [data-table-search]').fill('');
+  assert.equal(await coldPage.locator('[data-changes-period]').isVisible(), false, 'Holdings uses source periods, without an activity-period selector');
+  await coldPage.locator('[data-investor-view-tabs] [data-tab-id="overview"]').click();
   await coldPage.waitForSelector('[data-open-manager="custodian-example"]');
   assert.equal(await coldPage.evaluate(async () => (await import('/js/data/super-investors.js')).isLoaded()), false, 'private book opens before delayed public data');
   await coldPage.locator('[data-manager-search]').fill('Example');
@@ -407,6 +426,61 @@ try {
   }
   await coldPage.keyboard.press('Escape');
   assert.equal(await coldPage.evaluate(() => document.activeElement.dataset.openManager), 'custodian-example', 'closing restores keyboard focus to the manager card');
+  assert.deepEqual((await coldPage.locator('[data-investor-view-tabs] [role="tab"]').allTextContents()).map(s => s.trim()), ['Overview', 'Changes', 'Holdings']);
+  assert.equal(await coldPage.locator('[data-changes-audience], [data-live-section-tabs], [data-filed-section-tabs]').count(), 0, 'one audience switch owns every task');
+  await coldPage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
+  assert.equal(await coldPage.locator('[data-changes-period]').isVisible(), false);
+  await coldPage.locator('[data-investor-search]').fill('one');
+  assert.equal(await coldPage.locator('[data-investor-cards] > :visible').count(), 1);
+  await coldPage.locator('[data-investor-view-tabs] [data-tab-id="changes"]').click();
+  await coldPage.waitForSelector('[data-changes-ready="true"]');
+  await coldPage.locator('[data-changes-period]').selectOption('itd');
+  await coldPage.locator('[data-changes-activity] [data-table-search]').fill('Portfolio');
+  assert.equal(await coldPage.locator('[data-watch-toggle]').count(), 0, 'workspace scope owns Watchlist without a second default toggle');
+  await coldPage.locator('[data-investor-audience] [data-tab-id="my-managers"]').click();
+  assert.equal(await coldPage.locator('[data-changes-period]').inputValue(), 'quarter', 'manager and public activity retain their own date choices');
+  await coldPage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
+  assert.equal(await coldPage.locator('[data-changes-period]').inputValue(), 'itd');
+  assert.equal(await coldPage.locator('[data-changes-activity] [data-table-search]').inputValue(), 'portfolio');
+  await coldPage.locator('[data-investor-group]').selectOption('institutions');
+  await coldPage.waitForSelector('[data-institution-quarter-summary]');
+  assert.equal(await coldPage.locator('[data-changes-period]').isVisible(), false, 'institutional holding comparisons have no trade-period filter');
+  assert.equal(await coldPage.locator('[data-investor-comparison]').isVisible(), true);
+  const quarter = await coldPage.evaluate(async () => (await import('/js/data/institution-holdings.js')).quarterlySummary());
+  assert.equal(quarter.comparableBooks, 1, 'AMC NAV weights are excluded from institutional company-stake comparisons');
+  await coldPage.locator('[data-investor-view-tabs] [data-tab-id="overview"]').click();
+  assert.equal(await coldPage.locator('[data-open-fund]').count(), 2, 'both disclosure collections remain accessible');
+  await coldPage.locator('[data-open-fund="amc-fixture"]').click();
+  assert.match(await coldPage.locator('[data-filed-info]').innerText(), /% to NAV/);
+  assert.match(await coldPage.locator('thead').innerText(), /Value \(AMC\)/i);
+  await coldPage.locator('[data-institution-fund]').selectOption('institution-fixture');
+  assert.match(await coldPage.locator('[data-filed-info]').innerText(), /exchange filings/);
+  assert.match(await coldPage.locator('thead').innerText(), /Qty Held/i);
+  await coldPage.locator('[data-table-search]').fill('Portfolio');
+  await coldPage.reload();
+  await coldPage.waitForSelector('[data-institution-fund]');
+  assert.equal(await coldPage.locator('[data-institution-fund]').inputValue(), 'institution-fixture');
+  assert.equal(await coldPage.locator('[data-table-search]').inputValue(), 'portfolio', 'fund and search selections survive returning');
+  await coldPage.evaluate(() => { const saved = JSON.parse(localStorage.getItem('sattva:investor-navigation:v1')); saved.contexts.institutions.fundTables['institution-fixture'].watchOnly = true; localStorage.setItem('sattva:investor-navigation:v1', JSON.stringify(saved)); });
+  await coldPage.reload(); await coldPage.waitForSelector('[data-watch-toggle]');
+  assert.equal(await coldPage.locator('[data-watch-toggle]').isVisible(), true, 'a legacy saved Watchlist intersection stays visible until cleared');
+  await coldPage.locator('[data-watch-toggle]').click();
+  assert.equal(await coldPage.locator('[data-watch-toggle]').isVisible(), false);
+  const preferences = await coldPage.evaluate(() => JSON.parse(localStorage.getItem('sattva:investor-navigation:v1')));
+  assert.doesNotMatch(JSON.stringify(preferences), /marketValue|costBasis|sourceRevision|transactions|positions/, 'preferences contain no financial records');
+  for (const width of [320, 1440]) for (const theme of ['light', 'dark']) {
+    await coldPage.setViewportSize({ width, height: 900 }); await coldPage.evaluate(theme => document.documentElement.dataset.theme = theme, theme);
+    assert.equal(await coldPage.locator('[data-investor-navigation]').count(), 1, 'refresh and restore never duplicate the audience controls');
+    assert(await coldPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `audience first fits ${width} ${theme}`);
+    if (process.env.SI_QA_DIR) await coldPage.screenshot({ path:`${process.env.SI_QA_DIR}/navigation-${width}-${theme}.png`, fullPage:true });
+  }
+  // Legacy links and saved screens migrate without erasing their intended collection.
+  await coldPage.evaluate(async () => { const tab = await import('/js/tabs/super-investors.js'); tab.destroy(); tab.applySavedView({institutionSection:'quarterly-changes'}); tab.render({root:document.querySelector('#test-root'),scope:'universe',subview:'institutions',params:{}}); });
+  await coldPage.waitForSelector('[data-institution-quarter-summary]');
+  assert.equal(await coldPage.locator('[data-investor-group]').inputValue(), 'institutions');
+  await coldPage.evaluate(async () => { const tab = await import('/js/tabs/super-investors.js'); tab.destroy(); tab.applySavedView({investorSection:'data-table'}); tab.render({root:document.querySelector('#test-root'),scope:'portfolio',subview:'superstar-investors',params:{}}); });
+  await coldPage.waitForSelector('[data-live-panel="data-table"]');
+  assert.equal(await coldPage.locator('[data-investor-group]').inputValue(), 'tracked');
   assert.deepEqual(coldErrors, []);
   await cold.close();
   const unavailable = await browser.newContext({ serviceWorkers:'block' });
@@ -415,7 +489,8 @@ try {
   await unavailable.route('**/api/super-investors', route => route.fulfill({contentType:'application/json',body:JSON.stringify({ok:false,reason:'no-token',message:'npx wrangler secret put MUNS_TOKEN'})}));
   const unavailablePage = await unavailable.newPage();
   await unavailablePage.goto(origin + '/dispatcher');
-  await unavailablePage.locator('[data-live-section-tabs] [data-tab-id="investors"]').click();
+  await unavailablePage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
+  await unavailablePage.locator('[data-investor-view-tabs] [data-tab-id="overview"]').click();
   await unavailablePage.waitForFunction(() => document.querySelector('[data-live-panel]')?.textContent.includes('Investor source access unavailable'));
   const customerText = await unavailablePage.locator('[data-live-panel]').innerText();
   assert.doesNotMatch(customerText, /npx|wrangler|MUNS_TOKEN|\/api\/|bearer token/);

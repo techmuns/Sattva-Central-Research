@@ -13,12 +13,13 @@ const trade = (ticker, date) => ({ ticker, date, cells: { Company: ticker, Insid
 const capture = { kind: 'insider', capturedAt: at, coversUniverse: true, byTicker: { OWNED: [trade('OWNED', oldDay)], OTHER: [trade('OTHER', today)] }, empty: [], failed: {} };
 const snapshot = { capturedAt: at, investors: [{ slug: 'example', name: 'Example Investor' }], books: {} };
 const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><main id="fixture" class="p-4"></main><script type="module">
-import { renderChanges } from '/js/investors/changes.js';
+import * as tab from '/js/tabs/super-investors.js';
 import * as investors from '/js/data/super-investors.js';
 import * as coverage from '/js/data/coverage.js';
 import { watchWorkerChanges } from '/js/core/app-updates.js';
 coverage.prime({holdings:[{ticker:'OWNED',name:'Owned company'}]}); await investors.load();
-const view = renderChanges({scope:'portfolio'}, {view:{audience:'investors',period:'quarter'}}); fixture.innerHTML = view.html; view.wire(fixture, []);
+if (!localStorage.getItem('sattva:investor-navigation:v1')) tab.applySavedView({investorAudience:'investors',investorView:'changes',investorPeriod:'quarter'});
+tab.render({root:fixture,scope:'portfolio',subview:'superstar-investors',params:{}});
 watchWorkerChanges(navigator.serviceWorker, () => location.reload());
 await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.ready; window.ready = true;
 </script>`;
@@ -42,7 +43,7 @@ const server = createServer((req, res) => {
       if (!upgraded) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-investor-changes`;');
     }
     // A prior module graph with the former generic empty view stays immutable until SW adoption.
-    if (path === '/js/investors/changes.js' && !upgraded) body = "export function renderChanges(){return {html:'<div data-old-changes><p>No matching trades in the available records for this period.</p><p>Company scope: Portfolio. All Investors includes the tracked directory.</p><p>Capture is delayed; retained reports are shown.</p></div>',wire(){}};}";
+    if (path === '/js/tabs/super-investors.js' && !upgraded) body = "export function applySavedView(){}; export function render(ctx){ctx.root.innerHTML='<div data-old-changes><p>No matching trades in the available records for this period.</p><p>Company scope: Portfolio. All Investors includes the tracked directory.</p><p>Capture is delayed; retained reports are shown.</p></div>';}";
     res.setHeader('content-type', { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'application/octet-stream');
     res.end(body);
   } catch { res.writeHead(404).end(); }
@@ -62,6 +63,9 @@ try {
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await page.waitForSelector('[data-changes-ready="true"]');
   assert.equal(await page.locator('[data-old-changes]').count(), 0);
+  assert.equal(await page.locator('[data-investor-audience]').count(), 1);
+  assert.equal(await page.locator('[data-changes-audience], [data-live-section-tabs]').count(), 0, 'returning readers receive one audience selection and shared tasks');
+  assert.deepEqual((await page.locator('[data-investor-view-tabs] [role="tab"]').allTextContents()).map(v => v.trim()), ['Overview', 'Changes', 'Holdings']);
   assert.match(await page.locator('[data-changes-context]').textContent(), /Company scope: Portfolio/);
   assert.equal(await page.locator('[data-changes-panel] > p').count(), 0, 'returning readers adopt the clean All Investors layout');
   assert.equal(await page.locator('[data-changes-context]').isVisible(), false);
@@ -86,6 +90,9 @@ try {
   assert.equal(await page.locator('[data-changes-period]').inputValue(), 'itd');
   assert.equal(await page.locator('[data-changes-activity] [data-table-search]').inputValue(), 'owned');
   assert.equal(await page.locator('[data-changes-activity] [data-row-key]').count(), 2, 'automatic recovery exposes the new trade without losing history or filters');
+  await page.reload(); await page.waitForSelector('[data-changes-ready="true"]');
+  assert.equal(await page.locator('[data-changes-period]').inputValue(), 'itd', 'reader preferences survive reload');
+  assert.equal(await page.locator('[data-changes-activity] [data-table-search]').inputValue(), 'owned');
   assert.deepEqual(errors, []);
   console.log('PASS returning investor Changes: immutable-cache upgrade, scope/history shortcuts, failed-check retention and automatic capture recovery with filters');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

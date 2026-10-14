@@ -1,6 +1,21 @@
 # Investor disclosures and changes
 
-Superstar Investors opens on Changes, with My Managers / All Investors audiences. Public Changes combines two visibly separate
+Superstar Investors uses one My Managers / All Investors audience switch, followed by shared
+Overview, Changes and Holdings tasks. A first visit opens on My Managers / Changes; later visits
+restore device reading choices. Overview contains profiles and investment cards; Holdings contains
+security positions or disclosures. All Investors has Tracked investors / Institutional funds groups.
+The former Institutions route and saved section names continue to open their original collection
+and task. The shell's separate View picker is hidden on this page.
+
+Period filters apply to manager and tracked-investor Changes only. Institutional Changes compares
+the latest disclosed quarter pairs and excludes monthly AMC NAV weights. Holdings keeps its source
+periods and marks, without a trade-period filter. Company selection follows the shared scope control;
+an older saved Watchlist intersection stays explicit until cleared. Searches, periods and table
+choices are stored as bounded reading preferences, never financial records or access credentials.
+Private Holdings reads original custodian positions once; derived fund-unit overview cards do not
+add duplicate rows. Private fund capital remains in Overview and its investment workspace.
+
+Public Changes combines two visibly separate
 readings: dated public bulk/block trades matched to tracked investor names, and changes between
 consecutive completed quarterly disclosures. A quarter-end observation is never a trade date.
 Unknown, missing, conflicting and filing-due cells cannot establish purchases or sales. Only
@@ -14,9 +29,9 @@ imported. Original NSE/BSE holdings show the named legal holder, security identi
 date, filing time, check time and source links. Conflicting exchange figures stay separate and
 enter the coverage review. Search and exports use the same disclosure predicate.
 
-The All Investors audience selects the tracked investor directory; the company scope and
+The Tracked investors group selects the retained investor directory; the company scope and
 trade-date period still apply. The scope control and period selector name both filters. The
-All Investors Changes view keeps period explanations, directory counts, exchange check status
+manager and tracked-investor Changes views keep period explanations, directory counts, exchange check status
 and history limits in its collapsed Sources & coverage section, leaving the reported trades
 directly below the heading. Opening that section exposes the same actual check times, failures
 and retained-history bounds. If there are no matched
