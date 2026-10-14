@@ -1116,20 +1116,18 @@ unchanged: the header carries no Sources button, and every status pill is a pass
 opens nothing. What was wrong was never that the pill stopped opening a modal — it was that nothing
 else opened one either.
 
-- **The source registry** is reached from a **footer**, one muted line under the content column,
+- **The source registry** is reached from the **bottom of the research-sources panel**,
   except in Ask Research, where **Sources** in the compact conversation toolbar opens the same
-  registry. Ask Research hides its footer and floating badge so neither occupies answer space.
-- **Each filings tab's own provenance** is reached from one muted line **under its table**. It is
-  wired rather than pruned because it carries what no static registry can: the **measured coverage
-  for the rows on screen** — how many companies answered, how many had nothing, how many could not be
-  read. The denominator rule says that number stays REACHABLE, not that it stays on the page.
-- **`sourcesModalHtml()` is a function called on open**, which is what lets a static footer reach
-  live figures without going stale. That is the same rule that killed the old hand-typed source
-  array; see *Data sources* above.
+  registry. Ask Research hides its floating badge so it does not occupy answer space.
+- **Corporate Announcements' collection details** live beside that registry link in the panel.
+  Other filings readers retain their existing provenance links. Measured coverage stays reachable:
+  how many companies answered, had nothing or could not be read, with the active scope and current
+  partial/failed state. The panel reads the active reader; it never imports a cold renderer.
+- **`sourcesModalHtml()` is a function called on open**, so the panel reaches live figures.
 
-**The footer lives inside a template literal in `shell.js`, so it may contain no backticks.** The
-comment beside it says so because writing one there terminates the literal and takes the whole page
-down — which is exactly how this footer broke on its first attempt.
+The reading column has no global sources footer. The beacon supports mouse hover without taking
+input focus, plus pinned click, touch and keyboard access. Its bottom links open the registry and
+the active announcement reader's collection details. Opening source presentation starts no reads.
 
 ### ASK THE AXIS THE DATA IS PUBLISHED ON — the rule that fixed announcements
 
@@ -3900,16 +3898,9 @@ or not a byte had been confirmed in an hour.
   server does not get to move that clock.
 - **The Sources button and its popup are gone from the chrome.** The status pill is passive.
   Canonical provenance remains in the source registry and export disclosures — and the registry is
-  reached from the **page footer**, not from the header. See *An explanation with no door is worse
-  than no explanation*: removing the button was right, leaving the registry with no caller at all
-  was not.
-  **There are two doors to it now, and that is deliberate rather than a duplicate.** The footer
-  link opens the full registry as prose — the reference, at the end of the page, where a reader
-  who has finished reading goes looking. The lower-left beacon (see *The source beacon*) opens a
-  compact view of the same data as one column beside a diagram of it converging on the dashboard —
-  the estate at a glance, from anywhere, without leaving the tab. Neither is in the header, which
-  is the rule that matters; if one of them ever has to go, it is because they read as the same
-  control, not because two callers of one registry is wrong.
+  reached from the **research-sources panel**, outside the reading column. The lower-left beacon
+  shows the source inventory, with a link to the full registry and the active announcement reader's
+  collection details at the bottom. Mouse hover, click, touch and keyboard all keep it reachable.
 - `live.refreshAll()` ticks every **running, non-synthetic** poller and resolves when they settle.
   It deliberately does not start stopped ones: a stopped poller belongs to an unmounted tab.
 
@@ -4247,8 +4238,8 @@ nothing — which is exactly why the con-call route has no projection either.
 | Add/change a tab or sub-view | the module in `js/tabs/`, then `WORKSPACES` in `js/ui/shell.js` |
 | Change avatar / tier / status-pill styling | `js/ui/visual.js` |
 | Change the header, sub-view picker or tab bar | `js/ui/shell.js` |
-| Add a row to the source registry | `js/ui/sources.js` (and `docs/DATA-CONTRACTS.md`) — both doors to it, the footer link and the lower-left beacon, pick it up with no further wiring |
-| Change how a reader REACHES provenance | the footer in `layout()` + `wireStaticHeader()` in `js/ui/shell.js` (the registry), and `methodFooter()` + `wireMethod()` in `js/tabs/filings-tab.js` (a tab's own coverage) — read *An explanation with no door* first. The doors go BELOW the content; the header button and the active pill stay gone |
+| Add a row to the source registry | `js/ui/sources.js` (and `docs/DATA-CONTRACTS.md`) — the source panel and its full-registry link pick it up with no further wiring |
+| Change how a reader REACHES provenance | `js/ui/source-beacon.js` and `js/ui/source-details.js` (the registry and active announcement coverage), plus `methodFooter()` for other filings readers. Keep source presentation outside the header and announcement reading column |
 | Add an Ask Research source that fetches nothing | give its builder an explicit `load: null` in `js/research/estate.js` — a builder with neither a `load()` nor that declaration is raised as a registry error, because an omitted one used to throw and wear the upstream's clothes |
 | Change what appears in the News feed from X | `js/data/twitter-news.js` (the conversion) + `feedRows()` / `postBody()` in `js/tabs/market-news-view.js` — read *X/Twitter is a SOURCE in the News feed* first; it must stay ONE list |
 | Change the Telegram section, or what it says about times | `public/js/tabs/public-chatter.js` + `public/js/data/telegram-health.js`; read `docs/TELEGRAM-INGESTION.md`. Publication dates, successful source checks, readable reports and captured Telegram-only links stay distinct. |

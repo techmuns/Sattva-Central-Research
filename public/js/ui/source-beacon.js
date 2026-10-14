@@ -38,7 +38,9 @@ import { escapeHtml } from '../core/dom.js';
 import { formatRelativeTime } from '../core/format.js';
 import * as live from '../core/live.js';
 import { state } from '../core/state.js';
-import { sourceGroups, portfolioSource } from './sources.js';
+import { sourceGroups, portfolioSource, sourcesModalHtml } from './sources.js';
+import { openModal } from './screener.js';
+import { collectionDetails, onCollectionDetailsChange } from './source-details.js';
 import * as coverage from '../data/coverage.js';
 import { openTwitterSources } from './twitter-sources.js';
 import * as twitterHandles from '../core/twitter-handles.js';
@@ -57,6 +59,9 @@ let clock = null;
 let offHandles = null;
 let offIpos = null;
 let offPortfolio = null;
+let hoverOpened = false;
+let hoverOpenTimer = null;
+let hoverCloseTimer = null;
 
 /** Reads the registry — never a cached copy of it — and reduces it to what this widget draws. */
 function readEstate() {
@@ -262,6 +267,10 @@ function panelHtml() {
       <footer class="beacon-panel-foot">
         <div class="beacon-legend">${legendHtml(estate)}</div>
         <p class="beacon-foot-note">Automatic checks keep research moving. Expand a source for its latest check and coverage details.</p>
+        <div class="beacon-detail-links">
+          <button type="button" class="beacon-detail-link" data-filings-method hidden></button>
+          <button type="button" class="beacon-detail-link" data-sources-open>Data sources and how each feed is collected</button>
+        </div>
       </footer>
     </section>`;
 }
@@ -270,7 +279,7 @@ function launcherHtml(estate) {
   return `
     <button type="button" class="beacon-launcher" data-beacon-toggle
       aria-expanded="false" aria-controls="${PANEL_ID}"
-      title="See every source this dashboard reads">
+      aria-label="Research sources and collection details">
       <span class="beacon-mark" aria-hidden="true"><img class="sattva-mark" src="/assets/brand/sattva-ventures-mark.svg" width="420" height="174" alt="" /></span>
       <span class="beacon-launcher-text">
         <span class="beacon-launcher-line" data-beacon-launch-count>${estate.total} research sources</span>
@@ -297,8 +306,9 @@ function onKey(e) {
     // Only if nothing modal is on top — a reader pressing Escape over an open drill or workspace
     // means that one, and this popover sits underneath it.
     if (document.querySelector('#modal-overlay:not(.hidden), #workspace-overlay:not(.hidden)')) return;
+    const keepFocus = hoverOpened && !rootEl?.contains(document.activeElement);
     close();
-    rootEl?.querySelector('[data-beacon-toggle]')?.focus({ preventScroll: true });
+    if (!keepFocus) rootEl?.querySelector('[data-beacon-toggle]')?.focus({ preventScroll: true });
   }
 }
 
@@ -329,7 +339,7 @@ function wireFamilyHighlight(panel) {
   list.addEventListener('mouseleave', () => apply(null));
 }
 
-function paintPanel() {
+function paintPanel({ focus = true } = {}) {
   const host = rootEl.querySelector('[data-beacon-panel-host]');
   host.innerHTML = panelHtml();
   host.querySelector('[data-beacon-close]')?.addEventListener('click', () => {
@@ -338,6 +348,18 @@ function paintPanel() {
   });
   const panel = host.querySelector(`#${PANEL_ID}`);
   if (panel) {
+    refreshDetailLinks();
+    const openDetails = action => {
+      rootEl.querySelector('[data-beacon-toggle]')?.focus({ preventScroll: true });
+      close();
+      action();
+    };
+    panel.querySelector('[data-filings-method]').addEventListener('click', () => {
+      const details = collectionDetails();
+      if (details) openDetails(details.open);
+    });
+    panel.querySelector('[data-sources-open]').addEventListener('click', () =>
+      openDetails(() => openModal(sourcesModalHtml(), { size: 'wide' })));
     wireFamilyHighlight(panel);
     panel.querySelector('[data-beacon-action="edit-twitter"]')?.addEventListener('click', (e) => {
       // Not a close: the modal is z-60 and this popover is z-30, so it lands on top and the list
@@ -345,8 +367,16 @@ function paintPanel() {
       e.stopPropagation();
       openTwitterSources();
     });
-    panel.focus({ preventScroll: true });
+    if (focus && !hoverOpened) panel.focus({ preventScroll: true });
   }
+}
+
+function refreshDetailLinks() {
+  const button = rootEl?.querySelector('[data-filings-method]');
+  if (!button) return;
+  const details = collectionDetails();
+  button.hidden = !details;
+  button.textContent = details?.label || '';
 }
 
 // Refresh only IPO disclosures: never restart the flow animation or disturb another group.
@@ -395,6 +425,7 @@ function refreshConnections() {
 }
 function paintConnections() {
   if (!rootEl) return;
+  refreshDetailLinks();
   const estate = readEstate();
   rootEl.classList.toggle('has-connection', estate.connected > 0 && navigator.onLine !== false);
   const count = rootEl.querySelector('[data-beacon-launch-count]');
@@ -432,14 +463,14 @@ function focusGroup(id) {
   group.querySelector('summary')?.focus({ preventScroll: true });
 }
 
-export function openBeacon({ group } = {}) {
+export function openBeacon({ group, focus = true } = {}) {
   if (!rootEl) return;
   if (open) { if (group) focusGroup(group); return; }
   open = true;
   rootEl.classList.add('is-open');
   const toggle = rootEl.querySelector('[data-beacon-toggle]');
   toggle?.setAttribute('aria-expanded', 'true');
-  paintPanel();
+  paintPanel({ focus });
   if (group) focusGroup(group);
 
   // The launcher's own count is re-read on every open for the same reason the panel's is: it is a
@@ -466,6 +497,9 @@ export function openBeacon({ group } = {}) {
 }
 
 export function close() {
+  clearTimeout(hoverOpenTimer); hoverOpenTimer = null;
+  clearTimeout(hoverCloseTimer); hoverCloseTimer = null;
+  hoverOpened = false;
   if (!open || !rootEl) return;
   open = false;
   rootEl.classList.remove('is-open');
@@ -501,7 +535,34 @@ export function mount() {
 
   rootEl.innerHTML = `<div data-beacon-panel-host></div>${launcherHtml(readEstate())}`;
   refreshConnections();
-  rootEl.querySelector('[data-beacon-toggle]').addEventListener('click', () => (open ? close() : openBeacon()));
+  const toggle = rootEl.querySelector('[data-beacon-toggle]');
+  toggle.addEventListener('click', () => {
+    clearTimeout(hoverOpenTimer); hoverOpenTimer = null;
+    if (open && hoverOpened) {
+      hoverOpened = false;
+      rootEl.querySelector(`#${PANEL_ID}`)?.focus({ preventScroll: true });
+    } else if (open) close();
+    else openBeacon();
+  });
+  const onHover = event => {
+    if (event.pointerType !== 'mouse' || !window.matchMedia('(hover: hover)').matches) return;
+    clearTimeout(hoverCloseTimer); hoverCloseTimer = null;
+    if (!open && hoverOpenTimer === null) hoverOpenTimer = setTimeout(() => {
+      hoverOpenTimer = null;
+      hoverOpened = true;
+      openBeacon({ focus: false });
+    }, 150);
+  };
+  const onLeave = () => {
+    clearTimeout(hoverOpenTimer); hoverOpenTimer = null;
+    if (hoverOpened) hoverCloseTimer = setTimeout(() => {
+      hoverCloseTimer = null;
+      if (!rootEl?.contains(document.activeElement)) close();
+    }, 200);
+  };
+  rootEl.addEventListener('pointerenter', onHover);
+  rootEl.addEventListener('pointerleave', onLeave);
+  const offDetails = onCollectionDetailsChange(refreshDetailLinks);
   document.addEventListener('keydown', onKey);
   // The closed launcher must age and lose its pulse when offline too; opening the panel is not
   // what makes a source check fresh. These listeners perform no network reads.
@@ -524,6 +585,9 @@ export function mount() {
 
   return () => {
     close();
+    offDetails();
+    rootEl?.removeEventListener('pointerenter', onHover);
+    rootEl?.removeEventListener('pointerleave', onLeave);
     document.removeEventListener('keydown', onKey);
     clearInterval(statusClock); offTick(); if (tickRefresh !== null) { clearTimeout(tickRefresh); tickRefresh = null; }
     window.removeEventListener('offline', refreshConnections);
