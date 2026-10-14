@@ -777,8 +777,10 @@ function citeResolver(companies = []) {
   return (name) => {
     const normalise = value => String(value || '').trim().toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ');
     const wanted = normalise(name);
+    // Answers saved before the Screens rename retain their original citation wording.
+    const tabName = wanted === 'breakouts/technical' ? 'screens' : wanted;
     if (wanted === 'ask sattva' || wanted === 'sattva family') return { href: `${FAMILY_ORIGIN}/ask`, title: 'Open the portfolio source in Sattva Family', label: 'Ask Sattva' };
-    const source = DASHBOARD_RESEARCH_SOURCES.find((item) => normalise(item.tab) === wanted) || DASHBOARD_RESEARCH_SOURCES.find((item) => item.id === wanted);
+    const source = DASHBOARD_RESEARCH_SOURCES.find((item) => normalise(item.tab) === tabName) || DASHBOARD_RESEARCH_SOURCES.find((item) => item.id === wanted);
     if (!source) return null;
     return { href: dashboardHref(tabRoute(source.route), company?.inScope === false ? 'universe' : scope, company), title: company ? `Open ${source.tab} for ${company.name || company.ticker}` : `Open ${source.tab}`, label: source.tab };
   };

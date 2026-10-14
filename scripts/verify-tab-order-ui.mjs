@@ -7,7 +7,7 @@ const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
 let previousRelease = false, upgradeFixture = false;
 const ids = ['alerts', 'announcements', 'earnings', 'breakouts', 'insider-trades', 'mutual-funds', 'news-section', 'super-investors'];
-const labels = ['Alerts', 'Announcements', 'Earnings', 'Breakouts / Technical', 'Bulk/Block Deal', 'Mutual Funds', 'News', 'Super Investors'];
+const labels = ['Alerts', 'Announcements', 'Earnings', 'Screens', 'Bulk/Block Deal', 'Mutual Funds', 'News', 'Super Investors'];
 const fixture = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><style>
 ${readFileSync(resolve(root, 'index.html'), 'utf8').match(/<style>([\s\S]*?)<\/style>/)[1]}
 body { padding: 20px; } #fixture { max-width: 1300px; }

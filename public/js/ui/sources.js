@@ -319,7 +319,7 @@ export function sourceGroups() {
     {
       title: 'Market data',
       icon: '💹',
-      tabs: 'Breakouts / Technical · Portfolio Analytics',
+      tabs: 'Screens · Portfolio Analytics',
       items: [
         {
           name: 'Yahoo Finance — EOD OHLCV',

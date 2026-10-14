@@ -69,7 +69,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'public-chatter', tab: 'Public Chatter', route: '#/research/public-chatter', description: 'Retail mention counts and sentiment across ValuePickr, TradingQnA and Google News.' },
   { id: 'chatter-posts', tab: 'Public Chatter posts', route: '#/research/public-chatter?open=mentions', description: 'Question-selected company posts from the same detail reader as Public Chatter; source text and links, with bounded topic coverage.' },
   { id: 'telegram', tab: 'Telegram', route: '#/research/public-chatter?section=telegram', description: 'Retained public-channel text and document names mentioning companies in scope. Attachment contents are not extracted.' },
-  { id: 'technicals', tab: 'Breakouts / Technical', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
+  { id: 'technicals', tab: 'Screens', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
   { id: 'super-investors', tab: 'Super Investors', route: '#/research/super-investors/superstar-investors', description: 'Filed superstar-investor holdings and quarter-on-quarter disclosed changes.' },
   { id: 'institutions', tab: 'Super Investors', route: '#/research/super-investors/institutions', description: 'Institutional shareholding patterns and AMC portfolio disclosures.' },
   { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Permanently retained company news, including portfolio companies without exchange symbols.' },

@@ -109,7 +109,7 @@ try {
     assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 8, 'all retained navigation remains available before its code loads');
     assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])), [
       ['alerts', 'Alerts'], ['announcements', 'Announcements'], ['earnings', 'Earnings'],
-      ['breakouts', 'Breakouts / Technical'], ['mutual-funds', 'Mutual Funds'],
+      ['breakouts', 'Screens'], ['mutual-funds', 'Mutual Funds'],
       ['news-section', 'News'], ['super-investors', 'Super Investors'],
     ], 'navigation matches the requested parent order and labels');
     assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research is absent from navigation, including on its saved route');

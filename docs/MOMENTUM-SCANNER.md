@@ -1,7 +1,7 @@
 # Momentum Scanner
 
 A live, universe-wide technical screener, the **Momentum Scanner** sub-view of
-**Breakouts / Technical**. It ranks every listed company against a small set of momentum
+**Screens**. It ranks every listed company against a small set of momentum
 **filters** — price above its moving averages, multi-timeframe RSI strength, a volume surge
 with a bullish MACD — and recomputes every figure **on the in-progress candle from the current
 price**, so the answer is current to the quote rather than to the last end-of-day scrape.

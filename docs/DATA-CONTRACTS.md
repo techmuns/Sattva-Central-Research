@@ -405,7 +405,7 @@ demerged since the universe export.
 **Refresh cadence** — weekdays 07:00 IST via GitHub Actions, plus manual `workflow_dispatch`.
 **Real source** — Yahoo Finance Chart v8 (`TICKER.NS`, falling back to `.BO`) and the Nifty 500
 index `^CRSLDX`; NSE `sec_bhavdata_full` for delivery %.
-**Consumed by** — the whole Breakouts / Technical tab, and the global search drill from any tab.
+**Consumed by** — the whole Screens tab, and the global search drill from any tab.
 
 ---
 
@@ -5287,7 +5287,7 @@ mode; its table progressively paints the rows inside one fixed-height scroller, 
 
 | Feed id | Tab | Contributes |
 | --- | --- | --- |
-| `technicals` | Breakouts / Technical | companies that moved more than `MOVE_PCT` at the retained snapshot's close; this source has one day only |
+| `technicals` | Screens | companies that moved more than `MOVE_PCT` at the retained snapshot's close; this source has one day only |
 | `earnings` | Earnings Hub | filed quarterly results; direction from the revenue/net-profit comparison |
 | `concalls` | Con-call | held calls using StockScans' own result/sentiment bands |
 | `chatter` | Public Chatter | one event per covered company in the rolling source snapshot; not individual posts |
