@@ -139,10 +139,13 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
     const buttons = [...list.querySelectorAll('[data-tab-id]')];
     const draftButton = list.querySelector('[data-tab-draft]');
     const navigable = () => [...buttons, ...(draftButton ? [draftButton] : [])];
+    const activeButton = () => activeId === draft?.id ? draftButton : buttons.find(button => button.dataset.tabId === activeId);
     syncButtonOrder = () => {
       buttons.splice(0, buttons.length, ...list.querySelectorAll('[data-tab-id]'));
       const byId = new Map(tabs.map(tab => [tab.id, tab]));
       tabs = buttons.map(button => byId.get(button.dataset.tabId));
+      // Shared reordering appends saved tabs; the unsaved tab stays after them.
+      if (draftButton && list.lastElementChild !== draftButton) list.append(draftButton);
     };
     const controls = bar.querySelector('[data-tab-scroll-controls]');
     const previous = bar.querySelector('[data-tab-scroll="-1"]');
@@ -171,13 +174,13 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
       // Compare against the FULL available width, including the space controls would release.
       // Otherwise controls can keep themselves visible after the viewport grows to fit all tabs.
       controls.hidden = list.scrollWidth <= bar.clientWidth - 12 + 1;
-      const focused = buttons.includes(document.activeElement) ? document.activeElement : null;
-      reveal(focused || buttons.find((button) => button.dataset.tabId === activeId), false);
+      const focused = navigable().includes(document.activeElement) ? document.activeElement : null;
+      reveal(focused || activeButton(), false);
       syncEdges();
     };
     revealActive = () => {
       // A restored view can be far along the strip. Reveal its selected tab immediately.
-      reveal(buttons.find((button) => button.dataset.tabId === activeId), false);
+      reveal(activeButton(), false);
       syncEdges();
     };
     const tabStop = (button) => navigable().forEach((item) => { item.tabIndex = item === button ? 0 : -1; });
@@ -211,9 +214,7 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
     };
 
     const disposeOrder = orderKey ? wireTabOrder(list, orderKey, () => {
-      buttons.splice(0, buttons.length, ...list.querySelectorAll('[data-tab-id]'));
-      const byId = new Map(tabs.map(tab => [tab.id, tab]));
-      tabs = buttons.map(button => byId.get(button.dataset.tabId));
+      syncButtonOrder();
       if (buttons.includes(document.activeElement)) tabStop(document.activeElement);
       measure();
     }, onOrderChange) : null;
@@ -225,7 +226,7 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
     const observer = new ResizeObserver(measure);
     observer.observe(list);
     // Font loading can change the content width without changing the container's width.
-    buttons.forEach((button) => observer.observe(button));
+    navigable().forEach((button) => observer.observe(button));
     measure();
 
     return () => {

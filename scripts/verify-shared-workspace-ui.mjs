@@ -32,6 +32,19 @@ const ready = async page => {
   await page.evaluate(async () => { window.query = (await import('/js/tabs/corp-announcements.js')).announcementQuery; window.workspace = await import('/js/core/workspace.js'); });
   await page.waitForFunction(() => window.query.meta().state === 'ready' && !window.query.meta().refreshing);
 };
+const draftInRow = async page => {
+  await page.waitForFunction(() => {
+    const draft = document.querySelector('#tabbar-mount [data-tab-draft]'), list = draft?.parentElement;
+    if (!draft) return false;
+    const tab = draft.getBoundingClientRect(), strip = list.getBoundingClientRect();
+    return tab.left >= strip.left - 1 && tab.right <= strip.right + 1;
+  });
+  const layout = await page.locator('#tabbar-mount [data-tab-draft]').evaluate(draft => ({
+    last: draft === draft.parentElement.lastElementChild,
+    separate: [...draft.parentElement.querySelectorAll('[data-tab-id]')].every(tab => tab.getBoundingClientRect().right <= draft.getBoundingClientRect().left),
+  }));
+  assert(layout.last && layout.separate, 'the draft follows every saved tab without overlapping them');
+};
 try {
   const one = await context(), two = await context('dark');
   await one.context.addInitScript(() => { if (!localStorage.getItem('dashboard:tab-order:v1:research')) localStorage.setItem('dashboard:tab-order:v1:research', JSON.stringify(['news-section', 'earnings', 'alerts', 'announcements', 'breakouts', 'mutual-funds', 'super-investors'])); });
@@ -244,6 +257,7 @@ try {
   assert.equal(store.snapshot().tabs.length, 1, 'choosing filters never publishes an unfinished tab');
   const draftId = new URL(one.page.url()).hash.match(/research\/([^?]+)/)[1];
   await one.page.locator('[data-tab-draft][aria-selected="true"]').waitFor();
+  await draftInRow(one.page);
   assert((await one.page.locator('[data-tab-draft]').innerText()).includes('Unsaved'));
   assert.equal(await one.page.locator('[data-building-tab]').count(), 1);
   assert.equal(await one.page.locator('[data-tab-draft] [data-tab-drag-handle]').count(), 0);
@@ -359,6 +373,26 @@ try {
     await one.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-many-light.png` });
     await two.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-many-mobile-dark.png` });
   }
+  for (const page of [one.page, two.page]) {
+    await page.evaluate(() => window.workspace.sync());
+    await page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+    await page.locator('[data-saved-title]').fill('Draft beside 20 saved tabs');
+    await page.locator('[data-saved-group]').selectOption('announcements');
+    await page.locator('[data-saved-source]').selectOption('corp-announcements');
+    await page.locator('[data-saved-submit]').click(); await ready(page);
+    await page.locator('[data-view-builder]').waitFor(); await draftInRow(page);
+    assert(await page.locator('#tabbar-mount [data-tab-list]').evaluate(list => list.scrollLeft > 0), 'building auto-scrolls to the draft');
+    const ids = await order(page);
+    store.apply({ id: `fixture-draft-reorder-${crypto.randomUUID()}`, op: 'move', tabId: ids[0], targetId: ids[1], after: true });
+    await page.evaluate(() => window.workspace.sync());
+    await page.waitForFunction(id => document.querySelector('#tabbar-mount [data-tab-id]')?.dataset.tabId === id, ids[1]);
+    await draftInRow(page);
+    const viewport = page.viewportSize();
+    await page.setViewportSize({ ...viewport, width: viewport.width - 20 }); await draftInRow(page);
+    await page.setViewportSize(viewport); await draftInRow(page);
+    if (process.env.WORKSPACE_SCREENSHOT) await page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-draft-${viewport.width}.png` });
+    await page.locator('[data-builder-cancel]').click(); await ready(page);
+  }
   for (const tab of many) store.apply({ id: `fixture-remove-many-${tab.id}`, op: 'remove', tabId: tab.id, expected: store.snapshot().tabs.find(row => row.id === tab.id).revision });
   await one.page.evaluate(() => window.workspace.sync()); await two.page.evaluate(() => window.workspace.sync());
   await one.page.goto(`${server.url}#/research/${view.id}?scope=universe`); await ready(one.page);
@@ -367,7 +401,7 @@ try {
   await one.page.locator('[data-builder-cancel]').click(); await ready(one.page);
   assert.equal(await one.page.locator('[data-tab-draft], [data-building-tab]').count(), 0);
   assert(!store.snapshot().tabs.some(tab => tab.title === 'Cancelled draft'), 'cancelling leaves no shared tab');
-  console.log('PASS scalable navigation: 20 custom tabs, no All tabs dropdown, desktop/light and mobile/dark scrolling, keyboard navigation, active reveal, shared reorder/reload and draft cancellation');
+  console.log('PASS scalable navigation: 20 custom tabs, no All tabs dropdown, desktop/light and mobile/dark scrolling, draft auto-scroll without overlap through shared reorder and resizing, keyboard navigation, active reveal, shared reorder/reload and draft cancellation');
   const multiTable = await one.page.evaluate(async () => {
     const { scoreTable } = await import('/js/ui/screener.js');
     const readings = await import('/js/core/view-reading.js'), prior = readings.activeView();

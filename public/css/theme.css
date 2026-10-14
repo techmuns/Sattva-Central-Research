@@ -488,7 +488,7 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
 .saved-tab-blank h3 { color: var(--ink-900); font-size: 18px; font-weight: 700; }
 .saved-tab-blank p { margin: 10px 0 20px; color: var(--ink-600); }
 .saved-tab-error { color: rgb(var(--text-rose-700, 190 18 60)); }
-.tab-draft { position: sticky; right: 0; z-index: 2; order: 1; display: inline-flex; align-items: center; gap: 8px; max-width: min(300px, 55vw); border: 1px dashed rgb(var(--edge-slate-400, 148 163 184)); background: rgb(var(--surface-slate-100, 241 245 249)); color: var(--ink-600); cursor: default; }
+.tab-draft { display: inline-flex; align-items: center; gap: 8px; max-width: min(300px, 55vw); border: 1px dashed rgb(var(--edge-slate-400, 148 163 184)); background: rgb(var(--surface-slate-100, 241 245 249)); color: var(--ink-600); cursor: default; }
 .tab-draft > span { overflow: hidden; text-overflow: ellipsis; }
 .tab-draft small { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 5px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-600); }
 .tab-draft::after { display: none; }
