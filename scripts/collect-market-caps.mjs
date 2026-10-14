@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildExchangeUniverse } from '../public/js/data/exchange-universe.js';
-import { SCREEN_URL, sourceKeys, parseMarketCapScreen, parseMarketCapCompany } from './lib/market-caps.mjs';
+import { SCREEN_URL, sourceKeys, parseMarketCapScreen, parseMarketCapCompany, marketCapDirectoryChecks } from './lib/market-caps.mjs';
 
 const root = process.env.MARKET_CAP_DATA_DIR || fileURLToPath(new URL('../public/data/', import.meta.url));
 const read = (name, fallback = null) => { try { return JSON.parse(readFileSync(resolve(root, name))); } catch { return fallback; } };
@@ -16,6 +16,8 @@ const bse = read('announcement-identities.json'), nse = read('filing-capture/nse
 if (!bse?.entries?.length || !nse?.directories?.equity?.entries?.length || !nse?.directories?.sme?.entries?.length)
   throw Error('Market cap: both verified exchange directories are required; saved figures were retained.');
 const universe = buildExchangeUniverse(bse, nse).companies;
+const directoryAsOf = marketCapDirectoryChecks(bse, nse);
+const directoryPartial = [directoryAsOf.bse, directoryAsOf.nse.equity, directoryAsOf.nse.sme].some(s => !s.checkedAt || s.error);
 const bySource = new Map();
 for (const c of universe) for (const key of sourceKeys(c)) {
   if (!bySource.has(key)) bySource.set(key, c);
@@ -76,9 +78,9 @@ function checkpoint() {
   const known = current.filter(e => Number.isFinite(e?.cr) && e.cr > 0).length;
   const body = { version: 1, source: 'Screener public company market capitalisation, ₹ crore',
     generated_at: new Date().toISOString(), startedAt,
-    directoryAsOf: { bse: bse.capturedAt, nse: nse.attemptedAt },
+    directoryAsOf,
     coverage: { companies: universe.length, known, checked: seen.size, unavailable: universe.length - known,
-      screenComplete, sourceTotal, pagesRead, directRead, directTotal, refused, retryAt, errors },
+      screenComplete, sourceTotal, pagesRead, directRead, directTotal, refused, retryAt, directoryPartial, errors },
     entries: [...entries.values()].sort((a, b) => a.isin.localeCompare(b.isin)) };
   writeFileSync(`${path}.tmp`, `${JSON.stringify(body)}\n`); renameSync(`${path}.tmp`, path);
   return body;

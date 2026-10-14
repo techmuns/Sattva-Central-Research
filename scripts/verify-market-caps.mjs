@@ -4,8 +4,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { parseMarketCapScreen, parseMarketCapCompany } from './lib/market-caps.mjs';
-import { buildCompanyProfiles, inMcapRange, parseMcapRange, formatMarketCap } from '../public/js/data/company-profile.js';
+import { parseMarketCapScreen, parseMarketCapCompany, marketCapDirectoryChecks } from './lib/market-caps.mjs';
+import { buildCompanyProfiles, inMcapRange, parseMcapRange, formatMarketCap, marketCapPriceDate } from '../public/js/data/company-profile.js';
+import { profileTable, mergeProfileLookups } from '../public/js/data/company-profile-table.js';
 
 const stamp = '2026-10-13T12:00:00Z';
 const entities = [
@@ -37,6 +38,12 @@ const figure = parseMarketCapCompany(page(), entities[1], stamp);
 assert.equal(figure.cr, 1468);
 assert.equal(figure.priceDateLabel, '13 Oct - close price');
 assert.equal(figure.checkedAt, stamp);
+assert.equal(marketCapPriceDate('13 Oct - close price'), null);
+assert.equal(marketCapPriceDate('08 Jun 2016'), '2016-06-08');
+assert.equal(marketCapPriceDate('31 Jun 2016'), null);
+const oldPage = page().replace('13 Oct - close price', '08 Jun 2016');
+assert.equal(parseMarketCapCompany(oldPage, entities[1], stamp).priceAsOf, '2016-06-08');
+assert.throws(() => parseMarketCapCompany(page().replace('13 Oct - close price', '14 Oct 2027'), entities[1], stamp), /future/);
 assert.throws(() => parseMarketCapCompany(page('OTHER'), entities[1], stamp), /identity/);
 assert.throws(() => parseMarketCapCompany(page().replace('Market Cap ₹ <span class="number">1,468', 'Unknown ₹ <span class="number">1,468'), entities[1], stamp), /unavailable/);
 
@@ -56,6 +63,25 @@ assert.equal(buildCompanyProfiles({ marketCaps, technicals: { price_date: '2026-
 assert.equal(buildCompanyProfiles({ marketCaps, technicals: { price_date: '2026-10-14', companies: [{ ticker: 'PRIZOR', marketCap: 1500 }] } }).profileOf(entities[1]).mcapCr, 1468, 'Yahoo bar dates cannot make an old Screener export newer');
 assert.equal(buildCompanyProfiles({ technicals: { price_date: '2026-10-14', companies: [{ ticker: 'PRIZOR', marketCap: 1500 }] } }).profileOf(entities[1]).mcapAsOf, null);
 assert.equal(buildCompanyProfiles({ marketCaps: { version: 1, entries: [{ ...entities[1], cr: 0, checkedAt: stamp }] } }).profileOf(entities[1]).mcapCr, null);
+const datedCapture = { version: 1, entries: [{ ...entities[1], cr: 0.34, checkedAt: stamp, priceDateLabel: '08 Jun 2016', priceAsOf: '2016-06-08' }] };
+assert.equal(buildCompanyProfiles({ marketCaps: datedCapture }).profileOf(entities[1]).mcapAsOf, '2016-06-08');
+assert.equal(buildCompanyProfiles({ marketCaps: datedCapture, technicals: { companies: [{ ticker: 'PRIZOR', marketCap: 1700, marketCapAsOf: '2025-12-31' }] } }).profileOf(entities[1]).mcapCr, 1700, 'old prices cannot override a genuinely newer dated figure');
+const table = profileTable({ builtAt: stamp, rows: [
+  ['SEL', '500371', entities[0].isin, 11.33, 'micro', 'real_estate'],
+  ['SEL', null, entities[1].isin, 73.94, 'micro', 'capital_goods'],
+] });
+assert.equal(table.profileOf({ ticker: 'SEL', isin: entities[1].isin }).mcapCr, 73.94);
+assert.equal(table.profileOf({ ticker: 'SEL', bseCode: '500371' }).mcapCr, 11.33);
+assert.equal(table.profileOf({ ticker: 'SEL' }).mcapCr, null, 'a colliding symbol has no unqualified owner');
+assert.equal(table.profileOf({ ticker: 'SEL', isin: 'INE999A01018' }).mcapCr, null);
+const directory = { source: 'reference-files', builtAt: stamp, profileOf: profiles.profileOf };
+const combined = mergeProfileLookups(table, directory);
+assert.equal(combined.profileOf(entities[2]).mcapCr, 567.89, 'an index absent issuer still receives its directory cap');
+assert.equal(combined.profileOf({ ticker: 'SEL', isin: entities[1].isin }).mcapCr, 73.94, 'saved index values survive a partial directory');
+const verified = marketCapDirectoryChecks({ capturedAt: stamp }, { attemptedAt: '2026-10-14T00:00:00Z', directories: { equity: { checkedAt: stamp }, sme: { checkedAt: '2026-10-01T00:00:00Z', error: 'HTTP 503' } } });
+assert.equal(verified.nse.sme.checkedAt, '2026-10-01T00:00:00Z');
+assert.equal(verified.nse.sme.error, 'HTTP 503');
+assert.notEqual(verified.nse.sme.checkedAt, verified.nse.attemptedAt);
 
 // Real CLI checkpoints with entirely local fetch responses. No upstream, secret or production write.
 const tmp = mkdtempSync(join(tmpdir(), 'market-cap-contract-'));
@@ -63,7 +89,7 @@ try {
   mkdirSync(join(tmp, 'filing-capture'));
   writeFileSync(join(tmp, 'announcement-identities.json'), JSON.stringify({ capturedAt: stamp, entries: [{ ...entities[2], name: 'Simplex Castings Ltd', bseSymbol: 'SIMPLEXCAS', status: 'Active' }] }));
   writeFileSync(join(tmp, 'filing-capture/nse-identities.json'), JSON.stringify({ attemptedAt: stamp, directories: {
-    equity: { entries: [{ ...entities[0], name: 'Main Ltd' }] }, sme: { entries: [{ ...entities[1], name: 'Prizor Viztech Ltd' }] },
+    equity: { checkedAt: stamp, entries: [{ ...entities[0], name: 'Main Ltd' }] }, sme: { checkedAt: stamp, entries: [{ ...entities[1], name: 'Prizor Viztech Ltd' }] },
   } }));
   const delisted = { isin: 'INE888A01018', ticker: 'OLD', cr: 42, checkedAt: stamp };
   writeFileSync(join(tmp, 'market-caps.json'), JSON.stringify({ entries: [...marketCaps.entries, delisted] }));

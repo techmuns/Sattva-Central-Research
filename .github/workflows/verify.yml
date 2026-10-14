@@ -395,7 +395,7 @@ jobs:
         if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-announcements-ui.mjs && node scripts/verify-announcement-read-cache-ui.mjs
+        run: node scripts/verify-market-caps-ui.mjs && node scripts/verify-announcements-ui.mjs && node scripts/verify-announcement-read-cache-ui.mjs
       - name: Verify corporate actions and exact transaction filters
         if: ${{ matrix.part == 3 }}
         env:

@@ -53,10 +53,10 @@ function loadProfiles() {
   if (!profilesPending) {
     profilesCheckedAt = Date.now();
     profilesPending = Promise.all([
-      revalidatedJson('data/mc-ticker-map.json', { optional: true }),
-      revalidatedJson('data/technicals.json', { optional: true }),
-      revalidatedJson('data/sector-kpis.json', { optional: true }),
-      revalidatedJson('data/market-caps.json', { optional: true }),
+      revalidatedJson('data/mc-ticker-map.json', { optional: true, fresh: true }),
+      revalidatedJson('data/technicals.json', { optional: true, fresh: true }),
+      revalidatedJson('data/sector-kpis.json', { optional: true, fresh: true }),
+      revalidatedJson('data/market-caps.json', { optional: true, fresh: true }),
     ]).then(([tickerMap, technicals, sectorKpis, marketCaps]) => {
       if (profiles?.meta.marketCapsAsOf && !marketCaps) return profiles;
       if (tickerMap || technicals || sectorKpis || marketCaps) profiles = buildCompanyProfiles({ tickerMap, technicals, sectorKpis, marketCaps });
@@ -78,7 +78,7 @@ function loadProfiles() {
 const LOAD_DWELL_MS = 600;
 let loadedOnce = false;
 async function ensureLoaded(prepareWhile = () => true) {
-  if (loadedOnce || (feed.isLoaded?.() && feed.rows().length)) return true;
+  if (loadedOnce || (feed.isLoaded?.() && feed.rows().length)) { await loadProfiles(); return true; }
   if (!loadPending) {
     await feed.prepareRows?.();
     await new Promise((done) => setTimeout(done, LOAD_DWELL_MS));
@@ -106,7 +106,7 @@ async function buildFor(q, now, keepGoing) {
   const meta = feed.meta();
   // The period's own bounds are in the key, so a midnight rollover prepares the new day's rows.
   const scopeKey = scopeCompanies ? scopeCompanies.map((c) => c.ticker || c.isin || c.bseCode || c.name || '').join(',') : '';
-  const key = `${q.period}|${range.from}|${range.to}|${q.scope}|${scopeKey}|${all.length}|${meta.identity?.revision || 0}|${profiles.meta.marketCapsAsOf || ''}`;
+  const key = `${q.period}|${range.from}|${range.to}|${q.scope}|${scopeKey}|${all.length}|${meta.identity?.revision || 0}|${profiles.meta.marketCapsRevision || ''}`;
   if (built?.key === key && built.rows === all) { built.meta = { ...meta, profiles: profiles.meta }; return built; }
   if (building?.key === key) return building.promise;
   // A newer preparation supersedes an older one still in its slices: two would only compete.
@@ -160,6 +160,7 @@ const selections = new Map();
 export async function query(input, { model = null, now = Date.now(), keepGoing = () => true, prepareWhile = () => true } = {}) {
   const q = normaliseQuery(input);
   if (!(await ensureLoaded(prepareWhile))) return null;
+  await loadProfiles(); // Also recheck after a pending initial source load crosses the cadence.
   // The prepared period is shared by every question about it, so one superseded question never
   // abandons it — only the table going away does (`prepareWhile`); this question's own selection
   // stops as soon as nobody is waiting for it.

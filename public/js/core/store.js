@@ -513,12 +513,14 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
  */
 const inFlightJson = new Map();
 
-export function revalidatedJson(path, { optional = false, allowCached = false } = {}) {
-  const requestKey = `${allowCached ? 'bootstrap' : 'revalidate'}:${path}`;
+export function revalidatedJson(path, { optional = false, allowCached = false, fresh = false } = {}) {
+  const requestKey = `${fresh ? 'fresh' : allowCached ? 'bootstrap' : 'revalidate'}:${path}`;
   const existing = inFlightJson.get(requestKey);
   if (existing) return optional ? existing.catch(() => null) : existing;
 
-  const p = fetch(path, { cache: 'no-cache', ...(allowCached ? { headers: { 'x-sattva-bootstrap': '1' } } : {}), signal: AbortSignal.timeout(20000) })
+  // An explicit freshness read must bypass the service worker's held data in this request.
+  // no-cache still permits the browser to reuse unchanged HTTP bytes after revalidation.
+  const p = fetch(path, { cache: 'no-cache', ...(fresh ? { headers: { 'x-sattva-refresh': '1' } } : allowCached ? { headers: { 'x-sattva-bootstrap': '1' } } : {}), signal: AbortSignal.timeout(20000) })
     .then((res) => {
       if (!res.ok) throw new Error(`${path} (${res.status})`);
       return readJsonResponse(res).then(value => hydrateJsonShards(value, path));

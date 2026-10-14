@@ -42,6 +42,17 @@ export function parseCrore(value) {
   return n > 0 ? n : null;
 }
 
+/** A complete publisher price date only. Day/month alone never supplies an inferred year. */
+export function marketCapPriceDate(label) {
+  const match = /^(\d{1,2})\s+([A-Za-z]+)\.?\s+(\d{4})\b/.exec(String(label || '').trim());
+  if (!match) return null;
+  const month = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(match[2].slice(0, 3).toLowerCase());
+  const day = +match[1], year = +match[3];
+  if (month < 0 || year < 1900) return null;
+  const date = new Date(Date.UTC(year, month, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month && date.getUTCDate() === day ? date.toISOString().slice(0, 10) : null;
+}
+
 const indian = (n, digits = 0) => n.toLocaleString('en-IN', { maximumFractionDigits: digits, minimumFractionDigits: 0 });
 
 /** ₹27,582 Cr · ₹1.23 lakh Cr · ₹480 Cr. Null when unknown. */
@@ -185,35 +196,38 @@ export function buildCompanyProfiles({ marketCaps = null, tickerMap = null, earn
     if (ticker && byKey.has(ticker)) { byKey.get(ticker).industry ||= value.industry; continue; }
     put([ticker, bse], value);
   }
-  const capsByIsin = new Map(), capsByKey = new Map(), attemptsByIsin = new Map();
-  const putCap = (key, value) => {
+  const capsByIsin = new Map(), capsByKey = new Map(), attemptsByIsin = new Map(), ownersByKey = new Map();
+  const putCap = (map, key, value) => {
     if (!key) return;
-    if (!capsByKey.has(key)) capsByKey.set(key, value);
-    else if (capsByKey.get(key)?.isin !== value.isin) capsByKey.set(key, null);
+    if (!map.has(key)) map.set(key, value);
+    else if (map.get(key)?.isin !== value.isin) map.set(key, null);
   };
   for (const entry of marketCaps?.version === 1 ? marketCaps.entries || [] : []) {
     if (!/^IN[A-Z0-9]{10}$/.test(entry?.isin || '')) continue;
     attemptsByIsin.set(entry.isin, entry);
+    if (entry.exchanges?.includes('NSE')) putCap(ownersByKey, upper(entry.ticker), entry);
+    putCap(ownersByKey, bseKey(entry.bseCode), entry);
     const cr = parseCrore(entry.cr);
     if (!cr || !Number.isFinite(Date.parse(entry.checkedAt))) continue;
     const value = { ...entry, cr };
     // NSE symbols and BSE numeric codes identify different namespaces. BSE-only symbols can
     // belong to another NSE issuer; never use them to fill another company's unknown figure.
     capsByIsin.set(entry.isin, value);
-    if (entry.exchanges?.includes('NSE')) putCap(upper(entry.ticker), value);
-    putCap(bseKey(entry.bseCode), value);
+    if (entry.exchanges?.includes('NSE')) putCap(capsByKey, upper(entry.ticker), value);
+    putCap(capsByKey, bseKey(entry.bseCode), value);
   }
   const profileOf = (company = {}) => {
     const bse = bseKey(company.scripCode || company.bseCode || company.bseId);
     const ticker = upper(company.ticker) || (bse ? aliases.get(bse) : '') || '';
-    const keys = [ticker, bse].filter(Boolean);
+    const isin = upper(company.isin);
+    const keys = [bse, ticker].filter(k => k && (!isin || !ownersByKey.has(k) || ownersByKey.get(k)?.isin === isin));
     let cap = null, group = null;
     for (const k of keys) { cap ||= byKey.get(k) || null; group ||= groups.get(k) || null; }
-    const isin = upper(company.isin);
     const candidate = capsByIsin.get(isin) || capsByKey.get(bse) || capsByKey.get(ticker);
     const captured = candidate && (!isin || candidate.isin === isin) ? candidate : null;
-    if (captured && (!cap || Date.parse(captured.checkedAt) >= Date.parse(cap.asOf || '1970-01-01'))) {
-      cap = { ...cap, cr: captured.cr, asOf: null,
+    const priceAsOf = captured ? captured.priceAsOf || marketCapPriceDate(captured.priceDateLabel) : null;
+    if (captured && (!cap || !cap.asOf || (priceAsOf && Date.parse(priceAsOf) >= Date.parse(cap.asOf)))) {
+      cap = { ...cap, cr: captured.cr, asOf: priceAsOf,
         source: `Screener market cap · checked ${captured.checkedAt}${captured.priceDateLabel ? ` · source price: ${captured.priceDateLabel}` : ' · price date not supplied'}${captured.error ? ` · latest check failed ${captured.attemptedAt || ''}: ${captured.error}` : ''}` };
     }
     const groupId = group?.group || industryGroup(cap?.industry) || null;
@@ -231,6 +245,8 @@ export function buildCompanyProfiles({ marketCaps = null, tickerMap = null, earn
     profileOf,
     size: byKey.size,
     meta: { tickerMapAsOf: mapAsOf, priceAsOf, technicalsAsOf, marketCapsAsOf: marketCaps?.generated_at || marketCaps?.generatedAt || null,
-      marketCapCoverage: marketCaps?.coverage || null, companies: byKey.size, sectorCompanies: groups.size },
+      marketCapsRevision: JSON.stringify([marketCaps?.generated_at || marketCaps?.generatedAt, marketCaps?.updatedAt]),
+      marketCapCoverage: marketCaps?.coverage || null, marketCapDirectory: marketCaps?.directoryAsOf || null,
+      companies: byKey.size, sectorCompanies: groups.size },
   };
 }

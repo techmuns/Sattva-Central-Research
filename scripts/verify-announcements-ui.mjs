@@ -8,7 +8,7 @@
 // stubbed — nothing leaves this machine. A second server with no index proves the browser still
 // answers from the captures when the index cannot be read.
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -64,7 +64,9 @@ const readFetcher = async (url, init = {}) => {
 };
 const now = () => clock.getTime();
 const srv = await startAnnouncementServer({ indexDir: tmp, publicDir, readFetcher, now });
-const fallback = await startAnnouncementServer({ indexDir: null, publicDir, readFetcher: async () => new Response('down', { status: 503 }), now });
+let fallbackCaps = null, capReads = 0;
+const fallback = await startAnnouncementServer({ indexDir: null, publicDir, readFetcher: async () => new Response('down', { status: 503 }), now,
+  transformAsset(path, bytes) { if (path === '/data/market-caps.json' && fallbackCaps) { capReads++; return Buffer.from(JSON.stringify(fallbackCaps())); } return bytes; } });
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const errors = [];
@@ -413,6 +415,32 @@ try {
   assert((await local.locator('#modal-content').innerText()).includes('server index could not be read'), 'fallback diagnostics remain reachable');
   await local.keyboard.press('Escape');
   assert(await local.locator('tbody .category-chip').count() > 0, 'categories still show');
+  const localTarget = await local.evaluate(() => window.__ca.rows().find(r => /^IN[A-Z0-9]{10}$/.test(r.isin || '')));
+  assert(localTarget, 'a verified issuer exercises fallback profile refresh');
+  const capFixture = JSON.parse(readFileSync(resolve(publicDir, 'data/market-caps.json')));
+  // Warm a real service-worker-held data response, then replace the server's capture.
+  await local.waitForFunction(() => navigator.serviceWorker.controller);
+  await local.evaluate(() => fetch('/data/market-caps.json').then(r => r.json()));
+  let capPhase = 1;
+  fallbackCaps = () => {
+    const entries = capFixture.entries.filter(e => e.isin !== localTarget.isin);
+    const old = capFixture.entries.find(e => e.isin === localTarget.isin) || {};
+    entries.push({ ...old, isin: localTarget.isin, ticker: localTarget.ticker, bseCode: localTarget.scripCode || old.bseCode,
+      exchanges: old.exchanges || ['NSE'], cr: capPhase === 1 ? 3333.33 : 4444.44,
+      checkedAt: clock.toISOString(), priceDateLabel: null, priceAsOf: null, error: null });
+    return { ...capFixture, generated_at: new Date(clock.getTime() + capPhase * 1000).toISOString(), entries };
+  };
+  await local.evaluate(() => { window.capRefreshClock = Date.now() + 16 * 60_000; Date.now = () => window.capRefreshClock; });
+  await local.evaluate(() => window.__ca.refresh());
+  assert.equal(await local.evaluate(id => window.__ca.rows().find(r => r.id === id)?.mcapCr, localTarget.id), 3333.33);
+  capPhase = 2;
+  await local.evaluate(() => { window.capRefreshClock += 16 * 60_000; });
+  await local.evaluate(() => window.__ca.refresh());
+  assert.equal(await local.evaluate(id => window.__ca.rows().find(r => r.id === id)?.mcapCr, localTarget.id), 4444.44,
+    'the normal fallback refresh re-reads profiles even after the source stream has loaded once');
+  assert(capReads >= 2);
+  fallbackCaps = null;
+  ok('a long-lived static fallback adopts updated market caps through its ordinary refresh path');
   await local.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
   await local.locator('#modal-content [data-ann-read]').waitFor();
   await local.locator('.ann-read-unavailable').waitFor();

@@ -495,6 +495,7 @@ const tab = makeFilingsTab({
     const qm = m.query || {};
     const index = qm.index || {};
     const marketCaps = index.meta?.profiles?.marketCapCoverage;
+    const capDirectory = index.meta?.profiles?.marketCapDirectory;
     const built = index.builtAt ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(index.builtAt)) + ' IST' : 'unavailable';
     return `<div class="px-7 py-6">
     <div class="mb-3 flex items-start justify-between gap-4">
@@ -523,7 +524,11 @@ const tab = makeFilingsTab({
         A company with no known figure shows “—” and is never treated as small or zero.</p>
       ${marketCaps ? `<p><strong>Market-cap coverage:</strong> ${escapeHtml(marketCaps.known)} of ${escapeHtml(marketCaps.companies)} directory companies have a saved public figure;
         ${escapeHtml(marketCaps.checked)} were checked in the latest collection attempt. ${escapeHtml(marketCaps.unavailable)} still have no figure from this source.
-        ${marketCaps.refused || !marketCaps.screenComplete || marketCaps.directRead < marketCaps.directTotal ? 'The latest collection is partial; previous figures retain their own check times.' : ''}</p>` : ''}
+        ${marketCaps.directoryPartial || marketCaps.refused || !marketCaps.screenComplete || marketCaps.directRead < marketCaps.directTotal ? 'The latest collection is partial; previous figures retain their own check times.' : ''}</p>` : ''}
+      ${capDirectory ? `<p><strong>Market-cap directory checks:</strong> BSE ${escapeHtml(capDirectory.bse?.checkedAt || 'unavailable')}${capDirectory.bse?.error ? ` (failed: ${escapeHtml(capDirectory.bse.error)})` : ''};
+        NSE main board ${escapeHtml(capDirectory.nse?.equity?.checkedAt || 'unavailable')}${capDirectory.nse?.equity?.error ? ` (failed: ${escapeHtml(capDirectory.nse.equity.error)})` : ''};
+        NSE SME ${escapeHtml(capDirectory.nse?.sme?.checkedAt || 'unavailable')}${capDirectory.nse?.sme?.error ? ` (failed: ${escapeHtml(capDirectory.nse.sme.error)})` : ''}.
+        A later request attempt does not advance a verified directory check.</p>` : ''}
       <p><strong>AI Read</strong> opens only when you click a filing: it reads that one document in full and keeps the reading so the next
         reader pays nothing. The list never shows a generated headline or summary; subjects are the exchange's own.</p>
       <p><strong>BSE:</strong> exchange-wide announcements are captured every two hours, with retained monthly history.

@@ -1,7 +1,13 @@
 // Public Screener figures, in ₹ crore. Never use sector/free-float cap or infer share counts.
 // Screen links identify exact NSE symbols or BSE codes; company-page fallbacks must prove
 // the same exchange identity. Collection time and the publisher's price date stay separate.
-import { parseCrore } from '../../public/js/data/company-profile.js';
+import { parseCrore, marketCapPriceDate } from '../../public/js/data/company-profile.js';
+
+export function marketCapDirectoryChecks(bse, nse) {
+  const segment = name => ({ checkedAt: nse.directories?.[name]?.checkedAt || null, error: nse.directories?.[name]?.error || null });
+  return { bse: { checkedAt: bse.capturedAt || null, error: bse.error || null },
+    nse: { attemptedAt: nse.attemptedAt || null, equity: segment('equity'), sme: segment('sme') } };
+}
 
 export const SCREEN_URL = 'https://www.screener.in/screens/1196250/all-stocks/';
 const plain = html => String(html || '').replace(/<[^>]*>/g, ' ').replace(/&(?:nbsp|amp|gt|lt);/g, ' ').replace(/\s+/g, ' ').trim();
@@ -49,6 +55,8 @@ export function parseMarketCapCompany(html, company, checkedAt) {
   if (!cr) bad('company market cap unavailable');
   const clock = /<div class="ink-600 font-size-11 font-weight-500">([\s\S]*?)<\/div>/i.exec(top)?.[1];
   const priceDateLabel = plain(clock) || null;
-  // Retain the source label verbatim. A day/month with no year is not an exact dated quote.
-  return { cr, checkedAt, priceDateLabel, source: 'Screener', sourceUrl: `https://www.screener.in/company/${nse ? company.ticker : company.bseCode}/` };
+  const priceAsOf = marketCapPriceDate(priceDateLabel);
+  if (/\b\d{4}\b/.test(priceDateLabel || '') && !priceAsOf) bad('invalid complete source price date');
+  if (priceAsOf && priceAsOf > new Date(Date.parse(checkedAt) + 5.5 * 3600_000).toISOString().slice(0, 10)) bad('future source price date');
+  return { cr, checkedAt, priceDateLabel, priceAsOf, source: 'Screener', sourceUrl: `https://www.screener.in/company/${nse ? company.ticker : company.bseCode}/` };
 }
