@@ -104,6 +104,9 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
     const meta = insider.meta(), exchanges = meta.exchanges;
     const dates = activity.map((r) => r.date).filter(Boolean).sort();
     const buys = events.filter(r => r.action === 'buy').length, sells = events.filter(r => r.action === 'sell').length;
+    const periodNote = `<p class="mb-3 text-xs text-slate-500" data-changes-period-note>${range.from ? `${esc(date(range.from))} – ${esc(date(range.to))}` : 'ITD · all available captured history'} · ${mine ? 'Family ledger events and matched public bulk/block deals' : 'matched public bulk/block deals'}. Click a row for evidence.</p>`;
+    const exchangeStatus = `<p class="mb-3 text-xs text-slate-500" data-exchange-status>${esc(exchanges?.summary || (ready ? 'Exchange coverage has not been verified.' : 'NSE / BSE reports are loading.'))}</p>`;
+    const coverageNote = `<p class="my-3 text-xs text-slate-500" data-changes-coverage>${ready ? dates.length ? `${mine ? 'Retained ledger / reported deal dates' : `Matched trade dates in ${esc(scopeLabel(ctx.scope))}`}: ${esc(date(dates[0]))} – ${esc(date(dates.at(-1)))}. ` : 'No matching records loaded. ' : 'Loading source records. '}${mine ? 'Ledger events include labelled transfers and unverified carried purchase dates. Public deals concern the named institution, not your account. ' : 'Matched trade dates are not the source’s capture coverage. '}ITD covers retained records and may not reach inception. Deals do not establish total allocation.</p>`;
     host.dataset.changesReady = String(ready);
     host.innerHTML = `
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -117,10 +120,9 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       <div data-changes-panel="${state.audience}" data-activity-total="${events.length}" data-holdings-total="${observations.length}">
         ${mine && !managers.meta() ? managerUnavailable() : ''}
         <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h2 class="font-display text-lg font-bold text-slate-900">${mine ? 'Your managers · ledger events & reported deals' : 'Tracked investors · reported trades'}</h2><span class="text-xs text-slate-500">${directoryPending ? 'Investor directory is loading…' : mine && !managers.meta() ? 'Manager records are not yet available' : `${buys} buys · ${sells} sells · ${new Set(events.map(r => r.personId)).size} ${mine ? 'managers' : 'investors'}`}</span></div>
-        <p class="mb-3 text-xs text-slate-500">${range.from ? `${esc(date(range.from))} – ${esc(date(range.to))}` : 'ITD · all available captured history'} · ${mine ? 'Family ledger events and matched public bulk/block deals' : 'matched public bulk/block deals'}. Click a row for evidence.</p>
-        ${!mine ? `<p class="mb-3 text-xs text-slate-500" data-changes-context>${directoryPending ? 'Loading tracked investors' : `${list.length} tracked investors`} · Company scope: ${esc(scopeLabel(ctx.scope))}. All Investors includes the tracked directory; the company scope still applies.</p>` : ''}
+        ${mine ? periodNote : ''}
         ${unverifiedRelations.length ? `<p class="mb-3 text-xs text-slate-500" data-changes-identity-warning>${unverifiedRelations.length} entity relationships await renewed verification. Their reports remain in Insider Trades and are excluded from these attributed totals.</p>` : ''}
-        <p class="mb-3 text-xs text-slate-500" data-exchange-status>${esc(exchanges?.summary || (ready ? 'Exchange coverage has not been verified.' : 'NSE / BSE reports are loading.'))}</p>
+        ${mine ? exchangeStatus : ''}
         ${!mine && ready && !directoryPending && !events.length ? `<div class="mb-3 rounded-2xl bg-white p-4 ring-1 ring-slate-100" data-changes-empty-context>
           <p class="text-sm text-slate-700">No matched reported trades in the available records for ${esc(scopeLabel(ctx.scope))} companies in ${esc(PERIODS.find(p => p.id === state.period).label)}. This does not establish that investors made no trades.</p>
           <div class="mt-2 flex flex-wrap gap-4">
@@ -129,8 +131,8 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
           </div>
         </div>` : ''}
         <div data-changes-activity>${table.html}</div>
-        <p class="my-3 text-xs text-slate-500" data-changes-coverage>${ready ? dates.length ? `${mine ? 'Retained ledger / reported deal dates' : `Matched trade dates in ${esc(scopeLabel(ctx.scope))}`}: ${esc(date(dates[0]))} – ${esc(date(dates.at(-1)))}. ` : 'No matching records loaded. ' : 'Loading source records. '}${mine ? 'Ledger events include labelled transfers and unverified carried purchase dates. Public deals concern the named institution, not your account. ' : 'Matched trade dates are not the source’s capture coverage. '}ITD covers retained records and may not reach inception. Deals do not establish total allocation.</p>
-        <details class="mb-4 rounded-2xl bg-white p-4 ring-1 ring-slate-100" data-changes-holdings ${state.holdingsOpen ? 'open' : ''}>
+        ${mine ? coverageNote : ''}
+        <details class="${mine ? '' : 'mt-3 '}mb-4 rounded-2xl bg-white p-4 ring-1 ring-slate-100" data-changes-holdings ${state.holdingsOpen ? 'open' : ''}>
           <summary class="cursor-pointer text-sm font-semibold text-slate-700">Holdings changes · ${mine ? 'paired reports unavailable' : `${observations.length} dated comparisons`}</summary>
           <p class="my-3 text-xs text-slate-500">${mine ? 'Paired manager statements are not supplied by the Sattva workbook. Current holdings are available in My Managers; quantity/value differences are not inferred as trades.' : 'Both quarter-end dates are shown. The period filter uses the later date; these are holdings observations, not trade dates. A missing or unavailable disclosure does not prove a purchase or sale. Unknown comparisons remain in the holding book and coverage review.'}</p>
           <div data-changes-observations>${mine ? '' : holdingTable.html}</div>
@@ -138,6 +140,9 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
         <details class="text-xs text-slate-500" data-changes-sources ${state.sourcesOpen ? 'open' : ''}>
           <summary class="cursor-pointer font-semibold">Sources &amp; coverage</summary>
           <div class="mt-2 space-y-2 leading-relaxed">
+            ${!mine ? `${periodNote}
+            <p class="mb-3 text-xs text-slate-500" data-changes-context>${directoryPending ? 'Loading tracked investors' : `${list.length} tracked investors`} · Company scope: ${esc(scopeLabel(ctx.scope))}. All Investors includes the tracked directory; the company scope still applies.</p>
+            ${exchangeStatus}${coverageNote}` : ''}
             <p>${mine ? esc(managers.meta()?.coverage.note || 'Manager coverage has not been verified.') : `Holdings come from Ticker Finology’s retained quarterly disclosures. ${investors.meta().failedBooks || 0} investor books could not be read.`} Public deals are matched by exact full name, allowing punctuation and equivalent legal suffixes. Associated entities require a current, evidenced relationship; ambiguous names remain unmatched.</p>
             <p>Bulk/block deals share the captured NSE/BSE and supplementary Screener records with Insider Trades. This view rechecks saved captures every minute while visible. A successful delivery does not establish complete exchange coverage. ${esc(meta.bulkDeals?.error || '')}</p>
             ${exchanges ? `<ul>${(exchanges.sources || []).map((s) => `<li>${esc(s.id.toUpperCase())}: ${(s.coverage || []).map((w) => `${esc(date(w.from))} – ${esc(date(w.to))}`).join(', ') || 'No successful capture'} · ${s.ok ? 'read successfully' : esc(s.error || 'unavailable')}; latest reported deal ${esc(date(s.latestDate))}.</li>`).join('')}</ul>` : ''}
