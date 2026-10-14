@@ -70,6 +70,58 @@ try {
   await two.page.goto(`${server.url}#/research/${view.id}?scope=universe`);
   await two.page.getByRole('heading', { name: 'Capital Raises', exact: true }).waitFor(); await ready(two.page);
   assert.deepEqual(await two.page.evaluate(() => window.query.rows().map(row => row.id)), rowIds, 'a second device restores the same filters and eligible records');
+  const headers = page => page.locator('table[data-shared-column-layout="corp-announcements"] thead th').evaluateAll(cells => cells.map(cell => cell.textContent.replace(/[▴▾▲▼↕]/g, '').trim()));
+  const column = (page, label) => page.locator('table[data-shared-column-layout="corp-announcements"] thead th').filter({ hasText: new RegExp(`^\\s*${label}\\s*[▴▾▲▼↕]?\\s*$`) });
+  assert.equal((await headers(one.page))[0], 'Company', 'Company starts first on a fresh Announcements table');
+  assert.equal((await headers(two.page))[0], 'Company');
+  assert(!store.snapshot().columnLayouts, 'opening a table never publishes browser preferences');
+  const beforeRows = await one.page.evaluate(() => window.query.rows().map(row => row.id));
+  await column(one.page, 'Company').focus(); await one.page.keyboard.press('Alt+ArrowRight');
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.status().confirmed);
+  await one.page.locator('.column-layout-status').filter({ hasText: 'shared with everyone' }).waitFor();
+  await two.page.evaluate(() => window.workspace.sync());
+  assert.deepEqual((await headers(two.page)).slice(0, 2), ['Subject', 'Company'], 'separate device applies an explicit shared move');
+  assert.deepEqual(await two.page.evaluate(() => window.query.rows().map(row => row.id)), beforeRows, 'column updates preserve source rows');
+  await two.page.reload(); await ready(two.page);
+  assert.deepEqual((await headers(two.page)).slice(0, 2), ['Subject', 'Company'], 'shared order survives reload and saved copies');
+  const companyBox = await column(one.page, 'Company').boundingBox();
+  await one.page.mouse.move(companyBox.x + companyBox.width / 2, companyBox.y + companyBox.height / 2);
+  await one.page.mouse.down(); await one.page.mouse.move(companyBox.x + companyBox.width / 2 + 20, companyBox.y + companyBox.height / 2);
+  await one.page.locator('[data-column-dragging]').waitFor();
+  store.apply({ id: 'fixture-columns-during-drag', op: 'columns-reset', table: 'corp-announcements' });
+  await one.page.evaluate(() => window.workspace.sync());
+  assert.deepEqual((await headers(one.page)).slice(0, 2), ['Subject', 'Company'], 'remote updates defer while a column is held');
+  await one.page.keyboard.press('Escape'); await one.page.mouse.up();
+  await one.page.waitForFunction(() => document.querySelector('table[data-shared-column-layout="corp-announcements"] th')?.textContent.trim() === 'Company');
+  await column(one.page, 'Company').focus(); await one.page.keyboard.press('Alt+ArrowRight');
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.status().confirmed);
+  await two.page.evaluate(() => window.workspace.sync());
+  await two.page.goto(`${server.url}#/research/corp-announcements?scope=portfolio`); await ready(two.page);
+  assert.deepEqual((await headers(two.page)).slice(0, 2), ['Subject', 'Company'], 'the base reader and another scope use the shared table order');
+  await two.page.goto(`${server.url}#/research/${view.id}?scope=universe`); await ready(two.page);
+  await one.page.route('**/api/workspace', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false}' }));
+  await column(one.page, 'Company').focus(); await one.page.keyboard.press('Alt+ArrowRight');
+  await one.page.waitForFunction(() => window.workspace.status().pending === 1 && !!window.workspace.status().error);
+  await one.page.locator('.column-layout-status[data-unavailable]').waitFor();
+  await one.page.reload(); await ready(one.page);
+  assert.equal((await headers(one.page))[2], 'Company', 'queued column moves survive an offline reload');
+  await one.page.unroute('**/api/workspace'); await one.page.evaluate(() => window.workspace.sync());
+  await two.page.evaluate(() => window.workspace.sync());
+  assert.equal((await headers(two.page))[2], 'Company', 'reconnection publishes the durable queued move');
+  await column(two.page, 'Company').focus(); await two.page.keyboard.press('Alt+Home');
+  await two.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.status().confirmed);
+  await one.page.evaluate(() => window.workspace.sync());
+  assert.equal((await headers(one.page))[0], 'Company', 'shared reset overrides old browser orders');
+  await one.page.reload(); await ready(one.page);
+  assert.equal((await headers(one.page))[0], 'Company', 'reset remains authoritative after reload');
+  await one.page.route('**/api/workspace', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false}' }));
+  await column(one.page, 'Company').focus(); await one.page.keyboard.press('Alt+ArrowRight');
+  await one.page.locator('.column-layout-status[data-unavailable]').waitFor();
+  await one.page.unroute('**/api/workspace'); await one.page.evaluate(() => window.workspace.sync());
+  assert.equal(await one.page.locator('.column-layout-status[data-unavailable]').count(), 0, 'recovery clears the visible failed-sharing notice without a reload');
+  await column(one.page, 'Company').focus(); await one.page.keyboard.press('Alt+Home');
+  await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.status().confirmed);
+  await two.page.evaluate(() => window.workspace.sync());
   if (process.env.WORKSPACE_SCREENSHOT) {
     await one.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-light.png` });
     await two.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-dark.png` });
@@ -364,9 +416,18 @@ try {
   assert((await returning.evaluate(() => caches.keys())).some(key => key.includes('previous-shared-workspace')));
   oldModules = false;
   await returning.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-  await returning.locator(`#tabbar-mount [data-tab-id="${view.id}"]`).waitFor();
+  await returning.locator(`#tabbar-mount [data-tab-id="${view.id}"]`).waitFor().catch(async error => {
+    console.error('Warm workspace upgrade', await returning.evaluate(async () => ({
+      controller: navigator.serviceWorker.controller?.scriptURL,
+      registrations: (await navigator.serviceWorker.getRegistrations()).map(reg => ({ active: reg.active?.state, installing: reg.installing?.state, waiting: reg.waiting?.state })),
+      caches: await caches.keys(), tabs: [...document.querySelectorAll('#tabbar-mount [data-tab-id]')].map(tab => tab.dataset.tabId),
+      status: (await import('/js/core/workspace.js')).status(),
+    })), errors);
+    throw error;
+  });
   await returning.locator(`#tabbar-mount [data-tab-id="${view.id}"]`).click();
   await returning.getByRole('heading', { name: 'Fundraising', exact: true }).waitFor(); await ready(returning);
+  assert.equal((await returning.locator('table[data-shared-column-layout="corp-announcements"] thead th').first().textContent()).trim(), 'Company', 'warm cache upgrade receives Company-first shared columns');
   assert.deepEqual(await returning.evaluate(() => window.query.query().categories), ['capital-raise']);
   assert(!(await returning.evaluate(() => caches.keys())).some(key => key.includes('previous-shared-workspace')));
   assert.deepEqual(errors, []); await warm.close();

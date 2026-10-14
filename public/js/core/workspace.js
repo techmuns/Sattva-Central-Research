@@ -1,4 +1,4 @@
-import { DEFAULT_TAB_ORDER, workspaceSnapshot, workspaceIntent } from '../data/workspace-shared.js';
+import { DEFAULT_TAB_ORDER, workspaceSnapshot, workspaceIntent, moveWorkspaceColumn } from '../data/workspace-shared.js';
 const KEY = 'sattva:shared-workspace:v1', QUEUE = `${KEY}:outbox`;
 let confirmed = false, error = null, storageFailed = false, running = null, started = false;
 let current = { version: 1, revision: 0, updatedAt: null, tabs: [], order: [...DEFAULT_TAB_ORDER] }, pending = [];
@@ -26,7 +26,7 @@ const emit = () => listeners.forEach(fn => fn());
 export const onChange = fn => { listeners.add(fn); return () => listeners.delete(fn); };
 export function snapshot() {
   if (!pending.length) return current;
-  const value = { ...current, order: [...current.order], tabs: [...current.tabs] };
+  const value = { ...current, order: [...current.order], tabs: [...current.tabs], columnLayouts: { ...current.columnLayouts } };
   for (const intent of pending) {
     // A stale removal must not navigate away before the server can reject it.
     if (intent.op === 'remove') continue;
@@ -37,6 +37,7 @@ export function snapshot() {
       if (index >= 0) value.tabs[index] = tab; else value.tabs.push(tab);
       if (!value.order.includes(tab.id)) value.order.push(tab.id);
     } else if (intent.op === 'reset') value.order = [...DEFAULT_TAB_ORDER, ...value.tabs.map(tab => tab.id)];
+    else if (intent.op === 'columns-move' || intent.op === 'columns-reset') value.columnLayouts[intent.table] = moveWorkspaceColumn(value.columnLayouts[intent.table], intent);
     else if (value.order.includes(intent.tabId) && value.order.includes(intent.targetId)) {
       value.order = value.order.filter(id => id !== intent.tabId);
       value.order.splice(value.order.indexOf(intent.targetId) + (intent.after ? 1 : 0), 0, intent.tabId);

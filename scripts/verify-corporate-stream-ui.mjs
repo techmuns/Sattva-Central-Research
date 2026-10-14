@@ -364,6 +364,7 @@ try {
   await search.fill('Bharat');
   await page.clock.fastForward(300);
   await page.waitForFunction(() => document.querySelector('[data-search-status]')?.textContent === 'Choose a company');
+  await page.waitForFunction(() => window.caQuery.query().q === 'bharat' && window.caQuery.meta().state === 'ready' && !window.caQuery.meta().refreshing);
   assert(searches.includes('Bharat'), 'typed names use the existing Worker search endpoint');
   const menu = page.locator('[data-announcement-search-menu]:visible');
   assert.equal(await menu.getByRole('option', { name: /Bharat Parenterals/ }).count(), 1, 'BSE code and symbol suggestions deduplicate by verified issuer');
@@ -510,7 +511,10 @@ try {
   assert.equal(await returning.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'the returning session adopts Last 3 days after upgrade');
   assert.equal(await returning.evaluate(() => window.caQuery.query().period), '3', 'the upgraded query adopts Last 3 days');
   await returning.evaluate(() => window.renderScope('universe'));
+  // Scope and text changes rebuild the live reader after their queries complete.
+  await returning.waitForFunction(() => window.caQuery.meta().state === 'ready' && !window.caQuery.meta().refreshing);
   await returning.locator('[data-table-search]').fill('Bharat');
+  await returning.waitForFunction(() => window.caQuery.query().q === 'bharat' && window.caQuery.meta().state === 'ready' && !window.caQuery.meta().refreshing);
   await returning.getByRole('option', { name: /Bharat Parenterals/ }).waitFor();
   // Mouse selection is covered above. Use the native keyboard flow here: the
   // warm-cache fixture's floating menu can move during Playwright's auto-scroll.
