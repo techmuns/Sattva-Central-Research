@@ -372,6 +372,7 @@ export function makeFilingsTab(cfg) {
       initialView: view,
       onRowClick: cfg.onRowClick ? (row) => cfg.onRowClick(row, ctx) : null,
       afterSub: cfg.afterSub || null,
+      rowContent: cfg.rowContent || null,
       allowSort: cfg.allowSort !== false,
       toolbarControls: cfg.toolbarControls?.(ctx, m) || null,
       loading: cfg.loading?.(m) || false,

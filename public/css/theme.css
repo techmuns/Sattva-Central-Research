@@ -603,9 +603,13 @@ html [data-announcement-search] .announcement-search-input:focus { outline: none
 .relevance-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .relevance-feedback-question { color: var(--ink-600); font-size: 13px; font-weight: 600; }
 .relevance-feedback-actions { display: inline-flex; flex-wrap: wrap; gap: 6px; }
-.relevance-vote, .relevance-why-toggle { min-height: 34px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-600); font-size: 12.5px; font-weight: 600; }
-.relevance-vote:hover, .relevance-why-toggle:hover { border-color: var(--accent-600); color: var(--accent-600); }
-.relevance-vote[aria-pressed="true"] { border-color: var(--accent-600); background: var(--accent-600); color: #fff; }
+.relevance-vote, .relevance-why-toggle { min-height: 38px; padding: 7px 13px; border-radius: 999px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-600); font-size: 12.5px; font-weight: 600; }
+.relevance-vote { display: inline-flex; align-items: center; gap: 5px; background: var(--vote-surface); color: var(--vote-ink); border-color: var(--vote-edge); }
+.relevance-vote.is-important { --vote-surface: rgb(var(--surface-emerald-50, 236 253 245)); --vote-ink: rgb(var(--text-emerald-700, 4 120 87)); --vote-edge: rgb(var(--edge-emerald-200, 167 243 208)); --vote-selected: #047857; }
+.relevance-vote.is-not-important { --vote-surface: rgb(var(--surface-rose-50, 255 241 242)); --vote-ink: rgb(var(--text-rose-700, 190 18 60)); --vote-edge: rgb(var(--edge-rose-200, 254 205 211)); --vote-selected: #be123c; }
+.relevance-vote:hover { border-color: var(--vote-ink); box-shadow: inset 0 0 0 1px var(--vote-ink); }
+.relevance-why-toggle:hover { border-color: var(--accent-600); color: var(--accent-600); }
+.relevance-vote[aria-pressed="true"] { border-color: var(--vote-selected); background: var(--vote-selected); color: #fff; box-shadow: inset 0 0 0 1px var(--vote-selected); }
 .relevance-why-toggle[aria-expanded="true"] { background: rgb(var(--surface-indigo-50, 238 242 255)); color: var(--accent-600); }
 .relevance-feedback :where(button, textarea):focus-visible { outline: 2px solid var(--accent-600); outline-offset: 2px; }
 .relevance-feedback[aria-busy="true"] button { opacity: .6; cursor: progress; }
@@ -683,7 +687,7 @@ html [data-announcement-search] .announcement-search-input:focus { outline: none
 @media print { .relevance-prompt, .ca-popover { display: none !important; } }
 .news-row-extras { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; white-space: normal; }
 /* Filled accent controls: the dark accent is a light indigo, so their text turns dark. */
-html[data-theme="dark"] .ann-read-original, html[data-theme="dark"] .relevance-vote[aria-pressed="true"], html[data-theme="dark"] .ca-popover-foot button.is-primary { color: #0f172a; }
+html[data-theme="dark"] .ann-read-original, html[data-theme="dark"] .ca-popover-foot button.is-primary { color: #0f172a; }
 
 /* AI Alerts keeps search beside the list controls, with the input mounted independently. */
 .ai-alert-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 12px; }
@@ -707,10 +711,36 @@ html[data-theme="dark"] .ann-read-original, html[data-theme="dark"] .relevance-v
 /* Visible importance controls stay below the linked story, in every News scope. */
 .news-feedback { margin-top: 8px; white-space: normal; }
 .news-story-content { display: flex; align-items: flex-start; gap: 4px; padding-right: 12px; }
-.news-story-bookmark { display: flex; margin-top: 16px; flex: none; }
+.news-story { min-width: 0; transition: background-color .15s; }
+.news-story:hover { background: rgb(var(--surface-slate-50, 248 250 252)); }
+.news-story-link { display: flex; gap: 16px; min-width: 0; flex: 1; padding: 16px 20px; }
+a.news-story-link:focus-visible { outline: 2px solid var(--accent-600); outline-offset: -2px; border-radius: 8px; }
+.news-story-thumbnail { position: relative; display: grid; place-items: center; flex: none; width: 135px; height: 76px; overflow: hidden; border-radius: 8px; background: rgb(var(--surface-slate-100, 241 245 249)); color: var(--ink-400); }
+.news-story-thumbnail img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.news-story-thumbnail img[hidden] { display: none; }
+.news-story-copy { flex: 1; min-width: 0; max-width: 56rem; overflow-wrap: anywhere; }
+.news-story-title { margin: 0; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 15px; font-weight: 700; line-height: 1.4; color: var(--ink-900); }
+a.news-story-link:hover .news-story-title { color: var(--accent-600); }
+.news-story-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: 4px 0 0; color: var(--ink-600); font-size: 14px; line-height: 1.6; }
+.news-story-company { margin: 5px 0 0; color: var(--ink-600); font-size: 12px; line-height: 1.5; }
+.news-story-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 6px; color: var(--ink-400); font-size: 12px; }
+.news-story-bookmark { display: flex; align-items: center; gap: 6px; margin-top: 16px; flex: none; }
+.news-story-bookmark .watch-star { min-width: 30px; min-height: 32px; }
+.news-card-table { table-layout: fixed; }
+.news-card-table thead { display: none; }
+.news-card-table .news-card-cell { padding: 0; }
 .news-story-feedback { padding: 0 20px 14px; }
 .news-story-feedback .news-feedback { margin-top: 0; }
 .news-story-no-link { display: block; margin: 0 20px 8px; color: var(--ink-400); font-size: 11px; }
+@media (max-width: 639px) {
+  .news-story-link { gap: 12px; padding: 14px 12px; }
+  .news-story-thumbnail { width: 88px; height: 62px; }
+  .news-story-content { padding-right: 8px; }
+  .news-story-bookmark { flex-direction: column; gap: 2px; margin-top: 10px; }
+  .news-story-feedback { padding-inline: 12px; }
+  .news-story-feedback .relevance-feedback-question { flex-basis: 100%; }
+  .news-story-feedback :where(.relevance-vote, .relevance-why-toggle) { min-height: 44px; }
+}
 
 /* Public Chatter gives the table the page; source explanations open on demand. */
 .chatter-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; }

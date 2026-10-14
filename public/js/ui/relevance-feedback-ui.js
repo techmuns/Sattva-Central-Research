@@ -35,16 +35,16 @@ export function feedbackBar(item, { compact = false, question = 'Is this importa
   return `<div class="relevance-feedback${compact ? ' is-compact' : ''}" data-relevance-feedback="${escapeHtml(item.itemKey)}" id="${id}"${state?.busy ? ' aria-busy="true"' : ''}>
     ${compact ? '' : `<span class="relevance-feedback-question">${escapeHtml(question)}</span>`}
     <div class="relevance-feedback-actions" role="group" aria-label="${escapeHtml(question)}">
-      <button type="button" data-vote="important" aria-pressed="${pressed('important')}" class="relevance-vote">Important</button>
-      <button type="button" data-vote="not-important" aria-pressed="${pressed('not-important')}" class="relevance-vote">Not important</button>
+      <button type="button" data-vote="important" aria-pressed="${pressed('important')}" class="relevance-vote is-important"><span aria-hidden="true">✓</span> Important</button>
+      <button type="button" data-vote="not-important" aria-pressed="${pressed('not-important')}" class="relevance-vote is-not-important"><span aria-hidden="true">×</span> Not important</button>
       <button type="button" data-why aria-expanded="${!!state?.open}" aria-controls="${id}-why" class="relevance-why-toggle">Why?</button>
     </div>
     <div id="${id}-why" data-why-box class="relevance-why"${state?.open ? '' : ' hidden'}>
       <label class="relevance-why-label" for="${id}-text">Why? <span>(optional — helps the desk's shared ranking)</span></label>
       <textarea id="${id}-text" data-why-text maxlength="${WHY_MAX}" rows="2" placeholder="e.g. order is large for this company's size; routine notice">${escapeHtml(state?.why ?? current?.why ?? '')}</textarea>
       <div class="relevance-why-actions">
-        <button type="button" data-why-save="important" class="relevance-vote">Save as important</button>
-        <button type="button" data-why-save="not-important" class="relevance-vote">Save as not important</button>
+        <button type="button" data-why-save="important" class="relevance-vote is-important"><span aria-hidden="true">✓</span> Save as important</button>
+        <button type="button" data-why-save="not-important" class="relevance-vote is-not-important"><span aria-hidden="true">×</span> Save as not important</button>
       </div>
     </div>
     <p data-feedback-status role="status" class="relevance-feedback-status">${escapeHtml(state?.status || (current?.pending ? statusText({ state: 'queued' }) : ''))}</p>

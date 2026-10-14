@@ -498,6 +498,9 @@ export function scoreTable(config) {
     // Trusted markup drawn under a row's sub-line, inside the identity cell — e.g. an expandable
     // "3 related filings" list. Give interactive content `data-norow` so it does not open the row.
     afterSub = null,
+    // Optional full-width story markup. Filtering, ordering, identity, windowing and export
+    // still use the complete table model; the caller receives the existing shared controls.
+    rowContent = null,
     // False when the rows arrive in an order the server chose (a ranked, paged result): sorting the
     // loaded page alone would misstate the whole result, so no heading offers it.
     allowSort = true,
@@ -643,7 +646,7 @@ export function scoreTable(config) {
 
   // ---- markup -------------------------------------------------------------------------
 
-  const colCount = (showRank ? 1 : 0) + 1 + (showScore ? 1 : 0) + (showSignals ? 1 : 0) + columns.length + (link ? 1 : 0);
+  const colCount = rowContent ? 1 : (showRank ? 1 : 0) + 1 + (showScore ? 1 : 0) + (showSignals ? 1 : 0) + columns.length + (link ? 1 : 0);
 
   const PX = dense ? 'px-2' : 'px-4';
   // Letter-spacing on 13 uppercase headers is ~50px of table width. Worth keeping normally,
@@ -654,6 +657,7 @@ export function scoreTable(config) {
   const restCols = columns.slice(nameAfter);
 
   function headHtml() {
+    if (rowContent) return `<tr><th scope="col">${escapeHtml(nameLabel)}</th></tr>`;
     const th = (label, sortKey, align = 'left') => {
       const sortable = allowSort && sortKey !== null;
       const active = view.sort && view.sort.key === sortKey;
@@ -735,6 +739,9 @@ export function scoreTable(config) {
                   title="${isWatched ? `Remove ${escapeHtml(watchLabel || watchSlug)} from your watchlist` : `Add ${escapeHtml(watchLabel || watchSlug)} to your watchlist`}"
                   class="watch-star flex-shrink-0 text-base leading-none transition-colors ${isWatched ? 'text-amber-400' : 'text-slate-300 hover:text-amber-400'}">${isWatched ? '★' : '☆'}</button>`
           : '<span class="watch-star flex-shrink-0 text-base leading-none text-transparent" aria-hidden="true">☆</span>';
+        if (rowContent) return `<tr data-row-key="${escapeHtml(slug)}"${row.revision ? ` data-revision="${escapeHtml(row.revision)}"` : ''} class="row-line border-b border-slate-100"${rowIndex === null ? '' : ` aria-rowindex="${rowIndex + 2}"`}>
+          <td class="news-card-cell">${rowContent(row, { key: slug, watch: watchSlug ? star : '', bookmark: showBookmarks ? bookmarkButton(bookmarkEntry(row)) : '' })}</td>
+        </tr>`;
         const rowLink = link ? link(row) : null;
         // A CSS height on <tr> is only a minimum. Constrain each cell's content as well, so a
         // longer attribution/reason cannot change the physical stride behind virtual spacers.
@@ -918,7 +925,7 @@ export function scoreTable(config) {
       </div>
 
       <div class="table-scroll-surface scrollbar-thin overflow-x-auto" data-table-scroll tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}" ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto${isVirtual ? ';overflow-anchor:none' : ''}"` : ''}>
-        <table data-column-layout="${escapeHtml(columnLayoutKey || `${exportName.replace(/\d{4}-\d{2}-\d{2}/g, 'date')}:${nameLabel}`)}" class="w-full text-sm"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
+        <table data-column-layout="${escapeHtml(columnLayoutKey || `${exportName.replace(/\d{4}-\d{2}-\d{2}/g, 'date')}:${nameLabel}`)}" class="w-full text-sm${rowContent ? ' news-card-table' : ''}"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
           <thead data-table-head class="sticky top-0 z-10 ${stickyHead ? 'bg-white shadow-sm' : 'bg-slate-50/70'}">${headHtml()}</thead>
           <tbody data-table-body>${isVirtual ? virtualBodyHtml(initialList, initialVirtualStart) : bodyHtml(initialList, 0, FIRST_PAINT_ROWS)}</tbody>
         </table>
