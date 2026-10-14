@@ -621,7 +621,7 @@
       "pending": []
     },
     "isin:INE291A01017|GRWRHITECH": {
-      "lastAttemptAt": "2026-10-09T15:24:58+00:00",
+      "lastAttemptAt": "2026-10-14T22:42:30+00:00",
       "error": "search-unavailable",
       "lastResultCount": 3,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -2504,7 +2504,7 @@
   "coverage": {
     "planned": 254,
     "attempted": 1,
-    "incomplete": 243,
-    "checkedAt": "2026-10-14T22:03:45.008674+00:00"
+    "incomplete": 245,
+    "checkedAt": "2026-10-14T22:42:30.471781+00:00"
   }
 }
