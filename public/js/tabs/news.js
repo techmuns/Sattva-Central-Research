@@ -45,6 +45,7 @@ import { categoryLabel as categoryLabelOf } from '../data/announcement-categorie
 import { newsFeedbackBar, installNewsFeedback } from '../ui/relevance-feedback-ui.js';
 import { newsSearchControl } from '../ui/news-search.js';
 import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
+import { newsStoryHtml } from '../ui/news-story.js';
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
 
@@ -116,6 +117,7 @@ const tab = makeFilingsTab({
   feed,
   prepareReading: view => feed.setWindow?.(() => newsPeriodBounds(view?.filters?.[3] || 'today')) || false,
   preserveReadingPosition: true,
+  fillMode: 'windowed',
   noun: 'articles',
   emptyMessage: (m) => {
     const status = newsViewStatus(m);
@@ -138,6 +140,24 @@ const tab = makeFilingsTab({
   rowName: (r) => r.title || '(untitled)',
   rowSub: (r) => [attributionLabel(r), r.company || r.ticker, r.company && r.ticker, canonicalPublisherName(r.source)].filter(Boolean).join(' · '),
   afterSub: (r) => newsRowExtras(newsRelevance(r), r),
+  rowContent: (r, controls) => {
+    const entry = newsRelevance(r);
+    const day = newsPublicationDay(r);
+    const instant = /\d{1,2}:\d{2}/.test(r.publishedAt || '') ? Date.parse(r.publishedAt) : NaN;
+    const when = Number.isFinite(instant) ? new Date(instant).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+    }) : day ? formatDate(day) : 'Date not supplied';
+    const meta = [
+      `<span class="font-semibold">${escapeHtml(canonicalPublisherName(r.source))}</span>`,
+      `<span class="tabular-nums">${escapeHtml(when)}</span>`,
+      categoryChips(entry.categories, { weak: entry.weak, max: 3 }),
+      ...readingFor(r).keywords.map(k => `<span title="${escapeHtml(`Matched in the ${k.where === 'title' ? 'headline' : 'standfirst only'}`)}">${escapeHtml(k.label)}</span>`),
+    ].filter(Boolean).join('<span aria-hidden="true">·</span>');
+    return newsStoryHtml(r, { ...controls, meta,
+      company: [attributionLabel(r), r.company || r.ticker, r.company && r.ticker].filter(Boolean).join(' · '),
+      feedback: newsFeedbackBar(feedbackItemFor(entry, r)),
+    });
+  },
   // Category/feedback decorations follow the shared model; publication owns the default order.
   renderRevision: () => relevanceRevision(),
   searchable: newsSearchText,
