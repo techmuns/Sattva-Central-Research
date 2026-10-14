@@ -54,12 +54,12 @@ let managersView = { query: '', sourcesOpen: false };
 let filedSection = 'institutions';
 export function getSavedView() {
   return { investorSection: liveSection, institutionSection: filedSection, investorAudience: changesView.audience,
-    investorPeriod: changesView.period, managerQuery: managersView.query || '' };
+    investorPeriod: changesView.period, investorHoldingsOpen: changesView.holdingsOpen === true, managerQuery: managersView.query || '' };
 }
 export function applySavedView(extras = {}) {
   liveSection = ['quarterly-changes', 'my-managers', 'data-table', 'investors'].includes(extras.investorSection) ? extras.investorSection : 'quarterly-changes';
   filedSection = extras.institutionSection === 'quarterly-changes' ? 'quarterly-changes' : 'institutions';
-  changesView = { audience: extras.investorAudience === 'investors' ? 'investors' : 'my-managers', period: extras.investorPeriod || 'quarter' };
+  changesView = { audience: extras.investorAudience === 'investors' ? 'investors' : 'my-managers', period: extras.investorPeriod || 'quarter', holdingsOpen: extras.investorHoldingsOpen === true };
   managersView = { query: extras.managerQuery || '', sourcesOpen: false };
 }
 
