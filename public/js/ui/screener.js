@@ -491,6 +491,7 @@ export function scoreTable(config) {
     // the complete model. Explicit legacy idle/scroll modes remain available for specialized views;
     // `virtual` is the fixed-stride All Alerts layout, `windowed` preserves natural row heights.
     fillMode = 'auto',
+    // 'selected' exposes a retained legacy intersection until cleared; global scope owns new choices.
     showWatchFilter = true,
     initialRowCount = 40,
     initialRowKey = null,
@@ -920,10 +921,10 @@ export function scoreTable(config) {
             .join('')}
           ${filterGroup?.position === 'end' ? groupControl.html : ''}
           ${toolbarControls?.html || ''}
-          ${showWatchFilter ? `<button type="button" data-watch-toggle title="Show only watchlisted companies"
+          ${showWatchFilter && (showWatchFilter !== 'selected' || view.watchOnly) ? `<button type="button" data-watch-toggle title="Show only watchlisted companies"
             class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-colors hover:border-amber-200 hover:bg-amber-50">
             <span data-watch-icon class="text-amber-400">${view.watchOnly ? '★' : '☆'}</span>
-            <span>Watchlist</span>
+            <span>Watchlist${showWatchFilter === 'selected' ? ' only' : ''}</span>
             <span data-watch-count class="min-w-[18px] rounded-full bg-slate-200/70 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500">${watchlist.size()}</span>
           </button>` : ''}
         </div>
@@ -1453,6 +1454,7 @@ export function scoreTable(config) {
       watchBtn.classList.toggle('bg-amber-100', view.watchOnly);
       watchBtn.classList.toggle('border-amber-300', view.watchOnly);
       watchBtn.classList.toggle('text-amber-800', view.watchOnly);
+      if (showWatchFilter === 'selected' && !view.watchOnly) { watchBtn.hidden = true; watchBtn.classList.add('hidden'); }
       requestFilterPaint();
     });
 

@@ -70,7 +70,7 @@ const SECTIONS = [
   { id: 'data-table', label: 'Data Table' },
 ];
 
-export function renderLive(ctx, { disposers = [], section = 'quarterly-changes', tableView, onView, onSection, changesView, onChangesView, managersView, onManagersView } = {}) {
+export function renderLive(ctx, { disposers = [], section = 'quarterly-changes', tableView, onView, onSection, changesView, onChangesView, managersView, onManagersView, embedded = false, toolbarControls, overviewView = {}, onOverviewView = () => {} } = {}) {
   const m = feed.meta();
 
   disposers.push(feed.watchFreshness(), publicHoldings.watchFreshness());
@@ -81,9 +81,9 @@ export function renderLive(ctx, { disposers = [], section = 'quarterly-changes',
   const activeSection = sections.some((item) => item.id === section) ? section : sections[0].id;
   const sectionTabs = tabBar({ tabs: sections, activeId: activeSection, onSelect: onSection || (() => {}) });
 
-  const summary = activeSection === 'quarterly-changes' ? renderChanges(ctx, { view: changesView, onView: onChangesView, openInvestor, includeHolding: scopeFilter(ctx) }) : null;
+  const summary = activeSection === 'quarterly-changes' ? renderChanges(ctx, { view: changesView, onView: onChangesView, openInvestor, includeHolding: scopeFilter(ctx), embedded, toolbarControls }) : null;
   const mine = activeSection === 'my-managers' ? renderManagers(ctx, { view: managersView, onView: onManagersView }) : null;
-  const table = activeSection === 'data-table' ? holdingsTable(ctx, rows, quarters, tableView) : null;
+  const table = activeSection === 'data-table' ? holdingsTable(ctx, rows, quarters, tableView, { embedded, toolbarControls, onFilterChange: () => onView?.(table.view) }) : null;
   if (table) onView?.(table.view);
 
   const panel =
@@ -100,18 +100,18 @@ export function renderLive(ctx, { disposers = [], section = 'quarterly-changes',
           <span class="text-[11px] text-slate-400">${escapeHtml(coverageNote(rows, quarters))}</span>
         </div>
         ${table.html}`
-        : `<div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${investorList.map(investorCard).join('')}</div>`;
+        : `${embedded ? `<div class="investor-overview-controls"><label>Find an investor<input data-investor-search type="search" aria-label="Search investors" value="${escapeHtml(overviewView.query || '')}" placeholder="Investor name"></label>${toolbarControls?.html || ''}</div>` : ''}<div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-investor-cards>${investorList.map(investorCard).join('')}</div><p data-investor-empty class="text-sm text-slate-500" hidden>No matching investors. Try another name or clear the search.</p>`;
 
   ctx.root.innerHTML = `
-    ${sectionHead({
+    ${embedded ? '' : sectionHead({
       title: 'Superstar Investors',
       description: 'Follow your managers and tracked investors through holdings, ledger activity and reported bulk/block deals.',
     })}
     ${feed.isLoaded() && !m.ok && activeSection === 'quarterly-changes' && changesView?.audience === 'investors' ? unavailableHtml(m) : ''}
-    <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
+    ${embedded ? '' : `<div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
       ${sectionTabs.html}
-    </div>
-    <div role="tabpanel" aria-label="${escapeHtml(sections.find((item) => item.id === activeSection)?.label || '')}" data-live-panel="${escapeHtml(activeSection)}">
+    </div>`}
+    <div role="tabpanel" aria-label="${escapeHtml(embedded ? activeSection === 'quarterly-changes' ? 'Changes' : activeSection === 'data-table' ? 'Holdings' : 'Overview' : sections.find((item) => item.id === activeSection)?.label || '')}" data-live-panel="${escapeHtml(activeSection)}">
       ${panel}
     </div>`;
 
@@ -119,11 +119,24 @@ export function renderLive(ctx, { disposers = [], section = 'quarterly-changes',
   // "refresh on opening" is a standing requirement, not a side effect of a panel.
   ensureHoldingsFresh().catch(() => {});
 
-  disposers.push(sectionTabs.wire(ctx.root.querySelector('[data-live-section-tabs]')));
+  if (!embedded) disposers.push(sectionTabs.wire(ctx.root.querySelector('[data-live-section-tabs]')));
   summary?.wire(ctx.root, disposers);
   mine?.wire(ctx.root, disposers);
   if (table) disposers.push(table.wire(ctx.root));
-  if (activeSection === 'investors') wireCards(ctx.root);
+  if (activeSection === 'investors') {
+    wireCards(ctx.root);
+    const search = ctx.root.querySelector('[data-investor-search]');
+    if (search) {
+      const filter = () => {
+        overviewView.query = search.value; onOverviewView(overviewView);
+        const cards = [...ctx.root.querySelector('[data-investor-cards]').children];
+        cards.forEach((card, index) => card.hidden = !investorList[index].name.toLowerCase().includes(search.value.trim().toLowerCase()));
+        ctx.root.querySelector('[data-investor-empty]').hidden = cards.some(card => !card.hidden);
+      };
+      search.addEventListener('input', filter); filter();
+      disposers.push(toolbarControls?.wire?.(ctx.root));
+    }
+  }
 }
 
 
@@ -652,7 +665,7 @@ function wireCards(root) {
 // horizontal scrollbar — see the layout-knobs table in CLAUDE.md.
 // ---------------------------------------------------------------------------------------
 
-function holdingsTable(ctx, rows, quarters, initialView) {
+function holdingsTable(ctx, rows, quarters, initialView, { embedded = false, toolbarControls, onFilterChange } = {}) {
   const investorNames = [...new Set(rows.map((r) => r.investor))].sort();
 
   return scoreTable({
@@ -713,7 +726,8 @@ function holdingsTable(ctx, rows, quarters, initialView) {
         match: (r, v) => r.investor === v,
       },
       {
-        label: 'This quarter',
+        label: embedded ? 'Disclosure change' : 'This quarter',
+        readingAliases: ['This quarter'],
         options: [
           { value: 'all', label: 'Any change' },
           { value: 'new', label: 'New positions' },
@@ -733,6 +747,7 @@ function holdingsTable(ctx, rows, quarters, initialView) {
     onExport: () => runExport(),
     emptyMessage: scopePossessive(ctx.scope) ? `None of ${scopePossessive(ctx.scope)} is disclosed by a tracked investor.` : 'No positions match your filters.',
     initialView,
+    toolbarControls, onFilterChange, showWatchFilter: embedded ? 'selected' : true,
   });
 }
 

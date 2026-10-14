@@ -817,6 +817,34 @@ html[data-theme] [data-chatter-panel] [data-score-table] tbody tr { border-color
 
 /* Keep the publisher's artwork on its original light canvas in either theme. */
 .manager-avatar { position: relative; display: inline-flex; flex: 0 0 44px; width: 44px; height: 44px; overflow: hidden; border-radius: 12px; box-shadow: 0 0 0 1px rgb(var(--edge-slate-200, 226 232 240)); }
+.investor-navigation { margin-bottom: 20px; }
+.investor-navigation h1 { margin-bottom: 16px; }
+.investor-audience { width: fit-content; max-width: 100%; padding: 5px; margin-bottom: 16px; border-radius: 16px; background: rgb(var(--surface-white, 255 255 255)); box-shadow: 0 0 0 1px rgb(var(--edge-slate-100, 241 245 249)); }
+.investor-audience .tab-bar, .investor-view-row .tab-bar { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.investor-navigation .tab-list { flex-wrap: wrap; overflow: visible; mask-image: none; -webkit-mask-image: none; }
+.investor-navigation .tab-scroll-controls { display: none !important; }
+.investor-audience .tab-btn::after { display: none; }
+.investor-view-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.investor-view-row [data-investor-view-tabs] { min-width: 0; max-width: 100%; }
+.investor-view-row .tab-btn { border-radius: 0; }
+.investor-view-row .tab-btn.is-active { background: transparent; }
+.investor-navigation .tab-btn { color: rgb(var(--text-slate-600, 71 85 105)); }
+.investor-navigation .tab-btn.is-active { color: rgb(var(--text-indigo-600, 79 70 229)); }
+.investor-period, .investor-group-control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: rgb(var(--text-slate-500, 100 116 139)); }
+.investor-period select, .investor-group-control select, .investor-overview-controls input { max-width: 100%; min-width: 0; padding: 8px 12px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 8px; background: rgb(var(--surface-white, 255 255 255)); color: rgb(var(--text-slate-700, 51 65 85)); font-size: 14px; font-weight: 400; }
+.investor-group-control select { max-width: 280px; }
+.investor-comparison { font-size: 12px; color: rgb(var(--text-slate-500, 100 116 139)); }
+.investor-overview-controls { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.investor-overview-controls > label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: rgb(var(--text-slate-500, 100 116 139)); }
+.investor-loading { padding: 24px; border-radius: 16px; background: rgb(var(--surface-white, 255 255 255)); color: rgb(var(--text-slate-500, 100 116 139)); }
+.investor-navigation [hidden], .investor-overview-controls [hidden], [data-investor-group-slot][hidden] { display: none !important; }
+[data-investor-cards] > [hidden], [data-institution-cards] > [hidden] { display: none !important; }
+@media (max-width: 480px) {
+  .investor-period { width: 100%; }
+  .investor-group-control select, .investor-overview-controls input { width: 100%; max-width: 100%; }
+  .investor-group-control, .investor-overview-controls > label { width: 100%; }
+  .investor-period select, .investor-group-control select, .investor-overview-controls input { min-height: 44px; font-size: 16px; }
+}
 .manager-avatar-fallback { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; }
 .manager-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .manager-image[data-manager-image="sattva"] { padding: 6px; }

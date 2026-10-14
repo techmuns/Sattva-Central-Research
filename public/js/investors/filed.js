@@ -50,20 +50,22 @@ const SECTIONS = [
   { id: 'quarterly-changes', label: 'Quarterly Changes' },
 ];
 
-export function renderFiled(ctx, { disposers = [], section = 'institutions', onSection } = {}) {
+export function renderFiled(ctx, { disposers = [], section = 'institutions', onSection, embedded = false, toolbarControls, view = {}, onView = () => {}, onFund = () => {} } = {}) {
   const funds = filed.all();
   const m = filed.meta();
   if (!funds.length) return { html: '', wire: () => {} };
 
-  const wanted = ctx.params?.fund;
+  const wanted = view.fund || ctx.params?.fund;
   const fund = funds.find((f) => f.investorId === wanted) || funds[0];
   const activeSection = SECTIONS.some((item) => item.id === section) ? section : SECTIONS[0].id;
   const sectionTabs = tabBar({ tabs: SECTIONS, activeId: activeSection, onSelect: onSection || (() => {}) });
 
+  if (section === 'overview') return institutionOverview(funds, view, onView, onFund, toolbarControls);
+
   if (activeSection === 'quarterly-changes') {
     const summary = quarterSummaryBlock(ctx);
     return {
-      html: `
+      html: embedded ? `<div data-filed-panel="quarterly-changes">${summary.html}</div>` : `
         ${sectionHead({
           title: 'Institutions',
           description:
@@ -76,7 +78,7 @@ export function renderFiled(ctx, { disposers = [], section = 'institutions', onS
           ${summary.html}
         </div>`,
       wire(root) {
-        disposers.push(sectionTabs.wire(root.querySelector('[data-filed-section-tabs]')));
+        if (!embedded) disposers.push(sectionTabs.wire(root.querySelector('[data-filed-section-tabs]')));
         summary.wire(root, disposers);
       },
     };
@@ -118,29 +120,33 @@ export function renderFiled(ctx, { disposers = [], section = 'institutions', onS
     columns: columnsFor(fund),
     filters: filtersFor(fund),
     searchable: (r) => `${r.name} ${r.ticker || ''} ${r.sector || ''} ${r.industry || ''}`,
-    initialView: ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null,
+    initialView: view.fundTables?.[fund.investorId] || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
+    onFilterChange: () => onView(view), showWatchFilter: embedded ? 'selected' : true,
+    toolbarControls: embedded ? { html: `${toolbarControls?.html || ''}${funds.length > 1 ? `<label class="investor-group-control">Fund <select data-institution-fund aria-label="Institutional fund">${funds.map(f => `<option value="${escapeHtml(f.investorId)}" ${f.investorId === fund.investorId ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}</select></label>` : ''}`,
+      wire(host) { const off = toolbarControls?.wire?.(host); host.querySelector('[data-institution-fund]')?.addEventListener('change', e => onFund(e.target.value)); return off; } } : null,
     initialSort: { key: filing ? 'Holding Value' : 'Value (AMC)', dir: 'desc' },
     onRowClick: (r) => drillHolding(r, fund),
     exportName: `sattva-${fund.investorId}-holdings`,
     onExport: (visible) => exportFund(visible, fund),
     emptyMessage: scopePossessive(ctx.scope) ? `This fund holds none of ${scopePossessive(ctx.scope)}.` : 'No holding matches your filters.',
   });
+  view.fund = fund.investorId; view.fundTables ||= {}; view.fundTables[fund.investorId] = table.view; onView(view);
 
   // ONE TABLE AND NOTHING ELSE, the way the Earnings Hub is built. No stat strip, no ranking grid:
   // this is a portfolio listing and the reader came for the rows. The provenance did not go away —
   // it moved behind the pill, which is one click from anywhere on the page. See the "honesty rules
   // for the kit" section of CLAUDE.md: decluttering is fine, deleting the accountability is not.
   const html = `
-    ${sectionHead({
+    ${embedded ? `<div class="mb-4">${disclosurePill(fund)}</div>` : sectionHead({
       title: 'Institutions',
       description: DESCRIPTION[filing ? 'shareholding' : 'portfolio'],
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${disclosurePill(fund)}${scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'holdings', book: coverage.meta() })}</div>`,
     })}
-    <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-filed-section-tabs>
+    ${embedded ? '' : `<div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-filed-section-tabs>
       ${sectionTabs.html}
-    </div>
-    ${funds.length > 1 ? fundPicker(funds, fund) : ''}
-    <div role="tabpanel" aria-label="All Institutions" data-filed-panel="institutions">
+    </div>`}
+    ${!embedded && funds.length > 1 ? fundPicker(funds, fund) : ''}
+    <div role="tabpanel" aria-label="${embedded ? 'Holdings' : 'All Institutions'}" data-filed-panel="institutions">
       <div class="mb-4 flex flex-wrap items-center gap-3">
         ${avatarBlock(fund)}
         <div class="min-w-0 flex-1">
@@ -157,7 +163,7 @@ export function renderFiled(ctx, { disposers = [], section = 'institutions', onS
   return {
     html,
     wire(root) {
-      disposers.push(sectionTabs.wire(root.querySelector('[data-filed-section-tabs]')));
+      if (!embedded) disposers.push(sectionTabs.wire(root.querySelector('[data-filed-section-tabs]')));
       const off = table.wire(root);
       if (off) disposers.push(off);
       for (const btn of root.querySelectorAll('[data-fund]')) {
@@ -165,6 +171,18 @@ export function renderFiled(ctx, { disposers = [], section = 'institutions', onS
       }
     },
   };
+}
+
+function institutionOverview(funds, view, onView, onFund, toolbarControls) {
+  return { html: `<div class="investor-overview-controls"><label>Find a fund<input type="search" data-institution-search aria-label="Search institutional funds" value="${escapeHtml(view.query || '')}" placeholder="Fund name"></label>${toolbarControls?.html || ''}</div>
+    <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-institution-cards>${funds.map(fund => `<button type="button" data-open-fund="${escapeHtml(fund.investorId)}" class="min-w-0 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 hover:bg-slate-50"><div class="flex items-center gap-3">${avatarBlock(fund)}<h2 class="font-display font-bold text-slate-900">${escapeHtml(fund.name)}</h2></div><p class="mt-3 text-xs text-slate-500">${isFiling(fund) ? 'Company shareholdings' : 'AMC portfolio · weights to NAV'}</p><p class="mt-2 text-sm text-slate-600">${escapeHtml(identityLine(fund, fund.periodLabels[0]))}</p><p class="mt-2 text-xs text-slate-500">${isFiling(fund) ? "Value estimate · Trendlyne" : "Value disclosed by the AMC"}</p></button>`).join('')}</div>
+    <p data-institution-empty class="text-sm text-slate-500" hidden>No matching funds. Try another name or clear the search.</p>`,
+    wire(root) {
+      const search = root.querySelector('[data-institution-search]');
+      const filter = () => { view.query = search.value; onView(view); const cards = [...root.querySelector('[data-institution-cards]').children]; cards.forEach((card, index) => card.hidden = !funds[index].name.toLowerCase().includes(search.value.trim().toLowerCase())); root.querySelector('[data-institution-empty]').hidden = cards.some(card => !card.hidden); };
+      search.addEventListener('input', filter); filter(); toolbarControls?.wire?.(root);
+      root.querySelectorAll('[data-open-fund]').forEach(button => button.addEventListener('click', () => onFund(button.dataset.openFund)));
+    } };
 }
 
 // ---------------------------------------------------------------------------------------

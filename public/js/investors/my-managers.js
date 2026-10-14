@@ -15,7 +15,7 @@ const num = v => v === null || v === undefined ? '—' : formatNumber(v, { decim
 const date = v => v ? formatDate(v) : '—';
 const label = m => m.kind === 'fund' ? 'Private fund' : m.kind === 'listed-fund' ? 'Held fund units' : m.name === 'Direct / In-house' ? 'Direct holdings' : 'Custodian';
 const entries = () => [...managers.all(), ...managers.listedFunds()];
-const sourcePeriod = m => {
+export const sourcePeriod = m => {
   if (m.kind === 'fund') return privatePeriod();
   const meta = managers.meta(), basis = meta?.listedValuationBasis;
   const mark = basis === 'stated' ? `marks ${date(meta.listedValuationAt)}` : basis === 'traded' ? `last trade ${date(meta.listedValuationAt)}; valuation date unverified` : 'valuation date unstated';

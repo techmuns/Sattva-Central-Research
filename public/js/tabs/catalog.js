@@ -86,6 +86,7 @@ export const TAB_META = Object.freeze({
     id: 'super-investors',
     title: 'Super Investors',
     subtitle: 'Superstar-investor and institutional holdings, quarter on quarter and month on month.',
+    subviewNavigation: 'toolbar',
     subviews: [
       { id: 'superstar-investors', label: 'Superstar Investors' },
       { id: 'institutions', label: 'Institutions' },
