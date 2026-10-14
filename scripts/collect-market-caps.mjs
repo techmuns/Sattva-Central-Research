@@ -56,7 +56,7 @@ async function get(url) {
       /^\d+$/.test(header || '') ? +header * 1000 : Date.parse(header) - Date.now() || 0);
     retryAt = new Date(Date.now() + delay).toISOString(); checkpoint();
   }
-  if (!response.ok) throw Error(`HTTP ${response.status}`);
+  if (!response.ok) throw Object.assign(Error(`HTTP ${response.status}`), { reason: 'http' });
   refused = false; retryAt = null;
   // Public pages are ~120 KB; bound bytes before parsing.
   const chunks = []; let size = 0;
@@ -69,10 +69,10 @@ async function get(url) {
 }
 function save(company, figure) {
   entries.set(company.isin, { isin: company.isin, ticker: company.ticker, bseCode: company.bseCode || null,
-    exchanges: company.exchanges, ...figure });
+    exchanges: company.exchanges, checkState: 'verified', ...figure });
   seen.add(company.isin);
 }
-let sourceTotal = null, pagesRead = 0, screenComplete = false, directRead = 0, directTotal = null;
+let sourceTotal = null, pagesRead = 0, screenComplete = false, directRead = 0, directTotal = null, directFailures = 0, directUnavailable = 0;
 function checkpoint() {
   const current = universe.map(c => entries.get(c.isin));
   const known = current.filter(e => Number.isFinite(e?.cr) && e.cr > 0).length;
@@ -80,7 +80,8 @@ function checkpoint() {
     generated_at: new Date().toISOString(), startedAt,
     directoryAsOf,
     coverage: { companies: universe.length, known, checked: seen.size, unavailable: universe.length - known,
-      screenComplete, sourceTotal, pagesRead, directRead, directTotal, refused, retryAt, directoryPartial, errors },
+      screenComplete, sourceTotal, pagesRead, directRead, directTotal, directFailures, directUnavailable,
+      refused, retryAt, directoryPartial, errors },
     entries: [...entries.values()].sort((a, b) => a.isin.localeCompare(b.isin)) };
   writeFileSync(`${path}.tmp`, `${JSON.stringify(body)}\n`); renameSync(`${path}.tmp`, path);
   return body;
@@ -118,8 +119,10 @@ for (const company of direct) {
     const figure = parseMarketCapCompany(await get(url), company, new Date().toISOString());
     save(company, { ...figure, attemptedAt, error: null });
   } catch (error) {
+    const checkState = error.reason === 'unavailable' ? 'unavailable' : 'failed';
+    if (checkState === 'unavailable') directUnavailable++; else directFailures++;
     entries.set(company.isin, { ...entries.get(company.isin), isin: company.isin, ticker: company.ticker,
-      bseCode: company.bseCode || null, exchanges: company.exchanges, attemptedAt, error: error.message });
+      bseCode: company.bseCode || null, exchanges: company.exchanges, attemptedAt, checkState, error: error.message });
   }
   directRead++;
   if (directRead % 50 === 0 || directRead === direct.length) { checkpoint(); console.log(`Market cap company pages: ${directRead}/${direct.length}; ${seen.size}/${universe.length} figures checked.`); }

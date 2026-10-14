@@ -524,7 +524,8 @@ const tab = makeFilingsTab({
         A company with no known figure shows “—” and is never treated as small or zero.</p>
       ${marketCaps ? `<p><strong>Market-cap coverage:</strong> ${escapeHtml(marketCaps.known)} of ${escapeHtml(marketCaps.companies)} directory companies have a saved public figure;
         ${escapeHtml(marketCaps.checked)} were checked in the latest collection attempt. ${escapeHtml(marketCaps.unavailable)} still have no figure from this source.
-        ${marketCaps.directoryPartial || marketCaps.refused || !marketCaps.screenComplete || marketCaps.directRead < marketCaps.directTotal ? 'The latest collection is partial; previous figures retain their own check times.' : ''}</p>` : ''}
+        ${marketCaps.directoryPartial || marketCaps.directFailures > 0 || marketCaps.refused || !marketCaps.screenComplete || marketCaps.directRead < marketCaps.directTotal ? 'The latest collection is partial; previous figures retain their own check times.' : ''}
+        ${marketCaps.directFailures ? `${escapeHtml(marketCaps.directFailures)} company-page checks failed.` : ''}</p>` : ''}
       ${capDirectory ? `<p><strong>Market-cap directory checks:</strong> BSE ${escapeHtml(capDirectory.bse?.checkedAt || 'unavailable')}${capDirectory.bse?.error ? ` (failed: ${escapeHtml(capDirectory.bse.error)})` : ''};
         NSE main board ${escapeHtml(capDirectory.nse?.equity?.checkedAt || 'unavailable')}${capDirectory.nse?.equity?.error ? ` (failed: ${escapeHtml(capDirectory.nse.equity.error)})` : ''};
         NSE SME ${escapeHtml(capDirectory.nse?.sme?.checkedAt || 'unavailable')}${capDirectory.nse?.sme?.error ? ` (failed: ${escapeHtml(capDirectory.nse.sme.error)})` : ''}.

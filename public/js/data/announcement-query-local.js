@@ -27,6 +27,7 @@ import * as watchlist from '../core/watchlist.js';
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 let profiles = null, profilesPending = null;
 let profilesCheckedAt = 0;
+const profileInputs = { tickerMap: null, technicals: null, sectorKpis: null, marketCaps: null };
 let built = null; // { key, byDay, companies, byKey, dict, days, rows, meta }
 let building = null;
 let buildGeneration = 0;
@@ -57,9 +58,9 @@ function loadProfiles() {
       revalidatedJson('data/technicals.json', { optional: true, fresh: true }),
       revalidatedJson('data/sector-kpis.json', { optional: true, fresh: true }),
       revalidatedJson('data/market-caps.json', { optional: true, fresh: true }),
-    ]).then(([tickerMap, technicals, sectorKpis, marketCaps]) => {
-      if (profiles?.meta.marketCapsAsOf && !marketCaps) return profiles;
-      if (tickerMap || technicals || sectorKpis || marketCaps) profiles = buildCompanyProfiles({ tickerMap, technicals, sectorKpis, marketCaps });
+    ]).then(values => {
+      for (const [i, key] of ['tickerMap', 'technicals', 'sectorKpis', 'marketCaps'].entries()) if (values[i]) profileInputs[key] = values[i];
+      if (Object.values(profileInputs).some(Boolean)) profiles = buildCompanyProfiles(profileInputs);
       return profiles ||= buildCompanyProfiles({});
     }).catch(() => (profiles ||= buildCompanyProfiles({}))).finally(() => { profilesPending = null; });
   }
@@ -106,7 +107,7 @@ async function buildFor(q, now, keepGoing) {
   const meta = feed.meta();
   // The period's own bounds are in the key, so a midnight rollover prepares the new day's rows.
   const scopeKey = scopeCompanies ? scopeCompanies.map((c) => c.ticker || c.isin || c.bseCode || c.name || '').join(',') : '';
-  const key = `${q.period}|${range.from}|${range.to}|${q.scope}|${scopeKey}|${all.length}|${meta.identity?.revision || 0}|${profiles.meta.marketCapsRevision || ''}`;
+  const key = `${q.period}|${range.from}|${range.to}|${q.scope}|${scopeKey}|${all.length}|${meta.identity?.revision || 0}|${profiles.meta.profileInputsRevision || ''}`;
   if (built?.key === key && built.rows === all) { built.meta = { ...meta, profiles: profiles.meta }; return built; }
   if (building?.key === key) return building.promise;
   // A newer preparation supersedes an older one still in its slices: two would only compete.

@@ -47,7 +47,11 @@ files. A successful index lookup is supplemented by the directory, because non-f
 are absent from its compact table. Exact ISIN and then BSE code precede symbols, and colliding
 unqualified symbols remain unknown. Long-lived readers revalidate profiles when used after fifteen
 minutes; local feed refreshes revalidate their lookup, and failures retain each saved index/directory
-component. Fresh reference reads bypass held service-worker data in the same request while
+component and each independent reference input. A shared watcher checks the cadence while
+ranking subscribers remain mounted and visible, checks again on return, and stops after their
+subscriptions are removed. Sector SHA/classification metadata advances the lookup independently.
+Completed company-page walks remain partial when transport or identity/shape checks fail;
+verified pages with no figure are counted separately. Fresh reference reads bypass held service-worker data in the same request while
 allowing unchanged HTTP bytes to be reused. Announcement-index input identity includes the market-cap capture, and the
 existing Data refresh completion rebuilds the index.
 

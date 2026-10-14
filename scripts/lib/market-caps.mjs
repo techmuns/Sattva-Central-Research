@@ -11,7 +11,7 @@ export function marketCapDirectoryChecks(bse, nse) {
 
 export const SCREEN_URL = 'https://www.screener.in/screens/1196250/all-stocks/';
 const plain = html => String(html || '').replace(/<[^>]*>/g, ' ').replace(/&(?:nbsp|amp|gt|lt);/g, ' ').replace(/\s+/g, ' ').trim();
-const bad = message => { throw Error(`Market cap: ${message}`); };
+const bad = (message, reason = 'shape') => { throw Object.assign(Error(`Market cap: ${message}`), { reason }); };
 
 export function parseMarketCapScreen(html) {
   if (!/<\/html\s*>/i.test(html)) bad('incomplete screen');
@@ -52,7 +52,7 @@ export function parseMarketCapCompany(html, company, checkedAt) {
   const item = [...top.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].find(m => /^Market Cap\b/.test(plain(m[1])));
   const value = plain(item?.[1]);
   const cr = parseCrore(/^Market Cap\s+₹\s+([\d,.]+)\s+Cr\./.exec(value)?.[1]);
-  if (!cr) bad('company market cap unavailable');
+  if (!cr) bad('company market cap unavailable', 'unavailable');
   const clock = /<div class="ink-600 font-size-11 font-weight-500">([\s\S]*?)<\/div>/i.exec(top)?.[1];
   const priceDateLabel = plain(clock) || null;
   const priceAsOf = marketCapPriceDate(priceDateLabel);

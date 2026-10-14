@@ -21,9 +21,27 @@ let pending = null;
 let checkedAt = 0;
 let revision = 0;
 let indexProfiles = null, directoryProfiles = null;
+const referenceInputs = { tickerMap: null, sectorKpis: null, marketCaps: null };
 const listeners = new Set();
+let refreshTimer = null;
+const checkVisible = () => { if (listeners.size && document.visibilityState === 'visible') void loadProfiles(); };
 
-export const onChange = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
+function watchVisibleProfiles() {
+  if (refreshTimer !== null || typeof document === 'undefined') return;
+  refreshTimer = setInterval(checkVisible, 60_000);
+  document.addEventListener('visibilitychange', checkVisible);
+  window.addEventListener('focus', checkVisible);
+  window.addEventListener('pageshow', checkVisible);
+}
+function stopVisibleProfiles() {
+  if (listeners.size || refreshTimer === null) return;
+  clearInterval(refreshTimer); refreshTimer = null;
+  document.removeEventListener('visibilitychange', checkVisible);
+  window.removeEventListener('focus', checkVisible);
+  window.removeEventListener('pageshow', checkVisible);
+}
+
+export const onChange = fn => { listeners.add(fn); watchVisibleProfiles(); return () => { listeners.delete(fn); stopVisibleProfiles(); }; };
 export const profilesRevision = () => revision;
 export const profilesSource = () => profiles?.source || null;
 
@@ -33,15 +51,17 @@ export function profileOf(company = {}) {
 }
 
 async function fromCommittedFiles() {
-  const [tickerMap, sectorKpis, marketCaps] = await Promise.all([
+  const values = await Promise.all([
     revalidatedJson('data/mc-ticker-map.json', { optional: true, fresh: true }).catch(() => null),
     revalidatedJson('data/sector-kpis.json', { optional: true, fresh: true }).catch(() => null),
     revalidatedJson('data/market-caps.json', { optional: true, fresh: true }).catch(() => null),
   ]);
+  for (const [i, key] of ['tickerMap', 'sectorKpis', 'marketCaps'].entries()) if (values[i]) referenceInputs[key] = values[i];
+  const { tickerMap, sectorKpis, marketCaps } = referenceInputs;
   const built = buildCompanyProfiles({ tickerMap, sectorKpis, marketCaps });
   if ((!tickerMap && !marketCaps) || (directoryProfiles && !marketCaps)) return null;
   return { source: 'reference-files', builtAt: built.meta.marketCapsAsOf || built.meta.tickerMapAsOf || null,
-    revisionKey: JSON.stringify([built.meta.marketCapsRevision, built.meta.tickerMapAsOf, sectorKpis?.generated_at || sectorKpis?.capturedAt]),
+    revisionKey: built.meta.profileInputsRevision,
     profileOf: (c = {}) => { const p = built.profileOf(c); return { mcapCr: p.mcapCr, band: p.band, group: p.group }; } };
 }
 

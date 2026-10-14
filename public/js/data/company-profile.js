@@ -246,6 +246,8 @@ export function buildCompanyProfiles({ marketCaps = null, tickerMap = null, earn
     size: byKey.size,
     meta: { tickerMapAsOf: mapAsOf, priceAsOf, technicalsAsOf, marketCapsAsOf: marketCaps?.generated_at || marketCaps?.generatedAt || null,
       marketCapsRevision: JSON.stringify([marketCaps?.generated_at || marketCaps?.generatedAt, marketCaps?.updatedAt]),
+      profileInputsRevision: JSON.stringify([marketCaps?.generated_at || marketCaps?.generatedAt, marketCaps?.updatedAt,
+        mapAsOf, technicals?.generated_at, priceAsOf, sectorKpis?.source?.sha256, sectorKpis?.source?.classificationCapturedAt]),
       marketCapCoverage: marketCaps?.coverage || null, marketCapDirectory: marketCaps?.directoryAsOf || null,
       companies: byKey.size, sectorCompanies: groups.size },
   };

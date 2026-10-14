@@ -129,12 +129,24 @@ try {
   assert.equal(saved.cr, 1550.12);
   assert.equal(saved.checkedAt, oldCheck);
   assert.equal(saved.error, 'HTTP 404');
+  assert.equal(saved.checkState, 'failed');
   assert.equal(failedPage.coverage.directRead, 1);
+  assert.equal(failedPage.coverage.directFailures, 1);
+  assert.equal(failedPage.coverage.directUnavailable, 0);
   assert.match(buildCompanyProfiles({ marketCaps: failedPage }).profileOf(entities[1]).mcapSource, /latest check failed/);
   const pageRecovery = run({ 1: screen({ keys: ['MAIN', '513472'] }), company: page() });
   const refreshed = pageRecovery.entries.find(e => e.ticker === 'PRIZOR');
   assert.equal(refreshed.cr, 1468);
   assert.equal(refreshed.priceDateLabel, '13 Oct - close price');
   assert.equal(refreshed.error, null);
+  const noFigure = page().replace('Market Cap ₹ <span class="number">1,468', 'Unknown ₹ <span class="number">1,468');
+  const unavailable = run({ 1: screen({ keys: ['MAIN', '513472'] }), company: noFigure });
+  assert.equal(unavailable.entries.find(e => e.ticker === 'PRIZOR').checkState, 'unavailable');
+  assert.equal(unavailable.coverage.directFailures, 0);
+  assert.equal(unavailable.coverage.directUnavailable, 1);
+  const transport = run({ 1: screen({ keys: ['MAIN', '513472'] }), company: 503 });
+  assert.equal(transport.coverage.directFailures, 1, 'a finished walk with a transport failure remains partial');
+  assert.equal(transport.coverage.directRead, transport.coverage.directTotal);
+  assert.equal(transport.coverage.screenComplete, true);
 } finally { rmSync(tmp, { recursive: true, force: true }); }
 console.log('PASS market-cap units, exchange identities, sector rejection, source dates, ranges, retained checkpoints and refusal recovery.');
