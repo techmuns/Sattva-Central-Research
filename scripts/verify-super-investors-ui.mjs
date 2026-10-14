@@ -118,12 +118,13 @@ try {
   }
   await page.waitForSelector('[data-changes-ready="true"]');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'scope excludes another company; duplicate reports group but exchange and side stay separate');
-  const sourceNotes = '[data-changes-period-note], [data-changes-context], [data-exchange-status], [data-changes-coverage]';
-  assert.equal(await page.locator(`[data-changes-sources] :is(${sourceNotes})`).count(), 4, 'reading notes and source status remain available in coverage');
+  const sourceNotes = '[data-changes-summary], [data-changes-period-note], [data-changes-context], [data-exchange-status], [data-changes-coverage]';
+  assert.equal(await page.locator(`[data-changes-sources] :is(${sourceNotes})`).count(), 5, 'activity counts, reading notes and source status remain available in coverage');
   assert.equal(await page.locator('[data-changes-sources]').evaluate(el => el.open), false);
   for (const note of await page.locator(sourceNotes).all()) assert.equal(await note.isVisible(), false, 'All Investors hides the explanatory prose until coverage is opened');
-  assert.equal(await page.locator('[data-changes-panel] > p').count(), 0, 'trade table has no routine explanatory paragraphs above or below it');
+  assert.equal(await page.locator('[data-changes-panel] > [data-changes-summary], [data-changes-panel] > p').count(), 0, 'All Investors matches My Managers without a heading, counts or routine explanatory paragraphs above the trade table');
   await page.locator('[data-changes-sources] summary').click();
+  assert.match(await page.locator('[data-changes-summary]').innerText(), /Tracked investors · reported trades.*2 buys · 1 sells/s, 'coverage preserves the counts from the matched trade records');
   assert.match(await page.locator('[data-changes-context]').innerText(), /4 tracked investors.*Company scope: Portfolio/);
   assert.match(await page.locator('[data-changes-period-note]').innerText(), /matched public bulk\/block deals/);
   assert.match(await page.locator('[data-changes-coverage]').innerText(), /Matched trade dates in Portfolio.*not the source’s capture coverage.*may not reach inception/);
@@ -392,7 +393,7 @@ try {
   await coldPage.clock.install({ time:new Date(at) });
   await coldPage.goto(origin + '/dispatcher', { waitUntil:'domcontentloaded' });
   await coldPage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
-  assert.match(await coldPage.locator('[data-changes-panel]').innerText(), /Investor directory is loading/);
+  assert.match(await coldPage.locator('[data-changes-panel]').innerText(), /Loading the tracked investor directory/, 'pending directory state remains visible in the table after removing the summary');
   assert.doesNotMatch(await coldPage.locator('[data-changes-panel]').innerText(), /0 buys · 0 sells/);
   await coldPage.locator('[data-investor-view-tabs] [data-tab-id="holdings"]').click();
   assert.equal(await coldPage.locator('[data-live-panel] [aria-busy="true"]').count(), 1);

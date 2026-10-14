@@ -67,9 +67,11 @@ try {
   assert.equal(await page.locator('[data-changes-audience], [data-live-section-tabs]').count(), 0, 'returning readers receive one audience selection and shared tasks');
   assert.deepEqual((await page.locator('[data-investor-view-tabs] [role="tab"]').allTextContents()).map(v => v.trim()), ['Overview', 'Changes', 'Holdings']);
   assert.match(await page.locator('[data-changes-context]').textContent(), /Company scope: Portfolio/);
-  assert.equal(await page.locator('[data-changes-panel] > p').count(), 0, 'returning readers adopt the clean All Investors layout');
+  assert.equal(await page.locator('[data-changes-panel] > [data-changes-summary], [data-changes-panel] > p').count(), 0, 'returning readers adopt the All Investors layout without a heading or activity counts');
+  assert.equal(await page.locator('[data-changes-summary]').isVisible(), false);
   assert.equal(await page.locator('[data-changes-context]').isVisible(), false);
   await page.locator('[data-changes-sources] summary').click();
+  assert.match(await page.locator('[data-changes-summary]').innerText(), /Tracked investors · reported trades/);
   assert.match(await page.locator('[data-changes-context]').innerText(), /Company scope: Portfolio/);
   assert.match(await page.locator('[data-changes-universe]').innerText(), /1 trade in Universe/);
   assert.match(await page.locator('[data-changes-history]').innerText(), /1 retained trade in Portfolio/);
@@ -87,6 +89,7 @@ try {
   await page.clock.fastForward(61000);
   await page.waitForFunction(() => document.querySelector('[data-changes-panel]')?.dataset.activityTotal === '2');
   assert.equal(await page.locator('[data-changes-sources]').evaluate(el => el.open), true, 'automatic recovery preserves expanded source coverage');
+  assert.match(await page.locator('[data-changes-summary]').innerText(), /2 buys · 0 sells/, 'source coverage updates the retained activity counts after automatic recovery');
   assert.equal(await page.locator('[data-changes-period]').inputValue(), 'itd');
   assert.equal(await page.locator('[data-changes-activity] [data-table-search]').inputValue(), 'owned');
   assert.equal(await page.locator('[data-changes-activity] [data-row-key]').count(), 2, 'automatic recovery exposes the new trade without losing history or filters');
