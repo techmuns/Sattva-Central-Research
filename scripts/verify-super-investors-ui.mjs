@@ -383,6 +383,8 @@ try {
   await cold.route('**/*', fixtureRoute);
   const coldPage = await cold.newPage(), coldErrors = [];
   coldPage.on('pageerror', e => coldErrors.push(e.message));
+  // The frozen clock must not suspend native smooth tab scrolling during pointer checks.
+  await coldPage.emulateMedia({ reducedMotion: 'reduce' });
   await coldPage.clock.install({ time:new Date(at) });
   await coldPage.goto(origin + '/dispatcher', { waitUntil:'domcontentloaded' });
   await coldPage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
@@ -430,6 +432,7 @@ try {
   assert.equal(await coldPage.locator('[data-changes-audience], [data-live-section-tabs], [data-filed-section-tabs]').count(), 0, 'one audience switch owns every task');
   await coldPage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
   assert.equal(await coldPage.locator('[data-changes-period]').isVisible(), false);
+  assert.equal(await coldPage.locator('[data-investor-search]').inputValue(), '', 'disposing a private view cannot copy its search into the public view');
   await coldPage.locator('[data-investor-search]').fill('one');
   assert.equal(await coldPage.locator('[data-investor-cards] > :visible').count(), 1);
   await coldPage.locator('[data-investor-view-tabs] [data-tab-id="changes"]').click();

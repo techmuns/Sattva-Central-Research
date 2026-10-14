@@ -23,7 +23,7 @@ const active = () => state.contexts[contextKey(state)];
 function remember() {
   try { localStorage.setItem(PREFERENCE_KEY, JSON.stringify(navigationPreferences(state))); } catch {}
 }
-function changeReading(key, value) { active()[key] = value; remember(); navigation?.update(); }
+function changeReading(key, value, reading = active()) { reading[key] = value; remember(); navigation?.update(); }
 function navigate(focus) {
   remember(); navigation?.update();
   if (ctxRef?.setParams) {
@@ -151,15 +151,15 @@ function paint() {
     if (institutionError) root.insertAdjacentHTML('beforeend', `<p class="mt-3 text-xs text-slate-500" data-institution-delivery-error>${esc(institutionError)}</p>`);
     void checkInstitutions();
   } else if (state.audience === 'my-managers' && state.view === 'holdings') {
-    const panel = renderManagerHoldings(ctx, { view: reading.holdings, onView: view => changeReading('holdings', view), toolbarControls: navigation.toolbarControls });
+    const panel = renderManagerHoldings(ctx, { view: reading.holdings, onView: view => changeReading('holdings', view, reading), toolbarControls: navigation.toolbarControls });
     root.innerHTML = panel.html; panel.wire(root, panelDisposers);
   } else {
     const section = state.view === 'changes' ? 'quarterly-changes' : state.view === 'holdings' ? 'data-table' : state.audience === 'my-managers' ? 'my-managers' : 'investors';
     renderLive(ctx, { disposers: panelDisposers, embedded: true, section, toolbarControls: navigation.toolbarControls,
-      tableView: reading.holdings, onView: view => changeReading('holdings', view),
-      changesView: { ...reading.changes, audience: state.audience }, onChangesView: view => changeReading('changes', view),
-      managersView: reading.overview, onManagersView: view => changeReading('overview', view),
-      overviewView: reading.overview, onOverviewView: view => changeReading('overview', view) });
+      tableView: reading.holdings, onView: view => changeReading('holdings', view, reading),
+      changesView: { ...reading.changes, audience: state.audience }, onChangesView: view => changeReading('changes', view, reading),
+      managersView: reading.overview, onManagersView: view => changeReading('overview', view, reading),
+      overviewView: reading.overview, onOverviewView: view => changeReading('overview', view, reading) });
     if (!investors.isLoaded()) investors.load().catch(() => {});
   }
   root.querySelectorAll('[data-table-scroll]').forEach((el, i) => { if (scrolls[i]) [el.scrollLeft, el.scrollTop] = scrolls[i]; });
