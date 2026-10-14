@@ -8,6 +8,7 @@ import { exportRows } from '../ui/export.js';
 import { unlockPortfolio, portfolioConnectionState, FAMILY_ORIGIN } from '../research/portfolio-bridge.js';
 import { publicDisclosuresHtml, wirePublicDisclosures } from './public-disclosures.js';
 import { periodRange, inPeriod, PERIODS } from '../data/investor-changes.js';
+import { managerAvatar } from './manager-images.js';
 
 const money = v => v === null || v === undefined ? '—' : Math.abs(v) >= 1e7 ? formatCroreCompact(v / 1e7) : `₹${formatNumber(v, { decimals: 2 })}`;
 const num = v => v === null || v === undefined ? '—' : formatNumber(v, { decimals: 2 });
@@ -77,7 +78,7 @@ export function renderManagers(ctx, { view = {}, onView = () => {} } = {}) {
       syncListDOM(section.querySelector('[data-manager-cards]'), matching.map(m => {
         const siblings = investmentGroups.get(m.name) || [];
         const investment = m.kind === 'fund' ? `${siblings.length > 1 ? `Investment ${siblings.indexOf(m.id) + 1} of ${siblings.length} · ` : ''}First invested ${date(m.capital.firstInvest)}` : '';
-        return `<button type="button" data-row-key="${esc(m.id)}" data-open-manager="${esc(m.id)}" class="min-w-0 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 transition-colors hover:bg-slate-50"><p class="text-xs text-slate-500">${label(m)}</p><h3 class="mt-1 break-words font-display font-bold text-slate-900">${esc(m.name)}</h3><p class="mt-3 text-xs text-slate-500">${m.kind === 'fund' ? 'Residual value' : 'Current value'}</p><p class="text-lg font-semibold tabular-nums text-slate-800">${money(m.values.marketValue)}</p><p class="mt-1 text-xs text-slate-500">${m.kind === 'fund' ? `Drawn ${money(m.capital.drawn)} · distributed ${money(m.capital.distributed)}` : `${m.values.positionCount} ${m.values.positionCount === 1 ? 'security' : 'securities'} · cost ${money(m.values.costBasis)}`}</p>${investment ? `<p class="mt-2 text-xs text-slate-500">${esc(investment)}</p>` : ''}<p class="mt-2 text-xs text-slate-500">${esc(sourcePeriod(m))}</p></button>`;
+        return `<button type="button" data-row-key="${esc(m.id)}" data-open-manager="${esc(m.id)}" class="min-w-0 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 transition-colors hover:bg-slate-50"><div class="flex items-center gap-3">${managerAvatar(m)}<div class="min-w-0"><p class="text-xs text-slate-500">${label(m)}</p><h3 class="mt-1 break-words font-display font-bold text-slate-900">${esc(m.name)}</h3></div></div><p class="mt-3 text-xs text-slate-500">${m.kind === 'fund' ? 'Residual value' : 'Current value'}</p><p class="text-lg font-semibold tabular-nums text-slate-800">${money(m.values.marketValue)}</p><p class="mt-1 text-xs text-slate-500">${m.kind === 'fund' ? `Drawn ${money(m.capital.drawn)} · distributed ${money(m.capital.distributed)}` : `${m.values.positionCount} ${m.values.positionCount === 1 ? 'security' : 'securities'} · cost ${money(m.values.costBasis)}`}</p>${investment ? `<p class="mt-2 text-xs text-slate-500">${esc(investment)}</p>` : ''}<p class="mt-2 text-xs text-slate-500">${esc(sourcePeriod(m))}</p></button>`;
       }).join(''));
     }
     groupHost.querySelector('[data-manager-empty]')?.remove();

@@ -10,7 +10,7 @@ const revision = JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-
 const openPeriod = `${new Date().getUTCFullYear() + 1}-03-31`;
 const fixture = { version: 1, valuation: 'workbook', bookAsOf: openPeriod, listedValuationAt: null, listedValuationBasis: null, archiveVersion: 1, sourceRevision: revision,
   coverage: { note: 'Synthetic workbook coverage', transactionAsOf: '2026-08-31', sourceCount: 6, privateCount: 0 },
-  managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: openPeriod, positions: [], transactions: [],
+  managers: [{ id: 'custodian-example', name: 'Ashika', kind: 'custodian', asOf: openPeriod, positions: [], transactions: [],
     values: { marketValue: 100, costBasis: 80, unrealised: 20, cashValue: 0, positionCount: 0 } }] };
 const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><main id="fixture" class="p-4"></main><script type="module">
 import { renderManagers } from '/js/investors/my-managers.js';
@@ -32,7 +32,8 @@ const server = createServer((req, res) => {
       if (!upgraded) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-manager-release`;');
     }
     if (path === '/js/data/managers-contract.js' && !upgraded) body = body.toString().replace("if (!day(v.bookAsOf)) return 'period';", "if (!day(v.bookAsOf) || v.bookAsOf > new Date(Date.now() + 19800000).toISOString().slice(0, 10)) return 'period';");
-    res.setHeader('content-type', { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'application/octet-stream');
+    if (path === '/js/investors/my-managers.js' && !upgraded) body = body.toString().replace("import { managerAvatar } from './manager-images.js';", '').replace('${managerAvatar(m)}', '');
+    res.setHeader('content-type', { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp' }[extname(file)] || 'application/octet-stream');
     res.end(body);
   } catch { res.writeHead(404).end(); }
 });
@@ -66,7 +67,8 @@ try {
   assert.match(await page.locator('[data-open-manager="custodian-example"]').innerText(), /open period/);
   assert.equal(await page.locator('[data-manager-unavailable]').count(), 0, 'already-open page reloads the new contract and recovers automatically');
   const after = await page.evaluate(() => caches.keys()); assert(!after.some(k => k.includes('previous-manager-release')));
-  await page.locator('[data-manager-search]').fill('Example');
+  await page.waitForFunction(() => document.querySelector('[data-manager-image="ashika"]')?.naturalWidth > 0);
+  await page.locator('[data-manager-search]').fill('Ashika');
   assert.equal(await page.locator('[data-open-manager]').count(), 1);
   const cachedPrivate = await page.evaluate(async () => {
     for (const key of await caches.keys()) for (const req of await (await caches.open(key)).keys()) if (req.url.includes('research-bridge') || req.url.includes('/api/')) return true;
@@ -74,5 +76,5 @@ try {
   });
   assert.equal(cachedPrivate, false, 'authenticated replies never enter the public static cache');
   assert.deepEqual(errors, []);
-  console.log('PASS warm manager session: old open-period failure, automatic immutable-module upgrade, manager recovery, old-cache eviction and private-cache exclusion');
+  console.log('PASS warm manager session: old open-period failure, automatic immutable-module upgrade, locally decoded manager image, old-cache eviction and private-cache exclusion');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

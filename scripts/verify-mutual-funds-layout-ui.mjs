@@ -1,4 +1,4 @@
-// Full dashboard chrome with local source fixtures; compare the former layout at short heights.
+// Full dashboard chrome with local source fixtures, shared navigation and short viewports.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
@@ -47,36 +47,21 @@ try {
     return { top: table.top, bottom: table.bottom, height: table.height, visible: Math.min(innerHeight, table.bottom) - table.top,
       toolbar: document.querySelector('[data-table-toolbar]').getBoundingClientRect().height, overflow: document.documentElement.scrollWidth > innerWidth };
   });
-  const before = await open();
-  // Reproduce the former chrome and rows, independently
-  // of Git history (the CI checkout is shallow, and the baseline must survive this merge).
-  await before.page.evaluate(async () => {
-    (await import('/js/tabs/mutual-fund-holdings.js')).destroy();
-    document.querySelector('#app').dataset.readingLayout='standard';
-    const menu = '<button class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left"><span><span class="block text-[11px] font-bold uppercase text-slate-400">View</span><span class="block text-sm font-bold text-slate-900">Company Holdings</span></span></button>';
-    const views = document.querySelector('#subview-mount'); views.classList.remove('hidden');
-    views.innerHTML = `<div class="w-full max-w-[15rem] rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">${menu}</div>`;
-    const module = document.querySelector('.mf-module');
-    module.insertAdjacentHTML('afterbegin','<div class="mf-toolbar"><label>Sort <select><option>Largest holdings</option></select></label><button class="text-xs text-indigo-600">Coverage</button></div>');
-    document.querySelectorAll('[data-mf-view],[data-mf-sort],[data-mf-coverage]').forEach(control => control.style.display='none');
-    const toolbar = document.querySelector('[data-table-toolbar]'); toolbar.style.padding='16px';
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const scroller = document.querySelector('[data-table-scroll]'); scroller.style.height='auto'; scroller.style.maxHeight='max(320px, calc(100vh - 310px))';
-  });
-  const oldGeometry = await geometry(before.page);
-  await before.page.screenshot({ path: '/tmp/sattva-mf-layout-before.png' });
-  await before.context.close();
   const { page, context } = await open();
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.waitForFunction(() => document.querySelector('[data-table-scroll]').style.height);
   const newGeometry = await geometry(page);
-  assert(newGeometry.top <= oldGeometry.top - 70, 'consolidated controls return at least 70px to the table');
-  assert(newGeometry.visible >= oldGeometry.visible + 70, 'a short dashboard shows more table content');
   assert(newGeometry.toolbar <= 70, 'desktop controls fit in one row');
-  assert.equal(await page.locator('#subview-mount').isVisible(), false);
+  assert.equal(await page.locator('#subview-mount').isVisible(), true);
+  assert.equal(await page.locator('[data-mf-view]').count(), 0, 'view choices belong above the table');
+  assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+    ['company-holdings', 'all-schemes', 'category-performance']);
   for (const [width, height] of [[1280, 800], [1024, 768], [390, 844], [1280, 500]]) {
     await page.setViewportSize({ width, height });
-    await page.waitForFunction(() => Math.abs(document.querySelector('[data-table-scroll]').getBoundingClientRect().bottom - (innerHeight - 24)) < 2);
+    await page.waitForFunction(() => {
+      const table = document.querySelector('[data-table-scroll]').getBoundingClientRect();
+      return Math.abs(table.height - Math.max(120, Math.floor(innerHeight - table.top - 24))) < 2;
+    });
     const measured = await geometry(page); assert(!measured.overflow); assert(measured.height >= 120);
     assert(await page.locator('[data-mf-view], [data-mf-sort], [data-mf-coverage], [data-export]').evaluateAll(controls =>
       controls.every(control => {const rect=control.getBoundingClientRect();return rect.left>=0&&rect.right<=innerWidth;})), 'every toolbar action stays reachable');
@@ -93,14 +78,14 @@ try {
   await page.getByRole('button', { name: 'Coverage', exact: true }).click();
   await page.getByText('Mutual Fund coverage', { exact: true }).waitFor(); await page.keyboard.press('Escape');
   for (const subview of ['all-schemes', 'category-performance', 'company-holdings']) {
-    await page.getByLabel('Mutual fund view').selectOption(subview);
-    await page.waitForFunction(value => document.querySelector('[data-mf-view]')?.value === value, subview);
+    await page.locator(`#subview-mount [data-tab-id="${subview}"]`).click();
+    await page.locator(`#subview-mount [data-tab-id="${subview}"][aria-selected="true"]`).waitFor();
     assert(page.url().includes(subview) && page.url().includes('scope=universe'));
   }
   await page.waitForFunction(() => document.querySelector('[data-row-count]')?.textContent === '1000 companies');
   await page.evaluate(() => document.documentElement.dataset.theme = 'dark');
   await page.screenshot({ path: '/tmp/sattva-mf-layout-dark.png' });
   assert.deepEqual(errors, []);
-  console.log('PASS full-shell Mutual Funds layout, viewport resize, all views, scope, offscreen search and coverage', { oldGeometry, newGeometry });
+  console.log('PASS full-shell Mutual Funds layout, viewport resize, all views, scope, offscreen search and coverage', { newGeometry });
   await context.close();
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

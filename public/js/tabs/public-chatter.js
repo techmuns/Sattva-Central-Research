@@ -38,6 +38,7 @@ import * as telegram from '../data/telegram-posts.js';
 import { telegramReadHealth } from '../data/telegram-health.js';
 import { fitTableViewport } from '../ui/table-viewport.js';
 import { chatterHighlightsCell, latestChatterHighlights, wireChatterHighlights } from '../ui/chatter-highlights.js';
+import { chatterHighlightReading, shortChatterHighlight } from '../data/chatter-highlight-reading.js';
 
 export const meta = TAB_META['public-chatter'];
 
@@ -651,7 +652,10 @@ function exportChatterRows(rows) {
     { header: 'Company', key: 'name', width: 30, get: (r) => (r.__banner ? r.text : r.name || '') },
     { header: 'NSE ticker', key: 'ticker', width: 16, get: (r) => value(r, (x) => x.ticker || '') },
     { header: 'Forum topic', key: 'slug', width: 24, get: (r) => value(r, (x) => x.slug || '') },
-    { header: 'Latest source highlights', key: 'highlights', width: 70, get: r => value(r, x => latestChatterHighlights(x).map(post => `${post.text || 'No excerpt published'} [Source: ${post.sentiment || 'unclassified'}; ${post.at || 'time not published'}] ${safeExternalUrl(post.url) || 'Original link unavailable'}`).join('\n') || 'Excerpts not loaded; open company to read') },
+    { header: 'Latest source highlights', key: 'highlights', width: 70, get: r => value(r, x => latestChatterHighlights(x).map(post => {
+      const reading = chatterHighlightReading(post.text);
+      return `${shortChatterHighlight(post.text, reading) || 'No excerpt published'} [Text: ${reading.label}; Source tag: ${post.sentiment || 'unclassified'}; ${post.at || 'time not published'}] ${safeExternalUrl(post.url) || 'Original link unavailable'}`;
+    }).join('\n') || 'Excerpts not loaded; open company to read') },
     { header: 'Matched company', key: 'matched', width: 30, get: (r) => value(r, (x) => x.matchedName || '') },
     { header: 'Mentions', key: 'mentions', width: 14, get: (r) => value(r, (x) => x.mentions ?? '') },
     { header: 'Previous mentions', key: 'mentions_prev', width: 18, get: (r) => value(r, (x) => x.mentionsPrev ?? '') },

@@ -2391,11 +2391,16 @@ Coverage is the default; Telegram opens its independent public-channel capture. 
 entries remain in the source data and retained history, without a separate in-page tab.
 
 Coverage's **Highlights** column shows the two newest actual mention excerpts, ordered by parsed
-source publication instant (undated mentions last). Green/red bullets repeat individual bullish/
-bearish source tags; neutral or unclassified mentions use grey, independently of the company’s
-window summary. Each excerpt links to its exact original URL. When a source omits a usable HTTP(S)
+source publication instant (undated mentions last). Green/red bullets read positive/negative
+wording in the captured post, using `chatter-highlight-reading.js`; the provider's frequently
+neutral keyword label does not choose the colour. This local phrase reading handles market moves,
+results, price targets, ratings, orders and inverse metrics (lower costs/narrower losses). Negated
+claims, questions, conditional guesses and mixed or unrecognised wording remain grey. It does not
+fetch full articles or make model calls. Original source tags and company-window source-count
+summaries stay intact. Each excerpt links to its exact original URL. When a source omits a usable HTTP(S)
 link, the excerpt opens and focuses its exact captured mention instead. Hover/focus titles retain
-the source, publication time and tag; text is escaped and shortened, never generated analysis.
+the source, publication time, text-reading evidence and original tag. Points quote at most 16 words
+from the directional sentence, or the captured text when unclear; text is escaped, not generated.
 Only visible table rows prefetch details, with two shared request slots across scope changes.
 All pages must complete before a new set is called latest; verified saved excerpts remain during
 revalidation or failure, with an explicit updating/unavailable note. The five-minute reader cadence,

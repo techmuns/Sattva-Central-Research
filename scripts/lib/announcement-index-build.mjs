@@ -32,6 +32,7 @@ export const INDEX_CAPTURES = {
   identities: '/data/announcement-identities.json',
   nseIdentities: '/data/filing-capture/nse-identities.json',
   tickerMap: '/data/mc-ticker-map.json',
+  marketCaps: '/data/market-caps.json',
   technicals: '/data/technicals.json',
   sectorKpis: '/data/sector-kpis.json',
 };
@@ -138,6 +139,7 @@ export function verifyIndexMembers({ outDir, index, built }) {
 
 export function profilesFrom(root) {
   return buildCompanyProfiles({
+    marketCaps: readJson(root, INDEX_CAPTURES.marketCaps),
     tickerMap: readJson(root, INDEX_CAPTURES.tickerMap), earnings: readJson(root, '/data/earnings-live.json'),
     technicals: readJson(root, INDEX_CAPTURES.technicals), sectorKpis: readJson(root, INDEX_CAPTURES.sectorKpis),
   });

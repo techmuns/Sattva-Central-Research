@@ -6,15 +6,17 @@ import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
 let upgraded = false;
-const html = `<!doctype html><html><body><output id="reading"></output><output id="order"></output><output id="highlights"></output><script type="module">
+const html = `<!doctype html><html><body><output id="reading"></output><output id="order"></output><output id="highlights"></output><output id="tone"></output><script type="module">
 import { normaliseEntry } from '/js/data/sentiment-shared.js';
 import { newestMentions } from '/js/data/chatter-mentions.js';
 import { chatterHighlightsCell } from '/js/ui/chatter-highlights.js';
+import { chatterHighlightReading } from '/js/data/chatter-highlight-reading.js';
 import { watchWorkerChanges } from '/js/core/app-updates.js';
 const row=normaliseEntry({ticker:'coforge',mentions:13,sentiment:{bullish:1,bearish:3,neutral:9,label:'bearish',labelText:'Bearish'}});
 document.querySelector('output').textContent=row.sentimentReading?.label || row.sentiment.label;
 document.querySelector('#order').textContent=newestMentions([{id:'older',at:'2026-09-21T10:00:00+05:30'},{id:'latest',at:'2026-09-21T05:00:00Z'}]).map(post=>post.id).join(',');
 document.querySelector('#highlights').innerHTML=chatterHighlightsCell({slug:'coforge',mentions:13});
+document.querySelector('#tone').textContent=chatterHighlightReading('HDFC Bank shares drop 15%').tone;
 watchWorkerChanges(navigator.serviceWorker,()=>location.reload());
 await navigator.serviceWorker.register('/sw.js');
 await navigator.serviceWorker.ready;
@@ -41,6 +43,8 @@ const server = createServer((req, res) => {
       body = 'export function newestMentions(posts) { return [...posts].sort((a,b)=>String(b.at).localeCompare(String(a.at))); }';
     if (pathname === '/js/ui/chatter-highlights.js' && !upgraded)
       body = 'export function chatterHighlightsCell() { return ""; }';
+    if (pathname === '/js/data/chatter-highlight-reading.js' && !upgraded)
+      body = 'export function chatterHighlightReading() { return {tone:"unclear"}; }';
     const type = { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)];
     res.setHeader('content-type', type || 'application/octet-stream'); res.end(body);
   } catch { res.writeHead(404); res.end(); }
@@ -57,6 +61,7 @@ try {
   assert.equal(await page.locator('#reading').innerText(), 'bearish');
   assert.equal(await page.locator('#order').innerText(), 'older,latest');
   assert.equal(await page.locator('[data-chatter-highlights]').count(), 0);
+  assert.equal(await page.locator('#tone').innerText(), 'unclear');
   const before = await page.evaluate(() => caches.keys());
   assert(before.some(key => key.includes('previous-chatter-release')));
   upgraded = true;
@@ -65,6 +70,7 @@ try {
   assert.equal(await page.evaluate(() => !!navigator.serviceWorker.controller), true);
   assert.equal(await page.locator('#order').innerText(), 'latest,older', 'returning readers receive the corrected chronological ordering');
   assert.equal(await page.locator('[data-chatter-highlights="coforge"]').count(), 1, 'returning readers receive the new highlight module through the real immutable-cache upgrade');
+  assert.equal(await page.locator('#tone').innerText(), 'negative', 'returning readers receive text-based highlight colours');
   const after = await page.evaluate(() => caches.keys());
   assert(after.some(key => key.startsWith('sattva-dashboard-') && !before.includes(key)));
   assert(!after.some(key => key.includes('previous-chatter-release')), 'old immutable module cache is removed');
