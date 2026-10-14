@@ -201,13 +201,15 @@ try {
   await quiet.locator('.tab-drop-slot').waitFor();
   assert(await quiet.locator('.tab-drag-ghost').isVisible(), 'reduced motion keeps the pointer-following copy');
   assert.equal(await quiet.locator('.tab-drag-surface').evaluate(node => getComputedStyle(node).transform), 'none');
-  assert.equal(await quiet.evaluate(() => document.getAnimations().length), 0, 'reduced motion removes lift and preview animations');
+  // Focus/colour transitions may still appear in getAnimations for 0.01ms.
+  const moving = () => document.getAnimations().filter(item => item.effect.getTiming().duration > 1)
+    .map(item => ({ target: item.effect.target.className, duration: item.effect.getTiming().duration }));
+  assert.deepEqual(await quiet.evaluate(moving), [], 'reduced motion removes lift and preview animations');
   await quiet.mouse.up();
   assert.equal((await order(quiet))[0], 'news-section');
   assert.equal(await quiet.locator('.tab-drag-ghost, .tab-drop-slot, [data-tab-settling]').count(), 0);
   // The shell permits 0.01ms focus/colour transitions under reduced motion.
-  assert.deepEqual(await quiet.evaluate(() => document.getAnimations().filter(item => item.effect.getTiming().duration > 1)
-    .map(item => ({ target: item.effect.target.className, duration: item.effect.getTiming().duration }))), [], 'reduced motion has no settling animation');
+  assert.deepEqual(await quiet.evaluate(moving), [], 'reduced motion has no settling animation');
   await reduced.close();
 
   // A saved layout is normalized safely as the catalog grows, with no hidden/missing tab.
