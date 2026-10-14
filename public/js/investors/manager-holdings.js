@@ -57,7 +57,7 @@ export function renderManagerHoldings(ctx, { view = {}, onView = () => {}, toolb
     if (nextScroll) { nextScroll.scrollTop = reading.top; nextScroll.scrollLeft = reading.left; }
     if (reading.focused) { const next = host.querySelector('[data-table-search]'); next?.focus({ preventScroll: true }); next?.setSelectionRange(reading.start, reading.end); }
   }
-  return { html: '<div data-manager-holdings></div>', wire(root, disposers) {
+  return { html: '<div role="tabpanel" aria-label="Holdings" data-manager-holdings></div>', wire(root, disposers) {
     host = root.querySelector('[data-manager-holdings]');
     const off = managers.onChange(paint), stop = managers.watchFreshness();
     disposers.push(() => { stopped = true; offTable?.(); off(); stop(); }); paint();

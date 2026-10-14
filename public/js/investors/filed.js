@@ -146,7 +146,7 @@ export function renderFiled(ctx, { disposers = [], section = 'institutions', onS
       ${sectionTabs.html}
     </div>`}
     ${!embedded && funds.length > 1 ? fundPicker(funds, fund) : ''}
-    <div role="tabpanel" aria-label="All Institutions" data-filed-panel="institutions">
+    <div role="tabpanel" aria-label="${embedded ? 'Holdings' : 'All Institutions'}" data-filed-panel="institutions">
       <div class="mb-4 flex flex-wrap items-center gap-3">
         ${avatarBlock(fund)}
         <div class="min-w-0 flex-1">

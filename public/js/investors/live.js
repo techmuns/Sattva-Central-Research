@@ -111,7 +111,7 @@ export function renderLive(ctx, { disposers = [], section = 'quarterly-changes',
     ${embedded ? '' : `<div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
       ${sectionTabs.html}
     </div>`}
-    <div role="tabpanel" aria-label="${escapeHtml(sections.find((item) => item.id === activeSection)?.label || '')}" data-live-panel="${escapeHtml(activeSection)}">
+    <div role="tabpanel" aria-label="${escapeHtml(embedded ? activeSection === 'quarterly-changes' ? 'Changes' : activeSection === 'data-table' ? 'Holdings' : 'Overview' : sections.find((item) => item.id === activeSection)?.label || '')}" data-live-panel="${escapeHtml(activeSection)}">
       ${panel}
     </div>`;
 
