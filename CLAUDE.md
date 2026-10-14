@@ -53,6 +53,9 @@ Chatter evidence on AI cards opens `public-chatter?open=mentions` with the exact
 Snapshot dates must not be described as individual publication dates. Verify with
 `verify-chatter-sentiment.mjs` and `verify-chatter-reliability-ui.mjs`.
 Mention cards read newest first by parsed source publication time, with undated items last.
+Public Chatter highlight bullets (14 October 2026) read the captured wording locally: positive
+green, negative red, mixed/unclear grey. Keep this reading separate from original source tags and
+the company-wide count summary. Preserve verbatim short points, source dates and exact links.
 Scrolling reveals older cards and, in captured history, older months; keep the buttons for
 keyboard access and explicit retries. Refreshes preserve the reader's visible mention.
 
