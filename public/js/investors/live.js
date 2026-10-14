@@ -726,7 +726,8 @@ function holdingsTable(ctx, rows, quarters, initialView, { embedded = false, too
         match: (r, v) => r.investor === v,
       },
       {
-        label: 'This quarter',
+        label: embedded ? 'Disclosure change' : 'This quarter',
+        readingAliases: ['This quarter'],
         options: [
           { value: 'all', label: 'Any change' },
           { value: 'new', label: 'New positions' },
