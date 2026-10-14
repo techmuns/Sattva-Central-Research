@@ -318,7 +318,7 @@ try {
   await one.page.waitForFunction(() => !window.workspace.status().pending);
   assert(!store.snapshot().tabs.some(tab => tab.title === 'My Research'));
   assert.equal(store.snapshot().tabs.length, 1, 'removing one screen preserves every other saved screen');
-  // Twenty custom tabs remain one row, searchable, and universally reorderable.
+  // Twenty custom tabs remain directly reachable in one scrollable, reorderable row.
   const many = Array.from({ length: 20 }, (_, index) => ({ ...view, id: `view-${crypto.randomUUID()}`, title: `Saved research ${index + 1}` }));
   for (const tab of many) store.apply({ id: `fixture-many-${tab.id}`, op: 'put', tab, expected: null });
   await one.page.setViewportSize({ width: 1440, height: 900 });
@@ -330,42 +330,34 @@ try {
     await bar.waitFor({ state: 'visible' });
     await page.waitForFunction(() => document.querySelectorAll('#tabbar-mount [data-tab-id]').length === 28);
     assert((await bar.boundingBox()).height < 80, 'many tabs stay in a single bounded row');
-    await page.locator('[data-tab-picker-toggle]').click();
-    await page.getByRole('searchbox', { name: 'Search tabs', exact: true }).fill('research 20');
-    await page.locator(`[data-tab-pick="${many[19].id}"]`).click(); await ready(page);
+    assert.equal(await page.locator('[data-tab-picker-toggle], [data-tab-picker]').count(), 0, 'no All tabs dropdown');
+    const first = page.locator('#tabbar-mount [data-tab-id]').first();
+    await first.focus(); await page.keyboard.press('Home');
+    await page.waitForFunction(() => document.querySelector('#tabbar-mount [data-tab-list]').scrollLeft <= 1);
+    await page.locator('#tabbar-mount [data-tab-scroll="1"]').click();
+    await page.waitForFunction(() => document.querySelector('#tabbar-mount [data-tab-list]').scrollLeft > 1);
+    await first.focus(); await page.keyboard.press('End'); await page.keyboard.press('Enter'); await ready(page);
     await page.getByRole('heading', { name: 'Saved research 20', exact: true }).waitFor();
     assert.equal(await page.locator(`#tabbar-mount [data-tab-id="${many[19].id}"]`).getAttribute('aria-selected'), 'true');
     const visible = await page.locator(`#tabbar-mount [data-tab-id="${many[19].id}"]`).boundingBox(), strip = await page.locator('#tabbar-mount [data-tab-list]').boundingBox();
-    assert(visible.x + visible.width > strip.x && visible.x < strip.x + strip.width, 'selected search result is revealed in the strip');
-    await page.locator('[data-tab-picker-toggle]').click();
-    await page.getByRole('searchbox', { name: 'Search tabs', exact: true }).fill('no matching tab');
-    await page.getByText('No tabs match your search.', { exact: true }).waitFor();
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => document.querySelector('[data-tab-picker-toggle]').getAttribute('aria-expanded') === 'false');
+    assert(visible.x >= strip.x - 1 && visible.x + visible.width <= strip.x + strip.width + 1, 'selected tab is revealed in the strip');
   }
-  await one.page.locator('[data-tab-picker-toggle]').click();
-  await one.page.getByRole('searchbox', { name: 'Search tabs', exact: true }).fill('research 20');
-  await one.page.getByRole('button', { name: 'Move Saved research 20 earlier', exact: true }).click();
+  await one.page.locator(`#tabbar-mount [data-tab-id="${many[19].id}"]`).focus();
+  await one.page.keyboard.press('Alt+ArrowLeft');
   await one.page.waitForFunction(() => !window.workspace.status().pending);
-  assert.equal(store.snapshot().order.at(-2), many[19].id, 'search moves against the complete shared order');
-  await one.page.keyboard.press('Escape');
+  assert.equal(store.snapshot().order.at(-2), many[19].id, 'strip moves against the complete shared order');
   await two.page.evaluate(() => window.workspace.sync()); await two.page.reload(); await ready(two.page);
-  assert.deepEqual(await order(two.page), await order(one.page), 'overflow panel moves survive across devices and reload');
-  await one.page.locator('[data-tab-picker-toggle]').click();
+  assert.deepEqual(await order(two.page), await order(one.page), 'strip moves survive across devices and reload');
   const firstId = store.snapshot().order[0];
-  await one.page.locator(`[data-tab-move="${firstId}"][data-direction="1"]`).click();
+  await one.page.locator(`#tabbar-mount [data-tab-id="${firstId}"]`).focus();
+  await one.page.keyboard.press('Alt+ArrowRight');
   await one.page.waitForFunction(() => !window.workspace.status().pending);
-  await one.page.locator(`[data-tab-move="${firstId}"][data-direction="-1"]`).click();
+  await one.page.keyboard.press('Alt+ArrowLeft');
   await one.page.waitForFunction(() => !window.workspace.status().pending);
-  assert.equal(await one.page.evaluate(() => document.activeElement?.dataset.tabPick), firstId, 'moving to an order boundary keeps focus in the panel');
-  await one.page.keyboard.press('Escape');
+  assert.equal(await one.page.evaluate(() => document.activeElement?.dataset.tabId), firstId, 'moving to an order boundary keeps focus in the strip');
   if (process.env.WORKSPACE_SCREENSHOT) {
-    await one.page.locator('[data-tab-picker-toggle]').click();
     await one.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-many-light.png` });
-    await one.page.keyboard.press('Escape');
-    await two.page.locator('[data-tab-picker-toggle]').click();
     await two.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-many-mobile-dark.png` });
-    await two.page.keyboard.press('Escape');
   }
   for (const tab of many) store.apply({ id: `fixture-remove-many-${tab.id}`, op: 'remove', tabId: tab.id, expected: store.snapshot().tabs.find(row => row.id === tab.id).revision });
   await one.page.evaluate(() => window.workspace.sync()); await two.page.evaluate(() => window.workspace.sync());
@@ -375,7 +367,7 @@ try {
   await one.page.locator('[data-builder-cancel]').click(); await ready(one.page);
   assert.equal(await one.page.locator('[data-tab-draft], [data-building-tab]').count(), 0);
   assert(!store.snapshot().tabs.some(tab => tab.title === 'Cancelled draft'), 'cancelling leaves no shared tab');
-  console.log('PASS scalable navigation: 20 custom tabs, desktop/light and mobile/dark search, active reveal, empty search, keyboard dismissal, shared reorder/reload and draft cancellation');
+  console.log('PASS scalable navigation: 20 custom tabs, no All tabs dropdown, desktop/light and mobile/dark scrolling, keyboard navigation, active reveal, shared reorder/reload and draft cancellation');
   const multiTable = await one.page.evaluate(async () => {
     const { scoreTable } = await import('/js/ui/screener.js');
     const readings = await import('/js/core/view-reading.js'), prior = readings.activeView();

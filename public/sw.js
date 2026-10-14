@@ -271,7 +271,7 @@ function sharedWorkspaceCacheKey() {
 
 // Version the tab dialog independently of concurrent table and navigation releases.
 function tabDialogCacheKey() {
-  return `${sharedWorkspaceCacheKey()}-tab-dialog-dismiss-v1`;
+  return `${sharedWorkspaceCacheKey()}-tab-dialog-dismiss-v1-remove-all-tabs-dropdown-v1`;
 }
 
 function tableLayoutCacheKey() {
