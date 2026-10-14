@@ -5,9 +5,11 @@ import { readFileSync } from 'node:fs';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalisePortfolio } from '../public/js/data/finology-shared.js';
+import { EXCHANGE_SOURCES } from '../public/js/data/exchange-deals-shared.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = fileURLToPath(new URL('../public', import.meta.url));
 const at = '2026-09-06T00:00:00Z';
+const exchangeFixture = { version: 1, records: [], checkedAt: at, sources: EXCHANGE_SOURCES.map((s, i) => ({ ...s, coverage: [], lastSuccessAt: '2026-09-05T00:00:00Z', ok: i !== 3, error: i === 3 ? 'Fixture unavailable' : null })) };
 const h = (company, companySlug, latest, prior, valueCr = 10) => ({ company, companySlug,
   quarterlyHoldings: { 'Aug 2026': 'Filing Due', 'Jun 2026': latest, 'Mar 2026': prior }, valueCr });
 const b = (slug, holdings) => ({ ...normalisePortfolio({ name: slug, slug, quarters: ['Aug 2026', 'Jun 2026', 'Mar 2026'], holdings }, slug), ok: true, fetchedAt: at });
@@ -72,7 +74,7 @@ const server = createServer(async (req, res) => {
   if (path === '/data/public-holdings.json') { publicReads++; if (publicFail) res.statusCode = 503; return json(publicFail ? {} : publicPayload); }
   if (path === '/data/holding-evidence.json') return json(relationshipEvidence);
   if (path === '/data/insider-trades.json') return json(trades);
-  if (path === '/data/exchange-deals.json' || path.startsWith('/api/exchange-deals')) return json({ version: 1, records: [], sources: [], checkedAt: at });
+  if (path === '/data/exchange-deals.json' || path === '/api/bulk-block-deals' || path.startsWith('/api/exchange-deals')) return json(exchangeFixture);
   if (path === '/data/super-investors.json') { if (holdPublic) await holdPublic; return json(snapshot); }
   if (path === '/api/super-investors') return json({ ok: true, investors, fetchedAt: at });
   if (path.startsWith('/api/super-investors/')) return json(fail ? { ok: false, reason: 'fixture outage' } : books[path.split('/').at(-1)] || { ok: false, reason: 'missing fixture' });
@@ -111,7 +113,18 @@ try {
   }
   await page.waitForSelector('[data-changes-ready="true"]');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'scope excludes another company; duplicate reports group but exchange and side stay separate');
+  const sourceNotes = '[data-changes-period-note], [data-changes-context], [data-exchange-status], [data-changes-coverage]';
+  assert.equal(await page.locator(`[data-changes-sources] :is(${sourceNotes})`).count(), 4, 'reading notes and source status remain available in coverage');
+  assert.equal(await page.locator('[data-changes-sources]').evaluate(el => el.open), false);
+  for (const note of await page.locator(sourceNotes).all()) assert.equal(await note.isVisible(), false, 'All Investors hides the explanatory prose until coverage is opened');
+  assert.equal(await page.locator('[data-changes-panel] > p').count(), 0, 'trade table has no routine explanatory paragraphs above or below it');
+  await page.locator('[data-changes-sources] summary').click();
   assert.match(await page.locator('[data-changes-context]').innerText(), /4 tracked investors.*Company scope: Portfolio/);
+  assert.match(await page.locator('[data-changes-period-note]').innerText(), /matched public bulk\/block deals/);
+  assert.match(await page.locator('[data-changes-coverage]').innerText(), /Matched trade dates in Portfolio.*not the source’s capture coverage.*may not reach inception/);
+  assert.equal(await page.locator('[data-exchange-status]').innerText(), await page.evaluate(async () => (await import('/js/data/filings.js')).insider.meta().exchanges.summary), 'coverage retains the real source status');
+  assert.match(await page.locator('[data-exchange-status]').innerText(), /checked.*IST.*Capture is delayed.*Source gaps: BSE-BLOCK: Fixture unavailable/, 'actual check time, delayed capture and failed source stay explicit in coverage');
+  await page.locator('[data-changes-sources] summary').click();
   await page.locator('[data-changes-period]').selectOption('today');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '0');
   assert.match(await page.locator('[data-changes-empty-context]').innerText(), /Portfolio companies in Today.*does not establish/);
@@ -123,7 +136,7 @@ try {
   await page.locator('[data-changes-universe]').click();
   await page.waitForFunction(() => document.querySelector('[data-changes-panel]')?.dataset.activityTotal === '1');
   assert.equal(await page.locator('[data-changes-period]').inputValue(), 'today', 'Universe shortcut keeps the selected period and audience');
-  assert.match(await page.locator('[data-changes-context]').innerText(), /Company scope: Universe/);
+  assert.match(await page.locator('[data-changes-context]').textContent(), /Company scope: Universe/);
   await page.locator('[data-changes-activity] [data-row-key]').click();
   assert.match(await page.locator('[data-change-attribution]').innerText(), /Associated entity.*Example Associated Fund/);
   assert.equal(await page.locator('[data-change-attribution] a').getAttribute('href'), relationshipEvidence.relations[0].sourceUrl);
@@ -159,10 +172,16 @@ try {
   assert.doesNotMatch(await page.locator('#test-root').innerText(), /Undisclosed/);
   await page.evaluate(() => paint('portfolio', 'quarterly-changes'));
   if (process.env.SI_SCREENSHOT) await page.screenshot({ path: process.env.SI_SCREENSHOT, fullPage: true });
+  await page.evaluate(() => document.documentElement.dataset.theme = 'dark');
+  if (process.env.SI_SCREENSHOT) await page.screenshot({ path: process.env.SI_SCREENSHOT.replace(/\.png$/, '-dark.png'), fullPage: true });
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `no page overflow at ${width}`);
+    assert.equal(await page.locator('[data-changes-context]').isVisible(), false, 'coverage stays collapsed on narrow screens');
+    if (width === 390 && process.env.SI_SCREENSHOT) await page.screenshot({ path: process.env.SI_SCREENSHOT.replace(/\.png$/, '-mobile-dark.png'), fullPage: true });
   }
+  await page.evaluate(() => document.documentElement.dataset.theme = 'light');
+  if (process.env.SI_SCREENSHOT) await page.screenshot({ path: process.env.SI_SCREENSHOT.replace(/\.png$/, '-mobile.png'), fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1050 });
   await page.evaluate(() => openInvestor('one'));
   await page.locator('[data-ws-tab="exchange"]').click();

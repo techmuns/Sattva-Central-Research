@@ -42,7 +42,7 @@ const server = createServer((req, res) => {
       if (!upgraded) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-investor-changes`;');
     }
     // A prior module graph with the former generic empty view stays immutable until SW adoption.
-    if (path === '/js/investors/changes.js' && !upgraded) body = "export function renderChanges(){return {html:'<p data-old-changes>No matching trades in the available records for this period.</p>',wire(){}};}";
+    if (path === '/js/investors/changes.js' && !upgraded) body = "export function renderChanges(){return {html:'<div data-old-changes><p>No matching trades in the available records for this period.</p><p>Company scope: Portfolio. All Investors includes the tracked directory.</p><p>Capture is delayed; retained reports are shown.</p></div>',wire(){}};}";
     res.setHeader('content-type', { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'application/octet-stream');
     res.end(body);
   } catch { res.writeHead(404).end(); }
@@ -62,6 +62,10 @@ try {
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await page.waitForSelector('[data-changes-ready="true"]');
   assert.equal(await page.locator('[data-old-changes]').count(), 0);
+  assert.match(await page.locator('[data-changes-context]').textContent(), /Company scope: Portfolio/);
+  assert.equal(await page.locator('[data-changes-panel] > p').count(), 0, 'returning readers adopt the clean All Investors layout');
+  assert.equal(await page.locator('[data-changes-context]').isVisible(), false);
+  await page.locator('[data-changes-sources] summary').click();
   assert.match(await page.locator('[data-changes-context]').innerText(), /Company scope: Portfolio/);
   assert.match(await page.locator('[data-changes-universe]').innerText(), /1 trade in Universe/);
   assert.match(await page.locator('[data-changes-history]').innerText(), /1 retained trade in Portfolio/);
@@ -78,6 +82,7 @@ try {
   capture.byTicker.OWNED.push(trade('OWNED', today));
   await page.clock.fastForward(61000);
   await page.waitForFunction(() => document.querySelector('[data-changes-panel]')?.dataset.activityTotal === '2');
+  assert.equal(await page.locator('[data-changes-sources]').evaluate(el => el.open), true, 'automatic recovery preserves expanded source coverage');
   assert.equal(await page.locator('[data-changes-period]').inputValue(), 'itd');
   assert.equal(await page.locator('[data-changes-activity] [data-table-search]').inputValue(), 'owned');
   assert.equal(await page.locator('[data-changes-activity] [data-row-key]').count(), 2, 'automatic recovery exposes the new trade without losing history or filters');
