@@ -155,5 +155,12 @@ export function wireTabOrder(list, key, onReorder, shareOrder = null) {
       if (order.some((item, i) => item !== defaults[i])) { defaults.forEach(item => list.append(item)); save(button, { op: 'reset' }); }
     } else move(button, order[index + (event.key === 'ArrowRight' ? 1 : -1)], event.key === 'ArrowRight');
   });
-  return () => { finish(); abort.abort(); status.remove(); };
+  const dispose = () => { finish(); abort.abort(); status.remove(); };
+  // The searchable navigator uses the same move/save path as dragging and keyboard moves.
+  dispose.moveById = (id, direction) => {
+    finish();
+    const order = buttons(), button = order.find(item => item.dataset.tabId === id);
+    if (button) move(button, order[order.indexOf(button) + direction], direction > 0);
+  };
+  return dispose;
 }

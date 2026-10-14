@@ -310,8 +310,14 @@ Readers can rearrange this main strip by dragging a tab (or its grip on touch sc
 Alt + Left/Right moves the focused tab; Alt + Home restores the catalog order.
 `ui/tab-order.js` sends shared reorder intents through `core/workspace.js` to `/api/workspace`.
 The layout is universal for this desk, including saved tabs and their filters (13 October 2026).
-Add tab creates a named blank screen or selects an existing table; Use current view captures the current
-reader's scope, subview, search, filters and sort. Save filters deliberately publishes later edits.
+Add tab opens Build a Tab with a required live source and Tab heading. Use current view captures
+the reader's subview, search, filters and sort; company scope always follows the header Scope.
+New tabs open an unpublished, tinted filter-selection mode with a grey Unsaved tab in the strip
+and sticky Save tab controls. Only Save tab publishes the draft. Existing legacy blank definitions
+remain configurable, but the builder cannot create new blank pages. Save filters publishes later edits.
+The main strip stays one scrollable row. All tabs opens a searchable, bounded panel with shared
+move controls using the same anchored reorder path as drag and Alt + Left/Right, including when
+search results cover only a subset of the full order. Draft IDs never enter shared reorder intents.
 Saved readers retain their original data loading, source checks, archives and exports. Preferences
 contain no source rows, private holding values or credentials. Custom headings live inside the
 capture root. The existing CaptureRegistry class stores the workspace in its own fixed object,

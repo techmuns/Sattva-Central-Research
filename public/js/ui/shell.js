@@ -151,7 +151,8 @@ async function addSavedTab() {
   const ui = await savedTabsUI(), tab = currentTabModule;
   const saved = tab?.meta.savedView, source = saved?.source || tab?.meta.id;
   const readingContext = { scope: state.scope, subview: state.subview, params: router.parseHash().params };
-  ui.openTabEditor({ onPreview: beginViewDraft, onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: state.scope }),
+  ui.openTabEditor({ seed: { title: '', source: VIEW_SOURCES.includes(source) ? source : 'corp-announcements', subview: state.subview, scope: state.scope }, draftOnly: true,
+    onPreview: beginViewDraft, onSaved: view => router.navigate({ workspace: 'research', tab: view.id, subview: view.subview, scope: state.scope }),
     captureCurrent: VIEW_SOURCES.includes(source) ? async () => ui.captureSavedTab({ root: contentHost, source, ...readingContext, module: saved ? tab : await tab.load() }) : null });
 }
 
@@ -165,11 +166,16 @@ async function saveReaderFilters(tabModule, resolved, current) {
 
 function renderSavedControls(root, tabModule, resolved) {
   const mount = root.querySelector('#saved-view-mount'), saved = tabModule.meta.savedView;
+  const building = !!viewDraft && viewDraft.view.id === saved?.id;
+  root.querySelector('[data-app-content]').toggleAttribute('data-building-tab', building);
+  root.querySelector('[data-add-saved-tab]').disabled = building;
+  mount.toggleAttribute('data-builder-mount', building);
   mount.hidden = !saved;
   contentHost.toggleAttribute('data-saved-view', !!saved);
   if (mount.hidden) { mount.innerHTML = ''; return; }
   if (viewDraft?.view.id === saved.id) {
-    mount.innerHTML = `<div class="saved-view-head" data-view-builder><div><h2>${escapeHtml(saved.title)}</h2><p>Choose filters in the live view below, then save this tab for everyone. Company scope follows the Scope filter above.</p><p data-builder-status role="status"></p></div><div class="saved-tab-actions"><button type="button" data-builder-choose>Choose view</button><button type="button" data-builder-cancel>Cancel</button><button type="button" data-builder-save>Save tab</button></div></div>`;
+    const sourceTitle = WORKSPACES[0].tabs.find(tab => tab.meta.id === saved.source)?.meta.title || '';
+    mount.innerHTML = `<div class="saved-view-head" data-view-builder><div><div class="tab-builder-label">Building a tab <span>Unsaved</span></div><h2>${escapeHtml(saved.title)}</h2><p>Select filters in the live view below. Click <strong>Save tab</strong> when ready to share it with everyone.</p><p class="tab-builder-source">${escapeHtml(sourceTitle)} · Scope follows the filter above</p><p data-builder-status role="status"></p></div><div class="saved-tab-actions"><button type="button" data-builder-choose>Change view</button><button type="button" data-builder-cancel>Cancel</button><button type="button" class="tab-save-primary" data-builder-save>Save tab</button></div></div>`;
     mount.querySelector('[data-builder-save]').addEventListener('click', () => void publishViewDraft());
     mount.querySelector('[data-builder-choose]').addEventListener('click', async () => {
       const ui = await savedTabsUI(), draft = viewDraft;
@@ -421,6 +427,8 @@ function handleRoute(root, rawRoute) {
     releaseRouteLoading?.(); releaseRouteLoading = null;
     enterView(null); contentHost.removeAttribute('data-active-tab'); contentHost.removeAttribute('data-saved-view');
     root.querySelector('#saved-view-mount').hidden = true;
+    root.querySelector('[data-app-content]').removeAttribute('data-building-tab');
+    root.querySelector('[data-add-saved-tab]').disabled = false;
     renderTopNavigation(root, ws, null);
     setRoute({ workspace: ws.id, tab: rawRoute.tab, subview: null, scope: rawRoute.scope || state.scope, params: rawRoute.params || {} });
     contentHost.innerHTML = emptyState({ title: workspace.status().confirmed ? 'This shared tab is unavailable' : 'Loading shared tab…', message: workspace.status().error || 'The workspace will check its saved tabs automatically.' });
@@ -569,9 +577,10 @@ function renderTopNavigation(root, ws, navigationId) {
   const tabItems = [...new Map(workspaceTabs(ws).filter((t) => t !== bookmarks && !t.meta.hideFromNavigation)
     .map(t => {
       const parent = TAB_GROUPS[t.meta.navigationGroup], id = parent?.id || t.meta.id;
-      return [id, { id, label: parent?.title || t.meta.navigationTitle || t.meta.title }];
+      return [id, { id, label: parent?.title || t.meta.navigationTitle || t.meta.title, saved: !!t.meta.savedView }];
     })).values()];
-  const signature = JSON.stringify(tabItems);
+  const draft = viewDraft ? { id: viewDraft.view.id, label: viewDraft.view.title } : null;
+  const signature = JSON.stringify([tabItems, draft]);
   if (topTabs?.workspace === ws.id && topTabs.signature === signature) {
     topTabs.bar.update(navigationId, sharedOrder);
   } else {
@@ -580,12 +589,13 @@ function renderTopNavigation(root, ws, navigationId) {
     topTabs?.dispose();
     // Saved events are reached from the header beside the appearance control.
     const bar = tabBar({ tabs: tabItems, activeId: navigationId, onSelect: goTab, label: 'Research sections', orderKey: ws.id,
-      sharedOrder, onOrderChange: intent => workspace.edit(intent) });
+      sharedOrder, onOrderChange: intent => workspace.edit(intent), searchable: true, draft });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;
     topTabs = { workspace: ws.id, signature, bar, dispose: bar.wire(tabBarMount) };
     tabBarMount.querySelector('[data-tab-list]').scrollLeft = scroll;
     if (focusedId) tabBarMount.querySelector(`[data-tab-id="${focusedId}"]`)?.focus({ preventScroll: true });
+    bar.update(navigationId, sharedOrder);
   }
 }
 

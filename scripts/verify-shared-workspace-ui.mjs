@@ -55,7 +55,11 @@ try {
   await one.page.getByRole('button', { name: 'Current view selected', exact: true }).waitFor();
   await one.page.locator('[data-saved-title]').fill('Capital Raises');
   await one.page.locator('[data-saved-submit]').click();
+  await one.page.locator('[data-view-builder]').waitFor(); await ready(one.page);
+  assert.equal(store.snapshot().tabs.length, 0, 'even a captured current view remains unsaved until Save tab');
+  await one.page.locator('[data-builder-save]').click();
   await one.page.getByRole('heading', { name: 'Capital Raises', exact: true }).waitFor(); await ready(one.page);
+  await one.page.locator('[data-save-reading]').waitFor();
   const view = store.snapshot().tabs[0];
   assert.equal(view.title, 'Capital Raises'); assert.deepEqual(view.reading.extras.categories, ['capital-raise']);
   assert.equal(view.reading.extras.period, '7'); assert.equal(view.scope, 'universe');
@@ -151,6 +155,9 @@ try {
   await two.page.unroute('**/api/workspace');
   // Hierarchy selection opens the actual source renderer before publishing anything.
   await one.page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+  await one.page.getByRole('heading', { name: 'Build a Tab', exact: true }).waitFor();
+  assert.equal(await one.page.getByLabel('Tab heading', { exact: true }).count(), 1);
+  assert.equal(await one.page.locator('[data-saved-group] option[value=""]').count(), 0, 'new tabs cannot be blank pages');
   await one.page.locator('[data-saved-title]').fill('Built Capital Raises');
   assert.equal(await one.page.locator('[data-saved-scope]').count(), 0, 'scope has one authoritative header control');
   const expectedChoices = await one.page.evaluate(async () => {
@@ -175,6 +182,14 @@ try {
     console.error('Builder opening', one.page.url(), await one.page.locator('body').innerText(), errors, store.snapshot().tabs.map(tab => ({ title: tab.title, source: tab.source }))); throw error;
   }); await ready(one.page);
   assert.equal(store.snapshot().tabs.length, 1, 'choosing filters never publishes an unfinished tab');
+  const draftId = new URL(one.page.url()).hash.match(/research\/([^?]+)/)[1];
+  await one.page.locator('[data-tab-draft][aria-selected="true"]').waitFor();
+  assert((await one.page.locator('[data-tab-draft]').innerText()).includes('Unsaved'));
+  assert.equal(await one.page.locator('[data-building-tab]').count(), 1);
+  assert.equal(await one.page.locator('[data-tab-draft] [data-tab-drag-handle]').count(), 0);
+  await one.page.locator('[data-tab-draft]').focus(); await one.page.keyboard.press('Alt+ArrowLeft');
+  assert(!store.snapshot().order.includes(draftId), 'an unsaved draft is never added to the shared order');
+  if (process.env.WORKSPACE_SCREENSHOT) await one.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-building.png` });
   await one.page.locator('[data-ca-open="categories"]').click();
   await one.page.locator('input[value="capital-raise"]').check(); await one.page.locator('[data-ca-apply]').click();
   await one.page.getByRole('combobox', { name: 'Announcement period (IST)' }).selectOption('7'); await ready(one.page);
@@ -185,6 +200,7 @@ try {
   await one.page.locator('[data-builder-save]').click();
   await one.page.waitForFunction(() => !window.workspace.status().pending && window.workspace.snapshot().tabs.some(tab => tab.title === 'Built Capital Raises'));
   await one.page.locator('[data-save-reading]').waitFor();
+  assert.equal(await one.page.locator('[data-tab-draft], [data-building-tab]').count(), 0, 'saving exits draft mode');
   const built = store.snapshot().tabs.find(tab => tab.title === 'Built Capital Raises');
   assert.deepEqual(built.reading.extras.categories, ['capital-raise']);
   assert.equal(built.scope, 'watchlist', 'even an empty selected scope can publish a screen without discarding its filters');
@@ -205,9 +221,12 @@ try {
   await one.page.goto(`${server.url}#/research/${view.id}?scope=universe`); await ready(one.page);
   console.log('PASS builder: navigation-derived tab/subtab/view mapping, all four Announcements readers, native category selection, complete row parity, unpublished preview, reload and header scope inheritance');
   await one.page.getByRole('button', { name: '+ Add tab', exact: true }).click();
-  await one.page.locator('[data-saved-title]').fill('My Research'); await one.page.locator('[data-saved-submit]').click();
+  await one.page.locator('[data-saved-title]').fill('My Research');
+  await one.page.locator('[data-saved-group]').selectOption('announcements');
+  await one.page.locator('[data-saved-source]').selectOption('corp-announcements');
+  await one.page.locator('[data-saved-submit]').click(); await ready(one.page);
   await one.page.getByRole('heading', { name: 'My Research', exact: true }).waitFor();
-  await one.page.getByRole('button', { name: 'Choose a table', exact: true }).waitFor();
+  assert.equal(await one.page.getByRole('button', { name: 'Choose a table', exact: true }).count(), 0);
   // Offline edits stay on their device and publish after reconnect, including a create/update chain.
   await one.page.route('**/api/workspace', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false}' }));
   const offlineId = await one.page.evaluate(async () => {
@@ -223,7 +242,8 @@ try {
   await one.page.evaluate(async id => { const workspace = await import('/js/core/workspace.js'), tab = workspace.snapshot().tabs.find(tab => tab.id === id); await workspace.edit({ op: 'remove', tabId: id, expected: tab.revision }); }, offlineId);
   await one.page.setViewportSize({ width: 390, height: 800 });
   assert(await one.page.getByRole('button', { name: '+ Add tab', exact: true }).isVisible());
-  await one.page.getByRole('button', { name: 'Choose a table', exact: true }).click();
+  assert(await one.page.getByRole('button', { name: '+ Add tab', exact: true }).isDisabled());
+  await one.page.locator('[data-builder-choose]').click();
   await one.page.locator('[data-saved-group]').selectOption('announcements');
   await one.page.locator('[data-saved-source]').selectOption('corp-announcements'); await one.page.locator('[data-saved-submit]').click();
   await one.page.locator('[data-view-builder]').waitFor();
@@ -238,6 +258,56 @@ try {
   await one.page.waitForFunction(() => !window.workspace.status().pending);
   assert(!store.snapshot().tabs.some(tab => tab.title === 'My Research'));
   assert.equal(store.snapshot().tabs.length, 1, 'removing one screen preserves every other saved screen');
+  // Twenty custom tabs remain one row, searchable, and universally reorderable.
+  const many = Array.from({ length: 20 }, (_, index) => ({ ...view, id: `view-${crypto.randomUUID()}`, title: `Saved research ${index + 1}` }));
+  for (const tab of many) store.apply({ id: `fixture-many-${tab.id}`, op: 'put', tab, expected: null });
+  await one.page.setViewportSize({ width: 1440, height: 900 });
+  await one.page.evaluate(() => window.workspace.sync());
+  await two.page.setViewportSize({ width: 390, height: 800 });
+  await two.page.evaluate(() => window.workspace.sync());
+  for (const page of [one.page, two.page]) {
+    const bar = page.locator('#tabbar-mount [data-tab-bar]');
+    await bar.waitFor({ state: 'visible' });
+    await page.waitForFunction(() => document.querySelectorAll('#tabbar-mount [data-tab-id]').length === 28);
+    assert((await bar.boundingBox()).height < 80, 'many tabs stay in a single bounded row');
+    await page.locator('[data-tab-picker-toggle]').click();
+    await page.getByRole('searchbox', { name: 'Search tabs', exact: true }).fill('research 20');
+    await page.locator(`[data-tab-pick="${many[19].id}"]`).click(); await ready(page);
+    await page.getByRole('heading', { name: 'Saved research 20', exact: true }).waitFor();
+    assert.equal(await page.locator(`#tabbar-mount [data-tab-id="${many[19].id}"]`).getAttribute('aria-selected'), 'true');
+    const visible = await page.locator(`#tabbar-mount [data-tab-id="${many[19].id}"]`).boundingBox(), strip = await page.locator('#tabbar-mount [data-tab-list]').boundingBox();
+    assert(visible.x + visible.width > strip.x && visible.x < strip.x + strip.width, 'selected search result is revealed in the strip');
+    await page.locator('[data-tab-picker-toggle]').click();
+    await page.getByRole('searchbox', { name: 'Search tabs', exact: true }).fill('no matching tab');
+    await page.getByText('No tabs match your search.', { exact: true }).waitFor();
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.querySelector('[data-tab-picker-toggle]').getAttribute('aria-expanded') === 'false');
+  }
+  await one.page.locator('[data-tab-picker-toggle]').click();
+  await one.page.getByRole('searchbox', { name: 'Search tabs', exact: true }).fill('research 20');
+  await one.page.getByRole('button', { name: 'Move Saved research 20 earlier', exact: true }).click();
+  await one.page.waitForFunction(() => !window.workspace.status().pending);
+  assert.equal(store.snapshot().order.at(-2), many[19].id, 'search moves against the complete shared order');
+  await one.page.keyboard.press('Escape');
+  await two.page.evaluate(() => window.workspace.sync()); await two.page.reload(); await ready(two.page);
+  assert.deepEqual(await order(two.page), await order(one.page), 'overflow panel moves survive across devices and reload');
+  if (process.env.WORKSPACE_SCREENSHOT) {
+    await one.page.locator('[data-tab-picker-toggle]').click();
+    await one.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-many-light.png` });
+    await one.page.keyboard.press('Escape');
+    await two.page.locator('[data-tab-picker-toggle]').click();
+    await two.page.screenshot({ path: `${process.env.WORKSPACE_SCREENSHOT}-many-mobile-dark.png` });
+    await two.page.keyboard.press('Escape');
+  }
+  for (const tab of many) store.apply({ id: `fixture-remove-many-${tab.id}`, op: 'remove', tabId: tab.id, expected: store.snapshot().tabs.find(row => row.id === tab.id).revision });
+  await one.page.evaluate(() => window.workspace.sync()); await two.page.evaluate(() => window.workspace.sync());
+  await one.page.goto(`${server.url}#/research/${view.id}?scope=universe`); await ready(one.page);
+  await one.page.getByRole('button', { name: '+ Add tab', exact: true }).click();
+  await one.page.locator('[data-saved-title]').fill('Cancelled draft'); await one.page.locator('[data-saved-submit]').click(); await ready(one.page);
+  await one.page.locator('[data-builder-cancel]').click(); await ready(one.page);
+  assert.equal(await one.page.locator('[data-tab-draft], [data-building-tab]').count(), 0);
+  assert(!store.snapshot().tabs.some(tab => tab.title === 'Cancelled draft'), 'cancelling leaves no shared tab');
+  console.log('PASS scalable navigation: 20 custom tabs, desktop/light and mobile/dark search, active reveal, empty search, keyboard dismissal, shared reorder/reload and draft cancellation');
   const multiTable = await one.page.evaluate(async () => {
     const { scoreTable } = await import('/js/ui/screener.js');
     const readings = await import('/js/core/view-reading.js'), prior = readings.activeView();
@@ -265,7 +335,7 @@ try {
   assert.deepEqual(multiTable.restored.tables, multiTable.original.tables, 'each mounted table independently restores its own search and filters');
   assert(!JSON.stringify(multiTable.original).includes('synthetic-first'), 'saved multi-table readings contain no source rows');
   assert.deepEqual(errors, []);
-  console.log('PASS shared screens: real Capital Raises filters, two devices, universal order, deep links/reload, deliberate shared saves, rename, failed reads, blank page/configuration, responsive controls and removal without source changes');
+  console.log('PASS shared screens: live Capital Raises filters, two devices, universal order, deep links/reload, explicit draft save, rename, failed reads, responsive controls and removal without source changes');
   await one.context.close(); await two.context.close();
   oldModules = true;
   const warm = await browser.newContext({ viewport: { width: 1440, height: 900 } }), returning = await warm.newPage();
