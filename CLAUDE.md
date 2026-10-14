@@ -333,6 +333,7 @@ switching readers must not move the alert subtabs or change their horizontal pad
 Announcements uses the same grouping for Corporate Announcements, Corporate Actions, IPOs and Bulk/Block Deal,
 in that order, defaulting to Corporate Announcements when entering from another section.
 Each reader keeps its saved routes, scope behavior and independent data lifecycle.
+Corp Announcements shows its title alone, without the source/sorting description beneath it.
 Bulk/Block Deal retains the `insider-trades` route and all four disclosure categories.
 Earnings contains Results (the existing Earnings Hub reader, selected by default) and Concall,
 in that order. Both keep their existing routes, reader controls and data lifecycles.
