@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${ipoFilingCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2-ai-timeline-scroll-cue-v3-deals-reading-layout-v2-alerts-shared-frame-v1-announcements-title-only-v1-source-panel-details-v1`;
+  return `${ipoFilingCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2-ai-timeline-scroll-cue-v3-deals-reading-layout-v2-alerts-shared-frame-v1-announcements-title-only-v1-source-panel-details-v1-directory-market-caps-v1`;
 }
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.

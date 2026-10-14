@@ -4,8 +4,8 @@
 // of its inputs. The announcement index already holds both for every company it knows, so the
 // browser asks it for one compact table (GET /api/announcement-index/profiles, ~100 KB) instead of
 // downloading the captures that produced it. Where that cannot be read — a static copy, or no index
-// built yet — the figures are derived here (company-profile.js) from the two small reference files
-// only: the Moneycontrol map's own market cap and the sector file. NOT technicals.json: it is a
+// built yet — the figures are derived here (company-profile.js) from the public market-cap capture,
+// the Moneycontrol map and sector file. NOT technicals.json: it is a
 // 2.8 MB pooled capture, and All Alerts on Today reads the alert pool precisely so that no capture
 // is downloaded (verify-alert-pool-ui.mjs asserts it). A band from the map's figure can differ from
 // the index's Screener figure near a band edge; that is a fallback's precision, never a missing row.
@@ -17,6 +17,7 @@ import { revalidatedJson } from '../core/store.js';
 
 let profiles = null; // { profileOf, source, builtAt }
 let pending = null;
+let checkedAt = 0;
 let revision = 0;
 const listeners = new Set();
 const UNKNOWN = Object.freeze({ mcapCr: null, band: MCAP_UNKNOWN, group: null });
@@ -46,31 +47,37 @@ function fromTable(body) {
 }
 
 async function fromCommittedFiles() {
-  const [tickerMap, sectorKpis] = await Promise.all([
+  const [tickerMap, sectorKpis, marketCaps] = await Promise.all([
     revalidatedJson('data/mc-ticker-map.json', { optional: true }).catch(() => null),
     revalidatedJson('data/sector-kpis.json', { optional: true }).catch(() => null),
+    revalidatedJson('data/market-caps.json', { optional: true }).catch(() => null),
   ]);
-  const built = buildCompanyProfiles({ tickerMap, sectorKpis });
-  return { source: 'reference-files', builtAt: built.meta.tickerMapAsOf || null,
+  const built = buildCompanyProfiles({ tickerMap, sectorKpis, marketCaps });
+  if ((!tickerMap && !marketCaps) || (profiles && !marketCaps)) return null;
+  return { source: 'reference-files', builtAt: built.meta.marketCapsAsOf || built.meta.tickerMapAsOf || null,
     profileOf: (c = {}) => { const p = built.profileOf(c); return { mcapCr: p.mcapCr, band: p.band, group: p.group }; } };
 }
 
-/** Load once per page; resolves when profiles are available (or could not be). Never throws. */
+/** Revalidate when used after fifteen minutes; retain saved profiles through failures. Never throws. */
 export function loadProfiles() {
-  if (profiles) return Promise.resolve(profiles);
+  if (profiles && Date.now() - checkedAt < 15 * 60_000) return Promise.resolve(profiles);
   if (pending) return pending;
   pending = (async () => {
+    checkedAt = Date.now();
+    let next = null;
     try {
       const response = await fetch('api/announcement-index/profiles', { cache: 'no-cache', headers: { accept: 'application/json' } });
       if (response.ok && /json/.test(response.headers.get('content-type') || '')) {
         const body = await response.json();
-        if (body?.ok && Array.isArray(body.rows)) profiles = fromTable(body);
+        if (body?.ok && Array.isArray(body.rows) && body.rows.length) next = fromTable(body);
       }
     } catch { /* fall back to the committed files below */ }
-    if (!profiles) {
-      try { profiles = await fromCommittedFiles(); } catch { profiles = null; }
+    if (!next) {
+      try { next = await fromCommittedFiles(); } catch { /* retain last good figures */ }
     }
-    if (profiles) { revision++; listeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } }); }
+    if (next && (!profiles || next.source !== profiles.source || next.builtAt !== profiles.builtAt)) {
+      profiles = next; revision++; listeners.forEach((fn) => { try { fn(); } catch { /* ignore */ } });
+    }
     return profiles;
   })().finally(() => { pending = null; });
   return pending;

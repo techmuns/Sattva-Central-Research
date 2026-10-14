@@ -3,10 +3,14 @@
 // relevance reading on every surface, so a company is one size and one sector everywhere.
 //
 // WHERE THE NUMBERS COME FROM, in order of preference — and every figure keeps its own date:
-//   1. technicals.json `marketCap` — Screener's figure on the technicals capture's price date.
-//   2. mc-ticker-map.json `shares` × the last traded price in earnings-live.json, where that price
+//   1. market-caps.json — exact exchange-identified public Screener figures across the directory.
+//      A checked time is an observation, not an invented quote date. Failed reads retain their
+//      previous figure and checked time. A newer explicitly dated market-cap figure still wins.
+//   2. technicals.json `marketCap` — a cached Screener export input. The technicals' price date
+//      dates Yahoo bars, not this figure; only an explicit marketCapAsOf can date the cap.
+//   3. mc-ticker-map.json `shares` × the last traded price in earnings-live.json, where that price
 //      is newer than the map's own build — a derived figure, labelled `shares × last price`.
-//   3. mc-ticker-map.json `mktCapAtBuild` — Moneycontrol's figure when the map was built.
+//   4. mc-ticker-map.json `mktCapAtBuild` — Moneycontrol's cached figure, with no invented date.
 // A company none of them knows has NO market cap — never zero, never a guess. Its filings stay
 // visible; the Market cap column says "—" and the range filter offers "Not available" by name.
 //
@@ -45,7 +49,7 @@ export function formatMarketCap(cr) {
   if (!Number.isFinite(cr) || cr <= 0) return null;
   if (cr >= 100_000) return `₹${indian(cr / 100_000, 2)} lakh Cr`;
   if (cr >= 100) return `₹${indian(Math.round(cr))} Cr`;
-  return `₹${indian(cr, 1)} Cr`;
+  return `₹${indian(cr, cr < 1 ? 2 : 1)} Cr`;
 }
 
 /**
@@ -134,12 +138,13 @@ const bseKey = (v) => (/^\d{6}$/.test(String(v ?? '').trim()) ? `BSE:${String(v)
  * Build the lookup. Every input is optional; pass what is loaded.
  *
  * @param {object} p
+ * @param {object} [p.marketCaps]  market-caps.json (public figures, exact exchange identities)
  * @param {object} [p.tickerMap]   mc-ticker-map.json
  * @param {object} [p.earnings]    earnings-live.json (for last traded prices)
  * @param {object} [p.technicals]  technicals.json
  * @param {object} [p.sectorKpis]  sector-kpis.json
  */
-export function buildCompanyProfiles({ tickerMap = null, earnings = null, technicals = null, sectorKpis = null } = {}) {
+export function buildCompanyProfiles({ marketCaps = null, tickerMap = null, earnings = null, technicals = null, sectorKpis = null } = {}) {
   const byKey = new Map();
   const aliases = new Map();
   const put = (keys, value) => { for (const k of keys) if (k && !byKey.has(k)) byKey.set(k, value); };
@@ -151,15 +156,16 @@ export function buildCompanyProfiles({ tickerMap = null, earnings = null, techni
   for (const [key, company] of Object.entries(sectorKpis?.companies || {})) {
     if (company?.group) groups.set(/^\d{6}$/.test(key) ? `BSE:${key}` : upper(key), { group: company.group, sector: company.sector || null });
   }
-  // 1. technicals — Screener's own market cap on its price date.
+  // Legacy technicals inputs — their bar date cannot date the cached market cap.
   const technicalsAsOf = technicals?.price_date || technicals?.generated_at || null;
   for (const company of technicals?.companies || []) {
     const cr = parseCrore(company?.marketCap);
     const ticker = upper(company?.ticker);
     if (!ticker || !cr) continue;
-    put([ticker], { cr, asOf: technicalsAsOf, source: 'Screener market cap (technicals capture)', industry: company.industry || null, sector: company.sector || null });
+    put([ticker], { cr, asOf: Number.isFinite(Date.parse(company.marketCapAsOf)) ? company.marketCapAsOf : null,
+      source: 'Screener market cap (cached technicals input)', industry: company.industry || null, sector: company.sector || null });
   }
-  // 2/3. The Moneycontrol map — shares × a newer last price where there is one, its build figure otherwise.
+  // The Moneycontrol map — shares × a newer last price where there is one, its cached figure otherwise.
   const newerPrice = priceAsOf && (!mapAsOf || Date.parse(priceAsOf) > Date.parse(mapAsOf));
   for (const [scId, entry] of Object.entries(tickerMap?.map || {})) {
     const ticker = upper(entry?.ticker), bse = bseKey(entry?.bseId);
@@ -169,7 +175,8 @@ export function buildCompanyProfiles({ tickerMap = null, earnings = null, techni
       value = { cr: (entry.shares * ltp) / 1e7, asOf: priceAsOf, source: 'Shares × last traded price (Moneycontrol)' };
     } else {
       const cr = parseCrore(entry?.mktCapAtBuild);
-      if (cr) value = { cr, asOf: mapAsOf, source: 'Moneycontrol market cap' };
+      if (cr) value = { cr, asOf: Number.isFinite(Date.parse(entry.mktCapAsOf)) ? entry.mktCapAsOf : null,
+        source: 'Moneycontrol market cap (cached ticker-map input)' };
     }
     // One company, one figure: a BSE code resolves to the same profile its NSE symbol has.
     if (ticker && bse) aliases.set(bse, ticker);
@@ -178,17 +185,43 @@ export function buildCompanyProfiles({ tickerMap = null, earnings = null, techni
     if (ticker && byKey.has(ticker)) { byKey.get(ticker).industry ||= value.industry; continue; }
     put([ticker, bse], value);
   }
+  const capsByIsin = new Map(), capsByKey = new Map(), attemptsByIsin = new Map();
+  const putCap = (key, value) => {
+    if (!key) return;
+    if (!capsByKey.has(key)) capsByKey.set(key, value);
+    else if (capsByKey.get(key)?.isin !== value.isin) capsByKey.set(key, null);
+  };
+  for (const entry of marketCaps?.version === 1 ? marketCaps.entries || [] : []) {
+    if (!/^IN[A-Z0-9]{10}$/.test(entry?.isin || '')) continue;
+    attemptsByIsin.set(entry.isin, entry);
+    const cr = parseCrore(entry.cr);
+    if (!cr || !Number.isFinite(Date.parse(entry.checkedAt))) continue;
+    const value = { ...entry, cr };
+    // NSE symbols and BSE numeric codes identify different namespaces. BSE-only symbols can
+    // belong to another NSE issuer; never use them to fill another company's unknown figure.
+    capsByIsin.set(entry.isin, value);
+    if (entry.exchanges?.includes('NSE')) putCap(upper(entry.ticker), value);
+    putCap(bseKey(entry.bseCode), value);
+  }
   const profileOf = (company = {}) => {
     const bse = bseKey(company.scripCode || company.bseCode || company.bseId);
     const ticker = upper(company.ticker) || (bse ? aliases.get(bse) : '') || '';
     const keys = [ticker, bse].filter(Boolean);
     let cap = null, group = null;
     for (const k of keys) { cap ||= byKey.get(k) || null; group ||= groups.get(k) || null; }
+    const isin = upper(company.isin);
+    const candidate = capsByIsin.get(isin) || capsByKey.get(bse) || capsByKey.get(ticker);
+    const captured = candidate && (!isin || candidate.isin === isin) ? candidate : null;
+    if (captured && (!cap || Date.parse(captured.checkedAt) >= Date.parse(cap.asOf || '1970-01-01'))) {
+      cap = { ...cap, cr: captured.cr, asOf: null,
+        source: `Screener market cap · checked ${captured.checkedAt}${captured.priceDateLabel ? ` · source price: ${captured.priceDateLabel}` : ' · price date not supplied'}${captured.error ? ` · latest check failed ${captured.attemptedAt || ''}: ${captured.error}` : ''}` };
+    }
     const groupId = group?.group || industryGroup(cap?.industry) || null;
+    const attempt = attemptsByIsin.get(isin);
     return {
       mcapCr: cap ? Math.round(cap.cr * 100) / 100 : null,
       mcapAsOf: cap?.asOf || null,
-      mcapSource: cap?.source || null,
+      mcapSource: cap?.source || (attempt?.error ? `Last market-cap check ${attempt.attemptedAt || ''}: ${attempt.error}` : null),
       band: mcapBand(cap?.cr),
       group: groupId,
       sector: group?.sector || cap?.sector || null,
@@ -197,6 +230,7 @@ export function buildCompanyProfiles({ tickerMap = null, earnings = null, techni
   return {
     profileOf,
     size: byKey.size,
-    meta: { tickerMapAsOf: mapAsOf, priceAsOf, technicalsAsOf, companies: byKey.size, sectorCompanies: groups.size },
+    meta: { tickerMapAsOf: mapAsOf, priceAsOf, technicalsAsOf, marketCapsAsOf: marketCaps?.generated_at || marketCaps?.generatedAt || null,
+      marketCapCoverage: marketCaps?.coverage || null, companies: byKey.size, sectorCompanies: groups.size },
   };
 }

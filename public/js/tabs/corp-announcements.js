@@ -178,7 +178,7 @@ const feedbackItem = (row) => ({ surface: 'announcements', itemKey: row.id, even
 
 const mcapCell = (r) => {
   const text = formatMarketCap(r.mcapCr);
-  if (!text) return dash('No market cap is known for this company. Its filings stay visible; the range filter lists it under "Not available".');
+  if (!text) return dash(`No market cap is known for this company. Its filings stay visible; the range filter lists it under "Not available".${r.mcapSource ? ` ${r.mcapSource}` : ''}`);
   const title = `Market cap ${text}${r.mcapAsOf ? ` as of ${String(r.mcapAsOf).slice(0, 10)}` : ''}${r.mcapSource ? ` · ${r.mcapSource}` : ''}`;
   return `<span class="tabular-nums text-slate-700" title="${escapeHtml(title)}">${escapeHtml(text.replace(/^₹/, '₹ '))}</span>`;
 };
@@ -494,6 +494,7 @@ const tab = makeFilingsTab({
   provenance: (m, { scope } = {}) => {
     const qm = m.query || {};
     const index = qm.index || {};
+    const marketCaps = index.meta?.profiles?.marketCapCoverage;
     const built = index.builtAt ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(index.builtAt)) + ' IST' : 'unavailable';
     return `<div class="px-7 py-6">
     <div class="mb-3 flex items-start justify-between gap-4">
@@ -516,8 +517,13 @@ const tab = makeFilingsTab({
       <p><strong>Related filings</strong> are other filings by the same company about the same underlying event — the board intimation,
         the outcome, the results, the presentation, the call; or an approval, an allotment and a listing — joined by category family,
         time and shared words. Every filing stays its own row.</p>
-      <p><strong>Market cap</strong> is the latest captured figure (Screener's, or Moneycontrol's shares × last price), with its date in the
-        cell's tooltip. A company with no known figure shows “—” and is never treated as small or zero.</p>
+      <p><strong>Market cap</strong> uses public Screener figures across the exchange directory, with the technicals and Moneycontrol
+        captures as fallbacks. The cell's tooltip distinguishes when the figure was checked from the source's price date;
+        a screen that supplies no price date stays undated. Failed checks retain the last figure and its original check time.
+        A company with no known figure shows “—” and is never treated as small or zero.</p>
+      ${marketCaps ? `<p><strong>Market-cap coverage:</strong> ${escapeHtml(marketCaps.known)} of ${escapeHtml(marketCaps.companies)} directory companies have a saved public figure;
+        ${escapeHtml(marketCaps.checked)} were checked in the latest collection attempt. ${escapeHtml(marketCaps.unavailable)} still have no figure from this source.
+        ${marketCaps.refused || !marketCaps.screenComplete || marketCaps.directRead < marketCaps.directTotal ? 'The latest collection is partial; previous figures retain their own check times.' : ''}</p>` : ''}
       <p><strong>AI Read</strong> opens only when you click a filing: it reads that one document in full and keeps the reading so the next
         reader pays nothing. The list never shows a generated headline or summary; subjects are the exchange's own.</p>
       <p><strong>BSE:</strong> exchange-wide announcements are captured every two hours, with retained monthly history.
@@ -580,8 +586,9 @@ const tab = makeFilingsTab({
         { header: 'Company (as filed)', key: 'co', width: 38, get: (r) => (r.__banner ? '' : r.company || '') },
         { header: 'Subject (as filed)', key: 'h', width: 70, get: (r) => (r.__banner ? '' : cleanFilingText(r.title || r.headline)) },
         { header: 'Categories (dashboard)', key: 'cat', width: 40, get: (r) => (r.__banner ? '' : (r.categories || []).map(categoryLabel).join('; ')) },
-        { header: 'Market cap (₹ Cr)', key: 'mc', width: 16, get: (r) => (r.__banner ? '' : Number.isFinite(r.mcapCr) ? Math.round(r.mcapCr) : '') },
+        { header: 'Market cap (₹ Cr)', key: 'mc', width: 16, get: (r) => (r.__banner ? '' : Number.isFinite(r.mcapCr) ? r.mcapCr : '') },
         { header: 'Market cap as of', key: 'mca', width: 14, get: (r) => (r.__banner ? '' : r.mcapAsOf ? String(r.mcapAsOf).slice(0, 10) : '') },
+        { header: 'Market cap provenance', key: 'mcs', width: 70, get: (r) => (r.__banner ? '' : r.mcapSource || '') },
         { header: 'Related filings (same event)', key: 'rel', width: 14, get: (r) => (r.__banner ? '' : r.event?.size > 1 ? r.event.size - 1 : 0) },
         { header: 'Category (as filed)', key: 'c', width: 22, get: (r) => (r.__banner ? '' : r.category || '') },
         { header: 'Sub-category (as filed)', key: 'sb', width: 30, get: (r) => (r.__banner ? '' : r.subCategory || '') },

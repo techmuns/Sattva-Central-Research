@@ -89,6 +89,14 @@ jobs:
         continue-on-error: true
         run: node scripts/scrape-earnings.mjs
 
+      # Directory-wide figures, including SME/BSE-only companies outside technicals/earnings.
+      # Public pages, paced two seconds apart. Checkpoints retain successful figures
+      # through interruptions and source refusals; unavailable prices are never filled with zero.
+      - name: Capture public company market caps
+        continue-on-error: true
+        timeout-minutes: 32
+        run: node scripts/collect-market-caps.mjs
+
       # Result-day closes, also incremental — one Yahoo call per newly-reported company. A past
       # close never changes, so nothing already cached is refetched.
       - name: Run result-day closes
@@ -132,6 +140,7 @@ jobs:
             public/data/price-move-checks.json
             public/data/earnings-live.json
             public/data/mc-ticker-map.json
+            public/data/market-caps.json
             public/data/result-returns.json
             public/data/earnings-calendar.json
             public/data/concall-scans.json
@@ -148,7 +157,7 @@ jobs:
           # made the next fetch/rebase fail after an otherwise successful 20-minute collection.
           [ -f public/data/price-move-checks.json ] && git add public/data/price-move-checks.json || true
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
-          for f in earnings-live mc-ticker-map result-returns earnings-calendar concall-scans super-investors; do
+          for f in earnings-live mc-ticker-map market-caps result-returns earnings-calendar concall-scans super-investors; do
             [ -f "public/data/$f.json" ] && git add "public/data/$f.json" || true
           done
           if git diff --cached --quiet; then
