@@ -162,7 +162,7 @@ try {
     assert.equal(await one.page.locator('[data-saved-source]').isVisible(), expectedChoices.filter(choice => choice.group === group).length > 1);
     assert.deepEqual(await one.page.locator('[data-saved-source] option').evaluateAll(options => options.map(option => option.value)), expectedChoices.filter(choice => choice.group === group).map(choice => choice.id));
     for (const choice of expectedChoices.filter(choice => choice.group === group)) {
-      await one.page.locator('[data-saved-source]').selectOption(choice.id);
+      if (expectedChoices.filter(choice => choice.group === group).length > 1) await one.page.locator('[data-saved-source]').selectOption(choice.id);
       assert.equal(await one.page.locator('[data-saved-subview]').isVisible(), choice.views.length > 0, 'views without subtabs hide the redundant default selector');
       assert.deepEqual(await one.page.locator('[data-saved-subview] option').evaluateAll(options => options.map(option => option.value)), choice.views.length ? choice.views.map(view => view.id) : ['']);
     }
