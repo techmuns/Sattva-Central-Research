@@ -132,7 +132,7 @@ try {
   assert.equal(meta.total, index.counts.rows, 'All time counts every filing');
   assert.equal(srv.stats.queries, 2, 'one page request per selected period, not the history');
   const rows = await caRows();
-  const firstSubject = await page.locator('tbody tr[data-row-key]').first().locator('div.truncate.font-semibold').getAttribute('title');
+  const firstSubject = await page.locator('tbody tr[data-row-key]').first().locator('[data-record-name]').getAttribute('title');
   assert.equal(firstSubject, rows[0].title.replace(/\s+/g, ' ').trim(), 'the subject is the exchange’s own words');
   assert.doesNotMatch(await page.locator('tbody').innerText(), /\b(?:High|Medium|Low) (?:priority|relevance|importance)\b/i, 'no rank label is printed');
   for (let i = 1; i < rows.length; i++) {
@@ -143,6 +143,31 @@ try {
   assert(await page.locator('tbody .category-chip').count() > 0, 'category tags are visible');
   assert(await page.locator('tbody td.text-right').filter({ hasText: /₹/ }).count() > 0, 'market caps are visible');
   ok(`server mode: ${meta.total} real filings, one page request, exchange subjects, categories, market cap, ranked within day, no labels`);
+
+  const subjects = await page.locator('tbody tr[data-row-key]').evaluateAll(items => items.map(row => {
+    const subject = row.querySelector('[data-record-name]'), bookmark = row.querySelector('.record-identity-actions [data-bookmark-key]');
+    const text = subject.getBoundingClientRect(), action = bookmark.getBoundingClientRect();
+    return { title: subject.textContent, height: text.height, line: parseFloat(getComputedStyle(subject).lineHeight),
+      wraps: getComputedStyle(subject).whiteSpace === 'normal', actionRight: action.left >= text.right - 1,
+      aligned: Math.abs(action.top + action.height / 2 - text.top - parseFloat(getComputedStyle(subject).lineHeight) / 2) < 7,
+      misplacedWatch: !!row.querySelector('.record-subject-column [data-watch]'),
+      companyWatch: !row.querySelector('[data-watch]') || !!row.querySelector('.record-company-column [data-watch]') };
+  }));
+  assert(subjects.every(item => item.wraps && item.actionRight && item.aligned && !item.misplacedWatch && item.companyWatch), 'actions stay beside their own content, aligned with the first title line');
+  assert(subjects.some(item => item.height > item.line * 1.5), 'a real long exchange subject wraps completely');
+  const firstRow = page.locator('tbody tr[data-row-key]').first();
+  const readCount = srv.stats.reads;
+  await firstRow.locator('.record-identity-actions [data-bookmark-key]').focus(); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key] [data-bookmark-key]')?.getAttribute('aria-pressed') === 'true');
+  assert.equal(srv.stats.reads, readCount, 'bookmarking does not open the announcement reader');
+  await firstRow.locator('[data-bookmark-key]').click();
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key] [data-bookmark-key]')?.getAttribute('aria-pressed') === 'false');
+  await page.locator('[data-notebook-toast] [aria-label="Dismiss"]').click();
+  await page.locator('.record-company-column [data-watch]').first().click();
+  await page.locator('[data-watch-attribution]').waitFor();
+  assert.equal(srv.stats.reads, readCount, 'the company watch control keeps its own interaction');
+  await page.keyboard.press('Escape');
+  ok('complete wrapped subjects, fixed first-line bookmarks, company watch controls, keyboard saving and independent actions');
 
   // Category filter (multi-select).
   await page.locator('[data-ca-open="categories"]').click();
@@ -201,7 +226,7 @@ try {
   const target = feedbackPair(await caRows(), { pdf: true })?.row;
   assert(target, 'the page holds an exchange PDF with a comparable same-day peer for the read and feedback checks');
   const targetRow = page.locator(`tbody tr[data-row-key="${target.id}"]`);
-  await targetRow.locator('.ca-company-cell').click();
+  await targetRow.locator('[data-row-open]').focus(); await page.keyboard.press('Enter');
   const popup = page.locator('#modal-content [data-ann-read]');
   await popup.waitFor();
   assert.deepEqual(await popup.locator('.ann-read-section h3').allInnerTexts().then((t) => t.map((s) => s.trim().toLowerCase())),
@@ -215,7 +240,7 @@ try {
   await targetRow.locator('.ca-company-cell').click();
   await popup.locator('[data-slot="what"]').filter({ hasText: 'read in full' }).waitFor();
   assert.equal(counts.model, 1, 'reopening costs nothing');
-  ok('AI Read on click: five fixed sections, the exchange subject, Open Original Filing, read once and kept');
+  ok('AI Read by keyboard and click: five fixed sections, the exchange subject, Open Original Filing, read once and kept');
 
   // Important / Not important inside the popup trains the shared model and re-orders the list.
   const beforeRows = await caRows();
@@ -385,6 +410,12 @@ try {
     await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
     await page.setViewportSize({ width: 390, height: 844 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme}: no sideways page scroll at 390px`);
+    const controls = await page.locator('tbody tr[data-row-key]').first().evaluate(row => ({
+      subjectWatch: row.querySelector('.record-subject-column [data-watch]') !== null,
+      bookmark: row.querySelector('.record-identity-actions [data-bookmark-key]').getBoundingClientRect().width,
+      wrap: getComputedStyle(row.querySelector('[data-record-name]')).whiteSpace,
+    }));
+    assert(!controls.subjectWatch && controls.bookmark >= 28 && controls.wrap === 'normal', `${theme}: mobile keeps separate reachable actions and complete title wrapping`);
     await page.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
     await popup.waitFor();
     const box = await popup.boundingBox();

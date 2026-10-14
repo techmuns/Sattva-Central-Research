@@ -2145,6 +2145,12 @@ The single child-list observer handles new/replaced rows before paint and discon
 Do not add per-row listeners or full-dataset work. Grouped headings move with their descendants;
 individual child columns move within their group so month attribution remains correct.
 Preserve semantic cell styles (never style the identity cell by its current position).
+Corporate Announcements uses `watchColumn: 'Company'` and `bookmarkPlacement: 'trailing'`:
+the company watch control stays beside the company name, while the bookmark has a fixed action
+area beside the first line of the fully wrapped Subject. Omit empty subtitle lines; keep related
+filings below the subject and retain the keyboard-operable announcement read button. Other
+readers keep their existing action placement. Size and style the owning cells semantically so
+shared column moves do not change this layout.
 Sorting buttons may opt into heading drags with `data-column-drag-handle`; ordinary header
 links and controls keep their own interactions. A completed drag must not trigger sorting.
 Verify with `verify-column-order-ui.mjs`, `verify-column-order-upgrade-ui.mjs`, and the shared

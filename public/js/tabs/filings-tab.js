@@ -347,6 +347,8 @@ export function makeFilingsTab(cfg) {
       // — which narrows every feed on this dashboard by symbol — would have nothing to match.
       watchKey: (r) => r.ticker || null,
       watchName: (r) => r.company || cfg.rowName(r) || r.ticker,
+      watchColumn: cfg.watchColumn || null,
+      bookmarkPlacement: cfg.bookmarkPlacement || 'subline',
       name: (r) => cfg.rowName(r),
       nameLabel: cfg.nameLabel || 'Headline',
       nameAfter: cfg.nameAfter || 0,
@@ -372,6 +374,7 @@ export function makeFilingsTab(cfg) {
       initialSort: cfg.initialSort === null ? null : cfg.initialSort || { key: 'Date', dir: 'desc' },
       initialView: view,
       onRowClick: cfg.onRowClick ? (row) => cfg.onRowClick(row, ctx) : null,
+      rowActionLabel: cfg.rowActionLabel || null,
       afterSub: cfg.afterSub || null,
       allowSort: cfg.allowSort !== false,
       toolbarControls: cfg.toolbarControls?.(ctx, m) || null,
