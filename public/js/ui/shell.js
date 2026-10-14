@@ -468,7 +468,7 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
   const hasSubviews = subviewItems.length > 0 && tabModule.meta.subviewNavigation !== 'toolbar';
   const useSubviewTabs = hasSubviews && (group || tabModule.meta.subviewNavigation === 'tabs');
   const subviewMount = $('#subview-mount', root);
-  subviewMount.dataset.navigation = group ? 'group' : 'views';
+  subviewMount.dataset.navigation = group ? 'group' : useSubviewTabs ? 'tabs' : 'views';
   if (!useSubviewTabs || subviewTabs?.tab !== navigationId) {
     subviewTabs?.dispose();
     subviewTabs = null;
