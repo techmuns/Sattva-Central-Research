@@ -123,7 +123,6 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       </div>`}
       <div data-changes-panel="${state.audience}" data-activity-total="${events.length}" data-holdings-total="${observations.length}">
         ${mine && !managers.meta() ? managerUnavailable() : ''}
-        ${mine ? '' : activitySummary}
         ${unverifiedRelations.length ? `<p class="mb-3 text-xs text-slate-500" data-changes-identity-warning>${unverifiedRelations.length} entity relationships await renewed verification. Their reports remain in Insider Trades and are excluded from these attributed totals.</p>` : ''}
         ${!mine && ready && !directoryPending && !events.length ? `<div class="mb-3 rounded-2xl bg-white p-4 ring-1 ring-slate-100" data-changes-empty-context>
           <p class="text-sm text-slate-700">No matched reported trades in the available records for ${esc(scopeLabel(ctx.scope))} companies in ${esc(PERIODS.find(p => p.id === state.period).label)}. This does not establish that investors made no trades.</p>
@@ -141,7 +140,7 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
         <details class="text-xs text-slate-500" data-changes-sources ${state.sourcesOpen ? 'open' : ''}>
           <summary class="cursor-pointer font-semibold">Sources &amp; coverage</summary>
           <div class="mt-2 space-y-2 leading-relaxed">
-            ${mine ? activitySummary : ''}
+            ${activitySummary}
             ${periodNote}
             ${!mine ? `<p class="mb-3 text-xs text-slate-500" data-changes-context>${directoryPending ? 'Loading tracked investors' : `${list.length} tracked investors`} · Company scope: ${esc(scopeLabel(ctx.scope))}. All Investors includes the tracked directory; the company scope still applies.</p>` : ''}
             ${exchangeStatus}${coverageNote}

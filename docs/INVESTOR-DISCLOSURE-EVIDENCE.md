@@ -32,7 +32,7 @@ enter the coverage review. Search and exports use the same disclosure predicate.
 The Tracked investors group selects the retained investor directory; the company scope and
 trade-date period still apply. The scope control and period selector name both filters. The
 manager and tracked-investor Changes views keep period explanations, directory counts, exchange check status
-and history limits in the collapsed Sources & coverage section. My Managers also keeps its
+and history limits in the collapsed Sources & coverage section. Both audiences also keep their
 activity heading and counts there, so the table follows the filters directly. Opening that
 section exposes the same actual check times, failures
 and retained-history bounds. If there are no matched
