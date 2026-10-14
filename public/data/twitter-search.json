@@ -308,7 +308,7 @@
       "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE067A01029|Cg Power and Ind Sol": {
-      "lastAttemptAt": "2026-10-09T01:03:02+00:00",
+      "lastAttemptAt": "2026-10-14T08:09:18+00:00",
       "lastResultCount": 0,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-03T21:01:00+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-10-14T07:29:57.801428+00:00"
+    "checkedAt": "2026-10-14T08:09:18.941355+00:00"
   }
 }
