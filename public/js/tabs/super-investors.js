@@ -144,6 +144,11 @@ function paint() {
       });
       return;
     }
+    if (!filed.all().length) {
+      root.innerHTML = '<p class="text-sm text-slate-500">No institutional books are available in the retained capture. This does not establish that institutions have no holdings.</p>';
+      void checkInstitutions();
+      return;
+    }
     const panel = renderFiled(ctx, { disposers: panelDisposers, embedded: true, section: state.view === 'changes' ? 'quarterly-changes' : state.view === 'overview' ? 'overview' : 'institutions',
       toolbarControls: navigation.toolbarControls, view: state.view === 'overview' ? reading.overview : reading,
       onView: () => remember(), onFund: fund => { reading.fund = fund; state.view = 'holdings'; navigate('view'); } });

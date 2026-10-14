@@ -796,6 +796,8 @@ html[data-theme] [data-chatter-panel] [data-score-table] tbody tr { border-color
 .investor-navigation h1 { margin-bottom: 16px; }
 .investor-audience { width: fit-content; max-width: 100%; padding: 5px; margin-bottom: 16px; border-radius: 16px; background: rgb(var(--surface-white, 255 255 255)); box-shadow: 0 0 0 1px rgb(var(--edge-slate-100, 241 245 249)); }
 .investor-audience .tab-bar, .investor-view-row .tab-bar { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.investor-navigation .tab-list { flex-wrap: wrap; overflow: visible; mask-image: none; -webkit-mask-image: none; }
+.investor-navigation .tab-scroll-controls { display: none !important; }
 .investor-audience .tab-btn::after { display: none; }
 .investor-view-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .investor-view-row [data-investor-view-tabs] { min-width: 0; max-width: 100%; }

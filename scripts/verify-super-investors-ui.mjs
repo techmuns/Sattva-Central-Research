@@ -383,8 +383,6 @@ try {
   await cold.route('**/*', fixtureRoute);
   const coldPage = await cold.newPage(), coldErrors = [];
   coldPage.on('pageerror', e => coldErrors.push(e.message));
-  // The frozen clock must not suspend native smooth tab scrolling during pointer checks.
-  await coldPage.emulateMedia({ reducedMotion: 'reduce' });
   await coldPage.clock.install({ time:new Date(at) });
   await coldPage.goto(origin + '/dispatcher', { waitUntil:'domcontentloaded' });
   await coldPage.locator('[data-investor-audience] [data-tab-id="investors"]').click();
