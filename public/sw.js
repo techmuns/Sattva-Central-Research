@@ -50,7 +50,7 @@ function releaseCacheKey() {
 
 // Compose this UI revision without editing another release's version marker.
 function appReleaseCacheKey() {
-  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-reorder-research-tabs-v1-news-card-parity-v1`;
+  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-reorder-research-tabs-v1-manager-images-v1-news-card-parity-v1`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
@@ -176,7 +176,7 @@ function cacheable(request, url) {
   // navigation as /index.html both hid the document and could overwrite the cached dashboard.
   if (url.pathname === '/filing' || url.pathname.startsWith('/filing/')) return false;
   return request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html' ||
-    url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/') || url.pathname.startsWith('/data/') || url.pathname.startsWith('/assets/brand/');
+    url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/') || url.pathname.startsWith('/data/') || url.pathname.startsWith('/assets/brand/') || url.pathname.startsWith('/assets/managers/');
 }
 
 const newsPartHash = url => /^\/data\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.parts\/([a-f0-9]{64})\.json$/.exec(url.pathname)?.[1];
@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${ipoFilingCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2-ai-timeline-scroll-cue-v3-deals-reading-layout-v2-alerts-shared-frame-v1-announcements-title-only-v1-source-panel-details-v1`;
+  return `${ipoFilingCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2-ai-timeline-scroll-cue-v3-deals-reading-layout-v2-alerts-shared-frame-v1-announcements-title-only-v1-source-panel-details-v1-directory-market-caps-v4`;
 }
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.
@@ -261,11 +261,11 @@ function dashboardCacheKey() {
 
 // Compose column presentation with other releases without changing their version markers.
 function sharedWorkspaceCacheKey() {
-  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v6`;
+  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v6-shared-navigation-spacing-v2`;
 }
 
 function tableLayoutCacheKey() {
-  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1-chatter-clean-header-v2-chatter-source-highlights-v1`;
+  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1-chatter-clean-header-v2-chatter-source-highlights-v1-chatter-text-colours-v2`;
 }
 
 // Keep the IPO revision independent of other dashboard release markers.

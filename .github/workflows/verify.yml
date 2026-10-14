@@ -41,7 +41,7 @@ jobs:
       - name: Verify refresh ownership and source targeting
         run: node scripts/verify-refresh.mjs
       - name: Verify evidence-based public chatter summaries
-        run: node scripts/verify-chatter-sentiment.mjs
+        run: node scripts/verify-chatter-sentiment.mjs && node scripts/verify-chatter-highlight-reading.mjs
       - name: Verify personal notebook snapshot and backup contracts
         run: node scripts/verify-bookmarks.mjs
       - name: Verify durable shared tab layouts and live saved-reader definitions
@@ -113,7 +113,7 @@ jobs:
       - name: Verify continuous corporate announcement sources and retention
         run: node scripts/verify-corporate-stream.mjs && node scripts/verify-bse-collection.mjs && node scripts/verify-bse-request-profile.mjs && node scripts/verify-announcement-recovery.mjs
       - name: Verify investor relevance, categories, event stitching, shared feedback, the announcement index and AI Read
-        run: node scripts/verify-relevance.mjs && node scripts/verify-announcement-read-stream.mjs
+        run: node scripts/verify-market-caps.mjs && node scripts/verify-relevance.mjs && node scripts/verify-announcement-read-stream.mjs
       - name: Verify the announcement index, shared feedback and AI Read across real Durable Object RPC in the local Worker runtime
         run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-announcements-runtime.mjs'
       - name: Verify domestic filings and earnings provenance
@@ -281,7 +281,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-super-investors-ui.mjs && node scripts/verify-manager-upgrade-ui.mjs && node scripts/verify-investor-changes-upgrade-ui.mjs
+        run: node scripts/verify-super-investors-ui.mjs && node scripts/verify-manager-images-ui.mjs && node scripts/verify-manager-upgrade-ui.mjs && node scripts/verify-investor-changes-upgrade-ui.mjs
       - name: Verify portfolio reload, offline, resume and cache behaviour
         if: ${{ matrix.part == 2 }}
         env:
@@ -395,7 +395,7 @@ jobs:
         if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-announcements-ui.mjs && node scripts/verify-announcement-read-cache-ui.mjs
+        run: node scripts/verify-market-caps-ui.mjs && node scripts/verify-announcements-ui.mjs && node scripts/verify-announcement-read-cache-ui.mjs
       - name: Verify corporate actions and exact transaction filters
         if: ${{ matrix.part == 3 }}
         env:

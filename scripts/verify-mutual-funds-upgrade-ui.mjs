@@ -6,7 +6,7 @@ import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
 let upgraded = false;
-const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><output id="default"></output><output id="views"></output><output id="reading"></output><output id="comparison"></output><output id="coverage"></output><script type="module">
+const html = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"></head><body><div id="app" data-reading-layout="table"><header data-app-header class="pt-8 pb-4">Header</header><nav data-app-nav>Main tabs</nav><div data-app-content class="py-6"><div id="subview-mount" data-navigation="group" class="mb-5">Subtabs</div><main id="dashboard-main">Reader</main></div></div><output id="default"></output><output id="views"></output><output id="reading"></output><output id="comparison"></output><output id="coverage"></output><script type="module">
 import { DEFAULT_ROUTE } from '/js/core/router.js';
 import { meta as fundMeta } from '/js/tabs/mutual-funds.js';
 import { readableOwnership } from '/js/data/mutual-funds-ownership.js';
@@ -37,6 +37,7 @@ const server = createServer((req, res) => {
       body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
       if (!upgraded) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-mf-comparison-release`;');
     }
+    if (pathname === '/css/theme.css' && !upgraded) body = body.toString() + '\n[data-reading-layout="table"] [data-app-header], [data-reading-layout="table"] [data-app-content] { padding-top: 0; padding-bottom: 0; } [data-reading-layout="table"] #subview-mount { margin-bottom: 0; }';
     // Model the previous normalizer's behavior inside a genuinely controlled,
     // warm session. Every other module and the update lifecycle are real.
     if (pathname === '/js/core/router.js' && !upgraded) body = body.toString().replace("tab: 'ai-alerts'", "tab: 'ask-research'");
@@ -65,6 +66,13 @@ try {
   assert.equal(await page.locator('#reading').innerText(), '10%');
   assert.equal(await page.locator('#comparison').innerText(), 'Pending');
   assert.equal(await page.locator('#coverage').innerText(), 'ok');
+  const spacing = () => page.evaluate(() => {
+    const box = selector => document.querySelector(selector).getBoundingClientRect();
+    return { top: getComputedStyle(document.querySelector('[data-app-header]')).paddingTop,
+      navigationGap: box('#subview-mount').top - box('[data-app-nav]').bottom,
+      readerGap: box('#dashboard-main').top - box('#subview-mount').bottom };
+  });
+  assert.deepEqual(await spacing(), { top: '0px', navigationGap: 0, readerGap: 0 });
   const before = await page.evaluate(() => caches.keys());
   assert(before.some(key => key.includes('previous-mf-comparison-release')));
   upgraded = true;
@@ -72,6 +80,8 @@ try {
   await page.waitForFunction(() => document.querySelector('#comparison')?.textContent === 'No disclosure' && document.querySelector('#reading')?.textContent === '—', { timeout: 30000 });
   assert.equal(await page.locator('#coverage').innerText(), 'Current');
   assert.equal(await page.locator('#default').innerText(),'ai-alerts');
+  assert.deepEqual(await spacing(), { top: '32px', navigationGap: 24, readerGap: 20 }, 'the same warm session receives the new immutable CSS');
+  assert.equal(await page.evaluate(async () => (await import('/js/tabs/catalog.js')).TAB_META['mutual-funds'].subviewNavigation), 'tabs');
   assert.match(await page.locator('#views').innerText(),/all-schemes,category-performance/);
   assert.equal(await page.evaluate(() => !!navigator.serviceWorker.controller), true);
   const after = await page.evaluate(() => caches.keys());

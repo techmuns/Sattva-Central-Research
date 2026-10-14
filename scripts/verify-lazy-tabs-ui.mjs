@@ -33,12 +33,14 @@ async function alertFrame(page) {
     const box = selector => {
       const el = document.querySelector(selector), rect = el.getBoundingClientRect();
       const css = getComputedStyle(el);
-      return { x: rect.x, width: rect.width, left: rect.x + parseFloat(css.paddingLeft),
+      return { x: rect.x, y: rect.y, bottom: rect.bottom, height: rect.height, width: rect.width, left: rect.x + parseFloat(css.paddingLeft),
         right: rect.right - parseFloat(css.paddingRight) };
     };
     const header = box('[data-app-header]'), nav = box('[data-app-nav]'), content = box('[data-app-content]');
+    // Reader height changes with its rows; compare its frame and start, not its bottom.
+    delete content.bottom; delete content.height;
     const subtabs = box('#subview-mount');
-    return { header, nav, content, subtabs, subtabTop: document.querySelector('#subview-mount').getBoundingClientRect().top,
+    return { header, nav, content, subtabs, mainTop: document.querySelector('#dashboard-main').offsetTop, subtabTop: document.querySelector('#subview-mount').getBoundingClientRect().top,
       overflow: document.documentElement.scrollWidth > innerWidth + 1 };
   });
 }
@@ -49,6 +51,9 @@ function alignedAlerts(frame) {
   }
   assert.equal(frame.subtabs.x, frame.content.left, 'subtabs stay inside the common frame');
   assert.equal(frame.overflow, false, 'wide table columns do not widen the page');
+  assert(frame.header.y >= 0, 'the brand has space above it');
+  assert(frame.subtabTop - frame.nav.bottom >= 20, 'main tabs and subtabs have dedicated space');
+  assert(frame.mainTop - frame.subtabs.bottom >= 19, 'subtabs and reader content have dedicated space');
 }
 const server = createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
@@ -238,7 +243,8 @@ try {
     assert.equal(await page.locator('#tabbar-mount [data-tab-id="insider-trades"]').count(), 0, 'deals only occupy their announcement subtab');
     await page.locator('#tabbar-mount [data-tab-id="mutual-funds"]').click();
     await page.locator('[data-active-tab="mutual-funds"]').waitFor();
-    assert(await page.locator('#subview-mount').isHidden(), 'group subtabs leave with their parent');
+    assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+      ['company-holdings', 'all-schemes', 'category-performance'], 'Mutual Funds replaces the former group with its own shell subtabs');
 
     // Hold one real renderer request while the reader moves to another interface.
     let release;
@@ -279,6 +285,15 @@ try {
       await page.locator('#subview-mount [data-tab-id="ai-alerts"]').click();
       await page.locator('[data-active-tab="ai-alerts"]').waitFor();
       assert.deepEqual(await alertFrame(page), before, `${width}px: returning to AI Alerts keeps its frame`);
+      for (const tab of ['announcements', 'mutual-funds', 'earnings', 'news-section', 'breakouts']) {
+        await page.locator(`#tabbar-mount [data-tab-id="${tab}"]`).click();
+        const frame = await alertFrame(page);
+        alignedAlerts(frame);
+        assert.deepEqual(frame.header, before.header, `${width}px: ${tab} keeps the shared header`);
+        assert.deepEqual(frame.nav, before.nav, `${width}px: ${tab} keeps the shared main tabs`);
+        assert.equal(frame.subtabTop, before.subtabTop, `${width}px: ${tab} starts subtabs at the same position`);
+        assert.equal(frame.mainTop, before.mainTop, `${width}px: ${tab} starts the reader at the same position`);
+      }
     }
     await page.setViewportSize({ width: 1024, height: 700 });
     const embedded = await context.newPage();

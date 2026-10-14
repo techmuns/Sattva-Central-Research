@@ -42,7 +42,7 @@ export function* buildIndexSteps({ rows, feed, profiles }) {
     if (idx === undefined) {
       const identity = feed.companyIdentity(row);
       const scripCode = identity.bseCode || identity.scripCode || row.scripCode || null;
-      const profile = profiles.profileOf({ ticker: identity.ticker || row.ticker, scripCode });
+      const profile = profiles.profileOf({ ticker: identity.ticker || row.ticker, scripCode, isin: identity.isin || row.isin });
       idx = companies.length;
       companies.push({ k: key, t: identity.ticker || row.ticker || null, i: identity.isin || row.isin || null, s: scripCode,
         n: row.company || identity.name || null, m: profile.mcapCr, ma: profile.mcapAsOf, ms: profile.mcapSource, b: profile.band, g: profile.group });

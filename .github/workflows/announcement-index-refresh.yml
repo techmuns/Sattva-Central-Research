@@ -25,6 +25,7 @@ on:
       - 'public/js/data/relevance*.js'
       - 'public/js/data/event-stitching.js'
       - 'public/js/data/company-profile.js'
+      - 'public/data/market-caps.json'
       - 'public/js/data/sector-affinity.js'
       - 'scripts/lib/announcement-index-build.mjs'
       - 'scripts/build-announcement-index.mjs'

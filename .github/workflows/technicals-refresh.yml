@@ -170,3 +170,48 @@ jobs:
           done
           echo "Push still failing after 4 attempts."
           exit 1
+
+  # The existing scrape has taken 30–40 minutes; a ~27-minute directory walk must not
+  # consume its sixty-minute budget or delay publishing other feeds. Same triggers and
+  # workflow concurrency, independent checkpoints and a separate single-file commit.
+  market-caps:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * 1-5'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Capture public company market caps
+        run: node scripts/collect-market-caps.mjs
+      - name: Retain market-cap checkpoints
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: market-cap-data
+          path: public/data/market-caps.json
+          if-no-files-found: warn
+      - name: Publish captured market caps
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/market-caps.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Company market caps ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          exit 1
