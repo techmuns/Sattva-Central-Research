@@ -832,7 +832,7 @@
       "pending": []
     },
     "isin:INE858B01029|ISGEC Heavy Engineering": {
-      "lastAttemptAt": "2026-10-10T02:28:21+00:00",
+      "lastAttemptAt": "2026-10-15T08:28:48+00:00",
       "error": "search-unavailable",
       "lastResultCount": 24,
       "lastSuccessAt": "2026-09-21T14:54:36+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-15T07:55:51.273892+00:00"
+    "checkedAt": "2026-10-15T08:28:48.976772+00:00"
   }
 }
