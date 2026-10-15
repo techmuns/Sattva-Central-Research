@@ -27,7 +27,7 @@ jobs:
   collect:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       FAMILY_HOLDINGS_LIVE: 'true'
       GITHUB_TOKEN: ${{ github.token }}
@@ -36,13 +36,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Restore retained data on the GitHub runner
         id: restore
+        timeout-minutes: 45
         run: node scripts/mutual-funds-github.mjs restore
       - name: Set isolated source directory
         run: echo "AMFIBEAS_PATH=$RUNNER_TEMP/amfibeas" >> "$GITHUB_ENV"
@@ -60,9 +61,11 @@ jobs:
         run: timeout 5m node scripts/collect-mutual-funds-denominators.mjs
       - name: Publish retained holdings and coverage
         if: steps.sources.outcome == 'success'
+        timeout-minutes: 25
         run: node scripts/collect-mutual-funds.mjs --publish
       - name: Save retained data and prepared reader snapshots to GitHub
         if: always() && steps.restore.outcome == 'success'
+        timeout-minutes: 15
         run: node scripts/mutual-funds-github.mjs publish
       - uses: actions/upload-artifact@v5
         if: always()

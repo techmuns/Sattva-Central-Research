@@ -9,6 +9,8 @@ import { sealForReader,hash } from '../../worker/mutual-funds-seal.mjs';
 import { localMutualFunds } from './mutual-funds-local.mjs';
 import { scannerOperationalStatus } from '../../worker/mutual-funds-scanner-model.mjs';
 import { MF_TABLES } from '../../worker/mutual-funds-export.mjs';
+import {sealBackgroundView} from './github-background-views.mjs';
+import {sealBackgroundState} from './github-background-seal.mjs';
 
 export const MF_LOCAL_FILE=path.resolve('.cache/mutual-funds/state.sqlite');
 const encoder=new TextEncoder();
@@ -71,20 +73,31 @@ export async function restoreState({env=process.env,legacyClient,fetcher=fetch,f
   }catch(error){local.close();fs.rmSync(file,{force:true});throw error;}
   local.close();
 }
-export async function buildSnapshot(local,recipient,{env=process.env,out=path.resolve('.cache/mutual-funds/publish'),file=MF_LOCAL_FILE,previous=null,partBytes=4*1024*1024}={}) {
+export async function buildSnapshot(local,recipient,{env=process.env,out=path.resolve('.cache/mutual-funds/publish'),file=MF_LOCAL_FILE,previous=null,partBytes=4*1024*1024,staticViews=false}={}) {
   fs.mkdirSync(out,{recursive:true});
   const repo=mfRepo(runnerEnv(env)),prefix=`mf-${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT||1}`,files={};
   const manifest={version:1,repo,createdAt:new Date().toISOString(),files,publicParts:{},privateParts:{},logical:{}};
+  if(staticViews){
+    manifest.delivery='static-v1';
+    local.db.exec('CREATE TABLE IF NOT EXISTS github_mf_prepared_files (name TEXT PRIMARY KEY,hash TEXT NOT NULL,body TEXT NOT NULL)');
+    local.db.exec('CREATE TABLE IF NOT EXISTS github_mf_prepared_meta (key TEXT PRIMARY KEY,value TEXT NOT NULL)');
+    if(!previous){const saved=local.db.prepare("SELECT value FROM github_mf_prepared_meta WHERE key='manifest'").get();if(saved)previous=JSON.parse(saved.value);}
+  }
   async function save(label,payload,{privateRead=false}={}) {
     const plain=encoder.encode(JSON.stringify(payload));
     if(privateRead&&plain.byteLength>5*1024*1024)throw Error('Private snapshot part exceeds delivery budget');
-    const revision=privateRead?createHmac('sha256',key(env)).update(plain).update(recipient.kid).digest('hex'):await hash(plain);
-    const old=previous?.logical?.[label];
-    if(old?.revision===revision&&previous.files[old.name]){files[old.name]=previous.files[old.name];manifest.logical[label]=old;return old.name;}
+    const revision=privateRead?createHmac('sha256',key(env)).update(plain).update(recipient.kid).digest('hex'):staticViews?createHash('sha256').update(plain).update(recipient.kid).digest('hex'):await hash(plain);
+    const old=(staticViews?previous?.delivery==='static-v1':previous?.delivery!=='static-v1')?previous?.logical?.[label]:null;
+    if(old?.revision===revision&&previous.files[old.name]){
+      const cached=staticViews?local.db.prepare('SELECT hash,body FROM github_mf_prepared_files WHERE name=?').get(old.name):null;
+      if(!staticViews||cached?.hash===previous.files[old.name]&&await hash(encoder.encode(cached.body))===cached.hash){if(cached)fs.writeFileSync(path.join(out,old.name),cached.body);files[old.name]=previous.files[old.name];manifest.logical[label]=old;return old.name;}
+    }
     const name=`${prefix}-${label}.json`,context=`${repo}:${name}`;
-    const value=privateRead?await sealForReader(plain,recipient,context):payload;
+    const value=staticViews?JSON.parse((await sealBackgroundView(payload,recipient,{repo,feature:'mutual-funds',name})).bytes):privateRead?await sealForReader(plain,recipient,context):payload;
     const data=encoder.encode(JSON.stringify(value));if(data.byteLength>8*1024*1024)throw Error('Snapshot part exceeds safe delivery size');
-    fs.writeFileSync(path.join(out,name),data);files[name]=await hash(data);manifest.logical[label]={name,revision};return name;
+    fs.writeFileSync(path.join(out,name),data);files[name]=await hash(data);manifest.logical[label]={name,revision};
+    if(staticViews)local.db.prepare('INSERT INTO github_mf_prepared_files VALUES(?,?,?) ON CONFLICT(name) DO UPDATE SET hash=excluded.hash,body=excluded.body').run(name,files[name],new TextDecoder().decode(data));
+    return name;
   }
   local.primary.init();local.scanner.init();
   const ids=local.db.prepare('SELECT isin FROM mf_companies UNION SELECT isin FROM mf_scanner_targets ORDER BY isin').all().map(r=>r.isin);
@@ -131,9 +144,15 @@ export async function buildSnapshot(local,recipient,{env=process.env,out=path.re
   const privateDirectory={};
   await pages(privateParts,privateDirectory,'private',true);
   manifest.privateIndex=await save('private-index',{meta:{...primaryMeta,supplement},rows:privateRows,parts:privateDirectory},{privateRead:true});
+  if(staticViews)local.storage.transactionSync(()=>{
+    local.db.prepare("INSERT INTO github_mf_prepared_meta VALUES('manifest',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify(manifest));
+    local.db.prepare('DELETE FROM github_mf_prepared_files WHERE name NOT IN (SELECT value FROM json_each(?))').run(JSON.stringify(Object.keys(files)));
+  });
   local.close();
   manifest.state=`${prefix}-state.bin`;
-  await encryptState(file,path.join(out,manifest.state),env);files[manifest.state]=await fileHash(path.join(out,manifest.state));
+  if(staticViews)await sealBackgroundState(file,path.join(out,manifest.state),'mutual-funds',{env:{...env,BACKGROUND_STATE_KEY:env.MF_STATE_KEY}});
+  else await encryptState(file,path.join(out,manifest.state),env);
+  files[manifest.state]=await fileHash(path.join(out,manifest.state));
   const manifestName=`${prefix}-manifest.json`;fs.writeFileSync(path.join(out,manifestName),JSON.stringify(manifest));
   return {manifest,manifestName,out};
 }
