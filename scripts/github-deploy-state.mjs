@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
+import {preparedBackgroundPlan,preparedBackgroundIdentity,installPreparedBackground} from './lib/github-background-deployment.mjs';
 
 export const DEPLOY_ENV='cloudflare-direct';
 const sha=value=>/^[a-f0-9]{40}$/.test(value||'');
+const preparedSignature=value=>JSON.stringify(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)));
 function configuration(env) {
   if(env.GITHUB_ACTIONS!=='true'||env.GITHUB_REF!=='refs/heads/main'||!env.GITHUB_TOKEN||!/^techmuns\/[A-Za-z0-9-]+$/.test(env.GITHUB_REPOSITORY||''))throw Error('Deployment tracking is restricted to main-branch GitHub Actions');
   return `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/deployments`;
@@ -15,29 +17,31 @@ function apiClient(env,fetcher) {
     const text=await response.text();if(text.length>1024*1024)throw Error('Deployment tracking response too large');return JSON.parse(text);
   };
 }
-export async function planDeployment({env=process.env,fetcher=fetch,git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim()}={}) {
+export async function planDeployment({env=process.env,fetcher=fetch,prepared=preparedBackgroundPlan,git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim()}={}) {
   const base=configuration(env),api=apiClient(env,fetcher),head=git('rev-parse','HEAD');
   if(!sha(head)||head!==env.GITHUB_SHA)throw Error('Deployment checkout does not match the main event');
   const deployments=await api(`${base}?environment=${DEPLOY_ENV}&per_page=30`);
   if(!Array.isArray(deployments))throw Error('Invalid deployment history');
-  let previous;
+  const background=await prepared({env,fetcher}),preparedIdentity=preparedBackgroundIdentity(background);
+  let previous,previousPrepared={};
   for(const item of deployments) {
-    if(!Number.isSafeInteger(item.id)||!sha(item.sha)||item.payload?.publisher!=='github-direct-v1')continue;
+    if(!Number.isSafeInteger(item.id)||!sha(item.sha)||!['github-direct-v1','github-direct-v2'].includes(item.payload?.publisher))continue;
     const statuses=await api(`${base}/${item.id}/statuses?per_page=10`);
-    if(statuses.some(s=>s.state==='success')){previous=item.sha;break;}
+    if(statuses.some(s=>s.state==='success')){previous=item.sha;previousPrepared=item.payload?.prepared||{};break;}
   }
+  if(Object.keys(previousPrepared).some(feature=>!Object.hasOwn(preparedIdentity,feature)))throw Error('A previously published prepared dataset is unavailable');
   // Tree IDs include every nested asset. No data blob downloads or Cloudflare
   // calls are needed when a collector changed no published input.
   const signature=ref=>['public','worker','wrangler.jsonc'].map(path=>git('rev-parse',`${ref}:${path}`)).join(':');
-  if(previous) {
+  if(previous&&preparedSignature(previousPrepared)===preparedSignature(preparedIdentity)) {
     if(previous===head)return {changed:false};
     try{signature(previous);}catch{git('fetch','--depth=1','--filter=blob:none','origin',previous);}
     if(signature(previous)===signature(head))return {changed:false};
   }
-  const deployment=await api(base,{ref:head,environment:DEPLOY_ENV,auto_merge:false,required_contexts:[],production_environment:true,payload:{publisher:'github-direct-v1'},description:'Direct upload from the standard GitHub Actions runner'});
+  const deployment=await api(base,{ref:head,environment:DEPLOY_ENV,auto_merge:false,required_contexts:[],production_environment:true,payload:{publisher:'github-direct-v2',prepared:preparedIdentity},description:'Direct upload from the standard GitHub Actions runner'});
   if(!Number.isSafeInteger(deployment.id)||deployment.sha!==head)throw Error('Deployment claim invalid');
   await api(`${base}/${deployment.id}/statuses`,{state:'in_progress'});
-  return {changed:true,id:deployment.id};
+  return {changed:true,id:deployment.id,background};
 }
 export async function finishDeployment({env=process.env,fetcher=fetch}={}) {
   const base=configuration(env),id=Number(env.DEPLOYMENT_ID);
@@ -47,8 +51,14 @@ export async function finishDeployment({env=process.env,fetcher=fetch}={}) {
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href) {
   try {
     if(process.argv.includes('finish'))await finishDeployment();
+    else if(process.argv.includes('prepare')) {
+      const plan=JSON.parse(fs.readFileSync('.cache/deployment-prepared.json','utf8'));
+      await installPreparedBackground(plan);
+      console.log('Verified encrypted reader files prepared for static delivery; restart databases remain on GitHub.');
+    }
     else {
       const result=await planDeployment();
+      if(result.changed){fs.mkdirSync('.cache',{recursive:true});fs.writeFileSync('.cache/deployment-prepared.json',JSON.stringify(result.background));}
       fs.appendFileSync(process.env.GITHUB_OUTPUT,`changed=${result.changed}\n${result.id?`deployment_id=${result.id}\n`:''}`);
       console.log(result.changed?'Published inputs changed; direct upload is due.':'Published inputs match the last successful GitHub upload.');
     }

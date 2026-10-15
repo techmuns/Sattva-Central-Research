@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {readerKeys,encode64} from '../worker/mutual-funds-seal.mjs';
+import {sealBackgroundState,openBackgroundState} from './lib/github-background-seal.mjs';
+import {packBackgroundViews} from './lib/github-background-package.mjs';
+import {createBackgroundBundle,readBackgroundBundle} from './lib/github-background-bundle.mjs';
+fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/background-bundle-'));
+const env={GITHUB_REPOSITORY:'techmuns/Sattva-Central-Research',BACKGROUND_STATE_KEY:'fixture-state-key-1234567890'},options={repo:env.GITHUB_REPOSITORY,feature:'breakouts',sourceSha:'a'.repeat(40),sourceSignature:'b'.repeat(64),workflowRun:'12345',createdAt:new Date().toISOString()};
+try {
+  const plain=path.join(root,'source.sqlite'),state=path.join(root,'state.bin'),views=path.join(root,'views.gz'),bundle=path.join(root,'bundle.bin');
+  fs.writeFileSync(plain,'PRIVATE RETAINED HISTORY');await sealBackgroundState(plain,state,'breakouts',{env});
+  const keys=await readerKeys('fixture-reader-key-123456789'),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
+  await packBackgroundViews([{name:'head.json',value:{privateIdentity:'PRIVATE COMPANY'}}],recipient,views,options);
+  const built=await createBackgroundBundle(state,views,bundle,options,{env});assert.equal(built.size,fs.statSync(bundle).size);
+  assert(!fs.readFileSync(bundle).includes(Buffer.from('PRIVATE')),'Neither restart state nor prepared facts are plaintext transport');
+  const outputs={state:path.join(root,'restored.bin'),views:path.join(root,'restored.gz')};
+  assert.deepEqual(await readBackgroundBundle(bundle,outputs,options),built.manifest);assert.deepEqual(fs.readFileSync(outputs.views),fs.readFileSync(views));
+  await openBackgroundState(outputs.state,path.join(root,'restored.sqlite'),'breakouts',{env});assert.equal(fs.readFileSync(path.join(root,'restored.sqlite'),'utf8'),'PRIVATE RETAINED HISTORY');
+  const original=fs.readFileSync(bundle),bad=path.join(root,'broken.bin');
+  const damaged=Buffer.from(original);damaged[damaged.length-1]^=1;fs.writeFileSync(bad,damaged);
+  await assert.rejects(readBackgroundBundle(bad,outputs,options));assert.deepEqual(fs.readFileSync(outputs.state),fs.readFileSync(state),'A corrupt later part cannot replace the previously verified state');assert.deepEqual(fs.readFileSync(outputs.views),fs.readFileSync(views));
+  fs.writeFileSync(bad,original.subarray(0,original.length-1));await assert.rejects(readBackgroundBundle(bad,outputs,options));
+  await assert.rejects(readBackgroundBundle(bundle,outputs,{...options,repo:'fixture/other'}));
+  await assert.rejects(readBackgroundBundle(bundle,outputs,{...options,sourceSignature:'c'.repeat(64)}));
+  await assert.rejects(readBackgroundBundle(bundle,{state:bundle},options));assert.deepEqual(fs.readFileSync(bundle),original);
+  const fabricated=path.join(root,'fake-state.bin');fs.writeFileSync(fabricated,'GHBK1'+ 'PRIVATE DATA DISGUISED WITH A HEADER'.repeat(10));
+  await assert.rejects(createBackgroundBundle(fabricated,views,path.join(root,'fake-bundle.bin'),options,{env}),'A file prefix cannot stand in for authenticated encryption');assert(!fs.existsSync(path.join(root,'fake-bundle.bin')));
+  await assert.rejects(createBackgroundBundle(state,views,path.join(root,'wrong-key.bin'),options,{env:{...env,BACKGROUND_STATE_KEY:'different-fixture-state-key-00000'}}));
+  console.log('PASS one-upload retained-state bundle: authenticated encryption before publication, exact part hashes/sizes, code/repository binding, bounded headers, no plaintext source data and preserved outputs after corrupt/truncated input');
+}finally{fs.rmSync(root,{recursive:true,force:true});}

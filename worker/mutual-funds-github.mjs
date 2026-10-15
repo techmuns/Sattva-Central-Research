@@ -2,6 +2,7 @@ import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { readableOwnership } from '../public/js/data/mutual-funds-ownership.js';
 import { coverageState, validIsin, MF_ORIGIN } from './mutual-funds-model.mjs';
 import { openForReader, hash,decode64 } from './mutual-funds-seal.mjs';
+import {readBackgroundView} from './github-background-views.mjs';
 
 export const MF_RELEASE='mutual-funds-data';
 export const MF_PARTS=64;
@@ -58,6 +59,10 @@ export async function mfManifest(env,options={}) {
 }
 export async function mfSnapshotFile(snapshot,name,env,{privateRead=false,fetcher=fetch}={}) {
   if(!Object.hasOwn(snapshot.manifest.files,name))throw Error('Unlisted snapshot part');
+  if(snapshot.delivery==='static'){
+    const value=await readBackgroundView(env,snapshot.origin,'mutual-funds',name,{expectedHash:snapshot.manifest.files[name]});
+    if(!value)throw Error('Prepared ownership file missing');return value;
+  }
   const payload=await releaseAsset(snapshot.assets.get(name),mfRepo(env),{fetcher,validate:async value=>{
     if(await hash(new TextEncoder().encode(JSON.stringify(value)))!==snapshot.manifest.files[name])throw Error('Snapshot integrity failed');
   }});
@@ -67,12 +72,14 @@ export async function mfSnapshotFile(snapshot,name,env,{privateRead=false,fetche
   return JSON.parse(new TextDecoder().decode(plain));
 }
 export async function githubMutualFunds(request,env,{privateRead=false,fetcher=fetch}={}) {
-  const snapshot=await mfManifest(env,{fetcher});if(!snapshot)return null;
+  const prepared=await readBackgroundView(env,request.url,'mutual-funds','head.json');
+  if(prepared&&(prepared.version!==1||prepared.repo!==mfRepo(env)||prepared.delivery!=='static-v1'||!prepared.files||!Object.hasOwn(prepared.files,prepared.publicIndex)||!Object.hasOwn(prepared.files,prepared.privateIndex)||Object.entries(prepared.files).some(([name,digest])=>!/^mf-\d+-\d+-[a-z0-9-]+\.json$/.test(name)||!/^[a-f0-9]{64}$/.test(digest))))throw Error('Invalid prepared ownership manifest');
+  const snapshot=prepared?{manifest:prepared,delivery:'static',origin:request.url}:await mfManifest(env,{fetcher});if(!snapshot)return null;
   const url=new URL(request.url),company=url.pathname.endsWith('/company');
   const ids=url.searchParams.has('isins')?url.searchParams.get('isins').split(',').filter(Boolean):null;
   if(ids&&(ids.length>250||ids.some(id=>!validIsin(id))))throw Error('Invalid company scope');
   const index=await mfSnapshotFile(snapshot,privateRead?snapshot.manifest.privateIndex:snapshot.manifest.publicIndex,env,{privateRead,fetcher});
-  const meta={...index.meta,health:coverageState(index.meta),runtime:'github-actions'};
+  const meta={...index.meta,health:coverageState(index.meta),runtime:'github-actions',...(prepared?{delivery:'static-assets'}:{})};
   if(company) {
     const isin=url.searchParams.get('isin'),month=url.searchParams.get('month');
     if(!validIsin(isin)||month&&!/^20\d\d-(0[1-9]|1[0-2])$/.test(month))throw Error('Invalid detail scope');

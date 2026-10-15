@@ -3,6 +3,7 @@
 # megabytes, and nothing in the deploy reads it.
 .wrangler/
 .cache/
+public/generated-views/
 
 # Local browser results, traces and temporary test configurations stay in the checkout.
 .cache/

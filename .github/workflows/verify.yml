@@ -68,7 +68,7 @@ jobs:
         # 6 GB on 1 October 2026, past Node's default 4 GB heap on the 16 GB runner.
         run: node scripts/verify-json-preparation.mjs && node scripts/verify-alert-pool-projection.mjs && node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node --max-old-space-size=8192 scripts/verify-news-working-set.mjs
       - name: Verify Mutual Fund calculations and resumable capture
-        run: node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-denominators.mjs && node scripts/verify-mutual-funds-sources.mjs && node scripts/verify-mutual-funds-schedule.mjs && node scripts/verify-mutual-funds-scanner.mjs && node scripts/verify-mutual-funds-github.mjs && node scripts/verify-mutual-funds-export.mjs && node scripts/verify-github-deploy-state.mjs
+        run: node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-denominators.mjs && node scripts/verify-mutual-funds-sources.mjs && node scripts/verify-mutual-funds-schedule.mjs && node scripts/verify-mutual-funds-scanner.mjs && node scripts/verify-mutual-funds-github.mjs && node scripts/verify-mutual-funds-export.mjs && node scripts/verify-github-deploy-state.mjs && node scripts/verify-mutual-funds-static.mjs && node scripts/verify-github-background-views.mjs && node scripts/verify-github-background-seal.mjs && node scripts/verify-github-background-package.mjs && node scripts/verify-github-background-bundle.mjs && node scripts/verify-github-background-release.mjs
       - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)
         run: node scripts/verify-hot-path-memo.mjs
       - name: Verify lossless news parts and deployable asset sizes

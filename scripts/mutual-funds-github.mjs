@@ -5,8 +5,8 @@ import { legacyExportClient } from './collect-mutual-funds.mjs';
 import { MF_ORIGIN } from '../worker/mutual-funds-model.mjs';
 import { MF_RELEASE,mfRepo,mfRelease,mfManifest } from '../worker/mutual-funds-github.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
-import { localMutualFunds } from './lib/mutual-funds-local.mjs';
-import { restoreState,buildSnapshot,MF_LOCAL_FILE,runnerEnv } from './lib/mutual-funds-state.mjs';
+import { MF_LOCAL_FILE,runnerEnv } from './lib/mutual-funds-state.mjs';
+import {restoreStaticMutualFunds,publishStaticMutualFunds} from './lib/mutual-funds-static.mjs';
 
 async function recipient() {
   return boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds/publishing-key`,{redirect:'error',signal:AbortSignal.timeout(20000)}),4096);
@@ -69,15 +69,13 @@ async function main() {
     let ready=false;for(let attempt=0;attempt<60;attempt++){try{await recipient();ready=true;break;}catch{await new Promise(r=>setTimeout(r,10000));}}
     if(!ready)throw Error('Snapshot reader deployment is not ready');
     let lastProgress=0;
-    await restoreState({legacyClient:legacyExportClient(),onProgress:({table,received,count})=>{
+    await restoreStaticMutualFunds({legacyClient:legacyExportClient(),onProgress:({table,received,count})=>{
       if(received===count||Date.now()-lastProgress>30000){console.log(`Retained transfer: ${table}: copied ${received} of ${count} rows.`);lastProgress=Date.now();}
     }});
     console.log('Verified retained Mutual Funds state restored on the GitHub runner.');
   } else if(process.argv.includes('publish')) {
     if(!fs.existsSync(MF_LOCAL_FILE))throw Error('No verified runner state; refusing empty publication');
-    const previous=await mfManifest(runnerEnv());
-    const local=localMutualFunds(MF_LOCAL_FILE),built=await buildSnapshot(local,await recipient(),{previous:previous?.manifest});
-    await publishSnapshot(built);
+    await publishStaticMutualFunds(await recipient());
     console.log('Retained Mutual Funds state and prepared reader snapshots published on GitHub.');
   } else throw Error('Expected restore or publish');
 }
