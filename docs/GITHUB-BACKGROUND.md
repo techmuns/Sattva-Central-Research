@@ -21,6 +21,11 @@ requesting the public catalogue workflow. An ambiguous dispatch is not retried
 as a new source job on each status poll. Invalid, overdue or unverified catalogue
 checkpoints cannot authorize a premium summary request.
 
+Read-only history transfer also runs when collection is disabled; it never signs
+in or opens a source page in that case. Both the repository and Worker opt-ins
+are required before source collection. A merge's runner waits for the read-only
+configuration API while its independent static deployment finishes.
+
 The first runner copies all four summary tables, original rowids and the timer's
 dispatch claim through the fixed-workflow OIDC read-only export. Existing ready
 bodies, interrupted attempts, day-long retry holds and older inactive records
@@ -87,11 +92,32 @@ several generations, while the full acknowledged quote history remains on GitHub
 Source timestamps and the original two-minute freshness assessment expose delivery
 lags. Publication failures retain the last acknowledged archive and fail the job.
 
+## Private price-level checks
+
+Interactive edits and deletion tombstones retain their immediate service-only input
+store. The GitHub quote runner reads a bounded authenticated input snapshot and
+owns quote checks, calculations and new hit history. It imports all existing hit
+rows once, encrypts the complete restart database on GitHub, and prepares lossless
+200-hit pages. Cloudflare no longer arms or runs the price-level alarm.
+
+The original exact NSE ticker/ISIN, current-session and quote-after-set-time rules
+remain. The runner refreshes inputs again after receiving quotes, before recording
+hits, so edits during a request invalidate completeness. A prepared hit applies to
+an interactive level only when its value, set time and company identity still
+match. Cleared levels cannot return from a delayed publication. A changed input
+revision shows Waiting until GitHub checks that revision. Minute sampling, source
+outages and GitHub scheduling/delivery gaps remain visible; saved hits are observed
+history and cannot reconstruct every trade between checks.
+
+Every private API response still requires the separate service token before either
+input or encrypted static access and remains private, no-store. No new long-lived
+service credential is copied into GitHub: the fixed quote workflow uses its
+short-lived OIDC identity for read-only input/history transfer.
+
 ## Remaining transfer work
 
 Mutual Funds has its separate encrypted retained-state transfer and prepared reader snapshots documented in `GITHUB-MUTUAL-FUNDS.md`. Telegram's small scheduling change must not be presented as migrating the remaining engines:
 
-- Family price levels: interactive edits, tombstones, live quote checks and the hit ledger. Moving the checker cannot overwrite new edits or lose previously recorded hits.
 - Newsletter: private recipients and settings, content queue, provider budgets, edition claims, delivery acknowledgements and saved documents. An unknown delivery must not be retried as an unsent email.
 
 Each transfer needs read-only verified history import, encrypted public-repository storage where applicable, local/staging failure tests, live reader verification, and retirement of its old recurrence. A source or credential failure must remain visible instead of turning into empty successful data. Existing Cloudflare history must not be deleted as part of migration. No paid runner, new provider or external API spending is a fallback for unavailable free tooling.

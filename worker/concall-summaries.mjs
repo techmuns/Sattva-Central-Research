@@ -13,7 +13,7 @@ export async function handleConcallSummaries(request, env, { fetcher = fetch, no
   if (collector) {
     if (request.method !== 'POST') return reply({ ok: false, reason: 'method' }, 405);
     // Preview and local workflows cannot write into the production account's store.
-    if (url.origin !== SUMMARY_ORIGIN || env.SCREENER_SUMMARIES_ENABLED !== 'true') return reply({ ok: false, reason: 'not-enabled' }, 403);
+    if (url.origin !== SUMMARY_ORIGIN) return reply({ ok: false, reason: 'not-enabled' }, 403);
     if (!env.SCREENER_SUMMARIES) return reply({ ok: false, reason: 'storage-unavailable' }, 503);
     let identity;
     try { identity = await summaryCollectorIdentity(request, { fetcher, now: now() }); }

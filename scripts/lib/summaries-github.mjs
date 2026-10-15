@@ -33,7 +33,10 @@ export async function githubSummaries({env=process.env,fetcher=fetch,legacyClien
   try {
     if(!snapshot) {
       if(typeof legacyClient!=='function')throw Error('Retained summary source unavailable');
-      const inventory=await copyBackgroundStore(local,legacyClient,{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS,onProgress:progress=>console.log('Retained summary transfer:',JSON.stringify(progress))});
+      const source=await legacyClient({action:'export'});
+      if(source?.ok!==true||!Array.isArray(source.tables))throw Error('Retained summary inventory unavailable');
+      const inventory=source.tables.length?await copyBackgroundStore(local,legacyClient,{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS,onProgress:progress=>console.log('Retained summary transfer:',JSON.stringify(progress))}):source;
+      if(!source.tables.length&&JSON.stringify(await legacyClient({action:'export'}))!==JSON.stringify(source))throw Error('Unused summary source changed during import');
       console.log('Verified retained private summary transfer:',JSON.stringify(inventory.tables));
       await checkpoint();
     }

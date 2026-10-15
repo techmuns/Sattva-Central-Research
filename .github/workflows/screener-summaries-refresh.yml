@@ -35,10 +35,11 @@ jobs:
   collect:
     # Premium view allowance does not grant redistribution rights. Enable only for an approved
     # private caching arrangement, alongside the Worker's SCREENER_SUMMARIES_ENABLED setting.
-    if: github.ref == 'refs/heads/main' && vars.SCREENER_SUMMARIES_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
+      SUMMARY_COLLECTION_ENABLED: ${{ vars.SCREENER_SUMMARIES_ENABLED == 'true' }}
       GITHUB_TOKEN: ${{ github.token }}
       BACKGROUND_STATE_KEY: ${{ secrets.MF_STATE_KEY || secrets.FAMILY_HOLDINGS_TOKEN || secrets.GLOWVENTURES_READ_TOKEN }}
     steps:
@@ -50,6 +51,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install pinned browser runtime
+        if: vars.SCREENER_SUMMARIES_ENABLED == 'true'
         run: |
           npm install --prefix "$RUNNER_TEMP/summary-browser" --no-save --package-lock=false playwright@1.62.1
           node "$RUNNER_TEMP/summary-browser/node_modules/playwright/cli.js" install --with-deps chromium

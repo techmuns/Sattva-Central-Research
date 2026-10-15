@@ -1,3 +1,4 @@
+import {preparedPriceLevels} from './price-levels-github.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {PRICE_LEVELS_OBJECT,PRICE_LEVELS_REQUEST_BYTES} from '../public/js/data/price-levels-shared.js';
 const json=(body,status=200)=>Response.json(body,{status,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff'}});
@@ -19,12 +20,12 @@ export async function handlePriceLevels(request,env){
     if(request.method==='GET'){
       const cursor=new URL(request.url).searchParams.get('cursor');
       if(cursor?.length>700)return json({ok:false,reason:'invalid-cursor'},400);
-      return json({ok:true,...await store.priceLevelsSnapshot(cursor)});
+      return json({ok:true,...await preparedPriceLevels(request,env,await store.priceLevelsSnapshot(cursor))});
     }
     if(!/^application\/json(?:;|$)/i.test(request.headers.get('content-type')||''))return json({ok:false,reason:'content-type'},415);
     let input;
     try { input=await boundedJson(new Response(request.body),PRICE_LEVELS_REQUEST_BYTES); }
     catch { return json({ok:false,reason:'invalid-request'},400); }
-    return json({ok:true,...await store.priceLevelsApply(input?.intents)});
+    return json({ok:true,...await preparedPriceLevels(request,env,await store.priceLevelsApply(input?.intents))});
   }catch(error){return json({ok:false,reason:/Invalid price level|Duplicate company/.test(String(error?.message))?'invalid-request':'unavailable'},/Invalid price level|Duplicate company/.test(String(error?.message))?400:503);}
 }

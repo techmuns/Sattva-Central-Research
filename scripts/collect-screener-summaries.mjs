@@ -110,11 +110,13 @@ async function main() {
   delete process.env.DEBUG; delete process.env.PWDEBUG;
   const keyResponse=await fetch(SUMMARY_ORIGIN+'/api/mutual-funds/publishing-key',{redirect:'manual',signal:AbortSignal.timeout(20000)});
   const recipient=await boundedJson(keyResponse,4096);
-  const source=summaryCollectorClient();let sourceReady=false;
-  const legacyClient=async input=>{if(sourceReady||input.table)return source(input);const value=await backgroundExportReady(()=>source(input),{valid:value=>value?.ok===true&&value.rowidCursor===2&&Array.isArray(value.tables)});sourceReady=true;return value;};
+  const legacyClient=summaryCollectorClient();
+  const configuration=await backgroundExportReady(()=>legacyClient({action:'configuration'}),{valid:value=>value?.ok===true&&value.rowidCursor===2&&typeof value.enabled==='boolean'});
   const runtime=await githubSummaries({legacyClient,recipient});
   let result;
-  try { result = await runSummaryCollection({ client:runtime.client,
+  try {
+  if(process.env.SUMMARY_COLLECTION_ENABLED!=='true'||!configuration.enabled){await runtime.publish();console.log('Retained summary history published; source collection remains disabled.');return;}
+  result = await runSummaryCollection({ client:runtime.client,
     inventory: async () => {
       await ensureSummaryCatalogue(runtime);
       const [portfolio, result] = await Promise.all([
