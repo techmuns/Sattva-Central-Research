@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {exportSummaries,SUMMARY_TABLES,SUMMARY_KEYS} from '../worker/summaries-export.mjs';
+import {localSummaries} from './lib/summaries-local.mjs';
+import {copyBackgroundStore} from './lib/github-background-restore.mjs';
+fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/summary-export-'));let source,copy,rejected;
+const env={GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1'},options={env,checkpoint:async()=>{}};
+try {
+  source=localSummaries(path.join(root,'source.sqlite'),options);
+  source.db.exec('CREATE TABLE unrelated_credentials (secret TEXT)');source.db.prepare('INSERT INTO unrelated_credentials VALUES(?)').run('must-not-export');
+  const insert=source.db.prepare('INSERT INTO summary_attempts VALUES(?,?,?,?,?,?,?)');
+  source.storage.transactionSync(()=>{for(let n=0;n<2501;n++)insert.run('fixture-'+n,'1:1','1','retained-claim-'+n,n,n+1000,'source-unavailable');});
+  source.store.putState({...source.store.state(),privateHistory:'PRIVATE RETAINED CLAIMS',cooldownUntil:'2026-10-16T12:00:00Z'});
+  await source.storage.put('summary-timer',{started:true,nextAt:123});await source.storage.put('unrelated-token','must-not-export');
+  const before=source.db.prepare('SELECT total_changes() n').get().n;
+  const readOnly={sql:source.storage.sql,get:source.storage.get,put(){throw Error('Source writes are forbidden');},setAlarm(){throw Error('Source timer changes are forbidden');}};
+  let pages=0;const client=async input=>{if(input.table)pages++;return exportSummaries(readOnly,input);};
+  copy=localSummaries(path.join(root,'copy.sqlite'),options);
+  await copyBackgroundStore(copy,client,{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS});
+  for(const table of SUMMARY_TABLES)assert.deepEqual(copy.db.prepare(`SELECT rowid,* FROM ${table} ORDER BY rowid`).all(),source.db.prepare(`SELECT rowid,* FROM ${table} ORDER BY rowid`).all(),'Every retained value and rowid survives the copy');
+  assert(pages<10,'Thousands of small claims use bounded larger pages');
+  assert.equal(copy.store.state().cooldownUntil,'2026-10-16T12:00:00Z');assert.deepEqual(await copy.storage.get('summary-timer'),{started:true,nextAt:123});assert.equal(await copy.storage.get('unrelated-token'),undefined);
+  assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before,'Migration inventory and pages are read-only');
+  for(const input of [{table:'unrelated_credentials'},{table:'github_job_kv'},{table:'summary_attempts; DELETE FROM summary_attempts'},{table:'summary_attempts',cursor:-1}])await assert.rejects(exportSummaries(readOnly,input));
+  rejected=localSummaries(path.join(root,'rejected.sqlite'),options);let inventories=0;
+  await assert.rejects(copyBackgroundStore(rejected,async input=>{const result=await client(input);if(!input.table&&++inventories===2)result.tables[0].count++;return result;},{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS}),/source changed/);
+  assert.equal(await rejected.storage.get('summary-timer'),undefined,'Unverified transfer metadata is never accepted');
+  await assert.rejects(copyBackgroundStore(rejected,async input=>{const result=await client(input);if(input.table&&result.rows[0])delete result.rows[0][Object.keys(result.rows[0]).find(key=>key!=='__migration_rowid')];return result;},{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS}),/schema/);
+  console.log('PASS read-only private summary transfer: all rowids, paid claims and cooldowns retained; paged copy; unrelated credentials excluded; source changes and schema mismatches rejected');
+}finally{await source?.close();await copy?.close();await rejected?.close();fs.rmSync(root,{recursive:true,force:true});}

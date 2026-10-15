@@ -21,6 +21,7 @@ const body = {title:'Concall Summary - Summary fixture company - Sep 2026',block
   {type:'list',items:['<img src=x onerror=alert(1)>','Second note'],ordered:false},
   {type:'table',rows:[['Measure','Value'],['Fixture','12']]},
 ]};
+let githubRuntime=false;
 let enabled = true, denied = false, delayed = null, pendingId = null, timerReason = 'recent-run';
 let savedIds=['123','124'], discoveryStatus='ok', cooldownUntil=null;
 let pendingActive=true, pendingNextAttemptAt=null;
@@ -28,7 +29,7 @@ let readBudget=Infinity;
 let alarmAt=Date.now()+1800000;
 let getCount=0, postCount=0;
 const state = () => ({ok:true,enabled,ready:savedIds.length,readyIds:savedIds,pending:1,discoveryStatus,cooldownUntil,portfolioCheckedAt:new Date().toISOString(),sourceCheckedAt:new Date().toISOString(),
-  schedule:{started:true,reason:timerReason,alarmAt,lastAttemptAt:Date.now()},
+  schedule:{started:true,reason:timerReason,alarmAt,lastAttemptAt:Date.now(),...(githubRuntime?{runtime:'github-actions'}:{})},
   holdings:[{isin:'INE000000001',name:'Summary fixture company',ready:2,pending:1,discovery:'matched'},
     {isin:'INE000000002',name:'New portfolio holding',ready:0,pending:0,discovery:'no-published-summary'}]});
 const server = createServer(async (req,res) => {
@@ -100,7 +101,9 @@ try {
   assert((await page.locator('[data-summary-coverage]').innerText()).includes('could not check or start'));
   assert((await page.locator('[data-summary-schedule]').innerText()).includes('could not check or start'),'open coverage view updates without reopening');
   assert((await page.locator('[data-summary-schedule]').innerText()).includes('Next timer check:'));
-  timerReason='recent-run';
+  githubRuntime=true;await page.evaluate(async()=>{await(await import('/js/data/concall-summaries.js')).refresh({force:true});});
+  assert((await page.locator('[data-summary-schedule]').innerText()).includes('GitHub checks automatically'));assert(!(await page.locator('[data-summary-schedule]').innerText()).includes('Next timer check:'));
+  githubRuntime=false;timerReason='recent-run';
   discoveryStatus='failed';cooldownUntil=new Date(Date.now()+86400000).toISOString();
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
   for(const selector of ['[data-summary-coverage]','#modal-content']) {

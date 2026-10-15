@@ -11,6 +11,9 @@ import { readScreenerConcallCollector } from '../worker/screener-concalls-collec
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { SUMMARY_ORIGIN, SUMMARY_FAILURES, SUMMARY_INVENTORY_BATCH, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
 
+import {githubSummaries} from './lib/summaries-github.mjs';
+import {ensureSummaryCatalogue} from './lib/summary-catalogue-github.mjs';
+
 const ENDPOINT = `${SUMMARY_ORIGIN}/api/concall-summaries/collector`;
 const MAX_BATCH = 10;
 const diagnosticTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
@@ -104,9 +107,13 @@ async function main() {
   const username = process.env.SCREENER_USERNAME, password = process.env.SCREENER_PASSWORD, github = process.env.GH_TOKEN;
   delete process.env.SCREENER_USERNAME; delete process.env.SCREENER_PASSWORD; delete process.env.GH_TOKEN;
   delete process.env.DEBUG; delete process.env.PWDEBUG;
-  const client = summaryCollectorClient();
-  const result = await runSummaryCollection({ client,
+  const keyResponse=await fetch(SUMMARY_ORIGIN+'/api/mutual-funds/publishing-key',{redirect:'manual',signal:AbortSignal.timeout(20000)});
+  const recipient=await boundedJson(keyResponse,4096);
+  const runtime=await githubSummaries({legacyClient:summaryCollectorClient(),recipient});
+  let result;
+  try { result = await runSummaryCollection({ client:runtime.client,
     inventory: async () => {
+      await ensureSummaryCatalogue(runtime);
       const [portfolio, result] = await Promise.all([
         loadActivePortfolio(new URL('../public/data/portfolio-companies.json', import.meta.url), { live: true }),
         readScreenerConcallCollector({ token: github, documentsOnly: true, signal: AbortSignal.timeout(45000) }),
@@ -119,7 +126,7 @@ async function main() {
       if (!username || !password || !process.env.PLAYWRIGHT_ROOT) throw Error('Summary source account unavailable');
       const { chromium } = await import(pathToFileURL(resolve(process.env.PLAYWRIGHT_ROOT, 'index.mjs')).href);
       // Do not pass GitHub OIDC credentials to the browser subprocess.
-      const browserEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/TOKEN|SECRET|PASSWORD|ACTIONS_ID_TOKEN/.test(key)));
+      const browserEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/TOKEN|SECRET|PASSWORD|(?:^|_)KEY(?:$|_)|ACTIONS_ID_TOKEN/.test(key)));
       const browser = await chromium.launch({ headless: true, env: browserEnv });
       try {
         const context = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: 'block', acceptDownloads: false });
@@ -144,7 +151,8 @@ async function main() {
         return { page, prepare: target => navigation.arm(target), close: () => browser.close() };
       } catch (error) { await browser.close(); throw error; }
     },
-  });
+  });await runtime.publish();
+  }finally{await runtime.close();}
   // Counters, fixed stage/reason, numeric status and canonical cooldown only; never source text,
   // arbitrary error messages, account identity, URLs, headers or tokens.
   console.log(JSON.stringify(result));

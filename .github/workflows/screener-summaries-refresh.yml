@@ -1,6 +1,15 @@
 name: Private Screener summaries
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/screener-summaries-refresh.yml'
+      - 'scripts/collect-screener-summaries.mjs'
+      - 'scripts/lib/summaries-*.mjs'
+      - 'scripts/lib/summary-catalogue-github.mjs'
+      - 'worker/summaries-*.mjs'
+      - 'worker/concall-summaries.mjs'
   schedule:
     - cron: '11,41 * * * *'
   repository_dispatch:
@@ -17,8 +26,8 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
-  actions: read
+  contents: write
+  actions: write
   id-token: write
 
 jobs:
@@ -27,11 +36,14 @@ jobs:
     # private caching arrangement, alongside the Worker's SCREENER_SUMMARIES_ENABLED setting.
     if: github.ref == 'refs/heads/main' && vars.SCREENER_SUMMARIES_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 70
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      BACKGROUND_STATE_KEY: ${{ secrets.MF_STATE_KEY || secrets.FAMILY_HOLDINGS_TOKEN || secrets.GLOWVENTURES_READ_TOKEN }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:

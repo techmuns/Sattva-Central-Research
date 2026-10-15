@@ -26,7 +26,7 @@ jobs:
           # v1.7.12 predates GitHub's queue:max syntax (May 2026). The MF
           # capture test validates that exact queue/cancellation configuration.
           # Suppress only this known parser error; retain all other diagnostics.
-          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= -ignore '^unexpected key "queue" for "concurrency" section' .github/workflows/deploy.yml .github/workflows/mutual-funds-scanner.yml .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/announcements-refresh.yml .github/workflows/corporate-actions-refresh.yml .github/workflows/bse-access-check.yml .github/workflows/announcement-index-refresh.yml
+          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= -ignore '^unexpected key "queue" for "concurrency" section' .github/workflows/deploy.yml .github/workflows/screener-summaries-refresh.yml .github/workflows/mutual-funds-scanner.yml .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/announcements-refresh.yml .github/workflows/corporate-actions-refresh.yml .github/workflows/bse-access-check.yml .github/workflows/announcement-index-refresh.yml
   contracts:
     runs-on: ubuntu-latest
     # Full-history alert checks exceeded the former ten-minute job budget while
@@ -164,7 +164,7 @@ jobs:
       - name: Verify Screener concall pagination, deduplication and artifact integrity
         run: node scripts/verify-screener-concalls.mjs && node scripts/verify-concall-delivery.mjs && node scripts/verify-stockscans-contract.mjs
       - name: Verify private summaries, dynamic portfolio queue, durable quota and authorisation
-        run: node scripts/verify-concall-summaries.mjs
+        run: node scripts/verify-concall-summaries.mjs && node scripts/verify-github-background-sqlite.mjs && node scripts/verify-summaries-local.mjs && node scripts/verify-summaries-export.mjs && node scripts/verify-summaries-github.mjs && node scripts/verify-summary-catalogue-github.mjs && node scripts/verify-github-private-records.mjs
       - name: Verify Screener Insights capture and context-only correlation
         run: node scripts/verify-screener-insights.mjs
       - name: Verify complete General Alerts pool and scope isolation
@@ -269,7 +269,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-concall-summaries-ui.mjs
+        run: node scripts/verify-concall-summaries-ui.mjs && node scripts/verify-summary-upgrade-ui.mjs
       - name: Verify notebook persistence, notes, backup recovery and responsive layout
         if: ${{ matrix.part == 2 }}
         env:
