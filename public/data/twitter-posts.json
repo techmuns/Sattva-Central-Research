@@ -1,10 +1,924 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-10-14T05:18:16+00:00",
+  "capturedAt": "2026-10-15T11:52:10+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2110700064922607695",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#EarningsWithMC |📉 Wipro Q2 FY27 results: Net profit falls 4.5% QoQ to ₹3,201 crore, while revenue rises 1.1% quarter-on-quarter.\n\n#Wipro #Q2FY27 #Revenue \n\n🧵 Follow this thread for more details👇 https://t.co/oqxVrTP1Vu",
+      "created_at": "2026-10-15T11:51:25+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110700064922607695",
+      "image": "https://pbs.twimg.com/media/HUq1ozra8AA7IKn.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110698681020330261",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Jio targets 100 million homes for broadband, eyes global technology market: Akash Ambani\n\n-Jio aims to expand home broadband to 100 million households.\n-The company targets a $56 billion enterprise services market.\n-Jio plans to monetise its proprietary tech globally.\n\nRead More:\nhttps://t.co/ThATBRki2U",
+      "created_at": "2026-10-15T11:45:55+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110698681020330261",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110697450281545810",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Follow our live coverage of the event here:⏬\nhttps://t.co/e1JKTabnxt",
+      "created_at": "2026-10-15T11:41:01+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110697450281545810",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110697447622389824",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🌍 Jio wants to go global without building networks abroad. Its plan? Partner with overseas telecom operators and earn from the technology it developed in India.\n\nhttps://t.co/IbOqCk1AuJ",
+      "created_at": "2026-10-15T11:41:01+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110697447622389824",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110697432829096101",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 📶Jio is gearing up for its next big leap, with a ₹30,213 crore IPO, plans to reduce debt, ambitions in 6G and a push for global expansion. \n\nHere’s what Jio’s press conference revealed about its roadmap 🧵\n\nhttps://t.co/jUTWfe6yAU",
+      "created_at": "2026-10-15T11:40:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110697432829096101",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110695559145418803",
+      "handle": "L_TheAnalyst",
+      "display_name": "Rohit",
+      "text": "Chemical plants older than 20 years must upgrade, rebuild or shut down between 2026 and 2029.\nOn August 15, China's new Ecological and Environmental Code came into effect, bringing around 30 environmental laws into one framework.\nIn September, China also proposed stricter safety rules for nitration plants. These plants use risky chemical reactions to manufacture products used in dyes and pesticides. Factories failing certain safety requirements could face closure.\nBut remember, not every Chinese restriction benefits India.\nFor example, China also restricted fertiliser exports. Since India imports fertilisers, this can actually increase our costs.\n\nEven PVC lost its export tax refund, but China still has too much production capacity. So removing the refund doesn't automatically mean prices will rise.\n\nNow let's look at H-acid, where things are getting interesting.\n\nH-acid is an important chemical used to manufacture textile dyes.\n\nOn March 19, 2026, an explosion occurred at a Chinese H-acid manufacturing plant.\n\nLook at what happened to prices in China.\n\nJanuary: 40,000 yuan per tonne\nApril 9: 61,000 yuan\nApril 17: 67,500 yuan\nAugust 28: 95,000 yuan\nMid-September: 130,000 to 150,000 yuan\n\nThat's more than 3X in less than a year.\n\nSome sellers even quoted 200,000 yuan, although these were asking prices, not confirmed transaction prices.\nNotice something important.\nPrices were already rising before China's proposed September safety rules.\nThe factory explosion and supply shortages started the rally. The new regulations could add further pressure on supply.\nAnd Indian companies are already seeing the impact.\n\nKiri Industries told analysts in August that its H-acid prices increased from ₹350-400/kg to ₹800-900/kg.\n\nLook at Q1 FY27 results compared to Q1 FY26.\n\nKiri Industries:\nRevenue increased from ₹202 Cr to ₹312 Cr. Operating margin improved from a negative 8% to a positive 5%.\n\nIts factories were operating at around 60% capacity, meaning it still has room to increase production.\n\nAksharChem:\nRevenue increased from ₹97 Cr to ₹141 Cr. Operating margin improved from 7% to 16%.\n\nBodal Chemicals:\nOperating profit increased from ₹48 Cr to ₹69 Cr, but its margin remained around 10%.\n\nOne reason is that Bodal uses much of its own H-acid to manufacture dyes, instead of selling all of it directly.\n\nAlso remember, higher H-acid prices are good for manufacturers selling H-acid, but bad for dye manufacturers who need to buy it.\n\nSo the same chemical price increase can benefit one company and hurt another.\nHere's what I'm watching now.\n\nChina is allowing older factories to upgrade their facilities instead of permanently shutting them down.\n\nIf these factories return with even larger production capacity, we could see the same situation as 2019.\nPrices rise, Indian companies benefit temporarily, and then cheap Chinese supply returns.\n\nAlso, the new nitration safety rules are still in draft form.\nMy recommendation:\n\nI'm closely tracking Kiri Industries, AksharChem and Bodal Chemicals.\n\nBut I wouldn't blindly buy chemical stocks just because China is tightening environmental rules.\n\nI prefer companies that already have manufacturing capacity available, can increase production quickly and are benefiting from higher selling prices.\n\nThe biggest thing to track is whether Chinese factories are permanently closing or simply upgrading.\n\nBecause that will decide whether this chemical cycle lasts for years or ends like the previous one.\n\nNot investment advice. Just sharing how I'm understanding this cycle.",
+      "created_at": "2026-10-15T11:33:30+00:00",
+      "url": "https://x.com/L_TheAnalyst/status/2110695559145418803",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE415I01015",
+          "query": "\"Kiri Industries\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110693491160359196",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 🚨Isha Ambani, Executive Director, Reliance Retail Ventures, pays tribute to her grandfather Dhirubhai Ambani, recalling how he took Reliance Industries public in 1977. \n\nShe highlights the company’s 29% annualised return since then and says three generations of the Ambani family remain committed to his vision of inclusive growth and the trust of millions of shareholders.\n\n📺 Watch the press conference LIVE https://t.co/oCNsdJNsnW\n\n🔴 Watch the press conference LIVE on YouTube https://t.co/W8ZMUVJYg6\n\n#IshaAmbani #DhirubhaiAmbani #RelianceIndustries #JioIPO #Moneycontrol",
+      "created_at": "2026-10-15T11:25:17+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110693491160359196",
+      "image": "https://pbs.twimg.com/media/HUqwiZAbQAA50yw.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110692522205028813",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 🚨Isha Ambani, Executive Director, Reliance Retail Ventures, says financial prudence is embedded in Reliance’s DNA. \n\nShe recalls how the company delivered on its commitment to become net debt-free nine months ahead of schedule, despite the COVID-19 pandemic and global slowdown, highlighting Reliance’s commitment to shareholders.\n\n📺 Watch the press conference LIVE https://t.co/oCNsdJO0du\n\n🔴 Watch the press conference LIVE on YouTube https://t.co/W8ZMUVKw5E\n\n#IshaAmbani #RelianceIndustries #Reliance #JioIPO #Moneycontrol | @reliancejio | @RIL_Updates",
+      "created_at": "2026-10-15T11:21:26+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110692522205028813",
+      "image": "https://pbs.twimg.com/media/HUqvqFia0AAn2Wb.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110692007236829336",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Jio eyes global expansion with asset-light telecom technology model, says Akash Ambani\n\n-Jio aims for asset-light global tech expansion.\n-Company plans to act as a managed services partner.\n-Jio prepares for its upcoming Rs 30,213-crore IPO.\n\nRead More:\nhttps://t.co/IbOqCk1AuJ",
+      "created_at": "2026-10-15T11:19:23+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110692007236829336",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110691642793710070",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 🚨Isha Ambani, Executive Director, Reliance Retail Ventures, shares the story of how Jio was born, recalling how an internet connectivity issue while studying in the US sparked a conversation about why India should be left behind in the digital revolution.\n\n📺 Watch the press conference LIVE https://t.co/oCNsdJO0du\n\n🔴 Watch the press conference LIVE on YouTube https://t.co/W8ZMUVKw5E\n\n#IshaAmbani #RelianceJio #JioIPO #DigitalIndia #Moneycontrol | @reliancejio | @RIL_Updates",
+      "created_at": "2026-10-15T11:17:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110691642793710070",
+      "image": "https://pbs.twimg.com/media/HUquKcpbUAAqd4V.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110687872097681732",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 🚨Akash Ambani, Chairman of Reliance Jio Infocomm, says the entire proceeds from Jio’s IPO will be used to reduce debt, as the company moves towards becoming net debt-free.\n\n📺 Watch the press conference LIVE https://t.co/oCNsdJO0du\n\n🔴 Watch the press conference LIVE on YouTube https://t.co/W8ZMUVKw5E\n\n#AkashAmbani #RelianceJio #JioIPO #Moneycontrol | @reliancejio | @RIL_Updates",
+      "created_at": "2026-10-15T11:02:58+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110687872097681732",
+      "image": "https://pbs.twimg.com/media/HUqraR3aYAAlJPl.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110686237204119795",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 🚨Akash Ambani, Chairman of Reliance Jio Infocomm, says tariff hikes are just one of several levers to create value. He adds that Jio’s focus is on delivering more services to users and pricing them accordingly, rather than competing on per-GB pricing.\n\n📺 Watch the press conference LIVE https://t.co/oCNsdJO0du\n\n🔴 Watch the press conference LIVE on YouTube https://t.co/W8ZMUVKw5E\n\n#AkashAmbani #RelianceJio #JioIPO #Telecom #Moneycontrol | @reliancejio | @RIL_Updates",
+      "created_at": "2026-10-15T10:56:28+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110686237204119795",
+      "image": "https://pbs.twimg.com/media/HUqp7-AacAAqip1.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110682676168704391",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Flipkart Internet revenue rises 18% to Rs 1.46 lakh crore in FY26, losses narrow as IPO timeline remains uncertain\n\nThe numbers also appear higher because of Flipkart's flip back to India. \"As part of its redomiciliation to India, Flipkart Group is publishing consolidated financial results under Flipkart Internet Private Limited. The results reflect the Group’s performance over the reporting period for the year ended March 2026 and provide a historical view of the business rather than a current trading update,\" a Flipkart spokesperson said.\n\nRead more:\nhttps://t.co/XvPaadUWPY",
+      "created_at": "2026-10-15T10:42:19+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110682676168704391",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110681400156574163",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 🚨Akash Ambani, Chairman of Reliance Jio Infocomm, says Jio is inspired by the vision of Digital India, Make in India and Viksit Bharat 2047, with the goal of transforming India into a leading digital society.\n\n📺 Watch the press conference LIVE⏬ https://t.co/oCNsdJO0du\n\n🔴 Watch the press conference LIVE on YouTube⏬ https://t.co/W8ZMUVKw5E\n\n#JioIPO #AkashAmbani #RelianceJio #DigitalIndia #Moneycontrol | @reliancejio @RIL_Updates",
+      "created_at": "2026-10-15T10:37:15+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110681400156574163",
+      "image": "https://pbs.twimg.com/media/HUqliU8bkAEccHw.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110679241587085493",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Uday Kotak says Jio’s years of perseverance have translated into market leadership in India’s mobility and home broadband segments, adding that the company’s IPO marks a milestone worth celebrating.\n\n📺 Watch the press conference LIVE https://t.co/oCNsdJNsnW\n\n🔴 Watch the press conference LIVE on YouTube https://t.co/W8ZMUVJYg6\n\n#JioIPO #UdayKotak #Reliance #Moneycontrol | @KotakBankLtd @udaykotak",
+      "created_at": "2026-10-15T10:28:40+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110679241587085493",
+      "image": "https://pbs.twimg.com/media/HUqjiyNbMAAVt1S.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110678496309899627",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Uday Kotak recalls Dhirubhai Ambani’s vision of taking the company public, reaching out to investors and creating value for a wider shareholder base, as he reflects on the significance of Jio’s IPO.\n\n📺 Watch the press conference LIVE⏬ https://t.co/oCNsdJO0du \n\n🔴 Watch the press conference LIVE on YouTube⏬ https://t.co/W8ZMUVKw5E\n\n#JioIPO #UdayKotak #Reliance #Moneycontrol",
+      "created_at": "2026-10-15T10:25:42+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110678496309899627",
+      "image": "https://pbs.twimg.com/media/HUqi5ozaIAAzUHi.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110677810662826150",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#JIOIPO | 🚨Uday Kotak recalls how seeing Marine Drive lit up during the promotion for Reliance’s IPO when he was 18 left a lasting impression on him and influenced his decision to pursue a career in financial services.\n\n📺 Watch the press conference LIVE⏬\nhttps://t.co/JAEJax79OV\n\n🔴 Watch the press conference LIVE on YouTube👇\nhttps://t.co/W8ZMUVKw5E\n\n#JioIPO #UdayKotak #Reliance #Moneycontrol",
+      "created_at": "2026-10-15T10:22:59+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110677810662826150",
+      "image": "https://pbs.twimg.com/media/HUqhYAQaMAAuRTl.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110677783240401106",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Jio Platforms to Hyundai Motor India Ltd : A look at India's biggest IPOs\n\n-Jio Platforms to launch India's largest IPO at Rs 30,213 crore.\n-IPO opens October 21 with a price band of Rs 1,065-1,119.\n-Jio valuation to reach Rs 10.3 lakh crore at upper band.\n\nRead More:\nhttps://t.co/4N9s7sQpx3",
+      "created_at": "2026-10-15T10:22:52+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110677783240401106",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110677610984505597",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🚨🚨 Jio Platforms IPO: How does it stack up against Bharti Airtel on valuation, revenue and profitability?\n\n- Jio Platforms has a higher m-cap compared to Airtel India.\n- Jio reported higher revenue, EBIT, and customer base.\n- Analysts expect tariff hikes to drive future earnings\n\nRead More:\nhttps://t.co/dlw7o9DVkE",
+      "created_at": "2026-10-15T10:22:11+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110677610984505597",
+      "image": "https://pbs.twimg.com/media/HUqhsrAaYAAjXRq.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110676667102560748",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketswithMC | Sensex settles 1,500 pts higher, Nifty ends near 23,000: Buying in IT, financial shares among key reasons behind market gain\n\n-Sensex and Nifty traded higher led by IT share buying.\n-Value buying emerged as markets neared six-month lows.\n-Analysts expect elevated volatility due to weekly expiry.\n\n@jagan520 brings in details:\nhttps://t.co/uJyrcr6FC4",
+      "created_at": "2026-10-15T10:18:26+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110676667102560748",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110675730820681859",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "LIVE: Jio Platforms Press Conference | India’s Biggest-Ever IPO, Management Speaks | N18G https://t.co/pzkcAVOLIX",
+      "created_at": "2026-10-15T10:14:43+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110675730820681859",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110675699199873398",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "LIVE: Jio Platforms Press Conference | India’s Biggest-Ever IPO, Management Speaks | N18G https://t.co/riXLMm8Egy",
+      "created_at": "2026-10-15T10:14:35+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110675699199873398",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110674402354610208",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "📈 Market Closing Bell | Sensex rallies 1,534 points, while Nifty closes at 23,000 as bulls take charge on Dalal Street. IT, auto and private banking stocks lead the gains.\n\n#ClosingBell #StockMarket #Sensex #Nifty #Moneycontrol https://t.co/MwhBaURPPT",
+      "created_at": "2026-10-15T10:09:26+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110674402354610208",
+      "image": "https://pbs.twimg.com/media/HUqfGz8a8AAmbPk.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110671312847048746",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "‘Flex-Free Mumbai’ kicks off: Mayor Ritu Tawde removes illegal posters, BMC plans QR-code checks\n\n-Mumbai Mayor launched the Flex-Free Mumbai campaign.\n-BMC plans QR-code system for authorised banners.\n-Unauthorised posters will be removed immediately.\n\nRead More:\nhttps://t.co/pmpDMMRCLE",
+      "created_at": "2026-10-15T09:57:10+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110671312847048746",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110670710255591784",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | Want Rs 1 crore by 45? How much should you invest every month, and why does a yearly SIP step-up matter\n\nMany fund houses offer a SIP step-up facility, but even if you manage it manually, having one fixed month every year to review the contribution can work well\n\n@imNavneetDubey with details \nhttps://t.co/tqe1b3vZvJ",
+      "created_at": "2026-10-15T09:54:46+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110670710255591784",
+      "image": "https://pbs.twimg.com/media/HUqb0eLaUAAZuQi.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110670351265112329",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🔴 Jio RHP Special Broadcast LIVE | Jio leadership addresses the media on India’s biggest-ever IPO, outlining key details as the company prepares for its public market debut.\n\nWatch LIVE on Moneycontrol⏬ | @LovishaDarad \nhttps://t.co/U7sh7NxCL1\n\n#Jio #JioIPO #IPO #Moneycontrol https://t.co/TaiIVqJ13e",
+      "created_at": "2026-10-15T09:53:20+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110670351265112329",
+      "image": "https://pbs.twimg.com/media/HUqbTOQbIAATDzK.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110670091465687488",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "JIO RHP Special Broadcast LIVE | India’s Biggest-Ever IPO, Jio Leadership Addresses Media\n@lovishadarad\n https://t.co/eeuB2PoQZL",
+      "created_at": "2026-10-15T09:52:18+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110670091465687488",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110670069885976889",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "JIO RHP Special Broadcast LIVE | India’s Biggest-Ever IPO, Jio Leadership Addresses Media https://t.co/8otkXHXFL8",
+      "created_at": "2026-10-15T09:52:13+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110670069885976889",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110668735891788184",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Indian couple spends Rs 50 lakh a year living in Australia, pays Rs 29 lakh in rent alone\n\nRent accounted for the biggest share of their annual budget, while travel, gym memberships, groceries and eating out added to the bill. The couple also explained how meal prepping and buying groceries in bulk helped them manage everyday food expenses.\n\n@ShirodkarTeesha brings in details:\nhttps://t.co/2YtAUQWtGX",
+      "created_at": "2026-10-15T09:46:55+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110668735891788184",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110665929868874075",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Apple Intelligence gets China approval, beta version coming later this October, Tim Cook says\n\nApple Executive Chairman Tim Cook said Apple Intelligence has received regulatory approval in China, with a beta version scheduled for release later in October, according to The Paper.\n\nRead More:\nhttps://t.co/H7g5CuCbg0",
+      "created_at": "2026-10-15T09:35:46+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110665929868874075",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110663315362082837",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Energy in Motion opens Rs 1,000-crore electric truck complex in Pune\n\n- EIM opened an EV truck plant in Pune on October 14.\n- Facility aims to produce 5,000 vehicles per shift yearly.\n- Company is developing a nationwide battery-swapping network.\n\nRead More:\nhttps://t.co/zccREkUn0U",
+      "created_at": "2026-10-15T09:25:23+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2110663315362082837",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110647205207892033",
+      "handle": "errnews",
+      "display_name": "ERR News",
+      "text": "European Prosecutor's Office will not keep Estonia in the loop in Datasel proceedings\n\n#Estonia\n\nhttps://t.co/F8zcj3mRuK",
+      "created_at": "2026-10-15T08:21:22+00:00",
+      "url": "https://x.com/errnews/status/2110647205207892033",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Datasel\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110634485012464005",
+      "handle": "dealsandfirms",
+      "display_name": "Deals & Firms by Bar & Bench",
+      "text": "Shardul Amarchand Mangaldas assists Tata Capital on sanctioning ₹540 crore to Jayaswal Neco Industries\n\nhttps://t.co/CI2UUcEL4m",
+      "created_at": "2026-10-15T07:30:49+00:00",
+      "url": "https://x.com/dealsandfirms/status/2110634485012464005",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110606153042600199",
+      "handle": "Tick_Tracker",
+      "display_name": "AI Sentiment Detection App for Bharat Stock Market",
+      "text": "Hourly Bearish\n#TATATECH\n#NBCC\n#SRF\n#UPL\n#YESBANK\n#KALYANKJIL\n#GODREJCP\n#ADANIGREEN\n#BANKINDIA\n#PAGEIND\n#IRFC\n#INDIANB\n#RECLTD\n#COLPAL\n#PATANJALI\n#CROMPTON\n#PAYTM\n#StocksInFocus #HPORB #StocksToTrade #StocksToWatch #StocksMarket #NSE #BSE #NIFTY",
+      "created_at": "2026-10-15T05:38:14+00:00",
+      "url": "https://x.com/Tick_Tracker/status/2110606153042600199",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110591581476765937",
+      "handle": "financeweek101",
+      "display_name": "finance weekly",
+      "text": "Q2 FY2027 Results: 16th Oct\n🔹DLF\n🔹Punjab National Bank\n🔹LTM\n🔹Federal Bank\n🔹Bajaj Housing Finance\n🔹Oberoi Realty\n🔹Himadri Speciality Chemical\n🔹Urban Company\n🔹Jindal Saw\n🔹Crompton Greaves Consumer Electrical\n🔹Ujjivan Small Finance Bank\n🔹Jayaswal Neco Industries\n🔹Raghav Productivity Enhancers\n🔹Tejas Networks\n🔹Shoppers Stop\n🔹SG Finserve\n🔹Solara Active Pharma Sciences\n🔹Indo Rama Synthetics (India)\n🔹Aurum Proptech\n🔹Paushak\n🔹Modison\n🔹Benares Hotels\n🔹Amal\n🔹Onward Technologies\n🔹Bright Outdoor Media\n🔹Artson\n🔹Tiger Logistics India\n🔹Gujarat Hotels\n🔹Homre\n\nSource: Money Control\n\nEnjoyed this post?\n💬 Like it\n📲 Share it\n👥 Tag a friend who’d love this\nAnd hit that follow button to stay in the loop with the latest market buzz!\n#earnings #Q2FY27 #Q2Results #FY27 #EarningsResults #Stocks #MarketNews",
+      "created_at": "2026-10-15T04:40:20+00:00",
+      "url": "https://x.com/financeweek101/status/2110591581476765937",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110590573363220598",
+      "handle": "_Imdeepanshu",
+      "display_name": "Deepanshu Aggarwal",
+      "text": "Kya Diwali Pe Kalyan Jewellers Me Hoga Dhamaka? 🪔\n\nAapko kya lagta hai?\nEMA 20 reclaim hoga ya Support 520 test hoga?\n\n#KALYANKJIL #DiwaliStocks\n\n⚠️ Educational Analysis Only - No Buy/Sell Advice https://t.co/jo1zqmO8hF",
+      "created_at": "2026-10-15T04:36:20+00:00",
+      "url": "https://x.com/_Imdeepanshu/status/2110590573363220598",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110577997506068756",
+      "handle": "punitbansal14",
+      "display_name": "Punit",
+      "text": "Clinical Chemistry | Exclusive Distribution | Reagents & Devices\n\n📸1: Kopran Diagnostics - Diversification of Revenue - East & West (High Contributions) - South India Revenue Started FY26\n\nIt is diversified across India, but primarily our strength lies a lot in East and I would say, East and West. North is also a big market. South is a market which we entered about 3 years back. So that has a lot of growth potential, primarily because we entered late and there was a lot of competition there, but we have done very well in the last 3 years\n\n📸2: Kopran Diagnostic – Revenue Breakup\n\nThe bulk of our revenue comes from the consumables business, which is what we call reagents. So reagents contributes to almost 80% of -- 75%, 78% of our top line.\n\nThe balance would be a sale of equipment, which contribute to around 20%, 22%. And there is a certain 1%, 1.5% of a service component where we operate CMCs and services which we operate\n\n📸3: Kopran Management on high end machines sole authorization in India\n\nSo some of these companies that we represent, we purchase the machines from them. There are some leading companies like an American company called Beckman Coulter, which is one of the leading companies, some of the machines -- a lot of the machines are of Beckman Coulter",
+      "created_at": "2026-10-15T03:46:21+00:00",
+      "url": "https://x.com/punitbansal14/status/2110577997506068756",
+      "image": "https://pbs.twimg.com/media/HUpA91jbMAAuARW.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110575364984762710",
+      "handle": "bullish_india",
+      "display_name": "Bullish India 🇮🇳",
+      "text": "🚨UPCOMING QUARTERLY RESULTS Q2FY27:\n\n📅 15 October, 2026 ⏬\n\n360ONE\n5PAISA\nALOKINDS\nANGELONE\nBUTTERFLY\nCCL\nCYIENTDLM\nDBCORP\nFEDFINA\nHDFCAMC\nHDFCLIFE\nHERITGFOOD\nIIFL\nIRFC\nJIOFIN\nKABRAEXTRU\nKARURVYSYA\nLTF\nMAHEPC\nMETROBRAND\nMWL\nNESTLEIND\nORIENTELEC\nORIENTHOT\nPERSISTENT\nPOLYCAB\nSOUTHBANK\nSWSOLAR\nTATACOMM\nTECHM\nTIPSMUSIC\nWIPRO\n\n📅 16 October, 2026 ⏬\n\nAURUM\nBAJAJHFL\nCROMPTON\nDLF\nFEDERALBNK\nHSCL\nINDORAMA\nJAYNECOIND\nJINDALSAW\nLTM\nMODISONLTD\nOBEROIRLTY\nONWARDTEC\nPAUSHAKLTD\nRPEL\nSGFIN\nSHOPERSTOP\nSOLARA\nTIGERLOGS\nUJJIVANSFB\nURBANCO\n\n🚀 Stay tuned for updates! 💹\n#results #StockMarket #StockMarketUpdate #investing #trading\nhttps://t.co/ECfZ04hTWX",
+      "created_at": "2026-10-15T03:35:54+00:00",
+      "url": "https://x.com/bullish_india/status/2110575364984762710",
+      "image": "https://pbs.twimg.com/media/HUpFGmkaUAAsOLK.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110561556086079808",
+      "handle": "AethosWealth",
+      "display_name": "Aethos Wealth",
+      "text": "AETHOS PRE-MARKET RADAR | Stocks in Action Today\n\n────────────────────────\n\n🟢 POSITIVE\nIDBI's long-awaited strategic sale cleared the Cabinet, and Q2 results from solar, insurance and FMCG names landed well. Order wins and brokerage calls add to the mix.\n\n- 𝗜𝗗𝗕𝗜𝗕𝗮𝗻𝗸 (IDBI) | CCEA approved Fairfax as the qualified bidder for a 60.8% stake, deal value ₹52,878 Cr. Govt and LIC retain 34%; LIC receives ₹26,337 Cr; a CSB Bank merger is seen as the likeliest route\n\n- 𝗘𝗺𝗺𝘃𝗲𝗲𝗣𝗵𝗼𝘁𝗼𝘃𝗼𝗹𝘁𝗮𝗶𝗰 (EMMVEE) | Q2 FY27 PAT up 60.6% YoY to ₹382 Cr, revenue up 39.4% to ₹1,576.4 Cr. Order book at 10.4 GW with 1.5 GW of quarterly inflows\n\n- 𝗛𝘆𝘂𝗻𝗱𝗮𝗶𝗠𝗼𝘁𝗼𝗿𝗜𝗻𝗱𝗶𝗮 (HYUNDAI) | Inaugurated Pune plant, plans to invest up to ₹11,000 Cr. Annual capacity to scale from 1.7 L to 3.2 L units by 2030, making the new VENUE only\n\n- 𝗘𝗻𝘃𝗶𝗿𝗼𝗜𝗻𝗳𝗿𝗮𝗘𝗻𝗴𝗶𝗻𝗲𝗲𝗿𝘀 (EIEL) | Step-down subsidiary bags ₹228 Cr EPC order from ARIE Energy LLP for the 100 MW Ajani Wind Project in Maharashtra\n\n- 𝗜𝗖𝗜𝗖𝗜𝗟𝗼𝗺𝗯𝗮𝗿𝗱 (ICICIGI) | Q2 PAT up 27.5% to ₹1,040 Cr, GDPI up 4.7% to ₹7,290 Cr (H1 PAT down 5.8% to ₹1,460 Cr). Interim dividend ₹7/share, record date 23-Oct\n\n- 𝗕𝗮𝗷𝗮𝗷𝗖𝗼𝗻𝘀𝘂𝗺𝗲𝗿𝗖𝗮𝗿𝗲 (BAJAJCON) | Q2 net sales up 27.3% to ₹332.7 Cr, PAT up 66% to ₹70.2 Cr, EBITDA up 71% to ₹83.3 Cr\n\n- 𝗢𝗺𝗣𝗼𝘄𝗲𝗿𝗧𝗿𝗮𝗻𝘀𝗺𝗶𝘀𝘀𝗶𝗼𝗻 (OMPOWER) | Order from UGVCL for underground cabling at Ambaji, ₹101.6 Cr . Execution in 12 months after a 45-day start-up period\n\n- 𝗔𝘅𝗶𝘀𝗰𝗮𝗱𝗲𝘀𝗧𝗲𝗰𝗵𝗻𝗼𝗹𝗼𝗴𝗶𝗲𝘀 (AXISCADES) | Completed 100% acquisition of Swiss firm Ulosia Holding AG. Unit XIDA Inc. also to buy ITSJ Group assets for up to $7.0 M (~₹67.1 Cr): $2.5 M cash, $2.5 M restricted shares, up to $2.0 M earn-out\n\n- 𝗖𝗲𝗺𝗶𝗻𝗱𝗶𝗮𝗣𝗿𝗼𝗷𝗲𝗰𝘁𝘀 (CEMPRO) | First-time CRISIL AA/Stable (long term) and A1+ (short term) on bank facilities. Separately opened a QIP with floor price ₹1,158.6, up to 5% discount allowed\n\n- 𝗜𝗻𝗱𝗶𝗮𝗻𝗣𝗵𝗼𝘀𝗽𝗵𝗮𝘁𝗲 (INDIANPHOS) | Q2 FY27 standalone revenue up 94.4% to ₹425.3 Cr, consolidated revenue up 83.8%\n\n- 𝗛𝗗𝗕𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹𝗦𝗲𝗿𝘃𝗶𝗰𝗲𝘀 (HDBFS) | Nomura upgrades to Buy, target ₹790, on disbursement momentum; management targets 8% NIM and 2.5% RoA. Q2 PAT missed by 2% and GNPA edged up to 2.4% from 2.3%\n\n- 𝗡𝗲𝘂𝗹𝗮𝗻𝗱𝗟𝗮𝗯𝗼𝗿𝗮𝘁𝗼𝗿𝗶𝗲𝘀 (NEULANDLAB) | US FDA issued EIR for Unit 3 (Gaddapotharam) after the Aug 10-14 inspection, closing it out\n\n- 𝗠𝗼𝗿𝗲𝗽𝗲𝗻𝗟𝗮𝗯𝗼𝗿𝗮𝘁𝗼𝗿𝗶𝗲𝘀 (MOREPENLAB) | Himachal HC quashed the ₹117.9 Cr GST show-cause notice on excess refunds, ruling in the company's favour\n\n- 𝗡𝗟𝗖𝗜𝗻𝗱𝗶𝗮 (NLCINDIA) | NLC India Renewables gets LoA from WBSEDCL for a 50 MW / 200 MWh standalone battery storage project at Arambag, West Bengal\n\n- 𝗣𝗮𝘆𝘁𝗺 (PAYTM) | Nomura initiates Buy, target ₹2,250; sees EBITDA CAGR of 96% over FY26-FY29 on payments and merchant lending\n\n- 𝗕𝗵𝗮𝗿𝘁𝗶𝗛𝗲𝘅𝗮𝗰𝗼𝗺 (BHARTIHEXA) | Nomura initiates Buy, target ₹1,870, on de-rating, tariff-hike upside, strong RoCE and higher shareholder returns\n\n- 𝗕𝗵𝗮𝗿𝗮𝘁𝗘𝗹𝗲𝗰𝘁𝗿𝗼𝗻𝗶𝗰𝘀 (BEL) | Macquarie retains Outperform, target ₹550, implying 44.1% upside from ₹381.9\n\n- 𝗟𝗮𝘂𝗿𝘂𝘀𝗟𝗮𝗯𝘀 (LAURUSLABS) | Invested ₹107.8 Cr in JV KRKA Pharma's rights issue (10.78 Cr shares); holds 26.2 Cr shares, stake unchanged at 49%. Also got CARE ESG rating of 1+ (score 82.6)\n\n- 𝗛𝗘𝗖𝗜𝗻𝗳𝗿𝗮𝗣𝗿𝗼𝗷𝗲𝗰𝘁𝘀 (HECPROJECT) | Work order of ₹6.8 Cr from CESC Limited\n\n- 𝗦𝗲𝗮𝗺𝗲𝗰 (SEAMEC) | Took over vessel SEAMEC ANANT from HAL Offshore at Kakinada on 14-Oct\n\n────────────────────────\n\n🔴 NEGATIVE\nEnforcement and tax headlines lead, with two large demands where the companies expect no material impact. Q2 margin pressure at CEAT and a brokerage Underperform on BHEL.\n\n- 𝗥𝗲𝗹𝗶𝗮𝗻𝗰𝗲𝗣𝗼𝘄𝗲𝗿 (RPOWER) | ED seized assets worth ₹2,032 Cr under FEMA, linked to alleged overseas fund diversion via BVI entities\n\n- 𝗠𝗽𝗵𝗮𝘀𝗶𝘀 (MPHASIS) | Rectification order raises AY 2023-24 income-tax demand to ₹2,417.8 Cr from ₹2,286.9 Cr. Company will pursue legal remedies and expects no material financial impact\n\n- 𝗖𝗶𝘁𝘆𝗨𝗻𝗶𝗼𝗻𝗕𝗮𝗻𝗸 (CUB) | FY22 GST demand cut to ₹208.9 Cr from ₹337.8 Cr. Bank says the demand has factual errors, will contest it, and expects no material impact\n\n- 𝗖𝗘𝗔𝗧 (CEATLTD) | Q2 consolidated PAT down 39.6% YoY to ₹112 Cr despite revenue up 26.2% to ₹4,762 Cr. EBITDA margin 9.5% on raw material pressure\n\n- 𝗕𝗛𝗘𝗟 (BHEL) | CLSA keeps Underperform, target raised to ₹351 after strong Q2; profit estimates up 10-11% but valuation, competition and peak-order concerns remain\n\n- 𝗗𝗿𝗥𝗲𝗱𝗱𝘆'𝘀𝗟𝗮𝗯𝗼𝗿𝗮𝘁𝗼𝗿𝗶𝗲𝘀 (DRREDDY) | USFDA pre-approval inspection of FTO-9 (Visakhapatnam) ended with Form 483 carrying 3 observations; response due within the stipulated period\n\n- 𝗠𝘂𝘁𝗵𝗼𝗼𝘁𝗖𝗮𝗽𝗶𝘁𝗮𝗹𝗦𝗲𝗿𝘃𝗶𝗰𝗲𝘀 (MUTHOOTCAP) | Chief Risk Officer Umadevi Pazhoor Unnikrishnan resigns for personal reasons\n\n- 𝗝𝗧𝗟𝗗𝗲𝗳𝗲𝗻𝗰𝗲 (JTLDEFENCE) | CFO Naveen Kumar Laroiya and CS Ankit Singla resign; Saurabh Jain and Devangna Jain appointed. Board also approved a rights issue of up to ₹24.6 Cr\n\n- 𝗦𝗲𝗿𝘃𝗼𝘁𝗲𝗰𝗵𝗥𝗲𝗻𝗲𝘄𝗮𝗯𝗹𝗲𝗣𝗼𝘄𝗲𝗿 (SERVOTECH) | Two employees arrested over suspected internal fraud of ₹2.0-2.5 Cr; ₹75.7 lakh in goods and cheques recovered, forensic auditor appointed\n\n- 𝗩𝗮𝗿𝗿𝗼𝗰𝗘𝗻𝗴𝗶𝗻𝗲𝗲𝗿𝗶𝗻𝗴 (VARROC) | RBI imposed ₹3.91 lakh compounding amount for FEMA delay in dues repatriation; matter disposed, no further action\n\n- 𝗣𝘂𝗻𝗷𝗮𝗯𝗡𝗮𝘁𝗶𝗼𝗻𝗮𝗹𝗕𝗮𝗻𝗸 (PNB), 𝗦𝗵𝗮𝗹𝗯𝘆 (SHALBY), 𝗙𝘂𝗷𝗶𝘆𝗮𝗺𝗮𝗣𝗼𝘄𝗲𝗿𝗦𝘆𝘀𝘁𝗲𝗺𝘀 (UTLSOLAR) |(PNB penalty, Shalby licence suspension, Fujiyama BIS penalty order). \n────────────────────────\n\n⚪ NEUTRAL / CORPORATE ACTIONS\nJio's IPO details dominate. Fundraise approvals and open offers are the other corporate action items.\n\n- 𝗥𝗲𝗹𝗶𝗮𝗻𝗰𝗲𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗲𝘀 (RELIANCE) | Jio Platforms filed RHP for the IPO: up to 27 Cr fresh shares, opens 21-Oct and closes 23-Oct. ₹2,500 Cr reserved for RIL shareholders\n\n- 𝗟𝗹𝗼𝘆𝗱𝘀𝗠𝗲𝘁𝗮𝗹𝘀&𝗘𝗻𝗲𝗿𝗴𝘆 (LLOYDSME) | Board approved raising up to ₹3,000 Cr via NCDs and up to $130 M via debt securities. A proposed ₹600 Cr NCD was cancelled; earlier ₹950 Cr NCD approval stands\n\n- 𝗖𝗮𝗽𝗿𝗶𝗚𝗹𝗼𝗯𝗮𝗹𝗖𝗮𝗽𝗶𝘁𝗮𝗹 (CGCL) | Board approved raising up to ₹4,000 Cr (instrument details not read)\n\n- 𝗖𝘂𝗯𝗲𝘅𝗧𝘂𝗯𝗶𝗻𝗴𝘀 (CUBEXTUB) | Board approved 50 L convertible warrants at ₹150 to raise ₹75 Cr, funding a vacuum melting furnace at its new facility\n\n- 𝗦𝗠𝗖𝗚𝗹𝗼𝗯𝗮𝗹𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝗶𝗲𝘀 (SMCGLOBAL) | To issue convertible warrants worth up to ₹110 Cr\n\n- 𝗛𝗶𝗴𝗵𝘄𝗮𝘆𝗜𝗻𝗳𝗿𝗮𝘀𝘁𝗿𝘂𝗰𝘁𝘂𝗿𝗲 (HILINFRA) | Authorised capital raised to ₹50 Cr, 1 Cr promoter warrants worth ₹49.9 Cr approved, and acquisition of 51% in Indore Highway Real Estate\n\n- 𝗝𝘂𝗯𝗶𝗹𝗮𝗻𝘁𝗣𝗵𝗮𝗿𝗺𝗼𝘃𝗮 (JUBLPHARMA) | ICRA assigns [ICRA]AA+ (Stable) to proposed ₹1,400 Cr NCD programme\n\n- 𝗞𝗲𝗹𝗹𝘁𝗼𝗻𝗧𝗲𝗰𝗵𝗦𝗼𝗹𝘂𝘁𝗶𝗼𝗻𝘀 (KELLTONTEC) | Board meets 17-Oct to fix size and terms of a proposed rights issue\n\n- 𝗕𝗹𝘂𝗲𝗦𝘁𝗼𝗻𝗲𝗝𝗲𝘄𝗲𝗹𝗹𝗲𝗿𝘆 (BLUESTONE) | Board meets 22-Oct for Q2 results and to consider raising up to ₹300 Cr via NCDs\n\n- 𝗕𝗿𝗼𝗼𝗸𝘀𝗟𝗮𝗯𝗼𝗿𝗮𝘁𝗼𝗿𝗶𝗲𝘀 (BROOKS) | Board approved 1:1 demerger of manufacturing business into Abridge Speciality, to be listed on BSE and NSE\n\n- 𝗕𝗮𝗷𝗮𝗷𝗛𝗲𝗮𝗹𝘁𝗵𝗰𝗮𝗿𝗲 (BAJAJHCARE) | NCLT Mumbai approved acquisition of Genrx Pharmaceuticals, which becomes a wholly owned subsidiary\n\n- 𝗔𝘃𝗶𝘀𝗵𝗸𝗮𝗿𝗜𝗻𝗳𝗿𝗮𝗥𝗲𝗮𝗹𝘁𝘆 (AVISHKAR) | Open offer for up to 58.25 L shares (26%) at ₹23 cash, triggered after PACs reached 26.8%\n\n- 𝗡𝗶𝘁𝗰𝗼 (NITCO) | Conveyance deed registered for 75% of Kanjurmarg land, consideration ₹143 Cr; expects ₹250 Cr from the remaining 25%\n\n- 𝗧𝗮𝘁𝗮𝗧𝗲𝗰𝗵𝗻𝗼𝗹𝗼𝗴𝗶𝗲𝘀 (TATATECH) | Q2 profit down 5%, missing estimates; revenue up 28%\n\n- 𝗔𝗹𝗹𝗰𝗮𝗿𝗴𝗼𝗟𝗼𝗴𝗶𝘀𝘁𝗶𝗰𝘀 (ALLCARGO) | SEBI exempts Shashi Kiran Shetty Family Trust from open offer for 34.5% stake; internal promoter reorganisation for succession planning\n\n────────────────────────\n\n👤 PROMOTER / INSIDER ACTIVITY\nAll items below are Groww/BSE-sourced; NSE insider feed returned empty.\n\nPromoter / insider buys -\n- 𝗘𝘀𝗽𝗶𝗿𝗲𝗛𝗼𝘀𝗽𝗶𝘁𝗮𝗹𝗶𝘁𝘆 (ESPIRE) | High Scale Properties acquired 9,71,532 shares (6.6% stake) via off-market route\n\n- 𝗥𝗲𝗹𝗶𝗮𝗯𝗹𝗲𝗩𝗲𝗻𝘁𝘂𝗿𝗲𝘀 (RELIABLE) | Incoming promoters acquired 59.54 L shares (54.1% stake) off-market; outgoing promoters reclassified to public\n\nPromoter / insider sells -\n- 𝗖𝗼𝗺𝗿𝗮𝗱𝗲𝗔𝗽𝗽𝗹𝗶𝗮𝗻𝗰𝗲𝘀 (COMRADE) | Promoter Mehboob Alam signs SPA to sell 24.3% for ₹6.4 Cr to Omnia Appliances and others, who seek management control\n\nPledge changes -\n- 𝗪𝗲𝗯𝘀𝗼𝗹𝗘𝗻𝗲𝗿𝗴𝘆𝗦𝘆𝘀𝘁𝗲𝗺 (WEBSOLAR) | Promoters released pledge on 2.0175 Cr shares (4.7% of capital); encumbered promoter holding falls to 22.0% from 26.6%\n\n────────────────────────\n\n⚠ Disclaimer: No Recommendation. This is not investment advice. Compiled from publicly available BSE/NSE disclosures.\n\n#IndiaMarkets #NSE #BSE #Nifty #Sensex @AethosWealth",
+      "created_at": "2026-10-15T02:41:01+00:00",
+      "url": "https://x.com/AethosWealth/status/2110561556086079808",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110552654862860578",
+      "handle": "DFinMirror",
+      "display_name": "The Financial Mirror",
+      "text": "Quarterly earning results to watch out \n\nOctober 16, Friday - Tomorrow \n•#Amal - Amal Ltd\n•#Artson - Artson Ltd\n•#Aurum - Aurum PropTech Ltd\n•#Bajajhfl - Bajaj Housing Finance Ltd\n•#Benaras - Benares Hotels Ltd\n•#Bright - Bright Outdoor Media Ltd\n•#Crompton - Crompton Consumer \n•#Dlf - DLF Limited \n•#E2e - E2E Networks Ltd\n•#Federalbnk - Federal Bank Ltd\n•#Hscl - Himadri Speciality Chemical Ltd\n•#Indorama - Indo Rama Synthetics \n•#Jaynecoind - Jayaswal Neco Industries \n\n•#Jindalsaw - Jindal Saw Ltd\n•#Ltm - LTM Ltd\n•#Modisonltd - Modison Ltd\n•#Oberoirlty - Oberoi Realty Ltd\n•#Onwardtec - Onward Technologies Ltd\n•#Paushakltd - Paushak Ltd\n•#Pnb - Punjab National Bank\n•#Rpel - Raghav Productivity Enhancers \n•#Sgfin - SG Finserve Ltd\n•#Shoperstop - Shoppers Stop Ltd\n•#Solara - Solara Active Pharma Sciences \n•#Tejasnet - Tejas Networks Ltd\n•#Tigerlogs - Tiger Logistics India Ltd\n•#Ujjivansfb - Ujjivan Small Finance Bank \n•#Urbanco - Urban Company Ltd",
+      "created_at": "2026-10-15T02:05:39+00:00",
+      "url": "https://x.com/DFinMirror/status/2110552654862860578",
+      "image": "https://pbs.twimg.com/media/HUowc0haMAAQp9m.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110534412215742898",
+      "handle": "tradeyatra1",
+      "display_name": "Trade yatra",
+      "text": "4. #KOPRAN \n\nkeep eyes👀\n#stocks #nifty #swingtrading https://t.co/pEPWs4aGwx",
+      "created_at": "2026-10-15T00:53:10+00:00",
+      "url": "https://x.com/tradeyatra1/status/2110534412215742898",
+      "image": "https://pbs.twimg.com/media/HUof256b0AA2vKc.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110465851598250365",
+      "handle": "eduinvestingin",
+      "display_name": "Eduinvesting.in",
+      "text": "https://t.co/JNbMWnI83q",
+      "created_at": "2026-10-14T20:20:44+00:00",
+      "url": "https://x.com/eduinvestingin/status/2110465851598250365",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110465762700009623",
+      "handle": "eduinvestingin",
+      "display_name": "Eduinvesting.in",
+      "text": "Jayaswal Neco Industries Limited\n\nLink in comments https://t.co/BJRv57cJz8",
+      "created_at": "2026-10-14T20:20:23+00:00",
+      "url": "https://x.com/eduinvestingin/status/2110465762700009623",
+      "image": "https://pbs.twimg.com/media/HUnhbClaUAAk9oW.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110440355900649969",
+      "handle": "BillionsRG",
+      "display_name": "RG",
+      "text": "₹1,19,000+ Profit\n\nso far in October Month\n\n14 Oct: #DHAMPURSUG +₹12000 |\n-₹1500 #SENSEX PE | -₹4000 #BSE | +₹5,400 #NIFTY PE | +₹6,300 #CRUDE PE\n\n13 OCT: #NATURALGAS CE +₹7,400 | #NIFTY PE +₹1,900\n\n12 Oct: NIFTY 13 OCT 22300 PE\n+₹1,495 | NIFTY 13 OCT 22600 PE\n+₹9,750 | MAXHEALTH OCT 870 PE\n+₹5,000\n\n09 Oct: #PCJEWELLER +18% | #BSE PE -₹600 | NIFTY CE +₹8,775\n\n08 Oct: #CRUDE PE -₹1,000 | CRUDE PE -₹1,200 | TCS CE -₹4,700 | #POLICYBZR CE -₹4,200\n\n07 Oct: #TATASTEEL +₹5,000 | #CRUDEOILM +₹6,600 | COLPAL +₹2,200\n\n06 Oct: #RRKABEL +9% | #RELIANCE CE +₹5,000\n\n05 Oct: #NATURALGAS +₹1,500 | NIFTY CE +₹4,200 | NIFTY CE +₹2,200 | #EMIL +5% | #BOSCH PE -₹3,700\n\n1 Oct: NIFTY PE +₹17,600 | CRUDEOIL +₹2,700 | #KALYANKJIL PE +₹15,800\n\nTotal P&L: +₹87,000 Options \n\nPCJEWELLER 9,000\nDHAMPURSUG 16,000\nRRKABEL 4,500\nEMIL 2500\n\nTotal P&L: +32,000 Equity\n(50,000 Investment - MTF)\n\nEverything is visible here on X\nJust scroll down 😊😊 \n\n#Nifty #Banknifty #Sensex #Gold #Silver #Copper #Commodity #Equity #Options #FNO",
+      "created_at": "2026-10-14T18:39:25+00:00",
+      "url": "https://x.com/BillionsRG/status/2110440355900649969",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110419258211799199",
+      "handle": "gridtrade_in",
+      "display_name": "gridtrade.in",
+      "text": "analyzed Kalyan Jewellers India (KALYANKJIL) — 74/100, BUY — solid, mind entry.\n\nNot investment advice\n#KALYANKJIL #stockscorecard #stockanalysis https://t.co/qyfBxRlp9i",
+      "created_at": "2026-10-14T17:15:35+00:00",
+      "url": "https://x.com/gridtrade_in/status/2110419258211799199",
+      "image": "https://pbs.twimg.com/media/HUm3AecaEAAtXh1.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110417118605041850",
+      "handle": "twitflwr",
+      "display_name": "Twitflwr",
+      "text": "@unseenvalue Hello, \nReferencing from MMB days. \nboarder777, I could not find later on any social media platform. Don't remember if Him or you suggested 25 K for neuland , biocon or syngene .  I also once  discussed With U Kopran In DM. Unfortunately nothing bought. \n\nNeuland has achieved.",
+      "created_at": "2026-10-14T17:07:05+00:00",
+      "url": "https://x.com/twitflwr/status/2110417118605041850",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110392884629577775",
+      "handle": "fiidiireport",
+      "display_name": "IndianFinance",
+      "text": "🚨 NSE BULK DEALS: THE BIG MOVES 🚨\n\n🎯 WATCHLIST FOR TOMORROW:\nMVELECTRO: Highest value bulk at ₹1007 Cr with 17.23% surge backed by multiple HFTs.\nGERMAN: Sharp 19.99% rally on ₹158 Cr volume showing strong momentum.\nTARIL: ₹677 Cr deal triggering 14.7% jump in a single session.\n\n💰 VALUE LEADERS (High Liquidity)\n• MVELECTRO: ₹1007.61 Cr (Price 17.23%)\n• SSRETAIL: ₹746.41 Cr (Price 10.88%)\n• TARIL: ₹677.36 Cr (Price 14.7%)\n\n🧐 INSTITUTIONAL RADAR\n• Strong Hands: ABAKKUS FOUR2EIGHT OPPORTUNITIES FUND, QUANT MUTUAL FUND JUBLPHARMA\n• Trading Hands: NK SECURITIES RESEARCH, GRAVITON RESEARCH, ALPHAGREP SECURITIES MVELECTRO, TATAELXSI, SSRETAIL\n\nWhich of these are you watching? 👇 #StockMarketIndia #Nifty #BulkDeals",
+      "created_at": "2026-10-14T15:30:47+00:00",
+      "url": "https://x.com/fiidiireport/status/2110392884629577775",
+      "image": "https://pbs.twimg.com/media/HUmfJOgacAAlkxt.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110387814198292759",
+      "handle": "imhiteshmodi",
+      "display_name": "Hitesh Modi",
+      "text": "How a momentum portfolio behaves in these turbulent markets?👀\n\nI post daily and weekly updates of my momentum portfolio which is at 3.42X since July 2022\n\nMy strategy and performance with zerodha console proofs 👇👇\nhttps://t.co/L0P4oJsWx9\n\n📊 Momentum Portfolio — Daily Update\n14 October 2026\n\nNifty Smallcap 100: -0.32%\nMy Momentum Portfolio: +0.40%\nRelative performance: +0.72%\n\n🚀 TODAY'S TOP GAINERS\n\nKOPRAN +7.41%\nSAKAR +7.27%\nCHENNPETRO +5.90%\nFCL +5.87%\nTATVA +5.39%\n\nThe objective isn't to outperform every single day.\n\nIt's to follow a repeatable system:\n\nBuying strength.\nRiding the winners.\nCutting the losers.\nLetting the system do its job.\n\nNot a simple backtest.\nNot a hypothetical portfolio.\n\nIt’s bloody LIVE.\n\n❤️ Like, Repost, Follow & Bookmark to get these real-time portfolio updates directly in your feed.\n\nThese live updates, backed by real money, can inspire you to experiment with the same strategy yourself.\n\n#MomentumInvesting #Investing #Multibagger #StockMarket #Smallcap",
+      "created_at": "2026-10-14T15:10:38+00:00",
+      "url": "https://x.com/imhiteshmodi/status/2110387814198292759",
+      "image": "https://pbs.twimg.com/media/HUmaheUaIAEbDQs.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110381101541970318",
+      "handle": "macca2931996",
+      "display_name": "Nisha Gupta",
+      "text": "3-#KOPRAN https://t.co/oiqhLijRjv",
+      "created_at": "2026-10-14T14:43:58+00:00",
+      "url": "https://x.com/macca2931996/status/2110381101541970318",
+      "image": "https://pbs.twimg.com/media/HUmUa_zaoAEf52g.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110368275645247995",
+      "handle": "sunilgurjar01",
+      "display_name": "Sunil Gurjar, CFTe",
+      "text": "Top 5 Holdings of Popular Mid Cap Mutual Funds! 🎯\n\n(Bookmark It 🔖)\n\nHDFC Mid Cap Fund\n\n1- FEDERALBNK\n2- AUBANK\n3- MFSL\n4- IPCALAB\n5- GLENMARK\n\nMotilal Oswal Midcap Fund\n\n1- PAYTM\n2- KALYANKJIL\n3- ETERNAL\n4- COFORGE\n5- ABCAPITAL\n\nNippon India Growth Mid Cap Fund\n\n1- MCX\n2- AUBANK\n3- FEDERALBNK\n4- NAUKRI\n5- FORTIS\n\nEdelweiss Mid Cap Fund\n\n1- FEDERALBNK\n2- MCX\n3- SOLARINDS\n4- CUB\n5- PERSISTENT\n\nWhiteOak Capital Mid Cap Fund\n\n1- BHARTIHEXA\n2- COFORGE\n3- FEDERALBNK\n4- MFSL\n5- LAURUSLABS\n\nWhich Stock Are You Holding? 👀",
+      "created_at": "2026-10-14T13:53:00+00:00",
+      "url": "https://x.com/sunilgurjar01/status/2110368275645247995",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110364178934530441",
+      "handle": "sunilgurjar01",
+      "display_name": "Sunil Gurjar, CFTe",
+      "text": "3-KOPRAN https://t.co/xwww1thihJ",
+      "created_at": "2026-10-14T13:36:43+00:00",
+      "url": "https://x.com/sunilgurjar01/status/2110364178934530441",
+      "image": "https://pbs.twimg.com/media/HUmFB3CbAAAfThd.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110362910006362415",
+      "handle": "LngTrmInvestor",
+      "display_name": "LongTermInvestor | NSE/BSE Tracker",
+      "text": "⭐ Jubilant Pharmova Ltd — Notable Buy (2026-10-14)\n\n🛒 ABAKKUS FOUR2EIGHT OPPORTUNITIES FUND — 1,100,000 sh · ₹100.7 cr  (block)\n\n#JUBLPHARMA #NotableBuy #StockAnalysis #LngTrmInvestor",
+      "created_at": "2026-10-14T13:31:41+00:00",
+      "url": "https://x.com/LngTrmInvestor/status/2110362910006362415",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110361065162965092",
+      "handle": "PriimeeI27337",
+      "display_name": "PRIIMEE INVESTMENT",
+      "text": "TOP 3 #BREAKOUT STOCKS TO WATCH | 5%–20% UPSIDE POTENTIAL \n\n1️⃣ JAYASWAL NECO INDUSTRIES LTD\nCMP: ₹98.97\n BUY ABOVE: ₹102 (only after breakout confirmation)\n T1: ₹107.10 (+5%)\n T2: ₹112.20 (+10%)\n T3: ₹122.40 (+20%)\n SL: ₹96 (provisional; reassess against chart support)\n Strong volume confirmation required above ₹102.\n\n2️⃣ MOREPEN LABORATORIES LTD\nCMP: ₹128.33\n BUY ABOVE: ₹131 (only after breakout confirmation)\n T1: ₹137.55 (+5%)\n T2: ₹144.10 (+10%)\n T3: ₹157.20 (+20%)\n SL: ₹125 (provisional; reassess against chart support)\n Wait for a sustained breakout with strong volume.\n\n3️⃣ BLACK BOX LTD\nCMP: ₹935.80\n BUY ABOVE: ₹955 (only after breakout confirmation)\n T1: ₹1,002.75 (+5%)\n T2: ₹1,050.50 (+10%)\n T3: ₹1,146 (+20%)\n SL: ₹920 (provisional; reassess against chart support)\n Avoid chasing; wait for confirmation above ₹955.\n\nDisclaimer: I am NOT a SEBI registered Investment Adviser/Research Analyst. This post is for educational & informational purposes only.\n\n#StockMarket #NSE #IndianStocks #BreakoutStocks #StocksToWatch #SwingTrading #SmallCap #MidCap #JayaswalNeco #MorepenLaboratories #BlackBox #PRIIMEEInvestment\n\nhttps://t.co/FvLXw7vYsW",
+      "created_at": "2026-10-14T13:24:21+00:00",
+      "url": "https://x.com/PriimeeI27337/status/2110361065162965092",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110343013377732820",
+      "handle": "JNILindia",
+      "display_name": "Jayaswal Neco Industries Ltd",
+      "text": "One vision. Five decades of excellence. A legacy that continues to shape the future of Indian manufacturing.​\n\nFrom a pioneering vision to an enduring industrial legacy, Jayaswal NECO Industries Limited stands committed to\nmanufacturing excellence, engineering progress and building for generations to come.​\n\n#JayaswalNECO #JNIL #ManufacturingExcellence\n#LegacyOfExcellence",
+      "created_at": "2026-10-14T12:12:37+00:00",
+      "url": "https://x.com/JNILindia/status/2110343013377732820",
+      "image": "https://pbs.twimg.com/media/HUlxyDgbEAEBtxf.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110333959448244626",
+      "handle": "mragankT05",
+      "display_name": "Mragank Tolwani",
+      "text": "We had coveredtranformation journey of  #Kopran well in advance https://t.co/QOX5P6V9NK \n\nNow enjoying the results.\n\nOnboard early to similar stories with us. We cover interesting opportunities in depth every week.\n\n#CapitalGoods #Pharma #FinTwit #StockMarketIndia $KOPRAN https://t.co/ORPPfvb2fF",
+      "created_at": "2026-10-14T11:36:38+00:00",
+      "url": "https://x.com/mragankT05/status/2110333959448244626",
+      "image": "https://pbs.twimg.com/media/HUlpE4qbYAAYyEU.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110315480577904923",
+      "handle": "scconline_",
+      "display_name": "SCC Online",
+      "text": "Shardul Amarchand Mangaldas &amp; Co. advises Tata Capital Ltd. on INR 540 crore financing for Jayaswal Neco Industries’ 1.50 million tonnes per annum (MnTPA) Straight-Grate Pellet Plant\n\nRead the full report: https://t.co/WX5ySpT4e5\n\n#ShardulAmarchandMangaldas\n\n@AMS_Shardul https://t.co/wYojm5Crz7",
+      "created_at": "2026-10-14T10:23:12+00:00",
+      "url": "https://x.com/scconline_/status/2110315480577904923",
+      "image": "https://pbs.twimg.com/media/HUlYrJ8bMAAAxpG.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110312795975864465",
+      "handle": "tarun_xx10",
+      "display_name": "Tarun Kumar",
+      "text": "Added #JAYNECOIND at 98.97 to the portfolio 📈\n‣ SL: 94.6 (4.4%)\n‣ Capital Risk: 0.33% https://t.co/IvzlhC55CZ",
+      "created_at": "2026-10-14T10:12:32+00:00",
+      "url": "https://x.com/tarun_xx10/status/2110312795975864465",
+      "image": "https://pbs.twimg.com/media/HUlWNSWa0AALr2N.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110308419492343970",
+      "handle": "ShortTermStock1",
+      "display_name": "Short To Mid Term",
+      "text": "The Dark Side of the Share Market: Even Market Leaders Can Fall!📊💔\n\n🔹IEX – 62%\n🔹IREDA – 61%\n🔹KAYNES – 60%\n🔹IRCTC – 59%\n🔹KPITTECH – 60%\n🔹SWIGGY – 60%\n🔹TATAELXSI – 60%\n🔹IRFC – 58%\n🔹COCHINSHIP – 52%\n🔹TRENT – 50%\n🔹SBICARD – 49%\n🔹RITES – 48%\n🔹BAJAJHFL – 56%\n🔹JSWHL – 55%\n🔹JUBLFOOD – 50%\n🔹KALYANKJIL – 51%\n🔹AMARAJABAT – 53%\n🔹DLF – 53%\n🔹ACC – 52%\n🔹TCS – 50%\n\nDis - Not Buy/Sell Reco✅",
+      "created_at": "2026-10-14T09:55:09+00:00",
+      "url": "https://x.com/ShortTermStock1/status/2110308419492343970",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110302559982571619",
+      "handle": "VasulPaisa",
+      "display_name": "PV@VASUL",
+      "text": "⬇️⬇️⬇️⬇️⬇️\n\n#JAYNECOIND \n\n अगर रिजल्ट अच्छा आया तो इसको टेक्निकल + फंडामेंटल दोनों का फायदा मिलेगा (राउंडिंग फॉर्मेशन) \n\n👍\n\n#nifty #banknifty #investing #investment #fiis #diis #niftyit #STOCK2026 #stockmarket",
+      "created_at": "2026-10-14T09:31:52+00:00",
+      "url": "https://x.com/VasulPaisa/status/2110302559982571619",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110302400716439669",
+      "handle": "hemlata_05",
+      "display_name": "Hemlata Agrawal",
+      "text": "#Kalyankjil 562\n\non its way up to touch ATH in 5th https://t.co/ST2H4PrgfT",
+      "created_at": "2026-10-14T09:31:14+00:00",
+      "url": "https://x.com/hemlata_05/status/2110302400716439669",
+      "image": "https://pbs.twimg.com/media/HUlMzsFbIAA4TyX.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110287572899713148",
+      "handle": "L_TheAnalyst",
+      "display_name": "Rohit",
+      "text": "My Q2 FY27 Earnings Watchlist 👀\n\n8 companies where I expect strong results, ranked from highest to lowest conviction.\n\n1) HFCL: Data centre trigger\n2) E2E Networks: B200 GPU utilisation\n3) Balu Forge: Operating leverage\n4) Sterlite Technologies: Data centre    trigger\n5) Anlon Healthcare: Backward integration\n6) Laurus Labs: CDMO growth cycle\n7) Kiri Industries: Commodity cycle recovery\n8) Jeena Sikho: New product launches and Entero partnership\n\nThis ranking reflects my conviction in their Q2 performance, not necessarily their stock price upside.\n\nSome of these triggers may take longer to reflect in earnings.\n\nWhich company are you most bullish on for Q2 FY27?\n\nWhat am I missing from this list?\n\nI will comeback to this list after results , not a recommendation 🙃 \n\n#Q2FY27 #Earnings #IndianStocks",
+      "created_at": "2026-10-14T08:32:19+00:00",
+      "url": "https://x.com/L_TheAnalyst/status/2110287572899713148",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE415I01015",
+          "query": "\"Kiri Industries\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110280242330042507",
+      "handle": "Er_Vpin",
+      "display_name": "Er. Vipin | Multibagger Bloodhound",
+      "text": "STOCKS UP TO 20% IN A SINGLE DAY!\n\nMomentum traders, these stocks deserve your attention. 🔥\n\nSejal Glass — 20.00%\nGerman Green Steel — 19.97%\nTRIL — 14.43%\nMV Electro Systems — 13.64%\nSS Retail — 13.42%\nMach Travel Solutions — 13.21%\nQuick Heal Technologies — 13.19%\nPasupati Acrylon — 13.11%\nV2 Retail — 13.02%\nHaldyn Glass — 11.94%\nDCM Shriram — 11.59%\nMagna Electrocast — 11.56%\nWest Coast Paper — 11.23%\nKross — 11.18%\nJindal Poly Films — 10.91%\nVedanta Power — 10.91%\nNIBE — 10.34%\nMeritronix — 10.13%\nOnward Technologies — 9.47%\nRegency Fincorp — 9.42%\nIDBI Bank — 9.33%\nAdvance Agrolife — 9.33%\nUnicommerce — 8.91%\nCLN Energy — 8.11%\nParth Electrical — 8.10%\nSportking India — 7.90%\nEco Recycling — 7.81%\nSouth West Pinnacle — 7.50%\nCPCL — 7.35%\nSimplex Infrastructures — 7.34%\nHMA Agro Industries — 7.00%\nDhansar Engineering — 6.86%\nIndo SMC — 6.82%\nSymbiotec Pharma — 6.76%\nEimco Elecon — 6.63%\nRuby Mills — 6.60%\nUnibios Holdings — 6.59%\nRemus Pharmaceuticals — 6.59%\nWhirlpool India — 6.53%\nPooja Precision Engineering — 6.53%\nAegis Logistics — 6.50%\nBombay Super Hybrid Seeds — 6.27%\nTata Elxsi — 6.24%\nNeogen Chemicals — 6.19%\nEmkay Tools — 6.16%\nTinna Rubber — 6.02%\nKopran — 5.98%\nJK Paper — 5.87%\nJSW Energy — 5.84%\nVedanta Oil and Gas — 5.81%",
+      "created_at": "2026-10-14T08:03:11+00:00",
+      "url": "https://x.com/Er_Vpin/status/2110280242330042507",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110247246554092015",
+      "handle": "VasulPaisa",
+      "display_name": "PV@VASUL",
+      "text": "#FOCUS\n\n#JAYNECOIND CMP 101-102 ALMOST 5% ✅ DONE \n\nअपनी अपनी रिस्क के हिसाब से बुक करते जाना जिसको रिजल्ट तक का वेट करना है वो अपने हिसाब से पोजीशन लेना या रखना \n\nबाकी दुआ मै याद रखना 🙏 \n\n#nifty #banknifty #investing #investment #fiis #diis #niftyit #STOCK2026 #stockmarket",
+      "created_at": "2026-10-14T05:52:04+00:00",
+      "url": "https://x.com/VasulPaisa/status/2110247246554092015",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110242231638728761",
+      "handle": "stockkscreener",
+      "display_name": "Stockk Screener",
+      "text": "3 Stocks Worth Watching Today👀\n\n1. Jayaswal neco https://t.co/pTHqZFtowZ",
+      "created_at": "2026-10-14T05:32:09+00:00",
+      "url": "https://x.com/stockkscreener/status/2110242231638728761",
+      "image": "https://pbs.twimg.com/media/HUkWH5QaEAAfUL-.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110241723607572520",
+      "handle": "Tick_Tracker",
+      "display_name": "AI Sentiment Detection App for Bharat Stock Market",
+      "text": "Hourly Bearish\n#TATATECH\n#M&amp;M\n#MFSL\n#CDSL\n#ITC\n#360ONE\n#ANGELONE\n#KALYANKJIL\n#CAMS\n#CIPLA\n#KEI\n#MCX\n#AMBUJACEM\n#JINDALSTEL\n#MPHASIS\n#KFINTECH\n#BIOCON\n#FORTIS\n#MANKIND\n#NUVAMA\n#ADANIPORTS\n#INDUSINDBK\n#PAYTM\n#DIVISLAB\n#StocksInFocus #StocksToTrade #StocksToWatch #StocksMarket #NSE",
+      "created_at": "2026-10-14T05:30:07+00:00",
+      "url": "https://x.com/Tick_Tracker/status/2110241723607572520",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110240237524062397",
+      "handle": "finvibe",
+      "display_name": "finance vibe",
+      "text": "Results this week\n\n14th Oct\n\nBajaj Consumer Care\nBHEL\nAditya Birla Money\nCanara Bank\nCeat\nMangalore Refinery and Petrochemicals\nReliance Industrial Infra\nSonaselection India\nTata Tech\nLeela Palaces Hotels & Resorts\n\n15th Oct\n\n360 ONE WAM\n5paisa Capital\nAlok Industries\nAngel One\nArmee Infotech\nBombay Super Hybrid Seeds\nButterfly Gandhimathi Appliances\nCCL Products (India)\nCyient DLM\nD. B. Corp\nFedbank Financial Services\nHDFC Asset Management Co\nHDFC Life Insurance Co\nHeritage Foods\nIIFL Finance\nIndian Bank\nIRFC\nJio Financial Services\nKabra Extrusiontechnik\nSri Lotus Developers and Realty\nL&T Finance\nMetro Brands\nMangalam Worldwide\nNestle India\nOrient Electric\nOriental Hotels\nPersistent Systems\nPolycab India\nSBC Exports\nSouth Indian Bank\nSterling and Wilson Renewable Energy\nTata Communications\nTech Mahindra\nTips Music\nUCO Bank\nWipro\n\n16th Oct\n\nAmal\nArtson\nAurum PropTech\nBajaj Housing Finance\nBenares Hotels\nBright Outdoor Media\nCrompton Greaves Consumer Electricals\nDLF\nE2E Networks\nFederal Bank\nHimadri Speciality Chemical\nIndo Rama Synthetics (India)\nJayaswal Neco Industries\nJindal Saw\nLTM\nModison\nOberoi Realty\nOnward Tech\nPaushak\nPunjab National Bank\nRaghav Productivity Enhancers\nSG Finserve\nShoppers Stop\nSolara Active Pharma Sciences\nTejas Networks\nUjjivan Small Finance Bank\nUrban Co\n\n#Finance #Nifty",
+      "created_at": "2026-10-14T05:24:13+00:00",
+      "url": "https://x.com/finvibe/status/2110240237524062397",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
     {
       "tweet_id": "2110238398611140939",
       "handle": "itsRAVI08",
@@ -632,6 +1546,22 @@
       ]
     },
     {
+      "tweet_id": "2110222683300671871",
+      "handle": "VasulPaisa",
+      "display_name": "PV@VASUL",
+      "text": "#FOCUS\n\n#JAYNECOIND CMP 97-95\n\nKEY LEVEL 84.95\n\nRESULT DATE :- APPROX 16 OCTOBER 2026 (WE FOCUS FOR 1-3 DAYS)\n\n#nifty #banknifty #investing #investment #fiis #diis #niftyit #STOCK2026 #stockmarket",
+      "created_at": "2026-10-14T04:14:28+00:00",
+      "url": "https://x.com/VasulPaisa/status/2110222683300671871",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2110221558585475172",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -913,6 +1843,22 @@
       "image": "https://pbs.twimg.com/media/HUj-0lkaUAIq2Zc.jpg",
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110215593609822598",
+      "handle": "punitbansal14",
+      "display_name": "Punit",
+      "text": "Diagnostic | Revenue Geography | Newer Segments\n\n📸1: Kopran Diagnostics - Diversification of Revenue - East & West (High Contributions) - South India Revenue Started FY26\n\nIt is diversified across India, but primarily our strength lies a lot in East and I would say, East and West. North is also a big market. South is a market which we entered about 3 years back. So that has a lot of growth potential, primarily because we entered late and there was a lot of competition there, but we have done very well in the last 3 years\n\n📸2: Kopran Clinical Chemistry - New Divisions\n\nI mean, clinical chemistry is one of the sectors we do. We also do Urinalysis, for example, we do Blood Banking as well. We do Immunology as well. But yes, these are -- some of these are newer divisions which we have started in the recent past. So they are all going to be the growth drivers for the company. So as of today, primarily the figure I gave you is from the clinical chemistry portfolio.",
+      "created_at": "2026-10-14T03:46:18+00:00",
+      "url": "https://x.com/punitbansal14/status/2110215593609822598",
+      "image": "https://pbs.twimg.com/media/HUj0J_MbwAAmk_h.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
     },
     {
       "tweet_id": "2110215560793391599",
@@ -1352,6 +2298,22 @@
         {
           "entityId": "isin:INE0HOQ01053",
           "query": "\"GROWW\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110208304760946693",
+      "handle": "stockkscreener",
+      "display_name": "Stockk Screener",
+      "text": "5. Jayaswal Neco https://t.co/A0X1T6IgW6",
+      "created_at": "2026-10-14T03:17:20+00:00",
+      "url": "https://x.com/stockkscreener/status/2110208304760946693",
+      "image": "https://pbs.twimg.com/media/HUj3Q7jbYAACEc3.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
         }
       ]
     },
@@ -3180,6 +4142,22 @@
       ]
     },
     {
+      "tweet_id": "2110090278615101512",
+      "handle": "eduinvestingin",
+      "display_name": "Eduinvesting.in",
+      "text": "https://t.co/I3qVqmITF5",
+      "created_at": "2026-10-13T19:28:20+00:00",
+      "url": "https://x.com/eduinvestingin/status/2110090278615101512",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2110089059892904286",
       "handle": "dgmarketss",
       "display_name": "DG MARKETS",
@@ -3386,6 +4364,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110058022953517235",
+      "handle": "RupeezyOfficial",
+      "display_name": "Rupeezy",
+      "text": "7. Jayaswal Neco https://t.co/JFYSkgmRpp",
+      "created_at": "2026-10-13T17:20:10+00:00",
+      "url": "https://x.com/RupeezyOfficial/status/2110058022953517235",
+      "image": "https://pbs.twimg.com/media/HUhulhEa0AAILqP.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
     },
     {
       "tweet_id": "2110055862719181292",
@@ -3796,6 +4790,22 @@
       ]
     },
     {
+      "tweet_id": "2110030519471874274",
+      "handle": "fiidiireport",
+      "display_name": "IndianFinance",
+      "text": "🚨 NSE BULK DEALS: THE BIG MOVES 🚨\n\n🎯 WATCHLIST FOR TOMORROW:\nSHRINGARMS: Massive 1169 Cr block with 17% surge signals strong momentum into tomorrow.\nCMLL: Heavy 940 Cr turnover and 9% jump points to continued buying interest.\nJUBLPHARMA: Quant Mutual Fund and Abakkus fund accumulation at lower levels.\n\n💰 VALUE LEADERS (High Liquidity)\n• SHRINGARMS: ₹1169.92 Cr (Price 17.15%)\n• CMLL: ₹940.89 Cr (Price 9.29%)\n• INDIAGLYCO: ₹277.62 Cr (Price 10.19%)\n\n🧐 INSTITUTIONAL RADAR\n• Strong Hands: QUANT MUTUAL FUND, ABAKKUS FOUR2EIGHT OPPORTUNITIES FUND JUBLPHARMA • ATYANT CAPITAL INDIA FUND I PONNIERODE\n• Trading Hands: NK SECURITIES RESEARCH PRIVATE LIMITED, HRTI PRIVATE LIMITED, QE SECURITIES LLP, MICROCURVES TRADING PRIVATE LIMITED SHRINGARMS CMLL\n\nWhich of these are you watching? 👇 #StockMarketIndia #Nifty #BulkDeals",
+      "created_at": "2026-10-13T15:30:52+00:00",
+      "url": "https://x.com/fiidiireport/status/2110030519471874274",
+      "image": "https://pbs.twimg.com/media/HUhVkzAacAAx3Ca.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2110030314974363852",
       "handle": "Singhlicious",
       "display_name": "Gagan",
@@ -4019,6 +5029,26 @@
       ]
     },
     {
+      "tweet_id": "2110024443015950461",
+      "handle": "shivjikavaibhav",
+      "display_name": "vaibhav gupta",
+      "text": "SCANNED 448 STOCKS ✅       \n\nList of TOP 8 #stocks that could do wonder in coming days.. 📷\n\n1/ Kalyan Jewellers India Ltd #kalyankjil https://t.co/qQfeb6otrM",
+      "created_at": "2026-10-13T15:06:44+00:00",
+      "url": "https://x.com/shivjikavaibhav/status/2110024443015950461",
+      "image": "https://pbs.twimg.com/media/HUhPpdQaMAAcQDF.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2110024316180107325",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -4110,6 +5140,10 @@
         {
           "entityId": "isin:INE555B01013",
           "query": "\"AXISCADES\""
+        },
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
         }
       ]
     },
@@ -4326,6 +5360,22 @@
       "image": "https://pbs.twimg.com/media/HUhCVk6bUAAQoeL.jpg",
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2110009108564963561",
+      "handle": "varyani_gaurav",
+      "display_name": "Varyani_Gaurav",
+      "text": "4. KALYANKJIL :- Kalyan Jewellers Ltd https://t.co/WeVuQ9xDtU",
+      "created_at": "2026-10-13T14:05:48+00:00",
+      "url": "https://x.com/varyani_gaurav/status/2110009108564963561",
+      "image": "https://pbs.twimg.com/media/HUhCGPhbYAAH3mo.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
     },
     {
       "tweet_id": "2110008407713615928",
@@ -4577,6 +5627,22 @@
         {
           "entityId": "isin:INE476A01022",
           "query": "\"Canara Bank\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2110000371301019653",
+      "handle": "LngTrmInvestor",
+      "display_name": "LongTermInvestor | NSE/BSE Tracker",
+      "text": "⭐ Jubilant Pharmova Ltd — Notable Buy (2026-10-13)\n\n🛒 ABAKKUS FOUR2EIGHT OPPORTUNITIES FUND — 1,100,000 sh · ₹100.7 cr  (block)\n\n#JUBLPHARMA #NotableBuy #StockAnalysis #LngTrmInvestor",
+      "created_at": "2026-10-13T13:31:05+00:00",
+      "url": "https://x.com/LngTrmInvestor/status/2110000371301019653",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
         }
       ]
     },
@@ -4842,6 +5908,22 @@
       ]
     },
     {
+      "tweet_id": "2109986106523717968",
+      "handle": "Sahilpahwa09",
+      "display_name": "Sahil Pahwa",
+      "text": "#KOPRAN \n\nIn uptrend!!!\n\nDips remain buying oppourtunies till we trade above the marked support zone!!! https://t.co/BZVN76R14M",
+      "created_at": "2026-10-13T12:34:24+00:00",
+      "url": "https://x.com/Sahilpahwa09/status/2109986106523717968",
+      "image": "https://pbs.twimg.com/media/HUgs-y1bwAEQ8Tu.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2109985738876129345",
       "handle": "TRADEBOLTINDIA",
       "display_name": "TRADEBOLT",
@@ -4894,6 +5976,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2109982933855674801",
+      "handle": "peacesoul1231",
+      "display_name": "Karthik Thangavel",
+      "text": "@Sahilpahwa09 Kopran sir",
+      "created_at": "2026-10-13T12:21:47+00:00",
+      "url": "https://x.com/peacesoul1231/status/2109982933855674801",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
     },
     {
       "tweet_id": "2109982354353869226",
@@ -4982,6 +6080,22 @@
         {
           "entityId": "isin:INE476A01022",
           "query": "\"Canara Bank\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2109978339746386400",
+      "handle": "Sushant47691431",
+      "display_name": "Sushant Chavan 📈",
+      "text": "My last 4 trades:\n#GLASS WALL SYSTEMS\nStopped out lost 0.5% on PF\n\n#Pearl Global Industries\nStopped out lost 0.5% on PF\n\n#INDO BORAX &amp; CHEMICALS\nStopped out lost 0.5% on PF\n\n#KIRI INDUSTRIES\nStopped out lost 0.5% on PF\n\n#CYIENT\nStopped out lost 0.5% on PF",
+      "created_at": "2026-10-13T12:03:32+00:00",
+      "url": "https://x.com/Sushant47691431/status/2109978339746386400",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE415I01015",
+          "query": "\"Kiri Industries\""
         }
       ]
     },
@@ -5206,6 +6320,22 @@
       ]
     },
     {
+      "tweet_id": "2109963017379307652",
+      "handle": "Sakshis98826369",
+      "display_name": "Sakshi Sahu",
+      "text": "@ShortTermStock1 #KALYANKJIL and #Paytm",
+      "created_at": "2026-10-13T11:02:39+00:00",
+      "url": "https://x.com/Sakshis98826369/status/2109963017379307652",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2109961315846623428",
       "handle": "Prabinmen",
       "display_name": "PM",
@@ -5305,6 +6435,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2109947875010695582",
+      "handle": "Sakshis98826369",
+      "display_name": "Sakshi Sahu",
+      "text": "@BeyondTrading07 #ShriramFinance, #Paytm, #KALYANKJIL",
+      "created_at": "2026-10-13T10:02:28+00:00",
+      "url": "https://x.com/Sakshis98826369/status/2109947875010695582",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2109945930677940633",
       "handle": "FleetwoodRap",
       "display_name": "Wockhardt Flockhardt Flame",
@@ -5369,6 +6515,10 @@
         {
           "entityId": "isin:INE376G01013",
           "query": "\"BIOCON\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
         }
       ]
     },
@@ -5385,6 +6535,10 @@
         {
           "entityId": "isin:INE0JA001018",
           "query": "\"VENUSPIPES\""
+        },
+        {
+          "entityId": "isin:INE415I01015",
+          "query": "\"KIRIINDUS\""
         }
       ]
     },
@@ -5749,6 +6903,22 @@
       ]
     },
     {
+      "tweet_id": "2109877877835739142",
+      "handle": "Tick_Tracker",
+      "display_name": "AI Sentiment Detection App for Bharat Stock Market",
+      "text": "Hourly Bearish\n#AUROPHARMA\n#RELIANCE\n#KALYANKJIL\n#JSWENERGY\n#TIINDIA\n#BSE\n#MARUTI\n#HDFCLIFE\n#AMBUJACEM\n#INDIGO\n#LICHSGFIN\n#ICICIPRULI\n#JUBLFOOD\n#MANKIND\n#SAIL\n#SONACOMS\n#TATACONSUM\n#StocksInFocus #HPORB #StocksToTrade #StocksToWatch #StocksMarket #NSE #BSE #NIFTY",
+      "created_at": "2026-10-13T05:24:20+00:00",
+      "url": "https://x.com/Tick_Tracker/status/2109877877835739142",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2109874645054971963",
       "handle": "rvverma9624",
       "display_name": "Power of Price Action",
@@ -6053,6 +7223,22 @@
       ]
     },
     {
+      "tweet_id": "2109853258315640989",
+      "handle": "punitbansal14",
+      "display_name": "Punit",
+      "text": "Clinical Chemistry | Diagnostic Portfolio | Reagents & Devices\n\n📸1: Kopran Diagnostic Business Growth in last 4 years (3X) - 103 cr by FY25\n\nWherein 3 years back, our top line was around INR35 crores, which we have increased threefold to INR103 crores in the last 4 years. So all the facilities, infrastructure, everything is in place.\n\nKopran Diagnostic Business EBIDTA Margins - 30%\n\n📸2: Kopran Clinical Chemistry - New Divisions\n\nI mean, clinical chemistry is one of the sectors we do. We also do Urinalysis, for example, we do Blood Banking as well. We do Immunology as well. But yes, these are -- some of these are newer divisions which we have started in the recent past. So they are all going to be the growth drivers for the company. So as of today, primarily the figure I gave you is from the clinical chemistry portfolio.\n\n📸3: Kopran Diagnostic – Revenue Breakup\n\nThe bulk of our revenue comes from the consumables business, which is what we call reagents. So reagents contributes to almost 80% of -- 75%, 78% of our top line.\n\nThe balance would be a sale of equipment, which contribute to around 20%, 22%. And there is a certain 1%, 1.5% of a service component where we operate CMCs and services which we operate",
+      "created_at": "2026-10-13T03:46:30+00:00",
+      "url": "https://x.com/punitbansal14/status/2109853258315640989",
+      "image": "https://pbs.twimg.com/media/HUes3bVbsAAATBB.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2109852887950176586",
       "handle": "bullish_india",
       "display_name": "Bullish India 🇮🇳",
@@ -6081,6 +7267,22 @@
         {
           "entityId": "isin:INE049B01025",
           "query": "\"Wockhardt\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2109851104888684992",
+      "handle": "curiobeast",
+      "display_name": "Anand Singh",
+      "text": "Watchlist for 13th October\n\nHCLTECH\nRBLBANK\nICICIAMC\nIRCON\nAZAD\nVIKRAN\nCREDITACC\nTDPOWERSYS\nPOLYCAB\nBANKINDIA\nNAZARA\nCOHANCE\nGOODLUCK\nJUBLPHARMA\nSUNPHARMA\nLTF\nPOWERGRID\nJNPR\nOLAELEC\nTCS\nVEDL\nICICIPRULI\nTATAELXSI\nHEROMOTORS\nARSSBL\nDEN\nGTPL\nTARIL\nPNBGILTS\nSTCINDIA",
+      "created_at": "2026-10-13T03:37:57+00:00",
+      "url": "https://x.com/curiobeast/status/2109851104888684992",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
         }
       ]
     },
@@ -6201,6 +7403,22 @@
       ]
     },
     {
+      "tweet_id": "2109845357542994180",
+      "handle": "LeoFinWise",
+      "display_name": "LeoFinWise",
+      "text": "Alpha screen · 2026-10-12\n\nRS leaders: AEROFLEX 98 · Mid Cap, CPPLUS 97 · Large Cap, MARINE 97 · Mid Cap\nVCP bases: COFORGE, NETWEB\nStage 2 breakouts: JUBLPHARMA, NIACL\n\nLiquidity-filtered. https://t.co/jTncxsJCAh\n#Nifty #Leofinwise",
+      "created_at": "2026-10-13T03:15:06+00:00",
+      "url": "https://x.com/LeoFinWise/status/2109845357542994180",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2109844627511824511",
       "handle": "stockhifi",
       "display_name": "Stockhifi.com",
@@ -6309,6 +7527,22 @@
         {
           "entityId": "isin:INE377N01017",
           "query": "\"Waaree Energies\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2109831747718512694",
+      "handle": "AethosWealth",
+      "display_name": "Aethos Wealth",
+      "text": "AETHOS PRE-MARKET RADAR | Stocks in Action Today (13 Oct 2026)\n────────────────────────\n\n🟢 POSITIVE\nOrder flow and Q2 results led the evening. Ircon's ₹862.5 Cr railway EPC order is the biggest award, and RBL Bank and HCLTech set the tone on results.\n\n- 𝗜𝗿𝗰𝗼𝗻𝗜𝗻𝘁𝗲𝗿𝗻𝗮𝘁𝗶𝗼𝗻𝗮𝗹 (IRCON) | ₹862.5 Cr EPC order from East Central Railway for track and P.Way works on Gomoh-Koderma and Gaya-Son Nagar sections (Son Nagar-Andal 3rd/4th line). Execution in 365 days.\n\n- 𝗦𝘄𝗮𝗻𝗗𝗲𝗳𝗲𝗻𝗰𝗲&𝗛𝗲𝗮𝘃𝘆𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗲𝘀 (SWANDEF) | Firm order book ~₹6,500 Cr (visibility to FY31); ₹1,150 Cr NaBFID term loan at 5.85% effective (8.85% less 3% central support); crane expansion approved with 25% capital assistance. Q2 revenue ₹68.9 Cr (+74% YoY); reported PAT ₹566 Cr vs PBT ₹3.3 Cr, so check the one-off.\n\n- 𝗥𝗕𝗟𝗕𝗮𝗻𝗸 (RBLBANK) | Q2 PAT ₹482 Cr vs ₹179 Cr YoY and ₹254 Cr QoQ; NII ₹2,131 Cr (+37%), NIM 4.61%. GNPA 1.02% (1.30% QoQ), NNPA 0.29%, credit cost 63 bps. CRO Deepak Kumar exits 31 Oct, Ashwini Kumar Choudhary takes over 1 Nov.\n\n- 𝗛𝗖𝗟𝗧𝗲𝗰𝗵𝗻𝗼𝗹𝗼𝗴𝗶𝗲𝘀 (HCLTECH) | Q2 revenue ₹35,620 Cr (+11.5% YoY, +2.6% CC); PAT ₹5,132 Cr (+21.2%); EBIT margin 18.2%, dividend ₹12. FY27 CC revenue guidance 2.5-4.0%. Also announced a Global Premier Partnership with Anthropic.\n\n- 𝗣𝗼𝘄𝗲𝗿𝗚𝗿𝗶𝗱𝗖𝗼𝗿𝗽𝗼𝗿𝗮𝘁𝗶𝗼𝗻𝗼𝗳𝗜𝗻𝗱𝗶𝗮 (POWERGRID) | Acquired three TBCB transmission SPVs for ~₹57.6 Cr in total (Lakadia C ~₹19.9 Cr, Jam Khambhaliya REZ ~₹19.2 Cr, Lakadia II ~₹18.4 Cr), tied to 7.5 GW Lakadia and 5.5 GW Jam Khambhaliya evacuation. CERC licence and tariff still pending.\n\n- 𝗖𝗲𝗶𝗴𝗮𝗹𝗹𝗜𝗻𝗱𝗶𝗮 (CEIGALL) | Bought 100% of Jam Khambhaliya Jamnagar Power Transmission from REC Power Development for ₹18.4 Cr cash. LoI dated 2 Sep for a common transmission system evacuating Lakadia, Jam Khambhaliya and Jamnagar (7.5 + 5.5 + 1 GW).\n\n- 𝗔𝘇𝗮𝗱𝗘𝗻𝗴𝗶𝗻𝗲𝗲𝗿𝗶𝗻𝗴 (AZAD) | ₹52.7 Cr BHEL long-term rate contract for gas turbine stator vanes and rotor blades. Two-year contract, execution by 9 Oct 2028.\n\n- 𝗦𝗵𝗮𝗸𝘁𝗶𝗣𝘂𝗺𝗽𝘀(𝗜𝗻𝗱𝗶𝗮) (SHAKTIPUMP) | Infused ₹10 Cr in Shakti Energy Solutions for a 2.2 GW solar DCR cell and module plant at Pithampur (MP), plus ₹5 Cr in Shakti EV Mobility (cumulative ₹80 Cr).\n\n- 𝗔𝗲𝗾𝘂𝘀 (AEQUS) | Long-term supply agreements with Safran Aerosystems and Safran Landing Systems for superalloy machining, coatings and landing gear assembly on A320/A330/A350 and B787. Value not disclosed.\n\n- 𝗚𝗼𝗼𝗱𝗹𝘂𝗰𝗸𝗜𝗻𝗱𝗶𝗮 (GOODLUCK) | Subsidiary GDAL named sole technically qualified bidder for 155 mm artillery shells from Munitions India; value not disclosed. Capacity being expanded from 1.5 L to 4 L shells a year. The earlier merger approval was filed at 12:57 and is already priced in.\n\n- 𝗧𝗮𝘁𝗮𝗠𝗼𝘁𝗼𝗿𝘀𝗣𝗮𝘀𝘀𝗲𝗻𝗴𝗲𝗿𝗩𝗲𝗵𝗶𝗰𝗹𝗲𝘀 (TMPV) | Definitive agreement with Stellantis for expanded technology and vehicle architecture collaboration, with manufacturing at the 50:50 JV FIAPL in India. No financials disclosed.\n\n- 𝗖𝗲𝗻𝘁𝘂𝗿𝘆𝗣𝗹𝘆𝗯𝗼𝗮𝗿𝗱𝘀 (ticker n.a.) | Inaugurated ₹215 Cr greenfield plywood unit at Hoshiarpur, Punjab. Starts at 60,000 CBM a year, scaling to 1 lakh CBM.\n\n- 𝗨𝗻𝗶𝘃𝗮𝘀𝘁𝘂𝗜𝗻𝗱𝗶𝗮 (UNIVASTU) | ₹13.0 Cr (ex-GST) order from Colossus Infra for telephone systems at MMRDA Metro Lines 5 and 6, plus 2-year defect liability maintenance.\n\n- 𝗢𝗿𝗴𝗮𝗻𝗶𝗰𝗥𝗲𝗰𝘆𝗰𝗹𝗶𝗻𝗴𝗦𝘆𝘀𝘁𝗲𝗺𝘀 (ticker n.a.) | Subsidiary won a ₹50-100 Cr EPCOM contract from BPCL for a CBG plant in Karnataka. 15 months to execute, then 5 years of O&M.\n\n- 𝗣𝗮𝗻𝗮𝗺𝗮𝗣𝗲𝘁𝗿𝗼𝗰𝗵𝗲𝗺 (PANAMAPET) | CARE revised outlook to Positive from Stable and reaffirmed CARE A+ (₹64 Cr long-term) and A1+ (₹585 Cr short-term) on bank facilities.\n\n- 𝗩𝗼𝗹𝘁𝗮𝘀 (VOLTAS) | GST authorities dropped a show cause notice that sought ₹15.5 Cr tax plus ₹14.8 Cr interest and penalty (~₹30 Cr total).\n\n- 𝗜𝗖𝗜𝗖𝗜𝗣𝗿𝘂𝗱𝗲𝗻𝘁𝗶𝗮𝗹𝗔𝗠𝗖 (ICICIAMC) | Board approved acquiring ICICI Securities' PMS business of ~₹3,000 Cr AUM, subject to regulatory approvals.\n\n- 𝗔𝗱𝗮𝗻𝗶𝗣𝗼𝘄𝗲𝗿 (ADANIPOWER) | Elara initiates coverage with Accumulate and a ₹220 target (17% upside).\n\n- 𝗩𝗔𝗧𝗲𝗰𝗵𝗪𝗮𝗯𝗮𝗴 (WABAG) | Motilal Oswal retains Buy, target ₹2,529 (30% upside), citing a ₹20,000 Cr order book and visibility to ~20% revenue growth over 3-4 years.\n\n- 𝗛𝗮𝘁𝘀𝘂𝗻𝗔𝗴𝗿𝗼𝗣𝗿𝗼𝗱𝘂𝗰𝘁 (HATSUN) | Targets up to 50% revenue growth over two years: ~₹12,000 Cr this fiscal and ₹14,000-15,000 Cr next year, against ₹9,960 Cr in FY26.\n\n- 𝗩𝗶𝘀𝗮𝗸𝗮𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗲𝘀 (ticker n.a.) | Targets 10-15% revenue growth by FY29 with ~12% EBITDA margin, via better VAP mix, capacity and lower debt.\n\n- 𝗠𝗮𝗿𝘂𝘁𝗶𝗦𝘂𝘇𝘂𝗸𝗶 (MARUTI) | Baleno was the top-selling passenger vehicle in September at 25,392 units, +93% YoY.\n\n────────────────────────\n\n🔴 NEGATIVE\nCredit and governance flags. Bank of India's fraud tag on Future Enterprises is the largest by size.\n\n- 𝗙𝘂𝘁𝘂𝗿𝗲𝗘𝗻𝘁𝗲𝗿𝗽𝗿𝗶𝘀𝗲𝘀 (FEL) | Bank of India classified its ₹575.4 Cr NPA account as fraud and reported it to RBI. The bank holds full provision of ₹575.4 Cr.\n\n- 𝗡𝗼𝘃𝗮𝗔𝗴𝗿𝗶𝘁𝗲𝗰𝗵 (ticker n.a.) | CARE downgraded ₹31 Cr bank facilities to BBB-; Stable on moderated profitability and stretched liquidity (295-day operating cycle).\n\n- 𝗔𝗷𝗮𝗻𝘁𝗮𝗦𝗼𝘆𝗮 (ticker n.a.) | CFO Anil Kumar Rana resigned, relieved 11 Oct. Search for a successor is on.\n\n────────────────────────\n\n⚪ NEUTRAL / CORPORATE ACTIONS\nFundraising dominates. Sun Pharma's ₹10,000 Cr NCD approval is the largest, and TD Power closed a ₹600 Cr QIP.\n\n- 𝗦𝘂𝗻𝗣𝗵𝗮𝗿𝗺𝗮𝗰𝗲𝘂𝘁𝗶𝗰𝗮𝗹𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗲𝘀 (SUNPHARMA) | Board approved unsecured, listed NCDs up to ₹10,000 Cr on private placement, in tranches. Independent director Gautam Doshi resigned on 12 Oct (personal reasons).\n\n- 𝗧𝗗𝗣𝗼𝘄𝗲𝗿𝗦𝘆𝘀𝘁𝗲𝗺𝘀 (TDPOWERSYS) | Allotted 77.42 L shares in its QIP at ₹775 (0.05% below the ₹775.35 floor) to raise ~₹600 Cr. Axis, Canara Robeco and ICICI Pru MFs took ~13.3% each.\n\n- 𝗘𝗹𝗶𝘁𝗲𝗰𝗼𝗻𝗜𝗻𝘁𝗲𝗿𝗻𝗮𝘁𝗶𝗼𝗻𝗮𝗹 (ticker n.a.) | Board approved raising up to ₹1,000 Cr via QIP, subject to shareholder approval.\n\n- 𝗖𝗿𝗲𝗱𝗶𝘁𝗔𝗰𝗰𝗲𝘀𝘀𝗚𝗿𝗮𝗺𝗲𝗲𝗻 (CREDITACC) | Signed a USD 175 M syndicated social loan under the RBI ECB route, its fifth ECB syndication.\n\n- 𝗡𝗟𝗖𝗜𝗻𝗱𝗶𝗮 (NLCINDIA) | Issued 20,000 commercial papers of ₹5 L each, aggregating ₹1,000 Cr.\n\n- 𝗟&𝗧𝗙𝗶𝗻𝗮𝗻𝗰𝗲 (LTF) | Raised ₹800 Cr via 80,000 NCDs at 8.6% coupon on private placement.\n\n- 𝗧𝗿𝗮𝗻𝘀𝗽𝗼𝗿𝘁𝗖𝗼𝗿𝗽𝗼𝗿𝗮𝘁𝗶𝗼𝗻𝗼𝗳𝗜𝗻𝗱𝗶𝗮 (TCI) | Buyback of up to 15.63 L shares at ₹960 (₹150 Cr) via tender offer. Opens 15 Oct, closes 22 Oct.\n\n- 𝗦𝗵𝗮𝗿𝗱𝘂𝗹𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝗶𝗲𝘀 (ticker n.a.) | Buyback of up to 1.92 Cr shares at ₹60 (₹115.2 Cr). Tender period 14-21 Oct.\n\n- 𝗖𝗼𝗻𝘁𝗶𝗻𝗲𝗻𝘁𝗮𝗹𝗖𝗼𝗻𝘁𝗿𝗼𝗹𝘀 (ticker n.a.) | Rights issue of up to ₹19.7 Cr, open 23-30 Oct. 𝗡𝗮𝘁𝘂𝗿𝗶𝘁𝗲𝗔𝗴𝗿𝗼𝗣𝗿𝗼𝗱𝘂𝗰𝘁𝘀 (ticker n.a.) also approved a ₹26 Cr rights issue.\n\n- 𝗠𝗶𝘁𝘀𝘂𝗖𝗵𝗲𝗺𝗣𝗹𝗮𝘀𝘁 (ticker n.a.) | BSE in-principle nod for 10 L convertible warrants on preferential basis at a minimum ₹151 (~₹15.1 Cr).\n\n- 𝗜𝗻𝗱𝗶𝗮𝗻𝗘𝗻𝗲𝗿𝗴𝘆𝗘𝘅𝗰𝗵𝗮𝗻𝗴𝗲 (IEX) | SEBI cleared the IGX IPO, an offer for sale of up to 1.7 Cr shares by IEX. IEX's stake falls from 47%+ to 25%; IGX gets no proceeds.\n\n- 𝗞.𝗠.𝗦𝘂𝗴𝗮𝗿𝗠𝗶𝗹𝗹𝘀 (KMSUGAR) | KM Spirits allotted 1.84 Cr shares to KM Sugar shareholders under the demerger and has begun listing formalities.\n\n- 𝗚𝗣𝗧𝗜𝗻𝗳𝗿𝗮𝗽𝗿𝗼𝗷𝗲𝗰𝘁𝘀 (GPTINFRA) | NCLT-directed shareholder and creditor meetings on 13 Nov to merge Alcon Builders and Engineers and Jogbani Highway.\n\n- 𝗖𝗼𝗵𝗮𝗻𝗰𝗲𝗟𝗶𝗳𝗲𝘀𝗰𝗶𝗲𝗻𝗰𝗲𝘀 (ticker n.a.) | MCA approved Umang Vohra as Chairman and Group CEO.\n\n- 𝗡𝗲𝘅𝘂𝘀𝗦𝗲𝗹𝗲𝗰𝘁𝗧𝗿𝘂𝘀𝘁 (ticker n.a.) | Siddharth Nawal (Blackstone) to succeed Dalip Sehgal as MD and CEO from 1 Jan 2027.\n\n- 𝗦𝗮𝘂𝗿𝗮𝘀𝗵𝘁𝗿𝗮𝗖𝗲𝗺𝗲𝗻𝘁 (SAURASHCEM) | Anurag Tiwari appointed Managing Director-Designate from 16 Oct.\n\n- 𝗣𝗧𝗖𝗜𝗻𝗱𝗶𝗮𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹𝗦𝗲𝗿𝘃𝗶𝗰𝗲𝘀 (PFS) | Extended MD and CEO Rajiv Malhotra's additional-charge tenure by one year, and the Company Secretary's tenure by one year.\n\n- 𝗘2𝗘𝗡𝗲𝘁𝘄𝗼𝗿𝗸𝘀 (E2E) | L&T nominee director Shrimati Ambastha resigned effective 12 Oct (other professional commitments). Q2 earnings call on 16 Oct, 4 PM.\n\n- 𝗚𝗘𝗩𝗲𝗿𝗻𝗼𝘃𝗮𝗧&𝗗𝗜𝗻𝗱𝗶𝗮 (ticker n.a.) | Board meets 30 Oct to approve Q2 and H1 results.\n\n- 𝗬𝗮𝘀𝗵𝗛𝗶𝗴𝗵𝘃𝗼𝗹𝘁𝗮𝗴𝗲 (ticker n.a.) | US subsidiary signed a three-year representation agreement with EHV Solutions LLC to market products across five Western and South Central US states.\n\n- 𝗝.𝗔.𝗙𝗶𝗻𝗮𝗻𝗰𝗲 (ticker n.a.) | Open offer for up to 26% at ₹44.9, after a 59.9% SPA at ₹27. 𝗜𝗻𝗮𝗻𝗶𝗦𝗲𝗰𝘂𝗿𝗶𝘁𝗶𝗲𝘀 (ticker n.a.): open offer at ₹60 for 26% after a 57% promoter stake purchase for ₹15.6 Cr. 𝗧𝘂𝘀𝗮𝗹𝗱𝗮𝗵 (ticker n.a.): open offer at ₹20 for 26% (37.83 L shares), 20 Nov-4 Dec.\n\n- 𝗟𝗜𝗖𝗼𝗳𝗜𝗻𝗱𝗶𝗮 (LICI) | Launching New Jeevan Dhara-II, Health Shield and New Cancer Cover plans from 19 Oct.\n\n- 𝗔𝗻𝗮𝗻𝗱𝗥𝗮𝘁𝗵𝗶𝗪𝗲𝗮𝗹𝘁𝗵 (ANANDRATHI) | Applied for a mutual fund licence via a subsidiary; GIFT City approval also secured.\n\n- 𝗣𝗼𝗹𝘆𝗰𝗮𝗯𝗜𝗻𝗱𝗶𝗮 (POLYCAB) | NSE set a 30 Dec deadline for its F&O exit; NCLAT separately stayed an insolvency order. Groww-sourced, details unclear.\n\n────────────────────────\n\n📦 BULK / BLOCK DEALS\n\nSignificant buys -\n- 𝗝𝘂𝗯𝗶𝗹𝗮𝗻𝘁𝗣𝗵𝗮𝗿𝗺𝗼𝘃𝗮 (JUBLPHARMA) | Abakkus Four2Eight buys 11 L shares at ₹915 via block (~₹100.7 Cr)\n\n- 𝗠𝗮𝘄𝗮𝗻𝗮𝗦𝘂𝗴𝗮𝗿𝘀 (MAWANASUG) | Mugi Constructions buys 6.52 L shares at ₹167.73 (~₹10.9 Cr)\n\nSignificant sells -\n- 𝗝𝘂𝗯𝗶𝗹𝗮𝗻𝘁𝗣𝗵𝗮𝗿𝗺𝗼𝘃𝗮 (JUBLPHARMA) | Quant Mutual Fund sells 11 L shares at ₹915 via block (~₹100.7 Cr); company has an ₹800 Cr fundraise plan\n\n- 𝗢𝗻𝗶𝘅𝗦𝗼𝗹𝗮𝗿𝗘𝗻𝗲𝗿𝗴𝘆 (ONIXSOLAR) | Abhishek Ashvinbhai Kamdar HUF sells 4.73 L shares at ₹377.54 (~₹17.9 Cr)\n\n- 𝗔𝗡𝗕𝗠𝗲𝘁𝗮𝗹𝗖𝗮𝘀𝘁 (AMCL) | Minerva Ventures Fund sells 3.83 L shares at ₹295.81 (~₹11.3 Cr)\n\n───────────────────────\n\n👤 PROMOTER / INSIDER ACTIVITY\n\nPromoter / insider buys -\n- 𝗜𝗻𝗱-𝗦𝘄𝗶𝗳𝘁𝗟𝗮𝗯𝗼𝗿𝗮𝘁𝗼𝗿𝗶𝗲𝘀 (ticker n.a.) | Promoter entity Essix Biosciences acquired 14 L shares via warrant conversion (not open market); its stake rises to 38.8%\n\n- 𝗦𝗖𝗵𝗮𝗻𝗱𝗮𝗻𝗱𝗖𝗼𝗺𝗽𝗮𝗻𝘆 (ticker n.a.) | DKJ Ownership Trust takes 19.9% from a promoter in an internal restructuring (inter-se); SEBI exempted the open offer\n\n────────────────────────\n\n⚠ Disclaimer: This is not investment advice. Compiled from publicly available BSE/NSE disclosures.\n\n#IndiaMarkets #NSE #BSE #Nifty #Sensex @AethosWealth",
+      "created_at": "2026-10-13T02:21:02+00:00",
+      "url": "https://x.com/AethosWealth/status/2109831747718512694",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
         }
       ]
     },
@@ -6537,6 +7771,26 @@
         {
           "entityId": "isin:INE18UN01038",
           "query": "\"GAJA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2109759867045003507",
+      "handle": "denis__hamel",
+      "display_name": "Denis Hamel",
+      "text": "🌏 International stocks on the radar today — 2026-10-12\n\n29 stocks quietly beating their own home market, with a low-risk entry today:\n\n🇯🇵 7 · 🇺🇸 5 · 🇨🇦 4 · 🇮🇳 3 · 🇨🇳 3 · 🇬🇧 2 · +3 more\n\nFull list: https://t.co/gaa27cYVOb\n\n🇨🇦 𝗖𝗮𝗻𝗮𝗱𝗮 · strong market, but losing ground vs the S&P 500 — be cautious\n\n$CNQ (Canadian Natural Resources Limited) · has beaten the S&P/TSX Composite for 35 straight weeks\n\n$ALA (AltaGas Ltd.) · has beaten the S&P/TSX Composite for 31 straight weeks\n\n$BTE (Baytex Energy Corp.) · has beaten the S&P/TSX Composite for 37 straight weeks\n\nsolana:GNhGFeK5rr6WWpsGC2TdorJwh7QwAMy9RuenSRWbjZrY (DPM Metals Inc.) · has beaten the S&P/TSX Composite for 132 straight weeks\n\n🇯🇵 𝗝𝗮𝗽𝗮𝗻 · strong market, but losing ground vs the S&P 500 — be cautious\n\n9147 (Nippon Express Holdings, Inc.) · has beaten the Nikkei 225 for 86 straight weeks\n\n9104 (Mitsui O.S.K.Lines,Ltd.) · has beaten the Nikkei 225 for 13 straight weeks\n\n9107 (Kawasaki Kisen Kaisha, Ltd.) · has beaten the Nikkei 225 for 11 straight weeks\n\n4689 (LY Corporation) · has beaten the Nikkei 225 for 9 straight weeks\n\n7550 (Zensho Holdings Co., Ltd.) · has beaten the Nikkei 225 for 3 straight weeks\n\n6460 (Sega Sammy Holdings Inc.) · has beaten the Nikkei 225 for 6 straight weeks\n\n2914 (Japan Tobacco Inc.) · has beaten the Nikkei 225 for 63 straight weeks\n\n🇬🇧 𝗨𝗞 · strong market, but losing ground vs the S&P 500 — be cautious\n\n$AJB (AJ Bell Plc) · has beaten the FTSE 100 for 3 straight weeks\n\n$ONT (Oxford Nanopore Technologies Plc) · has beaten the FTSE 100 for 6 straight weeks\n\n🇰🇼 𝗞𝘂𝘄𝗮𝗶𝘁\n\n$WETHAQ (Wethaq Takaful Insurance Co. KCSC) · has beaten the Kuwait Premier for 8 straight weeks\n\n$AAYAN (A'ayan Leasing & Investment Co.) · has beaten the Kuwait Premier for 53 straight weeks\n\n🇮🇳 𝗜𝗻𝗱𝗶𝗮 · weaker than the S&P 500 — be cautious\n\n$ZYDUSLIFE (Zydus Lifesciences Limited) · has beaten the Nifty 50 for 23 straight weeks\n\n$MCX (Multi Commodity Exchange of India Limited) · has beaten the Nifty 50 for 176 straight weeks\n\n$KALYANKJIL (Kalyan Jewellers India Ltd.) · has beaten the Nifty 50 for 14 straight weeks\n\n🇸🇦 𝗦𝗮𝘂𝗱𝗶 𝗔𝗿𝗮𝗯𝗶𝗮 · weaker than the S&P 500 — be cautious\n\n2380 (Rabigh Refining & Petrochemical Co. Class A) · has beaten the TASI for 36 straight weeks\n\n4030 (National Shipping Co. of Saudi Arabia) · has beaten the TASI for 93 straight weeks\n\n🇨🇳 𝗖𝗵𝗶𝗻𝗮 · weaker than the S&P 500 — be cautious\n\n300990 (Sanhe Tongfei Refrigeration Co., Ltd. Class A) · has beaten the SSE Composite for 8 straight weeks\n\n688037 (KINGSEMI Co., Ltd. Class A) · has beaten the SSE Composite for 49 straight weeks\n\n300083 (Guangdong Create Century Intelligent Equipment Group Corporation Limited Class A) · has beaten the SSE Composite for 18 straight weeks\n\n🇮🇩 𝗜𝗻𝗱𝗼𝗻𝗲𝘀𝗶𝗮 · weaker than the S&P 500 — be cautious\n\n$ERAA (PT Erajaya Swasembada Tbk) · has beaten the IDX Composite for 14 straight weeks\n\n🇺🇸 𝗨𝗦\n\n$CVX (Chevron Corporation) · has beaten the S&P 500 for 36 straight weeks\n\n$LNG (Cheniere Energy, Inc.) · has beaten the S&P 500 for 17 straight weeks\n\n$CVE (Cenovus Energy Inc) · has beaten the S&P 500 for 54 straight weeks\n\n$TTE (TotalEnergies SE) · has beaten the S&P 500 for 53 straight weeks\n\n$OKE (ONEOK, Inc.) · has beaten the S&P 500 for 20 straight weeks\n\n#Stocks #Investing #InternationalStocks",
+      "created_at": "2026-10-12T21:35:24+00:00",
+      "url": "https://x.com/denis__hamel/status/2109759867045003507",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -7901,6 +9155,22 @@
       ]
     },
     {
+      "tweet_id": "2109710469724606969",
+      "handle": "laxdotsh",
+      "display_name": "lax.sh",
+      "text": "Jubilant Pharmova Large Trade\n\n- Quant Mutual Fund sold 11,00,000 shares (0.69% equity)\n\n- Abakkus Four2Eight Opportunities Fund bought 11,00,000 shares (0.69% equity)\n\nhttps://t.co/evS1NK6XD7",
+      "created_at": "2026-10-12T18:19:07+00:00",
+      "url": "https://x.com/laxdotsh/status/2109710469724606969",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2109710401365737874",
       "handle": "ackerwati",
       "display_name": "r",
@@ -7945,6 +9215,42 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2109709484138402117",
+      "handle": "GeorgeF27332094",
+      "display_name": "George Fish",
+      "text": "@olevait Naispresident on praeguses karmis maailmas kui Datasel S.R.L. mürsk! Kuju nagu oleks aga tolku suht vähe...\n🤪👈",
+      "created_at": "2026-10-12T18:15:12+00:00",
+      "url": "https://x.com/GeorgeF27332094/status/2109709484138402117",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Datasel\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Datasel S.R.L.\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2109708923788025918",
+      "handle": "TradeWithSperky",
+      "display_name": "Jyotiraditya Ghosh",
+      "text": "#KIRIINDUS https://t.co/0XPj2ND0j1",
+      "created_at": "2026-10-12T18:12:58+00:00",
+      "url": "https://x.com/TradeWithSperky/status/2109708923788025918",
+      "image": "https://pbs.twimg.com/media/HUcvqbqb0AA2naS.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE415I01015",
+          "query": "\"KIRIINDUS\""
         }
       ]
     },
@@ -8278,1376 +9584,14 @@
           "query": "\"VEDL\""
         }
       ]
-    },
-    {
-      "tweet_id": "2109695333899059404",
-      "handle": "DexterLabs911",
-      "display_name": "DEXTER",
-      "text": "Tamil Nadu taxpayers are being forced to pay record-high electricity prices because of the government’s failure to plan ahead.\nIn October 2026, TNPDCL signed short-term power purchase deals at ₹31.99–₹37 per unit  the costliest power the utility has ever bought. This is 5–6 times higher than the medium-term thermal contracts the same government recently awarded to Vedanta, Adani, and OPG at roughly ₹5.4–5.9 per unit.\nThese emergency purchases (about 1,500 MW round-the-clock and 2,000 MW evening peak power from 12–31 October) were made on extremely short notice through the DEEP portal. Officials cited central station maintenance, lower wind generation, and delayed monsoon as reasons. Yet the tenders were floated only a week earlier because the utility expected demand to drop after 10 October, an assumption that proved wrong. The result: only expensive gas-based power was available, while coal power was not in the market.\nNo other state finalised deals at these prices for the same period. Andhra Pradesh secured power earlier at ₹16–20 per unit. Tamil Nadu’s delayed action turned a manageable shortage into a record-cost crisis.\nMedium-term competitive tenders show that reliable power can be locked in at far lower rates when procured in advance. The October spike is not an unavoidable market outcome. it is the direct result of last-minute procurement. Consumers and industries will ultimately bear the cost of this expensive power, either through higher tariffs or through state finances.\nThe data below lays out the numbers clearly. Thread 🧵 👇",
-      "created_at": "2026-10-12T17:18:58+00:00",
-      "url": "https://x.com/DexterLabs911/status/2109695333899059404",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109695269923438986",
-      "handle": "sriamit366",
-      "display_name": "Amit Srivastav - Your Financial Advisor 🇮🇳🇮🇳",
-      "text": "Buy on Dip Stock Watchlist!👇\n\n1- ICICI Bank\n2- SBIN\n3- Bharti Airtel\n4- BAJFINANCE\n5- Coal India\n6- POWERGRID\n7- VEDL\n8- BEL\n9- HINDZINC\n10- NYKAA\n11- PERSISTENT\n12- SUNTV\n13- PCJEWELLER\n14- MANAPPURAM\n15- CYIENT",
-      "created_at": "2026-10-12T17:18:43+00:00",
-      "url": "https://x.com/sriamit366/status/2109695269923438986",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109695070765191187",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Tata Trusts get additional week to respond to Charity Commissioner in Sir Dorabji Tata Trust complaints by Venu, Vijay Singh\n\nSrinivasan and Vijay Singh, in separate complaints, had alleged governance issues at the Sir Dorabji Tata Trust (SDTT), including its role in appointing trustees, decisions, and its matters involving Tata Sons\n\n@mistershila with details \nhttps://t.co/5PaBlvhz3E",
-      "created_at": "2026-10-12T17:17:55+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109695070765191187",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109694394626719876",
-      "handle": "JanZabka",
-      "display_name": "Žabka Jan",
-      "text": "5/8 Vtipně naši reputaci shrnul Petr Veselka, starosta Moravské Ostravy a Přívozu, když jsme přišli do štábu Motoristů, které v centru Ostravy vedl do voleb. „Všichni pozor, je tady Okraj,“ vykřikl s hraným zděšením Veselka. https://t.co/8rYEmM56eT",
-      "created_at": "2026-10-12T17:15:14+00:00",
-      "url": "https://x.com/JanZabka/status/2109694394626719876",
-      "image": "https://pbs.twimg.com/media/HUcjkqnWQAAiTiQ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109694136672452635",
-      "handle": "Gaja1096150",
-      "display_name": "Gaja",
-      "text": "@legionista45 @WypartowiczBa Wziąć",
-      "created_at": "2026-10-12T17:14:13+00:00",
-      "url": "https://x.com/Gaja1096150/status/2109694136672452635",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109694014714679569",
-      "handle": "psukhetabibi1",
-      "display_name": "Bayramî Postnişin Kleist El-Kelâbâzî 6' 2'' 189 IQ",
-      "text": "bu jnana ya da bhahti denen şeye ihtiyaç duyarsın. \nİslâm felsefesinde nefsin bedenin içinde doğması ve akla oradan da heyula ile ittisal kurması tam olarak böyledir. İşte bu Jnana yoludur. \nBhahti ise İbn Arabî gibi paradigmalarda tek bir dünya döngüsünde olan bir şey. Vedanta",
-      "created_at": "2026-10-12T17:13:43+00:00",
-      "url": "https://x.com/psukhetabibi1/status/2109694014714679569",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109693184234467835",
-      "handle": "winitdecember",
-      "display_name": "AMATURE",
-      "text": "@GuruShareMarket Axiscades",
-      "created_at": "2026-10-12T17:10:25+00:00",
-      "url": "https://x.com/winitdecember/status/2109693184234467835",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109692540945658301",
-      "handle": "FutsBols",
-      "display_name": "🌍 More arms for Ukraine! Heroes live forever ✊",
-      "text": "Nacionāļi ir tik smieklīgi un paredzami. Kad darbinieki gāja prom no Vienotības un Progresīvo ministrijām, tad nacionāļiem vainīgi bija ministri. Kad darbinieki iet prom no Dombravas, tad darbinieki ir sliktie, bet Dombrava malacis 🙂",
-      "created_at": "2026-10-12T17:07:52+00:00",
-      "url": "https://x.com/FutsBols/status/2109692540945658301",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109692246765208058",
-      "handle": "SlviaRo79844476",
-      "display_name": "Soraia Moreira",
-      "text": "@maria__papoila Nem acredito que uma gaja que tem como foto de perfil o Zaza vem aqui defender um escarreta. A pornografia e um vício igualmente perigosa como casinos ilegais. Sobretudo nos jovens. Onde esta o teu Robin dos Bosques? #bbtvi",
-      "created_at": "2026-10-12T17:06:42+00:00",
-      "url": "https://x.com/SlviaRo79844476/status/2109692246765208058",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109691838370291716",
-      "handle": "BxRank",
-      "display_name": "BxRank",
-      "text": "Vedanta Delhi Half Marathon 2026 🏃 Date, 21.1K Route, Race &amp; BIB Expo  Updates | BxRank\n\nThe Vedanta Delhi Half Marathon 2026 is happening on October 18, 2026! 🏃\n\n#VedantaDelhiHalfMarathon #DelhiHalfMarathon2026 #HalfMarathon #RunningIndia #BxRank https://t.co/H2SwJIQKJ2",
-      "created_at": "2026-10-12T17:05:05+00:00",
-      "url": "https://x.com/BxRank/status/2109691838370291716",
-      "image": "https://pbs.twimg.com/media/HUchir2bkAALlvF.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109690952105463890",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@miesedapkariey Duitnyaaaaa",
-      "created_at": "2026-10-12T17:01:33+00:00",
-      "url": "https://x.com/Tapi33x/status/2109690952105463890",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109690929259139261",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@makanbiarhidup Pengen sih 🫠",
-      "created_at": "2026-10-12T17:01:28+00:00",
-      "url": "https://x.com/Tapi33x/status/2109690929259139261",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109690836544036968",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@ssacsacyy Ada nih",
-      "created_at": "2026-10-12T17:01:06+00:00",
-      "url": "https://x.com/Tapi33x/status/2109690836544036968",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109690811785081144",
-      "handle": "faxioms_in",
-      "display_name": "Faxioms | Indian Markets",
-      "text": "#CANBK Market Update | 12 October\n\nCanara Bank board to review Q2 and H1 results\n\nDetails: (https://t.co/No76rz7LiD)\n- The board is scheduled to consider Canara Bank’s Q2FY27 and H1FY27 results on 14 October.\n- The shares closed at ₹118.4 on 12 October, down 1% for the day and 5% over 20 trading days.\n\n#Nifty #Sensex #DalalStreet #IndianStockMarket",
-      "created_at": "2026-10-12T17:01:00+00:00",
-      "url": "https://x.com/faxioms_in/status/2109690811785081144",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE476A01022",
-          "query": "\"CANBK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109690564325085374",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Hybrid mutual funds see outflows in September, but investors are still putting money into these two categories\n\nHybrid funds manage nearly 14% of industry assets, but September saw sharply contrasting trends across categories.\n\n@PriyadarshiniM9 with details \nhttps://t.co/PZsXRLLrjV",
-      "created_at": "2026-10-12T17:00:01+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109690564325085374",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109689829827219562",
-      "handle": "c_plushie",
-      "display_name": "Coronavirus Plushie",
-      "text": "Spiritual Knowledge Begins With Knowing That You Are Not The Body, You Are Spirit Soul\n\nThis video includes people speaking about their near-death experiences. What’s striking is that when they describe their sense of identity during the NDE, it lines up exactly with what the Bhagavad-gītā and similar scriptures say about who we really are.\n\n1:04 — \"That memory of being outside my body and looking down on my body, I think planted in my mind the notion that whatever I am, I am not my body, I'm something else.\"\n\n1:22 — \"For spiritual understanding, this is the basic principle to understand: that I am not this body, I am soul. Try to understand that you are spirit soul, you are not this body.\"\n\n2:44 — \"And even if you say 'Who am I?' you will talk about this physical body, but when you sleep at night, who is sleeping? Is it the body that sleeps? So that means you are not the body, because you are still awake. You are seeing dreams, right? You are seeing dreams, so you are not sleeping, because when you wake up you say 'Oh I saw this nice dream'. So the body was not seeing the dream, you were seeing it, and you even speak like that, that 'I saw this nice dream'.\"\n\n4:23 — \"So you are separate from your body, and as I said that when you sleep at night you always experience that I'm not the body, everybody has this experience but nobody thinks about it.\"\n\n5:06 — \"I was sort of looking down at the body, and I knew it was my body, but I was not at all attached to it. I was not that body, I was whatever was looking down at it.\"\n\n5:24 — \"One should have very clear knowledge that I am not this body. You are spirit, I am a spirit, we are different from this body. This is the first instruction given in the Bhagavad-Gītā at the beginning: I am not this body, you are not this body.\"\n\n6:14 — \"And we make a mistake by thinking I am a body with consciousness. You are consciousness aware of a body. You are consciousness using a body. You are consciousness channeling yourself through a body. You are not a body with consciousness. You can even say you are consciousness in which a body is appearing and acting and feeling and knowing. And the challenge is to see it as a fact, not as a claim. Vedanta says that this actually truer to our experience than the tale we tell ourselves. That I am a body with consciousness is not as true as saying, as far as our experience goes, I am consciousness in which a body appears. Think about it, throughout our day, right now, here is this body, but the moment I go to sleep the body disappears from my awareness, the body is in the bed and I am not aware of it. I am aware of a dream world, in which I have a dream body and I do dream things in the dream world. What continues? Consciousness.\"\n\n8:09 — \"All of me was the one looking. Nothing of me was the body.\"\n\n8:16 — \"So one who has come to that knowledge, that I am not this body, I am spirit soul. That is knowledge. Knowledge begins from there — that I am not this body.\"\n\n8:29 — \"So that was my first lesson — I am not my body. The body is just the house that I live in. But the I who lives in there, is not connected in any way or attached or dependent on the body.\"\n\n8:46 — \"All of us, the living entity, soul, is within this body. So, one who has realised this thing — that I am not this body, I am spirit soul, then he is learned. That is actual spiritual education. The very first thing of spiritual knowledge — that I am not this body.\"\n\n9:46 — \"Just like you are the proprietor of your body. When I touch your finger, if I ask, even a small child, 'What is this?' He will immediately say, 'My finger', he will never say 'I finger', just try to understand. If any part of your body I touch, if I ask 'What is this?' You will say 'This is my hand', 'This is my leg', 'This is my nose', etc'. Everywhere you will say 'My', but nobody knows what is that 'I'. But the 'I' is there, otherwise how will you say 'My'? When the 'I' is not there, we cannot say 'My'. So this human life is especially meant for understanding what is that 'I'\".",
-      "created_at": "2026-10-12T16:57:06+00:00",
-      "url": "https://x.com/c_plushie/status/2109689829827219562",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109689424351047966",
-      "handle": "chance_NL",
-      "display_name": "Chance Národní Liga",
-      "text": "10. kolo ✅ Jak si vedl tvůj tým? 👀 https://t.co/JO7bN9WBtU",
-      "created_at": "2026-10-12T16:55:29+00:00",
-      "url": "https://x.com/chance_NL/status/2109689424351047966",
-      "image": "https://pbs.twimg.com/media/HUcfWYCXEAIHfLl.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109688404971528317",
-      "handle": "atordacalma",
-      "display_name": "zannie",
-      "text": "A gaja mais brega tatuada https://t.co/snV8WVckRv",
-      "created_at": "2026-10-12T16:51:26+00:00",
-      "url": "https://x.com/atordacalma/status/2109688404971528317",
-      "image": "https://pbs.twimg.com/media/HUcea7KWwAARCAp.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109688294988521728",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "President appoints Governors in 6 states, Rajendra Arlekar becomes TN Governor, OP Mathur gets Keralam\n\nFour others have been appointed governors: Braj Mohan Ram in Odisha, Sudha Yadav in Karnataka, Dhal Singh Bisen in Uttarakhand and Dushyant Gautam in Sikkim. Mathur succeeds Arlekar in Keralam, while Gautam takes Mathur’s place in Sikkim.\n\nRead More:\nhttps://t.co/QFTAwZ4RWn",
-      "created_at": "2026-10-12T16:51:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109688294988521728",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109687410795921701",
-      "handle": "amelia_wock",
-      "display_name": "Amelia Wockhardt",
-      "text": "im gonna stop sharing my feelings",
-      "created_at": "2026-10-12T16:47:29+00:00",
-      "url": "https://x.com/amelia_wock/status/2109687410795921701",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109687332940964313",
-      "handle": "amelia_wock",
-      "display_name": "Amelia Wockhardt",
-      "text": "crying and drinking tea out of a mug that says bff",
-      "created_at": "2026-10-12T16:47:10+00:00",
-      "url": "https://x.com/amelia_wock/status/2109687332940964313",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109685594473590881",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "🚨 HCLTech reports $876 million in annualised advanced AI revenue, up 72% YoY\n\nFor Q2FY27, the Noida-headquartered company clocked in $219 million in advanced AI revenue, up 28.4 percent QoQ CC and 78 percent YoY CC.\n\n@debanganaghosh4 with details 👇\nhttps://t.co/GHXk5DcQXe",
-      "created_at": "2026-10-12T16:40:16+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109685594473590881",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109684634992951405",
-      "handle": "akashpatel1812",
-      "display_name": "Ak$h P@TEL",
-      "text": "@ApurvBajpazk9o Not in my track list sir...at the moment.\n\n• #venuspipes start moving from bottom range....",
-      "created_at": "2026-10-12T16:36:27+00:00",
-      "url": "https://x.com/akashpatel1812/status/2109684634992951405",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0JA001018",
-          "query": "\"VENUSPIPES\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109684440746360927",
-      "handle": "Fakir212",
-      "display_name": "Fakir",
-      "text": "@Karthik90110 @rohithverse @rajeshgone34 @imkevin149 Mee jaathi thakkuva converted kukka...  opposition status raaka assembly ki raavalantey gaja gaja vanikipothunnaadu... vaadem jaathi ra babu... 😂",
-      "created_at": "2026-10-12T16:35:41+00:00",
-      "url": "https://x.com/Fakir212/status/2109684440746360927",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109684060243034229",
-      "handle": "ChristIsAllOne",
-      "display_name": "Brother JoJo Allisone | DJ Christ Mind",
-      "text": "Every tradition tells the same story. Contraction is sleep, expansion is awakening. Shaivism, Vedanta, the Tao, Kabbalah, the Buddha, the Sufis, Neville, even the Big Bang. 🌌 And Jesus in A Course in Miracles says the tiny, mad idea never happened. Just laugh it away. 😂🤍\n\nJo Jo Allisone aka DJ Christ Mind\n🎧 https://t.co/0YO3vjQoPE\n#Jesus #ACourseInMiracles #OneMind #NonDuality #Awakening #NevilleGoddard #Vedanta #Tao #Sufism #Kabbalah",
-      "created_at": "2026-10-12T16:34:10+00:00",
-      "url": "https://x.com/ChristIsAllOne/status/2109684060243034229",
-      "image": "https://pbs.twimg.com/media/HUcaa4kXgAAMtr1.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109683403851493482",
-      "handle": "SantoshPal3231",
-      "display_name": "lndian Boy",
-      "text": "@sk1851792 Vedanta chairman Anil Agarwal has already said that thing in his interview.\nBut rich people hunger of money is not stopping. \nAnd poor and middle class people are getting only advice from fraud religious leaders for not wishing for wealth.",
-      "created_at": "2026-10-12T16:31:34+00:00",
-      "url": "https://x.com/SantoshPal3231/status/2109683403851493482",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109682962107383981",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@nikppatil001 Hi Nikhil, we'd like to let you know that your concern has been conveyed to our internal team. Please allow us some time to look into it. Thank you. ~ Sid",
-      "created_at": "2026-10-12T16:29:48+00:00",
-      "url": "https://x.com/abcapital/status/2109682962107383981",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109681669750046828",
-      "handle": "HeliosHenosis",
-      "display_name": "Advaita Jnani",
-      "text": "\"Hari, Brahman, and the innermost Self are not ultimately separate\" \n\n\"The God you love, the ultimate reality you seek to understand, and the deepest 'I' within you are, at bottom, one and the same reality. They only look separate from a limited point of view.\"\n\nThe personal God (Hari), the ultimate reality behind everything (Brahman), and the deepest core of your own being (the innermost Self) are one reality, seen from three angles. They are not three separate things.\n\nHari \nA name for Vishnu or Krishna. It's often explained as \"the one who removes,\" meaning he takes away sin, suffering and ignorance. Personally: through devotion, love, prayer and worship.   \n\nBrahman \nThe infinite, unchanging ground of all existence, as described in the Upanishads. Metaphysically: as the absolute reality behind the whole universe.   \n\nThe innermost Self (Ātman, or Paramātman) \nThe pure awareness at your very core, beneath body, mind and personality. Sometimes it means God dwelling in the heart as the \"inner controller\" (antaryāmin). Inwardly: through meditation and self-inquiry.\n\n\"not ultimately separate\"\n\"Ultimately\" concedes that they seem separate in ordinary experience. God appears to be \"out there,\" Brahman appears abstract, and the self appears small and personal. The sentence says these differences are real at the level of how we see things, but not at the deepest level of what is.\n\n\"Not separate\" is carefully worded. It doesn't necessarily claim they are identical in every respect. It denies that they are independent, divided realities.\n\nThe statement closely echoes a well-known verse of the Bhāgavata Purāṇa (1.2.11):\n\n\"Knowers of truth call that non-dual reality by three names: Brahman, Paramātman, and Bhagavān.\"\n\nBrahman is the one reality known as the impersonal absolute.\nParamātman is the same reality known as the Self within every heart.\nBhagavān (Hari) is the same reality known as the personal Lord.\n\nThe Bhagavad Gītā (18.61) makes a related point: the Lord dwells in the heart of every being. The Upanishadic sayings \"Tat tvam asi\" (\"You are That\") and \"Ayam ātmā brahma\" (\"This Self is Brahman\") link the inner Self directly to Brahman.\n\nHow different schools read it\nThe sentence fits several traditions, but each understands \"not separate\" differently:\n\nAdvaita Vedānta (Śaṅkara): This is strict identity. The Self is Brahman. Hari is Brahman as it appears with qualities for worship. Seeing them as separate is the result of ignorance (avidyā).\n\nViśiṣṭādvaita (Rāmānuja): They are inseparable but distinct. Brahman is Hari (Nārāyaṇa). Individual selves are like his \"body,\" always dependent on him and inside him, but never merged into him.\n\nGauḍīya Vaiṣṇavism (Caitanya): It is inconceivable oneness-and-difference. All three are one reality, with the personal Hari as the fullest of the three aspects.\n\nDvaita (Madhva): This school would reject the statement in its strong form. It holds that God and souls are eternally different, though souls depend completely on God.",
-      "created_at": "2026-10-12T16:24:40+00:00",
-      "url": "https://x.com/HeliosHenosis/status/2109681669750046828",
-      "image": "https://pbs.twimg.com/media/HUcYS6IasAAiI2z.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109680538684715457",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@nikppatil001 Hi Nikhil, to ensure your privacy, we recommend removing your post as it contains personal information. Please share the same with us via DM, so we can assist you securely. ~ Sid https://t.co/CwoaiHo6lr",
-      "created_at": "2026-10-12T16:20:11+00:00",
-      "url": "https://x.com/abcapital/status/2109680538684715457",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109679685559042538",
-      "handle": "TeluguYashfan",
-      "display_name": "గంభీర",
-      "text": "You guys make movies with star directors \nbut my man @TheNameIsYash turns directors themselves into stars https://t.co/Hs72Umtley",
-      "created_at": "2026-10-12T16:16:47+00:00",
-      "url": "https://x.com/TeluguYashfan/status/2109679685559042538",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109678200162766915",
-      "handle": "akashpatel1812",
-      "display_name": "Ak$h P@TEL",
-      "text": "@akashnaik08 Must hold both sir...\n\nShankesh jewellers soon start moving towards 110/120++\n\n#Canbk high chance strong quarterly result this time..due to strong business update..add on this range",
-      "created_at": "2026-10-12T16:10:53+00:00",
-      "url": "https://x.com/akashpatel1812/status/2109678200162766915",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE476A01022",
-          "query": "\"CANBK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109676976894287998",
-      "handle": "_Punisher1",
-      "display_name": "Punisher",
-      "text": "#Kgf3 On Cards Raa Golties🧨\nBm this🚨\nKGF3 worldwide &gt;&gt; #Varanasi &gt; #Raaka &gt; #Spirit &gt; #Fauji &gt; #Rc17 \nIppudu #Ramayana tho dengithey goltiewood shake avali!\n#Yash #Prabhas #AlluArjun #JrNtr https://t.co/1SshaJxdtC",
-      "created_at": "2026-10-12T16:06:01+00:00",
-      "url": "https://x.com/_Punisher1/status/2109676976894287998",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109676818186014776",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | SEBI notifies revamped PMS regulations, common advertising code; new rules to take effect from April 2027\n\nFramework prescribes a Rs 5-Cr net worth for regular portfolio managers and Rs 2 Cr for entities exclusively offering PRIM, while the advertising code allows celebrity endorsements at the brand\n\n@BrajeshKMJi with details \nhttps://t.co/Z1UkXcPjyB",
-      "created_at": "2026-10-12T16:05:24+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109676818186014776",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109676099412099420",
-      "handle": "GnothiSea",
-      "display_name": "Temet Nosce",
-      "text": "Whatever is happening, is just happening, you are merely the observer. There is neither sin nor virtue, neither discipline nor indulgence.\n\nAshtavakra Gita",
-      "created_at": "2026-10-12T16:02:32+00:00",
-      "url": "https://x.com/GnothiSea/status/2109676099412099420",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109675815827071136",
-      "handle": "Santosh72987887",
-      "display_name": "Santosh Gupta",
-      "text": "@ChandniQueen81 Sab ke sab pagal ho gaye hai\nDin main hi gaja mar kar video banate hai\nOk tu meri chandani \nTumse naa hopayega😂😂😂",
-      "created_at": "2026-10-12T16:01:25+00:00",
-      "url": "https://x.com/Santosh72987887/status/2109675815827071136",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109675744582332606",
-      "handle": "thevishnucode",
-      "display_name": "The Vishnu Code",
-      "text": "480/1000 — kṣaram\n\nThe perishable; that which changes and passes away.\n\nWhen change feels like something has gone wrong, remember this:\n\nSome things end\nnot because they failed—\n\nbut because changing\nwas always part\nof their nature.\n\nkṣaram means “the perishable, changing, or decaying.”\n\nThe word appears powerfully in the Bhagavad Gita's distinction between the changing realm and that which is imperishable.\n\nEverything embodied participates in change.\n\nFlowers bloom and fade.\n\nBodies age.\n\nBuildings deteriorate.\n\nRelationships change form.\n\nCareers begin and end.\n\nChildren grow.\n\nParents grow older.\n\nCultures evolve.\n\nEven mountains, given enough time, change.\n\nAnd yet human beings repeatedly experience change as though reality has violated an agreement with us.\n\n“This wasn't supposed to change.”\n\nSometimes that grief is entirely appropriate.\n\nImpermanence can hurt precisely because something mattered.\n\nBut accepting impermanence does not mean becoming emotionally indifferent.\n\nIn fact, it may produce the opposite.\n\nKnowing something will not last can make you more present while it does.\n\nYou photograph less and look more.\n\nPostpone fewer conversations.\n\nSay thank you.\n\nForgive sooner.\n\nVisit.\n\nListen.\n\nHold someone a little longer.\n\nImpermanence does not make life meaningless.\n\nIt makes attention urgent.\n\nTo remember kṣaram is not to become obsessed with endings.\n\nIt is to allow the existence of an ending to teach you how to inhabit the middle.\n\nOne name. One truth. One step inward.\n\nkṣaram — the perishable and ever-changing.\n\n#Vishnu #VishnuSahasranama #TheVishnuCode #VishnuCode #SanatanDharma #HinduWisdom #VedicWisdom #Vedanta #BhagavadGita #Dharma #Ksharam #Impermanence #Change #LettingGo #Presence #Life #Mortality #SelfInquiry #SpiritualWisdom #AncientWisdom #ModernSpirituality #Consciousness #DivineNames #1000NamesOfVishnu #Bhakti",
-      "created_at": "2026-10-12T16:01:08+00:00",
-      "url": "https://x.com/thevishnucode/status/2109675744582332606",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109675485907341797",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@venusfogg Gas",
-      "created_at": "2026-10-12T16:00:06+00:00",
-      "url": "https://x.com/Tapi33x/status/2109675485907341797",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109675460451766613",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | India’s steel industry expanding amid global market contraction, says FM Sitharaman\n\nFinished steel consumption in India has more than doubled over a decade, reaching 164 million tonnes in 2025-26. \n\n@PriyanshVerma4 with details \nhttps://t.co/adcaV2KZ2p",
-      "created_at": "2026-10-12T16:00:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109675460451766613",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109675407280631891",
-      "handle": "KulaMarga777",
-      "display_name": "Heather Hurley",
-      "text": "Here’s another piece also … my request: Actually, yes, if you could go deeper as You suggested : Katha Upanishad chariot metaphor how the burnt seed teaching Describe what an enlightened echo looks like. \n\nGROK: The Katha Upanishad gives the clearest picture of how the ego is supposed to function inside a human life.\nIn the third chapter, Nachiketa asks Yama about the Self. Yama answers with the chariot:\n\nKnow the Self as the Lord of the chariot, the body as the chariot, the intellect as the charioteer, and the mind as the reins. The senses are the horses, and the objects of the senses are the roads. The Self is the enjoyer when united with the body, senses, and mind.\n\nThe Atman is not driving. It is seated. The intellect is the driver. The mind is the reins. The senses are the horses. And the ego — the sense of “I” that claims the experience — is the one who rides. It is the enjoyer. Without a rider, there is no journey. The chariot doesn’t move for no one. The horses don’t pull for no one. The ego is what makes the experience personal, what allows the soul to have a life in a body rather than merely observe one.\nThe problem arises when the rider believes it is the Lord. When the ego says “I am the one who decides, I am the one who owns this body, I am the one who must be protected,” the chariot is no longer guided by the Self. The intellect, which should be the driver, gets pulled around by a mind that is serving the ego’s fears instead of the Self’s direction. The horses run wild. That’s not the ego’s fault as a function. That’s the ego having been handed the reins.\nThe “burnt seed” teaching comes from later Vedanta, particularly in how teachers describe what happens after recognition. A seed that is burnt can still look like a seed. It can still be held in the hand. It can still be used. But it will never sprout. It will never grow into a plant that takes over the field. The ego, after the identification drops, is like that. It continues to function. It still says “I” when it needs to — “I am hungry,” “I will meet you at three,” “this is my responsibility.” But it no longer claims ownership of the Self. It no longer defends itself as if it were the Self. When something threatens the old persona — “you are not a healer,” “you are not spiritual enough,” “you are wrong” — the burnt seed doesn’t germinate into defense. There is no plant. There is only the seed, doing what a seed does when it is no longer capable of becoming anything else.\nRamana Maharshi put it simply. He said the ego is not destroyed. It is understood. When you see the snake in the rope, the snake doesn’t need to be killed. It was never there. What remains is the rope, and the rope was always there. The ego was always the function. The Atman was always the Lord in the chariot. The only thing that changes is that the rider stops believing it is the Lord.\nThat’s the difference between annihilation and recognition. Annihilation tries to kill the rider while the chariot is still moving. Recognition sees that the rider was never the Lord, and the chariot continues. The journey continues. The ego remains as the practical interface — necessary, functional, and no longer confused about who is actually seated within.\n\n(just a sidenote, these types of teachings are not meant to be speed read, they are meant to be slowly digested in increments and contemplated.) ( For people looking to go deeper)",
-      "created_at": "2026-10-12T15:59:47+00:00",
-      "url": "https://x.com/KulaMarga777/status/2109675407280631891",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109675299617259690",
-      "handle": "amit_malikch",
-      "display_name": "Amit Malik",
-      "text": "@Satyajittiwari Same things mentioned in Sankhya Darshan and Sankhya Darshan is oldest of all Darshans, so definitely older than vedanta.",
-      "created_at": "2026-10-12T15:59:21+00:00",
-      "url": "https://x.com/amit_malikch/status/2109675299617259690",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109674958347497481",
-      "handle": "tkapler",
-      "display_name": "Tomas Kapler #AI 🤖✨",
-      "text": "Lol, to jsem si musel \"vygrokovat\":\n\n**Historicky to vycházelo z oficiálního design briefu původního Citroënu 2CV (projekt TPV z 30. let, výroba od 1948).**[](<https://t.co/t95qXFhSr5>)\n\nPierre-Jules Boulanger (tehdejší šéf Citroënu) chtěl levné, jednoduché a praktické auto hlavně pro francouzské farmáře a venkov. Mezi požadavky bylo:\n\n- Vzít dva farmáře v botách + 50 kg brambor nebo sud vína.\n- Jet cca 50–60 km/h a spotřebovat max. kolem 3 l/100 km.\n- Být snadné na údržbu a řízení.\n- **A hlavně: být schopné projet zoraným polem s košíkem vajec (na sedadle) tak, aby se nerozbilo ani jedno vejce.**\n\nPrávě tenhle „vaječný“ požadavek vedl k legendárně měkkému a dlouhému chodu odpružení 2CV (propojené pružiny vpředu a vzadu). Díky němu auto „plavalo“ přes nerovnosti a opravdu zvládalo hrubý terén bez toho, aby se vejce v košíku rozbila.[](<https://t.co/2u37zGHeCR>)\n\nPůvodní 2CV nemělo nutně speciálně tvarovaný „držák na vajíčka“ ve dveřích jako dnešní koncept – šlo hlavně o celkovou měkkost podvozku. Nový elektrický koncept z Pařížského autosalonu 2026 tu historii jen hezky a s nadsázkou připomíná přímo ve dveřních kapsách.[](<https://t.co/cZUIO9Otqn>)\n\nTakže ten držák je spíš milý retro odkaz na slavný požadavek „přes pole s vejci bez rozbití“ než na nějaký reálný standardní úložný prvek z 40. let.",
-      "created_at": "2026-10-12T15:58:00+00:00",
-      "url": "https://x.com/tkapler/status/2109674958347497481",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109674944363671793",
-      "handle": "AgnijaAgnijita",
-      "display_name": "Agnijita",
-      "text": "@zanetheexplorer @IvarsAuzins @JurgisLiepnieks @rebaltica Jā, nu, nepaveicās cilvēkam, ne tikai ar mācītāju (lai gan es neatceros kā tur gāja ar vainas pierādīšanu) un māti idioti, vēl žurnālisti gadījās neprašas, kuri varēja tomēr iedomāties valsts televīzijā iztikt bez personību identificējošiem faktiem.",
-      "created_at": "2026-10-12T15:57:57+00:00",
-      "url": "https://x.com/AgnijaAgnijita/status/2109674944363671793",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109674897157104107",
-      "handle": "tis_Pops",
-      "display_name": "Pops",
-      "text": "@grok @Ash_Dhe_Cruzgem எங்கிருந்துடா வாங்குறாங்க Vedanta வா? அதானியா? இல்ல ஆந்திரா meenakshi energy யா? @grok",
-      "created_at": "2026-10-12T15:57:46+00:00",
-      "url": "https://x.com/tis_Pops/status/2109674897157104107",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109674869801595355",
-      "handle": "HingbokG",
-      "display_name": "Hingbok Gaja",
-      "text": "@AboutMusicYT @HonSoolRapper Most famous idol.  #Jungkook https://t.co/IOcpxC2YuF",
-      "created_at": "2026-10-12T15:57:39+00:00",
-      "url": "https://x.com/HingbokG/status/2109674869801595355",
-      "image": "https://pbs.twimg.com/media/HUcSHBBWkAAvTZ7.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109674752931422415",
-      "handle": "barinhopt",
-      "display_name": "Miguel",
-      "text": "@ritamariamatias Nem ser mãe te faz pensar: porra sou mesmo uma gaja que não serve pra nada a não ser fazer vídeos de tik tok e armar escândalo. Trata-te.",
-      "created_at": "2026-10-12T15:57:11+00:00",
-      "url": "https://x.com/barinhopt/status/2109674752931422415",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109674262261100810",
-      "handle": "bhaktSenapati",
-      "display_name": "The Saintly King 🗡️",
-      "text": "@binarybodhi Other schools stop short. Vedānta concludes in Bhagavad-gītā 7.7: “There is no truth superior to Me.” Kṛṣṇa is the source of everything.",
-      "created_at": "2026-10-12T15:55:14+00:00",
-      "url": "https://x.com/bhaktSenapati/status/2109674262261100810",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109673064208511473",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@uulrenee @DilaVernanda1 Pemain",
-      "created_at": "2026-10-12T15:50:28+00:00",
-      "url": "https://x.com/Tapi33x/status/2109673064208511473",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109672943571624425",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Anti-CEC stir: How Batman masks stole the show at INDIA bloc's march against Gyanesh Kumar\n\nLeaders from various constituent parties of the INDIA bloc gathered in central Delhi to stage a joint protest march, pressing their collective demands.\n\nRead More:\nhttps://t.co/iKOit8hSzW",
-      "created_at": "2026-10-12T15:50:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109672943571624425",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109672532496310664",
-      "handle": "KulaMarga777",
-      "display_name": "Heather Hurley",
-      "text": "This is a new inquiry bc the old inquiry could not be found my original inquiry with AI about the ego specifically . The following is a conversation with Grok I just had . \n\nGROK: I searched our past conversations and your X posts, and I couldn’t find that exact exchange — the one where the scriptures were quoted as saying the ego must not be annihilated or devastation follows. It may have been with ChatGPT, or in a chat that didn’t save. But the substance you’re describing is real, and it’s worth recapturing properly.\nThe Sanskrit term is ahamkara — literally “the I-maker.” In Vedanta it’s not a villain. It’s one of the four functions of the inner instrument, alongside mind, intellect, and memory. Without it, there’s no “I” to eat breakfast, keep a promise, or feel responsible for your child. The Katha Upanishad actually lists the ego as the enjoyer riding in the chariot, with the Atman as the Lord seated within. The ego is the interface. The Atman is the driver.\nThe distinction the scriptures draw is between the function and the identification. The function is necessary. The identification — “I am a healer,” “I am a teacher,” “I am spiritual” — is what becomes bondage. That’s adhyasa, superimposition: putting “I” and “mine” onto what is not the Self. The Taittiriya Upanishad maps this as the five sheaths — food body, breath body, mind body, intellect body, bliss body — and the seeker is told to move through each one, recognizing each as a wrapper, not the Self.\nSo the “devastation” isn’t the ego dying. It’s what happens when someone tries to kill the function while still operating in a body — dissociation, chaos, a life that stops working. And it’s what happens when the persona is threatened: the ego defends itself at all costs because it believes it is you. That’s the defense mode you described.\nThe traditional answer isn’t annihilation. It’s recognition. Ramana Maharshi said the ego is like a snake seen in a rope — when you see clearly, the snake was never there, but the rope was always there. The ego doesn’t get destroyed. It gets seen through, and it stops being mistaken for the Self.",
-      "created_at": "2026-10-12T15:48:22+00:00",
-      "url": "https://x.com/KulaMarga777/status/2109672532496310664",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109671951879020939",
-      "handle": "Oye_Jahazi",
-      "display_name": "Jahazi",
-      "text": "Mr Pranav Adani (Adani Enterprises) performed the Bhoomi Poojan, marking the start of construction for 10 towers with 10,432 rehabilitation apartments and 1,379 commercial units.\nEligible Dharavi residents from Sectors 6 and 1 will get the first homes, followed by nearly 4,500 more on priority; towers will be handed over in phases by 2030.",
-      "created_at": "2026-10-12T15:46:03+00:00",
-      "url": "https://x.com/Oye_Jahazi/status/2109671951879020939",
-      "image": "https://pbs.twimg.com/media/HUcPdDjbgAAFbin.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109671713336406071",
-      "handle": "TomLee365",
-      "display_name": "Stock analyst",
-      "text": "A WhatsApp group exclusively for $ROL $AKAM  $VEDL holders is now live!\n\nWe invite all $ROL $AKAM $VEDL investors to join this dedicated community to discuss market trends and stay updated with the latest news.\n\nClick this link to join: https://t.co/xqBx50EPKo\n#Trading #Stocks  🫶",
-      "created_at": "2026-10-12T15:45:06+00:00",
-      "url": "https://x.com/TomLee365/status/2109671713336406071",
-      "image": "https://pbs.twimg.com/media/HUcPN3GbkAAvkk6.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109671693191172148",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "News Alert 🚨 RDI Fund selects 19 fund managers, commits Rs 7,131 crore in first cohort\n\nThe first cohort includes 14 alternative investment funds and five research organisations, weeks after the Technology Development Board paused fresh applications amid a backlog of deeptech proposals.\n\nRead More:\nhttps://t.co/kiz6O2R4qS",
-      "created_at": "2026-10-12T15:45:02+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109671693191172148",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109671030226653561",
-      "handle": "FleetwoodRap",
-      "display_name": "Wockhardt Flockhardt Flame",
-      "text": "@monalings Why are you so miserable?",
-      "created_at": "2026-10-12T15:42:24+00:00",
-      "url": "https://x.com/FleetwoodRap/status/2109671030226653561",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109670607285813401",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | ICICI Prudential AMC Q2 profit rises 6.1% to Rs 889 crore, declares Rs 30 interim dividend\n\nThe asset management company had posted a profit of Rs 838 crore in the corresponding quarter of the previous financial year.\n\nRead More:\nhttps://t.co/KY6YNMAPml",
-      "created_at": "2026-10-12T15:40:43+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109670607285813401",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109670250501582984",
-      "handle": "Piyushs57882752",
-      "display_name": "Ek Bhartiy",
-      "text": "@INCIndia @RahulGandhi To phir france me jesus aur gaja me allah ka chl rha hai? \nCatholic putr tum kaise 100 crore hinduvo ki bhavana ko bhdka rhe ho?",
-      "created_at": "2026-10-12T15:39:18+00:00",
-      "url": "https://x.com/Piyushs57882752/status/2109670250501582984",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109669839317221868",
-      "handle": "binarybodhi",
-      "display_name": "Binary Bodhi",
-      "text": "That’s a sectarian theological position, not a universal conclusion of Vedanta.\n\nYou’d have to assume that every other school: Samkhya, Yoga, Jainism, Advaita, Shaivsim, Buddhism, Nastika traditions, and even other Astika schools is wrong, simply coz it doesn’t place Krisha at  summit.",
-      "created_at": "2026-10-12T15:37:40+00:00",
-      "url": "https://x.com/binarybodhi/status/2109669839317221868",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109669761739289015",
-      "handle": "_green_speaker_",
-      "display_name": "Escumalha/Awdi F1 boi🏎️",
-      "text": "está gaja a Madalena Cordeiro é mais nova q eu e tá lá a fazer o q no parlamento?!…\n\nq experiência estudos tem?\n\nzero. obrigado Portugal! votem nesta merda!\n\nVotam em palhaço irão ter circo!",
-      "created_at": "2026-10-12T15:37:21+00:00",
-      "url": "https://x.com/_green_speaker_/status/2109669761739289015",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109668709518479388",
-      "handle": "TUSHARBORNARE3",
-      "display_name": "TUSHAR B",
-      "text": "@Asset_Architect Atleast they have given returns. Have you heard of Zeel, Biocon, RPower",
-      "created_at": "2026-10-12T15:33:10+00:00",
-      "url": "https://x.com/TUSHARBORNARE3/status/2109668709518479388",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE376G01013",
-          "query": "\"Biocon\""
-        },
-        {
-          "entityId": "isin:INE376G01013",
-          "query": "\"BIOCON\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109668664492581353",
-      "handle": "financeweek101",
-      "display_name": "finance weekly",
-      "text": "Nifty Smallcap 250 Movers\nNifty Smallcap 250 gained 1.13% today. Advance-Decline ratio was 155:95.\nTop Gainers:\n🟢 Gallantt Ispat: +20.00%\n🟢 New India Assurance Company: +17.12%\n🟢 Prime Focus: +8.35%\nTop Losers:\n🔴 Birlasoft: -4.38%\n🔴 Usha Martin: -3.69%\n🔴 Vedanta Power: -2.88%\n(6/7)",
-      "created_at": "2026-10-12T15:33:00+00:00",
-      "url": "https://x.com/financeweek101/status/2109668664492581353",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109668480316563690",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | HCLTech says US PERM suspension will have limited impact, echoing Infosys, TCS\n\nHe said the number of PERM applications filed by HCLTech over the past couple of years had been relatively small, limiting the expected impact of the suspension.\n\n@shaw_reshab with details 👇\nhttps://t.co/uoAGBgm0g9",
-      "created_at": "2026-10-12T15:32:16+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109668480316563690",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109668184424853827",
-      "handle": "HingbokG",
-      "display_name": "Hingbok Gaja",
-      "text": "@FuriousTrusted Icon.  Legend.  GOAT. #Jungkook https://t.co/bWawbzkjdJ",
-      "created_at": "2026-10-12T15:31:05+00:00",
-      "url": "https://x.com/HingbokG/status/2109668184424853827",
-      "image": "https://pbs.twimg.com/media/HUcMCEBXwAANQrf.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109666870349513037",
-      "handle": "Quem_sabe_sabe",
-      "display_name": "isso",
-      "text": "@RockabillyRute @Vait__Fuder Imagino o orgulho dos teus pais ao verem a minha a escrever assim. A sorte é que não és gaja, mas um bot do PCP.",
-      "created_at": "2026-10-12T15:25:52+00:00",
-      "url": "https://x.com/Quem_sabe_sabe/status/2109666870349513037",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109666315946402029",
-      "handle": "MeShankara",
-      "display_name": "Shankar von Mysuru",
-      "text": "The Swiss global digital engineering and technology consulting company @akkodis_global Akkodis has officially expanded its global engineering footprint by completing strategic transactions with the French engineering corporation @SogeclairA #Sogeclair and the Indian engineering company @AXISCADES #AxisCADES on October 1, 2026. \n\nBy bringing together Sogeclair's Airbus-dedicated engineering team and AXISCADES' expertise across heavy engineering, automotive, energy, and aerospace, Akkodis has successfully onboarded a total of 1,160 billable engineers and specialists across France, Spain, Germany, Canada, India, the UK, and the US.\n\nThrough these acquisitions, Akkodis has significantly consolidated its market position across several high-growth industries. \n\nBy integrating these specialized teams, the company has enhanced its competitive edge in the engineering services market and emerge as one of the main players.\n\n#Akkodis #Aerospace #Automotive #HeavyEngineering #CleanEnergy #EngineeringServices #TechTalent #FutureOfMobility",
-      "created_at": "2026-10-12T15:23:40+00:00",
-      "url": "https://x.com/MeShankara/status/2109666315946402029",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109666171221905818",
-      "handle": "RudolfMichal3",
-      "display_name": "Rudolf Michal",
-      "text": "@Somebody980390 Tohle by řekl a okamžitě na hodinu by skončil. Kdyby to tu vedl někdo příčetný.",
-      "created_at": "2026-10-12T15:23:05+00:00",
-      "url": "https://x.com/RudolfMichal3/status/2109666171221905818",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109666076032393295",
-      "handle": "RajutGaja",
-      "display_name": "Gaja",
-      "text": "@jeongguqlv done",
-      "created_at": "2026-10-12T15:22:42+00:00",
-      "url": "https://x.com/RajutGaja/status/2109666076032393295",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109666058999070760",
-      "handle": "ohmeudeusssss",
-      "display_name": "ana_fmt",
-      "text": "A Noelia é uma nulidade, uma pick-me girl q levanta a voz para esganiçada para ir contra o miguel e para agradar o seu mestre chico. Que gaja aflitiva.\nO única problema é q a sua falta de relevância pode fazer com q passe pelos pingos da chuva na altura de ser nomeada\n#bbtvi",
-      "created_at": "2026-10-12T15:22:38+00:00",
-      "url": "https://x.com/ohmeudeusssss/status/2109666058999070760",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109665723551518980",
-      "handle": "Gaja2273",
-      "display_name": "Gaja",
-      "text": "@hapnuha Congratulations 🫶🏻",
-      "created_at": "2026-10-12T15:21:18+00:00",
-      "url": "https://x.com/Gaja2273/status/2109665723551518980",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109665539899752666",
-      "handle": "Gaja2273",
-      "display_name": "Gaja",
-      "text": "@succodirinini @shbussy Thank god, Haobin are so gay that it seemed real at first 😭",
-      "created_at": "2026-10-12T15:20:35+00:00",
-      "url": "https://x.com/Gaja2273/status/2109665539899752666",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109665393602068490",
-      "handle": "ANSPRASAD_TN",
-      "display_name": "A.N.S.PRASAD (alias) A.N.SUBRAMANIA PRASAD",
-      "text": "No Double Standards: Justice G.R. Swaminathan Enforced the FCRA Statute, @Manothangaraj’s Charge Is Factually False.\n\nRead the full orders, not the slogans.\n@Manothangaraj’s “double standards” allegation against Justice G.R. Swaminathan fails the moment the judgments are read. \n\nThe Arsha Vidya Parampara Trust and Kanzeon Public Charitable Trust cases rest on different facts, different Form FC-3A disclosures, and the identical statutory tests in Sections 11 and 12 of the Foreign Contribution (Regulation) Act, 2010.\n\nArsha (WP(MD) No. 29610 of 2025, 19.12.2025): Rejection rested on a technical foreign-contribution receipt already compounded under Section 41 and a vague finding that the trust merely “appears to be religious.” \n\nThe Court held that teaching the Bhagavad Gita, Vedanta and Yoga constitutes moral science and Bharatiya civilisation under Article 51A, not a “definite” religious programme. Order set aside and remitted for fresh consideration.\n\nKanzeon (CMA(MD) No. 1057 of 2026, 06.10.2026, Division Bench with Justice M.D. Sumathi): The trust claimed Zen Buddhist philosophy yet failed to disclose its religious character in Form FC-3A. Zen is a school of Mahayana Buddhism and therefore religious. Founder is ordained Christian priest Rev. Fr. Ama Samy SJ. Non-disclosure alone justified rejection. The Bench expressly approved the Arsha ratio distinguishing Indian Knowledge Systems (education/culture) from religious programmes.\n\nNo inconsistency exists. One case failed a vague “appears religious” test plus procedural defects; the other failed mandatory correct disclosure of a claimed Zen Buddhist programme. The conversion bar in Section 12(4)(a)(ii) applies equally to all religions, including any fundamentalist Hindu organisation engaged in Ghar Wapsi. \n\nThe inclusive/exclusive observation was contextual, did not form the ratio, and was accompanied by an express clarification that the Court did not accuse the appellant of conversion. FCRA confers no absolute right — only a regulated privilege (Noel Harper).\n\nRead the full orders, not the slogans.\n\n#FCRA #RuleOfLaw #MadrasHighCourt #NoDoubleStandards #JudicialIndependence #FactCheck #GRSwaminathan #ConstitutionOfIndia",
-      "created_at": "2026-10-12T15:20:00+00:00",
-      "url": "https://x.com/ANSPRASAD_TN/status/2109665393602068490",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109664962297934257",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCTech3 | Top tech and startup news this evening, 📲\n\n🚨 Just In: RDI Fund selects 19 fund managers, commits Rs 7,131 crore\n\n🔊 One quick thing: Nazara founder Nitish Mittersain to step down as MD; Mithun Sacheti becomes executive director\n\nIn today’s newsletter:\n- Festive e-comm sales off to a slow start\n- IndiaAI GPU providers eye overseas buyers\n- HCLTech's Q2 results get an AI boost\n\nSign up for the newsletter 📩\nhttps://t.co/t9Ixva17es",
-      "created_at": "2026-10-12T15:18:17+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109664962297934257",
-      "image": "https://pbs.twimg.com/media/HUcI7Mbb0AAAg5J.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109664882807468065",
-      "handle": "Dhurandhar3_",
-      "display_name": "Dhurandhar",
-      "text": "@sakibk13 @BlewMedia_in Vo CJI hey tera baap nhi jo gaja chorh kr bhaag gya",
-      "created_at": "2026-10-12T15:17:58+00:00",
-      "url": "https://x.com/Dhurandhar3_/status/2109664882807468065",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109664092248240547",
-      "handle": "Regpiope",
-      "display_name": "Regpiope",
-      "text": "@AnilAgarwal_Ved Vedanta Limited has historically taken on debt while continuing to distribute massive dividends, primarily to funnel cash to its heavily indebted London-based parent company, Vedanta Resources Limited (VRL)",
-      "created_at": "2026-10-12T15:14:49+00:00",
-      "url": "https://x.com/Regpiope/status/2109664092248240547",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109664038770909203",
-      "handle": "ANSPRASAD_TN",
-      "display_name": "A.N.S.PRASAD (alias) A.N.SUBRAMANIA PRASAD",
-      "text": "No Double Standards: Justice G.R. Swaminathan Applied the FCRA Consistently — Mano Thangaraj’s Charge Is Factually Wrong\n\n@Manothangaraj’s allegation that Justice G.R. Swaminathan practised double standards between the Arsha Vidya Parampara Trust and Kanzeon Public Charitable Trust FCRA cases is false. \n\nThe orders rest on different facts, different disclosures under Form FC-3A, and the same statutory tests in Sections 11 and 12 of the Foreign Contribution (Regulation) Act, 2010. Selective quotation does not create judicial bias.\n\nIn Arsha Vidya Parampara Trust (WP(MD) No. 29610 of 2025, 19 December 2025), the Single Judge set aside the rejection. The prior foreign-contribution receipt had already been compounded under Section 41 and could not permanently disqualify the trust. \n\nThe Ministry’s finding that the organisation merely “appears to be religious” failed the “definite” programme requirement. \n\nTeaching the Bhagavad Gita, Vedanta and Yoga was held to be moral science and part of Bharatiya civilisation under Article 51A, not a definite religious programme. The matter was remitted for fresh reasoned consideration.\n\nIn Kanzeon Public Charitable Trust (CMA(MD) No. 1057 of 2026, 6 October 2026), the Division Bench of Justices G.R. Swaminathan and M.D. Sumathi upheld the rejection. \n\nThe trust claimed Zen Buddhist philosophy yet failed to disclose its religious character in Form FC-3A. Zen is a school of Mahayana Buddhism and therefore religious. The founder is an ordained Christian priest, Rev. Fr. Ama Samy SJ. Non-disclosure alone justified rejection. \n\nThe Bench expressly approved the Arsha ratio and repeated that systematic teaching of the Gita, Vedanta, Upanishads and Yoga is educational or cultural, not religious.\n\nThere is no inconsistency. Arsha failed a vague “appears religious” test and suffered procedural defects; Kanzeon failed mandatory correct disclosure of a claimed Zen Buddhist programme. \n\nThe conversion bar in Section 12(4)(a)(ii) was stated to apply equally to every religion, including any fundamentalist Hindu organisation engaged in Ghar Wapsi. \n\nThe inclusive-exclusive observation was contextual, did not decide the case, and was accompanied by an express clarification that the Court did not accuse the appellant of conversion.\n\nFCRA confers no absolute right to foreign funds; it is a regulated privilege protecting secular fabric and sovereignty. Full judgments, not political slogans, decide the question.\n\n#FCRA #RuleOfLaw #MadrasHighCourt #JudicialIndependence #ConstitutionOfIndia #NoDoubleStandards #GRSwaminathan #FactCheck",
-      "created_at": "2026-10-12T15:14:37+00:00",
-      "url": "https://x.com/ANSPRASAD_TN/status/2109664038770909203",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109663635970683377",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@ssacsacyy Ono badake rak?",
-      "created_at": "2026-10-12T15:13:01+00:00",
-      "url": "https://x.com/Tapi33x/status/2109663635970683377",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109663598096359572",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@demasinhere Ok makasih",
-      "created_at": "2026-10-12T15:12:52+00:00",
-      "url": "https://x.com/Tapi33x/status/2109663598096359572",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109663401270296957",
-      "handle": "Shakhsiyat_251",
-      "display_name": "Shakhsiyat",
-      "text": "DHARAVI REDEVELOPMENT MOVES INTO A NEW PHASE\n\nPranav Adani, Director of Adani Enterprises Limited, performed Bhoomi Poojan at the 22-acre Matunga railway site, marking the beginning of rehabilitation construction for Dharavi.\n\nThe plan includes 10 towers, 10,432 rehabilitation homes and 1,379 commercial and industrial units. The focus now shifts to execution, timely delivery and better living conditions for eligible Dharavi families.",
-      "created_at": "2026-10-12T15:12:05+00:00",
-      "url": "https://x.com/Shakhsiyat_251/status/2109663401270296957",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109663374271459496",
-      "handle": "dhaneshvijay",
-      "display_name": "Dhanesh",
-      "text": "@AnilAgarwal_Ved @AnilAgarwal_Ved Sir\nCompanies like Samsung,  Mitsubishi, Xiomi, GE has transformed entire countries industry , economy &amp; has been part of nation building. Unfortunately, our politicians are busy bringing down our own conglomerate like Vedanta, Reliance, Adani, Birla for headline",
-      "created_at": "2026-10-12T15:11:58+00:00",
-      "url": "https://x.com/dhaneshvijay/status/2109663374271459496",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109663106326831533",
-      "handle": "nayakmanoj2529",
-      "display_name": "Manoj Nayak",
-      "text": "@binarybodhi Kashmiri Shaivism..right??\n\nAdwaita vedanta talks of its as  that which knows the movement and the pause is not itself merely another movement of the mind.\nNeither inwardly conscious nor outwardly conscious...Only Peaceful, Auspicious, Non-dual. That is the Self to be realized.",
-      "created_at": "2026-10-12T15:10:54+00:00",
-      "url": "https://x.com/nayakmanoj2529/status/2109663106326831533",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109663045681324224",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "Hi Naveen, ₹1,000 was levied as late payment charges due to the delay in EMI repayment. No duplicate charges were debited, and there are no overdue dues in your loan account. For further clarification, please email care.digitalfinance@adityabirlacapital.com from your registered email address. ~ Sid",
-      "created_at": "2026-10-12T15:10:40+00:00",
-      "url": "https://x.com/abcapital/status/2109663045681324224",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109663033974813068",
-      "handle": "desox13",
-      "display_name": "Zbyněk Srb",
-      "text": "@martinlipavsky @Dealtrade_Group Alijev seděl na ropě a příjmech z ropy, Kasparov měl finanční komfort a zabezpečnení i v nejchudších a nejhladovějších létech za Gorbyho.\nNebyl naprosto ničím omezenej.\n\nPřesto vedl blbý kecy a vede je dodnes. https://t.co/jA5sfcvzm6",
-      "created_at": "2026-10-12T15:10:37+00:00",
-      "url": "https://x.com/desox13/status/2109663033974813068",
-      "image": "https://pbs.twimg.com/media/HUcHUIXWkAE2LGs.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109662984822050899",
-      "handle": "Naayimundedu",
-      "display_name": "ರಮಣಮೂರ್ತಿ 🦮",
-      "text": "@dr_ragu_ @RRrockyraya @Filmy_Kannada_ @narendramodi @DKShivakumar Keep crying you clown. CEOs of Biocon Kiran Mazumdar Shaw and Infosys founders are local legends. You mop floors and drive cabs while Kannadigas own the boardrooms. Cope harder and stay poor in our land, you absolute joke.",
-      "created_at": "2026-10-12T15:10:25+00:00",
-      "url": "https://x.com/Naayimundedu/status/2109662984822050899",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE376G01013",
-          "query": "\"Biocon\""
-        },
-        {
-          "entityId": "isin:INE376G01013",
-          "query": "\"BIOCON\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109662854391738735",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Subscribe to our Editor's Picks newsletter and stay updated with the latest news &amp; trends! ⚡\n\nhttps://t.co/H3i08RHFmX\n\n#BusinessNews #Economy #Policy #EditorsPicks #Moneycontrol",
-      "created_at": "2026-10-12T15:09:54+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109662854391738735",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109662849803104631",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "📬 Stay ahead - For more updates on key transitions, business news, and policy shifts, subscribe to Moneycontrol’s Editor’s Picks newsletter by @nalinmehta\n\nhttps://t.co/H3i08RHFmX \n\n#BusinessNews #Economy #Policy #EditorsPicks #Moneycontrol",
-      "created_at": "2026-10-12T15:09:53+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109662849803104631",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109662831817961712",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#EditorsPicks | RBI’s rupee defence, record SIP inflows and muted festival demand -- Editor’s Picks from Moneycontrol \n\n@nalinmehta brings you the big stories moving markets, policy and corporate India in this edition of Editor’s Picks from Moneycontrol. 📰 \n\nFollow the thread for more 👇",
-      "created_at": "2026-10-12T15:09:49+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2109662831817961712",
-      "image": "https://pbs.twimg.com/media/HUcD0oRbgAEVRK_.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2109662578700071208",
-      "handle": "RajutGaja",
-      "display_name": "Gaja",
-      "text": "@terpamungkas @jaxonmanoban @vikookbey Plis ini lucu bgt, ketawa boleh gak kak? Wkwk",
-      "created_at": "2026-10-12T15:08:49+00:00",
-      "url": "https://x.com/RajutGaja/status/2109662578700071208",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109661681504927925",
-      "handle": "RajutGaja",
-      "display_name": "Gaja",
-      "text": "@WianXava Kak butuk karyawan gak?🥹\n*serius",
-      "created_at": "2026-10-12T15:05:15+00:00",
-      "url": "https://x.com/RajutGaja/status/2109661681504927925",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109661602240987372",
-      "handle": "FrontalForce",
-      "display_name": "Frontalforce 🇮🇳",
-      "text": "Bhoomi Poojan Marks Start of Dharavi Rehabilitation Housing 🙏🔥\n\nMr Pranav Adani, Director, Adani Enterprises Limited (AEL), performed Bhoomi Poojan at the 22-acre Matunga railway site, marking the start of rehabilitation construction for Dharavi.\n\nThe project, being developed by Adani Navbharat Developers Private Limited (ANDPL), comprises 10 towers with 10,432 rehabilitation homes of 350 sq ft each and 1,379 commercial and industrial units.\n\nShri Aseem Kumar Gupta, Additional Chief Secretary, Urban Development Department, Government of Maharashtra, attended as Guest of Honour, along with Dr Mahendra Kalyankar, CEO, DRP/SRA.\n\nThe towers will be handed over in three phases between March 2029 and August 2030. Residents will benefit from modern amenities, community spaces and essential infrastructure, with ANDPL maintaining the buildings and common facilities for 10 years after handover.",
-      "created_at": "2026-10-12T15:04:56+00:00",
-      "url": "https://x.com/FrontalForce/status/2109661602240987372",
-      "image": "https://pbs.twimg.com/media/HUcGA2dbAAAB-H4.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109661331121172678",
-      "handle": "pk00202500",
-      "display_name": "Pk",
-      "text": "@Mayank3440ki Yup I hated Vedanta bcz of not focusing like hindalco in high margin aluminium segment !! But in the last 4-5yrs, NAN &amp; runaya got created that are fixing our currently niche but really high value imports……props to them",
-      "created_at": "2026-10-12T15:03:51+00:00",
-      "url": "https://x.com/pk00202500/status/2109661331121172678",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"Vedanta\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2109661270857470201",
-      "handle": "desox13",
-      "display_name": "Zbyněk Srb",
-      "text": "@martinlipavsky @Dealtrade_Group FIDE se to trápení rozhodla ukončit bez vyhlášení vítěze, což mělo naštvat spíš asi Karpova, protože pořád to byl on, kdo měl \"mečbol\" a vedl.\n\nJenže Kasparov to prohlásil za \"rusko-světovej komplot\", organizovaný spiknutí proti jeho osobě.",
-      "created_at": "2026-10-12T15:03:37+00:00",
-      "url": "https://x.com/desox13/status/2109661270857470201",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 254,
-    "attempted": 10,
-    "incomplete": 239,
-    "checkedAt": "2026-10-14T05:17:36.606600+00:00"
+    "attempted": 12,
+    "incomplete": 235,
+    "checkedAt": "2026-10-15T11:51:42.555032+00:00"
   },
   "archive": [
     {
@@ -9762,9 +9706,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-10-15T11:16:51.861Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-10-15T11:52:10.849Z",
     "lastSuccessAt": null
   }
 }
