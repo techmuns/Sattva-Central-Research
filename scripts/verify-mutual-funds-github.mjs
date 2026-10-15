@@ -109,10 +109,12 @@ try {
     const asset=remote.get(decodeURIComponent(url.pathname.split('/').at(-1)));assert(asset?.bytes);return new Response(asset.bytes);
   };
   const publisher={...env,GITHUB_RUN_ID:'12346',GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_TOKEN:'fixture-actions-token'};
-  await assert.rejects(publishSnapshot(again,{env:publisher,fetcher:publishing}),/503/);
+  const mutationPauses=[],paced={env:publisher,fetcher:publishing,sleep:async ms=>mutationPauses.push(ms)};
+  await assert.rejects(publishSnapshot(again,paced),/503/);
   assert.equal((await mfManifest(worker,{fetcher:publishing})).manifest.state,built.manifest.state,'Previous complete generation survives a failed publish');
   assert.deepEqual(removed,['mf-999-1-orphan.json','mf-999-1-manifest.json','mf-999-2-manifest.json'],'No referenced history is deleted before the replacement is complete');
-  failManifest=false;await publishSnapshot(again,{env:publisher,fetcher:publishing});
+  failManifest=false;await publishSnapshot(again,paced);
+  assert(mutationPauses.length>=3&&mutationPauses.every(ms=>ms===1000),'Uploads and pruning are paced below burst content-creation limits');
   assert.equal((await mfManifest(worker,{fetcher:publishing})).manifest.state,again.manifest.state);
   for(const name of names)assert(remote.has(name),'Both complete generations remain available after recovery');
   assert(remote.has('mf-12344-1-manifest.json'),'The generation preceding the cache grace window is retained through a burst of publications');

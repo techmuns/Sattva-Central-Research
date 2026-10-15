@@ -15,10 +15,14 @@ function requirePublisher(env) {
   if(env.GITHUB_ACTIONS!=='true'||env.GITHUB_REF!=='refs/heads/main'||!env.GITHUB_TOKEN||!/^\d+$/.test(env.GITHUB_RUN_ID||''))throw Error('Publication is restricted to main-branch GitHub Actions');
   mfRepo(runnerEnv(env));
 }
-export async function publishSnapshot(built,{env=process.env,fetcher=fetch}={}) {
+export async function publishSnapshot(built,{env=process.env,fetcher=fetch,sleep=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
   requirePublisher(env);
   const config=runnerEnv(env),repo=mfRepo(config),headers={authorization:`Bearer ${env.GITHUB_TOKEN}`,accept:'application/vnd.github+json','user-agent':'ResearchSnapshots'};
+  let mutated=false;
   const api=async (url,options={})=>{
+    // GitHub recommends a full second between mutative requests. Initial
+    // publication and pruning can otherwise burst beyond secondary limits.
+    if(options.method&&options.method!=='GET'){if(mutated)await sleep(1000);mutated=true;}
     const response=await fetcher(url,{...options,headers:{...headers,...options.headers},redirect:'error',signal:AbortSignal.timeout(300000)});
     if(!response.ok){await response.body?.cancel();throw Error(`GitHub snapshot operation failed (${response.status})`);}
     if(response.status===204){await response.body?.cancel();return null;}
