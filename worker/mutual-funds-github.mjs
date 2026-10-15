@@ -32,7 +32,7 @@ export async function mfRelease(env,{fetcher=fetch,edgeCache=globalThis.caches?.
     try{const cached=await edgeCache.match(key);if(cached)return await boundedJson(cached,4*1024*1024);}catch{/* Recheck GitHub. */}
   }
   const response=await fetcher(`https://api.github.com/repos/${repo}/releases/tags/${MF_RELEASE}`,{
-    headers:{accept:'application/vnd.github+json','user-agent':'ResearchSnapshots',...(env.GH_RELEASE_TOKEN?{authorization:`Bearer ${env.GH_RELEASE_TOKEN}`}:{})},redirect:'error',signal:AbortSignal.timeout(15000)});
+    headers:{accept:'application/vnd.github+json','user-agent':'ResearchSnapshots',...(env.GH_RELEASE_TOKEN?{authorization:`Bearer ${env.GH_RELEASE_TOKEN}`}:{})},redirect:'manual',signal:AbortSignal.timeout(15000)});
   if(response.status===404){await response.body?.cancel();if(!env.GH_RELEASE_TOKEN&&edgeCache)await edgeCache.put(key,Response.json(null,{headers:{'cache-control':'public, max-age=60'}})).catch(()=>{});return null;}
   const release=await boundedJson(response,4*1024*1024);
   if(!env.GH_RELEASE_TOKEN&&edgeCache)await edgeCache.put(key,Response.json(release,{headers:{'cache-control':'public, max-age=300'}})).catch(()=>{});

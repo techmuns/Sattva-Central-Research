@@ -10,12 +10,15 @@ const dir=mkdtempSync(resolve('.cache/mf-budget-runtime-')),port=19884,secret='i
 const config=join(dir,'wrangler.json'),entry=join(dir,'entry.mjs');
 writeFileSync(entry,`import {CaptureRegistry} from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
 import {readerKeys,encode64,openForReader} from ${JSON.stringify(resolve('worker/mutual-funds-seal.mjs'))};
+import {mfRelease} from ${JSON.stringify(resolve('worker/mutual-funds-github.mjs'))};
 export class BudgetFixture extends CaptureRegistry {
   constructor(ctx,env){super(ctx,{...env,MF_RUNTIME:'github'});}
   async retiredTimer(){await this.ctx.storage.put('mutual-funds-timer',{started:true});await this.ctx.storage.setAlarm(Date.now()+86400000);await this.alarm();return {arm:await this.mfArm(),alarmAt:await this.ctx.storage.getAlarm()};}
 }
 export default {async fetch(request,env){
   const url=new URL(request.url);
+  if(url.pathname==='/metadata')return Response.json({assets:[]});
+  if(url.pathname==='/release-runtime')return Response.json(await mfRelease({GH_REPO:'techmuns/Sattva-Central-Research'},{fetcher:(_url,options)=>fetch(new URL('/metadata',request.url),options),edgeCache:null}));
   if(url.pathname==='/timer')return Response.json(await env.FIXTURE.getByName('budget-fixture').retiredTimer());
   if(request.method==='POST'){const value=await request.json();return Response.json({text:new TextDecoder().decode(await openForReader(value,${JSON.stringify(secret)},'runtime-fixture'))});}
   const keys=await readerKeys(${JSON.stringify(secret)});return Response.json({kid:keys.kid,publicKey:encode64(keys.publicKey)});
@@ -36,6 +39,7 @@ try {
   const expected=await readerKeys(secret);assert.equal(recipient.kid,expected.kid);
   const sealed=await sealForReader(new TextEncoder().encode('private fixture'),recipient,'runtime-fixture');
   const decrypted=await fetch(origin,{method:'POST',body:JSON.stringify(sealed)});assert(decrypted.ok);assert.equal((await decrypted.json()).text,'private fixture');
+  const release=await fetch(origin+'/release-runtime');assert(release.ok);assert.deepEqual(await release.json(),{assets:[]},'GitHub metadata fetch uses a redirect mode supported by workerd');
   const timer=await fetch(origin+'/timer');assert(timer.ok);const state=await timer.json();assert.equal(state.alarmAt,null);assert.deepEqual(state.arm,{runtime:'github-actions',started:false});
   console.log('PASS actual local Worker: Node-to-Worker encrypted snapshot compatibility; an old MF alarm retires without dispatching and cannot be re-armed');
 }finally{
