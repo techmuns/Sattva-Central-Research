@@ -730,7 +730,7 @@
       "lastDiscoveryAt": "2026-09-12T14:15:30+00:00"
     },
     "isin:INE685T01010|Horizon Industrial Parks": {
-      "lastAttemptAt": "2026-10-09T20:42:50+00:00",
+      "lastAttemptAt": "2026-10-15T03:28:25+00:00",
       "lastResultCount": 45,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-12T14:15:30+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-15T02:52:43.402732+00:00"
+    "checkedAt": "2026-10-15T03:28:25.328396+00:00"
   }
 }
