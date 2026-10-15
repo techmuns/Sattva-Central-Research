@@ -1,3 +1,5 @@
+import {handleGithubNewsletter} from './newsletter-github.mjs';
+import {breakoutCollectorIdentity} from './breakout-auth.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { EDITION_IDS, NEWSLETTER_REQUEST_BYTES } from '../public/js/data/newsletter-shared.js';
 import { NEWSLETTER_OBJECT } from './newsletter-store.mjs';
@@ -52,6 +54,15 @@ export async function handleNewsletter(request, env) {
   if (!env.NEWSLETTER) return fail('newsletter-unavailable', 503);
   const object = env.NEWSLETTER.getByName(NEWSLETTER_OBJECT);
   const dashboardUrl = String(env.DASHBOARD_ORIGIN || url.origin).replace(/\/+$/, '');
+
+  if(url.pathname==='/api/newsletter/collector'){
+    if(request.method!=='POST'||url.origin!=='https://sattva-central-research.tech-441.workers.dev')return fail('collector-origin',403);
+    try{await breakoutCollectorIdentity(request,{endpoint:'https://sattva-central-research.tech-441.workers.dev/api/newsletter/collector',workflow:'newsletter-refresh.yml'});}catch{return fail('collector-identity',403);}
+    try{const input=await boundedJson(new Response(request.body),32768);if(input.action==='configuration')return reply({ok:true,runtime:env.NEWSLETTER_RUNTIME||'cloudflare',rowidCursor:2});if(env.NEWSLETTER_RUNTIME!=='github')return fail('awaiting-cutover',409);if(!['export','inputs'].includes(input.action))return fail('github-actions-only',410);return reply(await object.newsletterExport({table:input.table,cursor:input.cursor,inputs:input.action==='inputs'}));}catch{return fail('transfer-unavailable',503);}
+  }
+  if(env.NEWSLETTER_RUNTIME==='github'){
+    try{return await handleGithubNewsletter(request,env,{object,guardWrite,pdfHeaders});}catch(error){return fail(/Invalid newsletter|Duplicate address/.test(String(error?.message))?'invalid-request':'newsletter-unavailable',/Invalid newsletter|Duplicate address/.test(String(error?.message))?400:503);}
+  }
 
   // Opaque links identify one saved edition. This path never rebuilds, calls sources, or sends.
   if (url.pathname.startsWith('/api/newsletter/pdf/')) {

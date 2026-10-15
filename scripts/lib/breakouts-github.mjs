@@ -21,7 +21,7 @@ export async function githubBreakouts({env=process.env,fetcher=fetch,legacyClien
   if(!latest){
    if(!legacyClient)throw Error('Retained quote source unavailable');
    for(const [part,tables,keys] of [['capture',BREAKOUT_TABLES,['breakout-timer']],['primary',['upstox_config'],['upstox-minute-timer']]]){
-    const copied=await copyBackgroundStore(local,input=>legacyClient({...input,part}),{tables,keys});
+    const copied=await copyBackgroundStore(local,input=>legacyClient({...input,part}),{tables,keys,onProgress:progress=>console.log('Retained breakout transfer:',part,JSON.stringify(progress))});
     console.log('Verified retained breakout transfer:',part,JSON.stringify(copied.tables));
    }
   }

@@ -34,5 +34,12 @@ try {
   await assert.rejects(packBackgroundViews([{name:'head.json',value},{name:'head.json',value}],recipient,file,options));
   assert.deepEqual(gunzipSync(fs.readFileSync(file)).toString(),decoded,'A failed package build preserves the complete prior package');
   assert.deepEqual(fs.readdirSync(path.join(site,'generated-views')),['breakouts'],'Failed staging directories are removed');
+  const cipherCache=new Map(),cache={get:(name,fingerprint)=>cipherCache.get(name)?.fingerprint===fingerprint?cipherCache.get(name).value:null,put:(name,fingerprint,value)=>{cipherCache.set(name,{fingerprint,value});}};
+  const cachedFile=path.join(root,'cached.gz');await packBackgroundViews([{name:'head.json',value}],recipient,cachedFile,{...options,cache});
+  const firstCipher=JSON.parse(gunzipSync(fs.readFileSync(cachedFile)).toString().split('\n')[1]).envelope;
+  await packBackgroundViews([{name:'head.json',value}],recipient,cachedFile,{...options,cache});assert.deepEqual(JSON.parse(gunzipSync(fs.readFileSync(cachedFile)).toString().split('\n')[1]).envelope,firstCipher);
+  const nextKeys=await readerKeys('fixture-rotated-reader-secret-123456789'),nextRecipient={kid:nextKeys.kid,publicKey:encode64(nextKeys.publicKey)};
+  await packBackgroundViews([{name:'head.json',value}],nextRecipient,cachedFile,{...options,cache});const nextCipher=JSON.parse(gunzipSync(fs.readFileSync(cachedFile)).toString().split('\n')[1]).envelope;assert.equal(nextCipher.kid,nextKeys.kid);assert.notDeepEqual(nextCipher,firstCipher);
+  await assert.rejects(packBackgroundViews([{name:'head.json',value,maxBytes:1}],nextRecipient,cachedFile,{...options,cache}),'Cached envelopes cannot bypass a changed plaintext limit');
   console.log('PASS encrypted static package: authenticated reader round trip, no plaintext private facts, exact repository/code binding, complete inventory, path traversal/duplicate rejection and preservation on failure');
 }finally{fs.rmSync(root,{recursive:true,force:true});}

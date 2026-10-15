@@ -395,70 +395,9 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // ---------------------------------------------------------------------------------------
-  // CRON: KEEP THE NEWS FRESH, BECAUSE GITHUB'S OWN SCHEDULER WILL NOT.
-  //
-  // The capture was supposed to refresh every 20 minutes on a GitHub `schedule:` trigger. It does
-  // not, and tuning the cron did not help — measured on this repository:
-  //
-  //     `*/20 * * * *`   fired  12 times against 124 scheduled over 41 hours   (10%)
-  //     then relaxed to `*/30` across a 12-hour window, and in the 5.7 hours that followed it
-  //     fired  ZERO  times against ~11 scheduled.
-  //
-  // Their scheduler is best-effort on shared infrastructure and this repository is evidently at
-  // the back of that queue. So the schedule is not a lever worth pulling again.
-  //
-  // `workflow_dispatch` IS NOT THROTTLED, and that is the whole fix. Every manual dispatch made
-  // today started a run **within seconds** of the POST — 10:24:00, 10:27:33, 10:41:01, 11:27:25,
-  // 11:47:55, 12:57:01. So the cadence comes from a scheduler that works (Cloudflare's) driving
-  // the trigger that works (GitHub's dispatch API), and GitHub's own `schedule:` block stays only
-  // as a fallback for a deployment without this Worker.
-  //
-  // NOTHING ELSE CHANGES. This calls the same `dispatchWorkflow` the button calls, which reads the
-  // latest run first and does nothing when one is already going — so a cron tick that lands on top
-  // of a reader's click costs no second run.
-  //
-  // AND IT RESPECTS THE WINDOW THE PUBLISHER ANSWERS IN. Measured across 12 scheduled runs, every
-  // success fell between 10:27 and 21:14 IST and every refusal between 20:28 and 05:29 IST. So
-  // outside 03:00-14:59 UTC this drops to hourly rather than spending three runs an hour being
-  // refused — politeness towards somebody else's site, and it costs the reader nothing, because
-  // Moneycontrol publish very little to that page overnight.
-  // ---------------------------------------------------------------------------------------
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil(dispatchNewsScrape(event, env));
-  },
+  // Scheduled work belongs to GitHub. Retire any legacy Cloudflare cron delivery.
+  async scheduled() {},
 };
-
-/** The dense window, in UTC. 03:00-14:59 UTC is 08:30-20:29 IST. */
-const NEWS_DENSE_FROM_UTC = 3;
-const NEWS_DENSE_TO_UTC = 15;
-
-async function dispatchNewsScrape(event, env) {
-  const cfg = githubConfig(env);
-  if (cfg.error) {
-    // Nothing to retry and nothing to alarm about: an operator sets the secret, or does not.
-    console.log(`[news-cron] skipped — ${cfg.error.reason}`);
-    return;
-  }
-
-  const at = new Date(event?.scheduledTime || Date.now());
-  const hour = at.getUTCHours();
-  const dense = hour >= NEWS_DENSE_FROM_UTC && hour < NEWS_DENSE_TO_UTC;
-  // The cron ticks every 20 minutes. Outside the window only the top-of-hour tick dispatches.
-  if (!dense && at.getUTCMinutes() >= 20) {
-    console.log(`[news-cron] ${at.toISOString()} — outside the window the publisher answers, hourly only`);
-    return;
-  }
-
-  try {
-    const out = await dispatchWorkflow(fetch, cfg, NEWS_WORKFLOW, cfg.ref, { source: 'cron' });
-    console.log(`[news-cron] ${at.toISOString()} — ${out.dispatched ? 'dispatched' : 'a run was already going'}`);
-  } catch (err) {
-    // A failed dispatch is not worth throwing over: the next tick is twenty minutes away and the
-    // reader's own Fetch button reports the same failure with its fix attached.
-    console.log(`[news-cron] ${at.toISOString()} — could not dispatch: ${err?.code || 'error'} ${err?.message || ''}`);
-  }
-}
 
 // ---------------------------------------------------------------------------------------
 // GET /api/earnings — the live results feed.

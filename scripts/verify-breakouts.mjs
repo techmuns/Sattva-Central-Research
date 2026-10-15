@@ -444,7 +444,7 @@ test('long captures acquire a fresh identity for every checkpoint',async()=>{
 test('migration readiness waits for the read-only export without arming or collecting',async()=>{
  let at=AT,calls=0;const actions=[];
  const result=await bootstrapBreakouts({now:()=>at,sleep:async ms=>{at+=ms;},client:async input=>{
-  actions.push(input.action);if(++calls<3)throw Error('not deployed');return {ok:true,tables:[{name:'breakout_runs',count:2}]};
+  actions.push(input.action);if(++calls<3)throw Error('not deployed');return {ok:true,rowidCursor:2,tables:[{name:'breakout_runs',count:2}]};
  }});
  assert.equal(result.tables[0].count,2);assert.equal(calls,3);assert(actions.every(action=>action==='export'));
  await assert.rejects(bootstrapBreakouts({now:()=>at,sleep:async ms=>{at+=ms;},client:async()=>{throw Error('unpublished');}}),/publishing/);

@@ -111,7 +111,7 @@ async function main() {
   const keyResponse=await fetch(SUMMARY_ORIGIN+'/api/mutual-funds/publishing-key',{redirect:'manual',signal:AbortSignal.timeout(20000)});
   const recipient=await boundedJson(keyResponse,4096);
   const legacyClient=summaryCollectorClient();
-  const configuration=await backgroundExportReady(()=>legacyClient({action:'configuration'}),{valid:value=>value?.ok===true&&typeof value.enabled==='boolean'});
+  const configuration=await backgroundExportReady(()=>legacyClient({action:'configuration'}),{valid:value=>value?.ok===true&&value.rowidCursor===2&&typeof value.enabled==='boolean'});
   const runtime=await githubSummaries({legacyClient,recipient});
   let result;
   try {

@@ -42,6 +42,7 @@ on:
       - "Screener concall collection"
       - "Screener Insights collection"
       - "Private Screener summaries"
+      - "Newsletter processing"
       - "Sector KPIs refresh"
       - "Data refresh"
       - "Telegram archive"

@@ -35,7 +35,7 @@ export class CaptureRegistry extends BaseCaptureRegistry {
  fixtureCheckpoint(run,rows,failures){return this.breakouts.checkpoint(run,rows,failures);}
  fixtureFinish(run){return this.breakouts.finish(run);}
  fixtureRecovery(run,ticker,from,to,rows){return this.breakouts.recovery(run,ticker,from,to,rows);}
- fixturePrimary(input){return this.breakouts.primarySave(input);}
+ fixturePrimary(input){const result=this.breakouts.primarySave(input);this.ctx.storage.sql.exec("INSERT OR IGNORE INTO breakout_primary_latest VALUES (0,'{}')");return result;}
  fixtureInventory(targets){return this.breakoutPrimary.inventory(targets,false);}
  fixtureAlarm(){return this.ctx.storage.getAlarm();}
  async fixtureRetire(kind){await this.ctx.storage.put(kind==='primary'?'upstox-minute-timer':'breakout-timer',{started:true});await this.ctx.storage.setAlarm(Date.now()+86400000);await this.alarm();return this.ctx.storage.getAlarm();}
@@ -112,6 +112,7 @@ try{
  await stop();await start();
  state=await call();assert.equal(state.capture.rows[0].exchange,'BSE');assert.equal(state.capture.rows[0].price,104);
  assert.equal(state.capture.primary.primaryUsed,1);assert.equal(state.capture.primary.failures.length,0);
+ const zero=await call({action:'export',table:'breakout_primary_latest',cursor:null});assert.equal(zero.writes,0);assert(zero.rows.some(row=>row.__migration_rowid===0),'The native SQL export includes bucket zero');
  const exported=await call({action:'export',table:'breakout_quotes',cursor:0});assert.equal(exported.writes,0);assert(exported.rows.length>0);
  console.log('PASS local workerd: native gzip and authenticated Upstox quote fetch; daily-file redirects; minute/fallback SQL history, large inventory, read-only source export, rejected collector writes, retired alarms and recovery survive restarts');
 }catch(error){writeFileSync(resolve('.cache/breakout-runtime-last-failure.log'),logs);throw error;}finally{await stop();await new Promise(done=>upstream.close(done));rmSync(scratch,{recursive:true,force:true});}

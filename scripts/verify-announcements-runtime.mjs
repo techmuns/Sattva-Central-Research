@@ -195,7 +195,16 @@ try {
   const mine = await (await fetch(new URL('/api/relevance/mine?device=device-runtime-1', base))).json();
   assert.equal(mine.votes[top.id].vote, 'not-important');
   const reranked = await (await post('/api/announcement-index/query', { period: 'all', limit: 500, modelRevision: model.model.revision })).json();
-  const day = reranked.rows.filter((r) => r.date === top.date);
+  const rerankedRows = [...reranked.rows];
+  let nextVotePage = reranked.nextOffset;
+  while (!rerankedRows.some(row => row.id === top.id) && nextVotePage !== null) {
+    const page = await (await post('/api/announcement-index/query', { period: 'all', offset: nextVotePage, limit: 500, modelRevision: model.model.revision })).json();
+    assert.equal(page.total, all.total, 'feedback pagination retains every filing across RPC');
+    assert(page.nextOffset === null || page.nextOffset > nextVotePage, 'feedback pagination advances across RPC');
+    rerankedRows.push(...page.rows);
+    nextVotePage = page.nextOffset;
+  }
+  const day = rerankedRows.filter((r) => r.date === top.date);
   const scored = day.find(row => row.id === top.id);
   assert(scored && scored.relevance < top.relevance, 'the saved vote lowers the score across RPC');
   assert(day.findIndex((r) => r.id === top.id) > beforePosition, 'the vote moves the filing down its day at once');

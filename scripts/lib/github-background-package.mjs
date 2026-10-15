@@ -3,6 +3,7 @@ import path from 'node:path';
 import {Readable} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
 import {createGzip,createGunzip} from 'node:zlib';
+import {createHash} from 'node:crypto';
 import {sealBackgroundView,backgroundViewContext} from './github-background-views.mjs';
 const MAX_LINE=8*1024*1024,MAX_PACKAGE=1900*1024*1024,MAX_FILES=20000;
 const fileName=name=>/^[a-z0-9-]{1,180}\.json$/.test(name);
@@ -18,7 +19,12 @@ function envelope(value,context) {
 // A stream of individually authenticated encrypted files. No plaintext source
 // records or restart database can enter the static delivery package.
 export async function packBackgroundViews(entries,recipient,destination,options) {
-  async function* sealed(){for await(const {name,value,maxBytes} of entries){const result=await sealBackgroundView(value,recipient,{...options,name,...(maxBytes?{maxBytes}:{})});yield {name,envelope:JSON.parse(result.bytes)};}}
+  async function* sealed(){for await(const {name,value,maxBytes} of entries){
+    const fingerprint=createHash('sha256').update(JSON.stringify([options.repo,options.feature,name,recipient.kid,maxBytes||null,value])).digest('hex');
+    let cached=await options.cache?.get(name,fingerprint);
+    if(!cached){const result=await sealBackgroundView(value,recipient,{...options,name,...(maxBytes?{maxBytes}:{})});cached=JSON.parse(result.bytes);await options.cache?.put(name,fingerprint,cached);}
+    yield {name,envelope:cached};
+  }}
   return packEncryptedBackgroundViews(sealed(),destination,options);
 }
 export async function packEncryptedBackgroundViews(entries,destination,options) {

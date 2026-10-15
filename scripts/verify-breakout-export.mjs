@@ -18,7 +18,7 @@ try {
   for(;;){const page=await exportBreakouts(storage,{table:'breakout_runs',cursor});copied.push(...page.rows);if(!page.cursor)break;assert(page.cursor>cursor);cursor=page.cursor;}
   assert.equal(copied.length,430);assert.deepEqual(copied.map(row=>row.__migration_rowid),Array.from({length:430},(_,i)=>i+1));
   assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before,'Inventory and paged transfer do not change SQL');
-  for(const request of [{part:'other'},{table:'secret_settings'},{table:'github_job_kv'},{table:'breakout_runs; DROP TABLE breakout_runs'},{table:'breakout_runs',cursor:-1},{table:'breakout_runs',cursor:1.5}])await assert.rejects(exportBreakouts(storage,request));
+  for(const request of [{part:'other'},{table:'secret_settings'},{table:'github_job_kv'},{table:'breakout_runs; DROP TABLE breakout_runs'},{table:'breakout_runs',cursor:0.5},{table:'breakout_runs',cursor:1.5}])await assert.rejects(exportBreakouts(storage,request));
   primary=githubBackgroundSqlite(join(root,'primary.sqlite'));primary.db.exec('CREATE TABLE upstox_config (key TEXT,part INTEGER,payload TEXT)');primary.db.prepare('INSERT INTO upstox_config VALUES(?,?,?)').run('upstox-inventory',0,JSON.stringify({targets:[{ticker:'TEST'}]}));
   await primary.storage.put('upstox-minute-timer',{lastAttemptAt:123,reason:'ok'});
   const second=await exportBreakouts(primary.storage,{part:'primary'});assert.deepEqual(second.tables,[{name:'upstox_config',count:1}]);assert.deepEqual(second.keys,[{key:'upstox-minute-timer',value:{lastAttemptAt:123,reason:'ok'}}]);

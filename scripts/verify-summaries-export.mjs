@@ -11,6 +11,7 @@ try {
   source.db.exec('CREATE TABLE unrelated_credentials (secret TEXT)');source.db.prepare('INSERT INTO unrelated_credentials VALUES(?)').run('must-not-export');
   const insert=source.db.prepare('INSERT INTO summary_attempts VALUES(?,?,?,?,?,?,?)');
   source.storage.transactionSync(()=>{for(let n=0;n<2501;n++)insert.run('fixture-'+n,'1:1','1','retained-claim-'+n,n,n+1000,'source-unavailable');});
+  source.db.prepare('INSERT INTO summary_inventory VALUES(?,?,?)').run(0,'fixture-zero',JSON.stringify({id:'fixture-zero'}));
   source.store.putState({...source.store.state(),privateHistory:'PRIVATE RETAINED CLAIMS',cooldownUntil:'2026-10-16T12:00:00Z'});
   await source.storage.put('summary-timer',{started:true,nextAt:123});await source.storage.put('unrelated-token','must-not-export');
   const before=source.db.prepare('SELECT total_changes() n').get().n;
@@ -22,7 +23,7 @@ try {
   assert(pages<10,'Thousands of small claims use bounded larger pages');
   assert.equal(copy.store.state().cooldownUntil,'2026-10-16T12:00:00Z');assert.deepEqual(await copy.storage.get('summary-timer'),{started:true,nextAt:123});assert.equal(await copy.storage.get('unrelated-token'),undefined);
   assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before,'Migration inventory and pages are read-only');
-  for(const input of [{table:'unrelated_credentials'},{table:'github_job_kv'},{table:'summary_attempts; DELETE FROM summary_attempts'},{table:'summary_attempts',cursor:-1}])await assert.rejects(exportSummaries(readOnly,input));
+  for(const input of [{table:'unrelated_credentials'},{table:'github_job_kv'},{table:'summary_attempts; DELETE FROM summary_attempts'},{table:'summary_attempts',cursor:0.5}])await assert.rejects(exportSummaries(readOnly,input));
   rejected=localSummaries(path.join(root,'rejected.sqlite'),options);let inventories=0;
   await assert.rejects(copyBackgroundStore(rejected,async input=>{const result=await client(input);if(!input.table&&++inventories===2)result.tables[0].count++;return result;},{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS}),/source changed/);
   assert.equal(await rejected.storage.get('summary-timer'),undefined,'Unverified transfer metadata is never accepted');
