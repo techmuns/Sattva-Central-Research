@@ -164,7 +164,7 @@ jobs:
       - name: Verify Screener concall pagination, deduplication and artifact integrity
         run: node scripts/verify-screener-concalls.mjs && node scripts/verify-concall-delivery.mjs && node scripts/verify-stockscans-contract.mjs
       - name: Verify private summaries, dynamic portfolio queue, durable quota and authorisation
-        run: node scripts/verify-concall-summaries.mjs && node scripts/verify-github-background-sqlite.mjs && node scripts/verify-summaries-local.mjs && node scripts/verify-summaries-export.mjs && node scripts/verify-summaries-github.mjs && node scripts/verify-summary-catalogue-github.mjs && node scripts/verify-github-private-records.mjs
+        run: node scripts/verify-concall-summaries.mjs && node scripts/verify-github-background-sqlite.mjs && node scripts/verify-background-rowids.mjs && node scripts/verify-summaries-local.mjs && node scripts/verify-summaries-export.mjs && node scripts/verify-summaries-github.mjs && node scripts/verify-summary-catalogue-github.mjs && node scripts/verify-github-private-records.mjs
       - name: Verify Screener Insights capture and context-only correlation
         run: node scripts/verify-screener-insights.mjs
       - name: Verify complete General Alerts pool and scope isolation

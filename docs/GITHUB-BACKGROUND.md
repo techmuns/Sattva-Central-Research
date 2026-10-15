@@ -95,3 +95,13 @@ Mutual Funds has its separate encrypted retained-state transfer and prepared rea
 - Newsletter: private recipients and settings, content queue, provider budgets, edition claims, delivery acknowledgements and saved documents. An unknown delivery must not be retried as an unsent email.
 
 Each transfer needs read-only verified history import, encrypted public-repository storage where applicable, local/staging failure tests, live reader verification, and retirement of its old recurrence. A source or credential failure must remain visible instead of turning into empty successful data. Existing Cloudflare history must not be deleted as part of migration. No paid runner, new provider or external API spending is a fallback for unavailable free tooling.
+
+## Retained SQL cursor contract
+
+A rowid of zero (including quote bucket zero and staged inventory sequence zero)
+is a valid saved row. A null cursor means the first page; subsequent pages accept
+zero and negative safe integer rowids. Only a null returned cursor ends paging.
+The source advertises `rowidCursor: 2`; the runner waits for this read-only API
+before transfer and refuses an incompatible source. Exact count checks remain,
+so an interrupted or mismatched transfer cannot replace retained history.
+Transfer progress logs contain only fixed table names and aggregate row counts.

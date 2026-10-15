@@ -33,7 +33,7 @@ export async function githubSummaries({env=process.env,fetcher=fetch,legacyClien
   try {
     if(!snapshot) {
       if(typeof legacyClient!=='function')throw Error('Retained summary source unavailable');
-      const inventory=await copyBackgroundStore(local,legacyClient,{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS});
+      const inventory=await copyBackgroundStore(local,legacyClient,{tables:SUMMARY_TABLES,keys:SUMMARY_KEYS,onProgress:progress=>console.log('Retained summary transfer:',JSON.stringify(progress))});
       console.log('Verified retained private summary transfer:',JSON.stringify(inventory.tables));
       await checkpoint();
     }

@@ -142,7 +142,7 @@ export async function collectBreakouts({ targets, previous = null, client, prima
 export async function bootstrapBreakouts({client=breakoutClient(),now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
   const deadline=now()+8*60000;
   do {
-    try { const result=await client({action:'export',part:'capture'}); if(result.ok===true&&Array.isArray(result.tables))return result; }
+    try { const result=await client({action:'export',part:'capture'}); if(result.ok===true&&result.rowidCursor===2&&Array.isArray(result.tables))return result; }
     catch { /* The new Worker may still be publishing. No source collection is needed. */ }
     await sleep(15000);
   } while(now()<deadline);

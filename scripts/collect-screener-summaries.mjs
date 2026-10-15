@@ -11,6 +11,7 @@ import { readScreenerConcallCollector } from '../worker/screener-concalls-collec
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { SUMMARY_ORIGIN, SUMMARY_FAILURES, SUMMARY_INVENTORY_BATCH, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
 
+import {backgroundExportReady} from './lib/background-export-ready.mjs';
 import {githubSummaries} from './lib/summaries-github.mjs';
 import {ensureSummaryCatalogue} from './lib/summary-catalogue-github.mjs';
 
@@ -109,7 +110,9 @@ async function main() {
   delete process.env.DEBUG; delete process.env.PWDEBUG;
   const keyResponse=await fetch(SUMMARY_ORIGIN+'/api/mutual-funds/publishing-key',{redirect:'manual',signal:AbortSignal.timeout(20000)});
   const recipient=await boundedJson(keyResponse,4096);
-  const runtime=await githubSummaries({legacyClient:summaryCollectorClient(),recipient});
+  const source=summaryCollectorClient();let sourceReady=false;
+  const legacyClient=async input=>{if(sourceReady||input.table)return source(input);const value=await backgroundExportReady(()=>source(input),{valid:value=>value?.ok===true&&value.rowidCursor===2&&Array.isArray(value.tables)});sourceReady=true;return value;};
+  const runtime=await githubSummaries({legacyClient,recipient});
   let result;
   try { result = await runSummaryCollection({ client:runtime.client,
     inventory: async () => {

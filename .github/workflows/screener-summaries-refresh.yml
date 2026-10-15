@@ -8,6 +8,7 @@ on:
       - 'scripts/collect-screener-summaries.mjs'
       - 'scripts/lib/summaries-*.mjs'
       - 'scripts/lib/summary-catalogue-github.mjs'
+      - 'scripts/lib/background-export-ready.mjs'
       - 'worker/summaries-*.mjs'
       - 'worker/concall-summaries.mjs'
   schedule:

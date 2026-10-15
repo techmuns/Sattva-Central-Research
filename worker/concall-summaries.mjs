@@ -20,6 +20,7 @@ export async function handleConcallSummaries(request, env, { fetcher = fetch, no
     catch { return reply({ ok: false, reason: 'collector-identity' }, 403); }
     try {
       const input = await boundedJson(new Response(request.body), SUMMARY_TRANSPORT_LIMIT);
+      if(input.action==='configuration')return reply({ok:true,enabled:env.SCREENER_SUMMARIES_ENABLED==='true',rowidCursor:2});
       const store = env.SCREENER_SUMMARIES.getByName(SUMMARY_OBJECT);
       if(input.action==='export')return reply(await store.summaryExport({table:input.table,cursor:input.cursor}));
       return reply({ok:false,reason:'github-actions-only'},410);
