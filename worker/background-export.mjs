@@ -6,7 +6,9 @@ export function exportBackgroundTable(sql,allowed,table,cursor=null) {
   const result=cursor===null?sql.exec(`SELECT rowid AS __migration_rowid,* FROM ${table} ORDER BY rowid LIMIT ?`,2000):sql.exec(`SELECT rowid AS __migration_rowid,* FROM ${table} WHERE rowid>? ORDER BY rowid LIMIT ?`,cursor,2000);
   for(const row of result) {
     const size=encoder.encode(JSON.stringify(row)).byteLength+(rows.length?1:0);
-    if(bytes+size>=2*1024*1024){if(!rows.length)throw Error('Background migration row too large');break;}
+    // The transport limit includes the result object, cursor and caller's fixed
+    // fields (for example part: capture), not just the rows array.
+    if(bytes+size>=2*1024*1024-1024){if(!rows.length)throw Error('Background migration row too large');break;}
     rows.push(row);bytes+=size;
   }
   return {ok:true,rows,cursor:rows.length?rows.at(-1).__migration_rowid:null};
