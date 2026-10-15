@@ -641,7 +641,7 @@
       "error": "search-unavailable"
     },
     "isin:INE850D01014|Godrej Agrovet": {
-      "lastAttemptAt": "2026-10-09T18:11:51+00:00",
+      "lastAttemptAt": "2026-10-15T00:48:47+00:00",
       "error": "search-unavailable"
     },
     "isin:INE850D01014|GODREJAGRO": {
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-15T00:18:16.793545+00:00"
+    "checkedAt": "2026-10-15T00:48:47.515951+00:00"
   }
 }
