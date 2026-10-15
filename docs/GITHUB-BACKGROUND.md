@@ -2,6 +2,9 @@
 
 The 15 October 2026 budget instruction keeps Cloudflare as the website delivery layer. Collection, scheduled calculations and retained job state belong on standard GitHub Actions runners and GitHub storage. Request-time authentication and delivery of prepared private files must preserve existing access rules.
 
+The unused legacy Cloudflare news-cron handler is retired as well; the existing
+GitHub market-news workflow keeps its configured source cadence.
+
 ## Telegram
 
 The existing ten-minute GitHub schedule owns collection. Its verified Actions checkpoints carry source cooldowns and account safety pauses; the existing archive workflow retains history. This change neither resumes paused source access nor changes collection allowances.
@@ -114,10 +117,61 @@ input or encrypted static access and remains private, no-store. No new long-live
 service credential is copied into GitHub: the fixed quote workflow uses its
 short-lived OIDC identity for read-only input/history transfer.
 
+## Newsletter migration (prepared; cutover requires setup)
+
+The GitHub implementation keeps existing recipients, settings, content jobs,
+reported-story ledger, model reservations, edition claims and immutable PDF
+history. Read-only transfer preserves original rowids. PDF BLOBs use bounded
+base64 pages with byte counts and SHA-256 verification; JSON must never turn a
+saved binary PDF into an empty object. The source must report the GitHub runtime
+before import, and changes in its input revision or inventory block publication.
+
+The existing providers, models, content limits, news dollar budget, rolling manual
+send budget and three-hour scheduled catch-up rule remain. The runner acknowledges
+an encrypted restart bundle before each model or email request. Publication failure
+latches external I/O off. Unknown/interrupted delivery claims remain claimed,
+including after restart; a failed job cannot automatically resend that edition.
+PDF bytes are acknowledged on GitHub and their exact hash is verified at the live
+opaque download URL before an email containing that link may leave the runner.
+No model or email request is made by the website after cutover.
+
+Subscribers and schedule edits remain immediate interactive inputs. The runner
+refreshes them before metered work and before email, and refuses removed recipients.
+The website serves encrypted prepared delivery status, previews and saved PDF
+bytes. Unchanged reader ciphertext is reused so a new claim does not reupload all
+historical PDFs. Restart state and credentials are never static assets.
+
+Manual send requests return HTTP 202 with a request ID and status URL. Their
+address, edition and optional caller token are encrypted to a public key derived
+from the runner's existing background secret before GitHub receives them. A fixed
+main-branch workflow queues each distinct request; request IDs prevent replay from
+spending the manual budget or sending twice. Claimed/unknown requests are never
+reported as confirmed sends. The original request-time origin and rate limits
+remain. GitHub scheduling, runner queues and static delivery are best effort: the
+five-minute schedule can delay an edition or preview; actual check/build times and
+missed deliveries remain visible. Original captured source history is retained.
+
+Before production cutover, separately authorize the existing newsletter mail,
+OpenAI and (where already configured) Bedrock credentials as dedicated encrypted
+GitHub secrets `NEWSLETTER_MAIL_TOKEN`, `NEWSLETTER_OPENAI_KEY` and
+`NEWSLETTER_BEDROCK_KEY` in each owning repository. These are the same providers
+and existing budgets, with no paid test or new provider. Do not create a repository
+`MUNS_TOKEN` secret: the deployment secret-sync step uses that name for the Worker
+and could otherwise overwrite its existing credential.
+
+After that authorization, set the Worker secret `NEWSLETTER_RUNTIME=github` and
+run the explicit `bootstrap` workflow input for read-only history transfer and
+source-only previews. Keep `NEWSLETTER_GITHUB_ENABLED` disabled until credentials
+and retained history are verified; this bootstrap cannot call a model or send an
+email. Then enable that repository variable and resume the ordinary GitHub job.
+The old newsletter alarm then retires; legacy send and preview RPCs are blocked.
+Until explicit setup approval, both flags remain unset, the new workflow skips,
+and the existing newsletter remains operational. Do not claim this cutover is done.
+
 ## Remaining transfer work
 
 Mutual Funds has its separate encrypted retained-state transfer and prepared reader snapshots documented in `GITHUB-MUTUAL-FUNDS.md`. Telegram's small scheduling change must not be presented as migrating the remaining engines:
 
-- Newsletter: private recipients and settings, content queue, provider budgets, edition claims, delivery acknowledgements and saved documents. An unknown delivery must not be retried as an unsent email.
+- Newsletter production credential setup and runtime cutover, followed by retained-history and live-reader verification.
 
 Each transfer needs read-only verified history import, encrypted public-repository storage where applicable, local/staging failure tests, live reader verification, and retirement of its old recurrence. A source or credential failure must remain visible instead of turning into empty successful data. Existing Cloudflare history must not be deleted as part of migration. No paid runner, new provider or external API spending is a fallback for unavailable free tooling.

@@ -1,3 +1,4 @@
+import {exportNewsletter} from './newsletter-export.mjs';
 import {exportPriceLevels} from './price-levels-export.mjs';
 import {PriceLevelStore} from './price-levels-store.mjs';
 import {PriceLevelSchedule,PRICE_LEVEL_TIMER} from './price-levels-schedule.mjs';
@@ -120,18 +121,19 @@ export class CaptureRegistry extends DurableObject {
   breakoutRead() { return this.breakouts.read(); }
   breakoutHistory(ticker, before) { return this.breakouts.history(ticker, before); }
   breakoutScheduleStatus() { return {runtime:'github-actions',started:false}; }
+  newsletterExport(input) { return exportNewsletter(this.ctx.storage,input); }
   newsletterSnapshot() { return this.newsletter.snapshot(); }
-  async newsletterStatus() { await this.newsletterSchedule.arm(); return this.newsletterSchedule.status(); }
+  async newsletterStatus() { if(this.env.NEWSLETTER_RUNTIME==='github')return {runtime:'github-actions',armed:false};await this.newsletterSchedule.arm(); return this.newsletterSchedule.status(); }
   async newsletterApply({ intents = null, settings = null } = {}) {
     const out = { outcomes: [], settingsChanged: false };
     if (settings) out.settingsChanged = this.newsletter.setSettings(settings).changed;
     if (intents) out.outcomes = this.newsletter.apply(intents).outcomes;
-    await this.newsletterSchedule.arm();
+    if(this.env.NEWSLETTER_RUNTIME!=='github')await this.newsletterSchedule.arm();
     return { ...out, snapshot: this.newsletter.snapshot(), schedule: await this.newsletterSchedule.status() };
   }
-  newsletterSend(input, token) { return this.newsletterSchedule.sendNow(input, token); }
+  newsletterSend(input, token) { if(this.env.NEWSLETTER_RUNTIME==='github')throw Error('Newsletter processing moved to GitHub');return this.newsletterSchedule.sendNow(input, token); }
   newsletterPdf(id) { return this.newsletter.document(id); }
-  newsletterPreview(input) { return this.newsletterSchedule.preview(input); }
+  newsletterPreview(input) { if(this.env.NEWSLETTER_RUNTIME==='github')throw Error('Newsletter processing moved to GitHub');return this.newsletterSchedule.preview(input); }
   mfReports(run,reports) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
   mfFragment(run,fragment) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
   mfBegin(run,manifest) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
@@ -155,7 +157,7 @@ export class CaptureRegistry extends DurableObject {
       await this.ctx.storage.deleteAlarm();return;
     }
     if (await this.ctx.storage.get(PRIMARY_TIMER)) await this.ctx.storage.deleteAlarm();
-    else if (await this.ctx.storage.get(NEWSLETTER_TIMER_KEY)) await this.newsletterSchedule.wake();
+    else if (await this.ctx.storage.get(NEWSLETTER_TIMER_KEY)) {if(this.env.NEWSLETTER_RUNTIME==='github')await this.ctx.storage.deleteAlarm();else await this.newsletterSchedule.wake();}
     else if (await this.ctx.storage.get('breakout-timer')) await this.ctx.storage.deleteAlarm();
     else if (await this.ctx.storage.get('summary-timer')) await this.ctx.storage.deleteAlarm();
     else await this.ctx.storage.deleteAlarm(); // Retire the old Telegram dispatch alarm.

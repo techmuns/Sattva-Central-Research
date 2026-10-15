@@ -1,6 +1,6 @@
 // Copy only the named application's tables into a new runner database. The
 // source is read twice for a quiescent inventory; any mismatch stops the copy.
-export async function copyBackgroundStore(local,legacyClient,{tables,keys=[]}) {
+export async function copyBackgroundStore(local,legacyClient,{tables,keys=[],decode=value=>value}) {
   if(!Array.isArray(tables)||!tables.length||new Set(tables).size!==tables.length||tables.some(table=>typeof table!=='string'||!/^[a-z_]+$/.test(table)))throw Error('Invalid background table allowlist');
   const inventory=await legacyClient({action:'export'});
   if(inventory?.ok!==true||!Array.isArray(inventory.tables)||!Array.isArray(inventory.keys)||new Set(inventory.tables.map(row=>row.name)).size!==inventory.tables.length||new Set(inventory.keys.map(row=>row.key)).size!==inventory.keys.length)throw Error('Invalid background migration inventory');
@@ -20,7 +20,7 @@ export async function copyBackgroundStore(local,legacyClient,{tables,keys=[]}) {
       local.storage.transactionSync(()=>{
         for(const row of page.rows) {
           if(Object.keys(row).sort().join(',')!==expected||!Number.isSafeInteger(row.__migration_rowid)||row.__migration_rowid<=cursor)throw Error('Background migration schema or cursor changed');
-          insert.run(row.__migration_rowid,...columns.map(column=>row[column]??null));
+          insert.run(row.__migration_rowid,...columns.map(column=>decode(row[column]??null,name,column)));
         }
       });
       received+=page.rows.length;

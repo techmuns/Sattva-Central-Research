@@ -1,0 +1,58 @@
+name: Newsletter processing
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/newsletter-refresh.yml'
+      - 'scripts/collect-newsletter.mjs'
+      - 'scripts/lib/newsletter-*.mjs'
+      - 'worker/newsletter*.mjs'
+  schedule:
+    - cron: '1,6,11,16,21,26,31,36,41,46,51,56 * * * *'
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: Read-only history transfer and previews without model or email work
+        type: boolean
+        default: false
+      request:
+        description: Encrypted one-time newsletter request
+        type: string
+        required: false
+concurrency:
+  group: newsletter-account
+  cancel-in-progress: false
+  queue: max
+permissions:
+  contents: write
+  actions: write
+  id-token: write
+jobs:
+  process:
+    if: github.ref == 'refs/heads/main' && (vars.NEWSLETTER_GITHUB_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.bootstrap))
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      NEWSLETTER_PROCESSING_ENABLED: ${{ vars.NEWSLETTER_GITHUB_ENABLED == 'true' }}
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_DISPATCH_TOKEN: ${{ github.token }}
+      BACKGROUND_STATE_KEY: ${{ secrets.MF_STATE_KEY || secrets.FAMILY_HOLDINGS_TOKEN || secrets.GLOWVENTURES_READ_TOKEN }}
+      MUNS_TOKEN: ${{ secrets.NEWSLETTER_MAIL_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.NEWSLETTER_OPENAI_KEY }}
+      CLAUDE_KEY: ${{ secrets.NEWSLETTER_BEDROCK_KEY }}
+      UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      NEWSLETTER_NEWS_AI_PROVIDER: openai
+      BEDROCK_REGION: ap-south-1
+      BEDROCK_MODEL_ID: global.anthropic.claude-sonnet-5
+      DASHBOARD_ORIGIN: https://sattva-central-research.tech-441.workers.dev
+      NEWSLETTER_PRODUCT_NAME: Research Central
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Restore history, process due editions and publish encrypted prepared readers
+        run: node scripts/collect-newsletter.mjs
