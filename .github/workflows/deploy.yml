@@ -1,26 +1,6 @@
 name: Deploy
 
-# A FALLBACK PUBLISH PATH, AND ON THIS REPOSITORY IT IS NOT THE ONE IN USE.
-#
-# MEASURED, 31 Aug: every run of this workflow has completed in six or seven seconds with the
-# `deploy` job **skipped** — `secrets.CLOUDFLARE_API_TOKEN` is not set, so the gate below reports
-# `available=false`. It has therefore never deployed anything. And yet the live site is current to
-# the minute: a commit pushed at 07:58 was serving at 08:0x, assets and Worker code alike.
-#
-# So this repository publishes through **Cloudflare's own Git integration** (Workers Builds), which
-# watches the branch and deploys without any of this. That is a perfectly good arrangement — but it
-# means the comment that used to sit here, and the line in docs/DATA-CONTRACTS.md that said a
-# committed capture "only reaches readers once deploy.yml runs", were both WRONG. The capture was
-# reaching readers the whole time, by a route neither of them named.
-#
-# The lesson is the one CLAUDE.md already states, arriving from the other side: *check that a
-# scheduled capture has a path to the live site* — and when you check, find out which path, because
-# a workflow that reports success while skipping its only real job looks exactly like one that
-# works. This one now says which mode it is in, on every run, in the run summary.
-#
-# KEEP IT. If the Git integration is ever disconnected, setting CLOUDFLARE_API_TOKEN here restores
-# publishing with no other change.
-
+# Build and upload on the standard GitHub runner; Cloudflare only receives the result.
 on:
   push:
     branches: [main]
@@ -28,17 +8,20 @@ on:
       - "public/**"
       - "worker/**"
       - "wrangler.jsonc"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: a441977d2344922f96303859b74754d8
 
 concurrency:
   group: deploy
   cancel-in-progress: true
 
 jobs:
-  # A ONE-STEP JOB WHOSE ONLY PURPOSE IS TO TURN "IS THE SECRET SET" INTO AN OUTPUT.
-  # Guarding the deploy steps individually would let the job report SUCCESS while every step
-  # skipped — a green tick over work that did not happen. Guarding at JOB level renders as
-  # "Skipped" in the checks list, which is the truth.
   secret:
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -58,40 +41,16 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      # `--dry-run` first: it validates the bundle and the asset directory without publishing, so a
-      # broken build fails before it can replace a working deployment.
       - name: Validate the bundle
         run: npx --yes wrangler@4 deploy --dry-run
       - name: Deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4 deploy
 
-      # PUT THE WORKER'S SECRETS WHERE THE OPERATOR ALREADY KEEPS THEM.
-      #
-      # `npx wrangler secret put` needs a terminal logged in to Cloudflare, which is a different
-      # place from the one where CLOUDFLARE_API_TOKEN already lives — so the news Fetch button sat
-      # in its `no-token` state on a deployment that was otherwise fully configured, and the only
-      # instruction the page could give named a command the operator could not conveniently run.
-      #
-      # This syncs them from GitHub's own secret store on every deploy, using the Cloudflare token
-      # that is already here. To turn the button on, add GH_DISPATCH_TOKEN under
-      # Settings -> Secrets and variables -> Actions, beside CLOUDFLARE_API_TOKEN. Nothing else.
-      #
-      # THE PRESENCE TEST IS IN THE SHELL, NOT IN AN `if:`. The `secrets` context is not dependable
-      # in a step-level condition — which is exactly why the job above turns one into an output
-      # before using it — and a condition that silently evaluates false would skip this without
-      # saying so. `[ -n "$VAR" ]` cannot be ambiguous, and it can explain itself.
-      #
-      # AN UNSET SECRET MUST SKIP, NEVER PUSH AN EMPTY STRING. A blank secret reads as "configured"
-      # on the Worker, so `no-token` — which names the fix — would become `unauthorised`, which
-      # describes the same state and sends the reader to reissue a token that was never created.
-      # Values reach wrangler on stdin and are never echoed; GitHub masks them in the log anyway.
       - name: Sync Worker secrets from the GitHub secret store
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
           MUNS_TOKEN: ${{ secrets.MUNS_TOKEN }}
         run: |
@@ -108,31 +67,26 @@ jobs:
           sync_one GH_DISPATCH_TOKEN "$GH_DISPATCH_TOKEN"
           sync_one MUNS_TOKEN "$MUNS_TOKEN"
 
-  # A GREEN TICK OVER A SKIPPED DEPLOY IS THE THING THAT HID THIS FOR DAYS.
-  #
-  # Deliberately does NOT fail: on this repository the skip is CORRECT, because Cloudflare's Git
-  # integration is doing the publishing, and a red X on every push would be a false alarm that
-  # trains everyone to ignore it. What it does is make the mode unmissable in the run summary, so
-  # "Deploy: success" can never again be read as "this workflow deployed something".
+
   report:
     needs: [secret, deploy]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Say which publish path was used
+      - name: Report actual publication
+        env:
+          AVAILABLE: ${{ needs.secret.outputs.available }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
         run: |
-          if [ "${{ needs.secret.outputs.available }}" = "true" ]; then
-            echo "### Published by this workflow" >> "$GITHUB_STEP_SUMMARY"
-            echo "\`wrangler deploy\` ran with CLOUDFLARE_API_TOKEN, and any Worker secrets present in the GitHub secret store were synced." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$DEPLOY_RESULT" = success ]; then
+            echo '### Published from the free GitHub Actions runner' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Wrangler uploaded the Worker and static assets directly; no Cloudflare build was used by this workflow.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$AVAILABLE" != true ]; then
+            echo '### GitHub publishing needs its deployment credential' >> "$GITHUB_STEP_SUMMARY"
+            echo 'CLOUDFLARE_API_TOKEN is missing. This run published nothing. Do not disconnect the existing publish path until the credential is installed and this path is verified.' >> "$GITHUB_STEP_SUMMARY"
+            echo '::warning title=GitHub deployment not configured::CLOUDFLARE_API_TOKEN is missing; this workflow published nothing.'
           else
-            echo "### This workflow published NOTHING — and that is expected here" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "\`CLOUDFLARE_API_TOKEN\` is not set, so the deploy job was skipped. This repository publishes through **Cloudflare's own Git integration**, which deploys on push without this workflow — verified: a commit pushed at 07:58 was live minutes later with this job skipped." >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Two consequences worth knowing:" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "- **Worker secrets are not synced from here.** Set them in the Cloudflare dashboard: *Workers & Pages → this Worker → Settings → Variables and Secrets*. That is where \`GH_DISPATCH_TOKEN\` (the news Fetch button) and \`MUNS_TOKEN\` (super-investor books) belong." >> "$GITHUB_STEP_SUMMARY"
-            echo "- **If the Git integration is ever disconnected, nothing publishes.** Add \`CLOUDFLARE_API_TOKEN\` as a repository secret to bring this workflow back as the publish path." >> "$GITHUB_STEP_SUMMARY"
-            echo "::warning title=Deploy skipped::CLOUDFLARE_API_TOKEN is unset, so this workflow deployed nothing. Publishing is handled by Cloudflare's Git integration; see the run summary."
+            echo "::error::GitHub deployment did not succeed ($DEPLOY_RESULT)."
+            exit 1
           fi

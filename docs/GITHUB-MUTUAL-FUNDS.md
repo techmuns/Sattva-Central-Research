@@ -74,3 +74,10 @@ public/private separation, authorization, and zero DO calls after publication.
 `verify-mutual-funds-budget-runtime.mjs` checks Node-to-Worker crypto compatibility
 and retirement of an existing MF alarm in the actual local Worker runtime. Existing
 MF arithmetic, source, denominator, coverage, correction and scanner checks remain.
+
+
+## Switching deployment off paid Workers Builds
+
+`.github/workflows/deploy.yml` is ready to validate and upload the existing Worker and static files directly from the standard GitHub runner. It reports the actual deploy result and watches its own configuration. The Cloudflare account ID is public configuration; the deployment API token stays in the repository's encrypted Actions secrets.
+
+The currently active Cloudflare Git build connection is separate from this code. Before disconnecting it, an operator must authorize and install a user API token scoped to this account with the minimum Worker deployment permissions, then verify a successful GitHub deployment. Do not reuse Wrangler's broad personal OAuth token. Disconnect the Cloudflare Git trigger only after that path works, and verify a subsequent normal main-branch push reaches the live site without a Workers Build. Creating the credential, changing the build connection, or manually starting a production deployment requires the user's specific authorization under AGENTS.md.

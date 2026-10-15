@@ -12,7 +12,7 @@ import { publishSnapshot } from './mutual-funds-github.mjs';
 
 fs.mkdirSync('.cache',{recursive:true});
 const root=fs.mkdtempSync(path.resolve('.cache/mf-github-'));
-const file=path.join(root,'source.sqlite'),secret='fixture-worker-secret-only-123456789',repo=MF_ORIGIN.includes('glow-central-research')?'techmuns/Glow-Central-Research':'techmuns/Sattva-Central-Research';
+const file=path.join(root,'source.sqlite'),secret='fixture-worker-secret-only-123456789',repo='techmuns/Sattva-Central-Research';
 const env={GITHUB_REPOSITORY:repo,GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',MF_STATE_KEY:'fixture-github-secret-only-987654321'};
 const isin='INE090A01021',other='INE040A01034',month=targetMonth(),prior=previousMonth(month),stamp=new Date().toISOString();
 try {

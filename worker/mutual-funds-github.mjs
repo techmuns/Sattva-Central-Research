@@ -1,13 +1,13 @@
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { readableOwnership } from '../public/js/data/mutual-funds-ownership.js';
-import { coverageState, validIsin, MF_ORIGIN } from './mutual-funds-model.mjs';
+import { coverageState, validIsin } from './mutual-funds-model.mjs';
 import { openForReader, hash,decode64 } from './mutual-funds-seal.mjs';
 
 export const MF_RELEASE='mutual-funds-data';
 export const MF_PARTS=64;
 export const mfPart=isin=>[...isin].reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,0)%MF_PARTS;
 export function mfRepo(env) {
-  const expected=MF_ORIGIN.includes('glow-central-research')?'techmuns/Glow-Central-Research':'techmuns/Sattva-Central-Research';
+  const expected='techmuns/Sattva-Central-Research';
   if(env.GH_REPO!==expected)throw Error('Snapshot repository unavailable');
   return env.GH_REPO;
 }
