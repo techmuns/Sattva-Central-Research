@@ -156,7 +156,7 @@ export class CaptureRegistry extends DurableObject {
     else if (await this.ctx.storage.get(NEWSLETTER_TIMER_KEY)) await this.newsletterSchedule.wake();
     else if (await this.ctx.storage.get('breakout-timer')) await this.breakoutSchedule.wake();
     else if (await this.ctx.storage.get('summary-timer')) await this.summarySchedule.wake();
-    else await this.schedule.request('cron');
+    else await this.ctx.storage.deleteAlarm(); // Retire the old Telegram dispatch alarm.
   }
   list() {
     return this.ctx.storage.sql.exec('SELECT isin, ticker, name FROM companies ORDER BY isin').toArray();

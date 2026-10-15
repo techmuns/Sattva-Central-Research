@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { createServer } from 'node:net';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 
 // Local workerd only: exercise the actual Durable Object, SQL, RPC and restart persistence.
-const scratch = mkdtempSync(join(tmpdir(), 'sattva-telegram-runtime-'));
+mkdirSync('.cache',{recursive:true});
+const scratch = mkdtempSync(resolve('.cache/sattva-telegram-runtime-'));
 const portFinder = createServer(); await new Promise(done => portFinder.listen(0, '127.0.0.1', done));
 const port = portFinder.address().port; await new Promise(done => portFinder.close(done));
 const origin = `http://127.0.0.1:${port}`;
@@ -28,7 +28,7 @@ export class TestScheduler extends CaptureRegistry {
     };
   }
   async inspect() {
-    return { ...await this.status(), alarm:await this.ctx.storage.getAlarm(), posts:await this.ctx.storage.get('test-posts') || 0 };
+    return { ...await this.status(), alarm:await this.ctx.storage.getAlarm(), posts:await this.ctx.storage.get('test-posts') || 0, legacy:await this.ctx.storage.get('schedule') || null };
   }
   async soon() {
     const at=Date.now()+3000;
@@ -79,26 +79,15 @@ const read = async () => (await fetch(`${origin}/status`)).json();
 const post = path => fetch(`${origin}${path}`, {method:'POST'});
 try {
   await start();
-  assert.deepEqual(await read(), {enabled:false,intervalSeconds:600,alarmAt:null,nextAttemptAt:null,lastAttemptAt:null,lastResult:'not-started',reason:null,failures:0,activeRun:null,runOverdue:false,alarm:null,posts:0});
-  const results=await Promise.all(Array.from({length:12},async()=> (await post('/start')).json()));
-  assert.equal(results.filter(result=>result.dispatched).length,1);
-  const first=await read();
-  assert.equal(first.posts,1); assert(first.alarm>Date.now());
-  assert.equal(first.alarmAt,new Date(first.alarm).toISOString(),'read-only status reflects the actual runtime alarm');
-  const company=await (await fetch(`${origin}/company`)).json();
-  assert.equal(company.companies.length,1);
-  assert.equal(company.alarm,null,'company registry objects never arm collection');
-  assert.equal(company.enabled,false); assert.equal(company.posts,0,'distinct objects isolate registry data from the channel timer');
-  await stop(); await start();
-  assert.deepEqual(await read(),first,'actual SQL storage, alarm and claim survive full runtime restart');
-  await post('/soon');
-  // No requests keep the object active while the real workerd alarm fires.
+  const initial=await read();assert.equal(initial.runtime,'github-actions');assert.equal(initial.alarm,null);assert.equal(initial.posts,0);
+  assert((await (await post('/start')).json()).dispatched);
+  const first=await read();assert.equal(first.posts,1);assert.equal(first.alarm,null,'Explicit refresh cannot arm a Cloudflare timer');
+  const company=await (await fetch(`${origin}/company`)).json();assert.equal(company.companies.length,1);assert.equal(company.alarm,null);assert.equal(company.posts,0);
+  await post('/soon');const legacy=await read();assert(legacy.alarm>Date.now());
+  await stop();await start();
   await new Promise(done=>setTimeout(done,5000));
-  const after=await read();
-  assert.equal(after.posts,2,'the alarm dispatches again without a browser request');
-  assert.equal(after.lastResult,'dispatched');
-  assert(after.alarm>Date.now()+500000,'the alarm has scheduled its next recurrence');
-  assert.equal((await (await post('/start')).json()).reason,'cooling-down');
-  assert.equal((await read()).posts,2);
-  console.log('PASS local workerd Telegram timer: real RPC/storage, concurrent deduplication, full restart persistence and autonomous recurring alarm');
+  const retired=await read();assert.equal(retired.alarm,null,'An existing Telegram alarm retires after restart');
+  assert.equal(retired.posts,1,'The old alarm cannot dispatch background work from Cloudflare');
+  assert.deepEqual(retired.legacy,legacy.legacy,'Retiring the timer preserves its existing history');
+  console.log('PASS local workerd Telegram migration: old alarm retires without dispatch, legacy state survives restart, explicit refresh stays stateless and company storage is isolated');
 } finally { await stop(); rmSync(scratch,{recursive:true,force:true}); }

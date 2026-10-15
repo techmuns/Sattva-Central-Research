@@ -38,6 +38,8 @@ assert(codes(assess({ publicSafety: { reason: 'rate-limit', nextAttemptAt: at(60
 assert(codes(assess({ apiSafety: { paused: true, reason: 'account-attention' } })).includes('account-review-required'));
 assert(codes(assess({ apiSafety: { paused: false, reason: 'connection', nextAttemptAt: at(15) } })).includes('api-source-paused'));
 assert(codes(assess({}, { enabled: false })).includes('scheduler-disabled'));
+assert(assess({}, {runtime:'github-actions',alarmAt:null,nextAttemptAt:null}).ok,'GitHub scheduling has no Cloudflare alarm or promised next start');
+assert(codes(assess({}, {runtime:'github-actions',alarmAt:null,nextAttemptAt:null,lastAttemptAt:at(-76)})).includes('scheduler-attempt-overdue'),'Missing GitHub runs remain visible');
 assert(codes(assess({}, { alarmAt: null })).includes('scheduler-alarm-missing'));
 assert.equal(assess({}, { alarmAt: null, nextAttemptAt: at(0) }).status, 'warning', 'brief alarm-start state is not a lost timer');
 assert(codes(assess({}, { alarmAt: at(-3), nextAttemptAt: at(-3) })).includes('scheduler-alarm-overdue'));

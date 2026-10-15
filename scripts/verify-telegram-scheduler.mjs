@@ -1,105 +1,39 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dispatchWorkflow, TELEGRAM_WORKFLOW } from '../worker/github-actions.mjs';
-import { TelegramSchedule, TELEGRAM_INTERVAL_MS, TELEGRAM_RUN_OVERDUE_MS, TELEGRAM_SCHEDULER_NAME, TELEGRAM_PRODUCTION_HOST } from '../worker/telegram-scheduler.mjs';
+import {readFileSync} from 'node:fs';
+import {dispatchWorkflow,TELEGRAM_WORKFLOW} from '../worker/github-actions.mjs';
+import {TelegramSchedule,TELEGRAM_INTERVAL_MS,TELEGRAM_RUN_OVERDUE_MS,TELEGRAM_PRODUCTION_HOST} from '../worker/telegram-scheduler.mjs';
 import worker from '../worker/index.js';
-
-class Store {
-  data = new Map(); alarm = null; tail = Promise.resolve();
-  async get(key) { return structuredClone(this.data.get(key)); }
-  async put(key, value) { this.data.set(key, structuredClone(value)); }
-  async getAlarm() { return this.alarm; }
-  async setAlarm(value) { this.alarm = value; }
-  async deleteAlarm() { this.alarm = null; }
-  transaction(fn) {
-    const result = this.tail.then(() => fn(this));
-    this.tail = result.catch(() => {});
-    return result;
-  }
-}
-const env = { GH_DISPATCH_TOKEN: 'local-test-secret', GH_REPO: 'techmuns/Sattva-Central-Research', GH_REF: 'main' };
-let time = Date.parse('2026-09-06T09:00:00Z'), posts = 0, calls = 0, scenario = 'ok', recentAt = null;
-const fetcher = async (input, init) => {
-  calls++;
-  const url = new URL(input);
-  assert.equal(url.origin, 'https://api.github.com');
+const env={GH_DISPATCH_TOKEN:'local-test-secret',GH_REPO:'techmuns/Sattva-Central-Research',GH_REF:'main'};
+const time=Date.parse('2026-10-15T09:00:00Z');
+const noStorage=new Proxy({},{get(){throw Error('GitHub schedule must not access Cloudflare storage');}});
+let recent=null,posts=0,calls=0,fail=false;
+const fetcher=async(raw,options)=>{
+  calls++;const url=new URL(raw);assert.equal(url.origin,'https://api.github.com');
   assert(url.pathname.startsWith('/repos/techmuns/Sattva-Central-Research/actions/workflows/telegram-refresh.yml/'));
-  assert.equal(init.headers.Authorization || init.headers.authorization, 'Bearer local-test-secret');
-  if (scenario === 'read-error') return new Response('private upstream response', { status: 401 });
-  if (init.method === 'POST') {
-    posts++;
-    assert.deepEqual(JSON.parse(init.body), { ref: 'main', inputs: { source: 'auto' } });
-    if (scenario === 'lost-response') throw Error('private upstream response');
-    return new Response(null, { status: 204 });
-  }
-  let runs = [];
-  if (['running', 'stalled'].includes(scenario) && url.searchParams.get('status') === 'queued') runs = [{ id: 1, status: 'queued',
-    ...(scenario === 'stalled' ? { created_at: new Date(time - TELEGRAM_RUN_OVERDUE_MS - 1).toISOString() } : {}) }];
-  if (recentAt && !url.searchParams.has('status')) runs = [{ id: 2, status: 'completed',
-    conclusion: scenario === 'recent-failed' ? 'failure' : 'success', created_at: recentAt }];
-  return Response.json({ total_count: runs.length, workflow_runs: runs });
+  assert.equal(options.headers.authorization,'Bearer local-test-secret');
+  if(fail)return new Response('private upstream detail',{status:403});
+  if(options.method==='POST'){posts++;assert.deepEqual(JSON.parse(options.body),{ref:'main',inputs:{source:'auto'}});return new Response(null,{status:204});}
+  const status=url.searchParams.get('status');
+  const rows=recent&&(!status||recent.status===status)?[recent]:[];
+  return Response.json({total_count:rows.length,workflow_runs:rows});
 };
-const storage = new Store();
-const create = (overrides = {}) => new TelegramSchedule(storage, { ...env, ...overrides }, { fetcher, now: () => time });
-let schedule = create();
-assert.equal((await schedule.status()).enabled, false);
-assert.equal(await storage.getAlarm(), null, 'reading status must not create an alarm or collect');
-const simultaneous = await Promise.all(Array.from({ length: 15 }, () => schedule.request('auto')));
-assert.equal(posts, 1, 'concurrent requests share one durable claim');
-assert.equal(simultaneous.filter(r => r.dispatched).length, 1);
-const firstAlarm = await storage.getAlarm();
-schedule = create(); // Simulate eviction: nothing important lives only in memory.
-assert.equal((await schedule.request('auto')).reason, 'cooling-down');
-assert.equal(await storage.getAlarm(), firstAlarm, 'visits do not push the timer into the future');
-storage.alarm = null;
-assert.equal((await schedule.status()).alarmAt, null, 'a status read reports the lost alarm without repairing it');
-assert.equal(await storage.getAlarm(), null);
-await schedule.request('auto');
-assert.equal(await storage.getAlarm(), firstAlarm, 'recover the timer without bypassing its claim');
-time += TELEGRAM_INTERVAL_MS;
-scenario = 'running';
-assert.equal((await schedule.request('auto')).reason, 'already-running');
-assert.equal(posts, 1, 'an older active run blocks collection');
-assert.equal((await schedule.status()).activeRun.status, 'queued');
-assert.equal((await schedule.status()).runOverdue, false);
-time += TELEGRAM_RUN_OVERDUE_MS + 1;
-assert.equal((await schedule.request('auto')).reason, 'run-overdue', 'an undated queued run cannot hide forever behind success');
-assert.equal((await schedule.status()).lastResult, 'blocked');
-assert.equal((await schedule.status()).runOverdue, true);
-assert.equal(posts, 1, 'overdue diagnostics never cancel or duplicate an active job');
-time = await storage.getAlarm();
-scenario = 'stalled';
-assert.equal((await schedule.request('auto')).ok, false, 'a dated stalled run is also an explicit failure');
-assert.equal(posts, 1);
-time += TELEGRAM_INTERVAL_MS;
-scenario = 'ok'; recentAt = new Date(time - 60000).toISOString();
-assert.equal((await schedule.request('auto')).reason, 'cooling-down');
-assert.equal(posts, 1, 'a recent GitHub scheduled run prevents an extra timer run');
-time = await storage.getAlarm(); scenario = 'recent-failed'; recentAt = new Date(time - 60000).toISOString();
-assert.equal((await schedule.request('auto')).reason, 'latest-run-failed');
-assert.equal((await schedule.status()).lastResult, 'recent-run-failed', 'a recent failed workflow is not a healthy cooldown');
-time = await storage.getAlarm(); recentAt = null; scenario = 'lost-response';
-assert.equal((await schedule.request('auto')).ok, false);
-assert.equal(posts, 2);
-assert.equal((await create().request('auto')).reason, 'cooling-down');
-assert.equal(posts, 2, 'ambiguous POST is not retried on replay or restart');
-time = await storage.getAlarm(); scenario = 'read-error';
-await schedule.request('auto');
-const failed = await schedule.status();
-assert.equal(failed.reason, 'unauthorised');
-assert.equal(Date.parse(failed.nextAttemptAt) - time, TELEGRAM_INTERVAL_MS * 2);
-assert(!JSON.stringify(failed).includes('private'));
-assert(!JSON.stringify([...storage.data.values()]).includes('secret'), 'credentials never enter durable storage');
-time = await storage.getAlarm(); scenario = 'ok';
-assert.equal((await schedule.request('auto')).dispatched, true);
-assert.equal((await schedule.status()).failures, 0, 'recover automatically after upstream service recovers');
-const beforeInvalid = calls;
-time = await storage.getAlarm();
-assert.equal((await create({ GH_REF: 'preview' }).request()).reason, 'configuration');
-assert.equal(calls, beforeInvalid, 'a misconfigured scheduler must never contact GitHub');
-await create({ TELEGRAM_SCHEDULER_DISABLED: 'true' }).request();
-assert.equal((await schedule.status()).enabled, false);
-assert.equal(await storage.getAlarm(), null);
+const create=(overrides={})=>new TelegramSchedule(noStorage,{...env,...overrides},{fetcher,now:()=>time});
+let schedule=create();
+assert.equal((await schedule.status()).runtime,'github-actions');assert.equal(posts,0,'Status never dispatches');
+assert.equal((await schedule.status()).alarmAt,null);
+assert((await schedule.request('auto')).dispatched);assert.equal(posts,1);
+recent={id:10,status:'completed',conclusion:'success',created_at:new Date(time-1000).toISOString()};
+assert.equal((await create().request('auto')).reason,'cooling-down','A new Worker instance checks GitHub instead of relying on lost local memory');
+assert.equal(posts,1);
+recent.conclusion='failure';assert.equal((await schedule.request('auto')).reason,'latest-run-failed');
+assert.equal((await schedule.status()).lastResult,'recent-run-failed');
+recent={id:11,status:'in_progress',created_at:new Date(time-TELEGRAM_RUN_OVERDUE_MS-1).toISOString()};
+assert.equal((await schedule.status()).runOverdue,true);assert.equal((await schedule.request('auto')).reason,'run-overdue');assert.equal(posts,1);
+const before=calls;assert.equal((await create({GH_REF:'preview'}).request()).reason,'configuration');
+assert.equal((await create({GH_REPO:'other/repo'}).request()).reason,'configuration');
+assert.equal((await create({TELEGRAM_SCHEDULER_DISABLED:'true'}).request()).reason,'operator-disabled');assert.equal(calls,before);
+fail=true;const failed=await schedule.request();assert.equal(failed.reason,'forbidden');assert(!JSON.stringify(failed).includes('private upstream'));
+assert.equal(TELEGRAM_INTERVAL_MS,600000);
 
 // Actual 13 September request: GitHub kept it queued with zero jobs while newer
 // collections completed. It must not permanently suppress the independent timer.
@@ -196,29 +130,21 @@ const slowAudit = queuedAPI({ jobInventory: { get total_count() { auditClock += 
 await assert.rejects(dispatchWorkflow(slowAudit.fetcher, { ...queueCfg, now: () => auditClock }, TELEGRAM_WORKFLOW, 'main', { source: 'auto' }, recovery),
   { code: 'unreachable' });
 assert.equal(slowAudit.dispatches.length, 0, 'the audit cannot run past its shared deadline');
-const recoveringStore = new Store(), recoveringAPI = queuedAPI();
-const recoveringSchedule = new TelegramSchedule(recoveringStore, env, { fetcher: recoveringAPI.fetcher, now: () => queueTime });
-assert.equal((await recoveringSchedule.request('auto')).dispatched, true);
-const recoveredStatus = await recoveringSchedule.status();
-assert.equal(recoveredStatus.runOverdue, false);
-assert.deepEqual(recoveredStatus.queueRecovery.runIds, [queueFixture.id]);
-assert.equal((await recoveringSchedule.request('auto')).reason, 'cooling-down');
-assert.equal(recoveringAPI.dispatches.length, 1, 'orphan recovery still obeys the durable claim');
-assert(!JSON.stringify([...recoveringStore.data.values()]).includes('secret'));
-assert.match(readFileSync(new URL('../.github/workflows/telegram-refresh.yml', import.meta.url), 'utf8'),
-  /concurrency:\s*\n\s*group: telegram-account-collection\s*\n\s*cancel-in-progress: false/, 'workflow mutex remains the execution guard');
 
-let starts = 0, reads = 0;
-const routeEnv = { TELEGRAM_SCHEDULER: { getByName(name) {
-  assert.equal(name, TELEGRAM_SCHEDULER_NAME);
-  return { async status() { reads++; return { enabled: true }; }, async request(source) { starts++; assert.equal(source, 'auto'); return { ok: true }; } };
-} } };
-const request = (path, method = 'GET', host = TELEGRAM_PRODUCTION_HOST) => new Request(`https://${host}${path}`, { method });
-assert.equal((await worker.fetch(request('/api/telegram/schedule'), routeEnv, {})).status, 200);
-assert.equal(reads, 1); assert.equal(starts, 0);
-assert.equal((await worker.fetch(request('/api/telegram/refresh'), routeEnv, {})).status, 405);
-assert.equal((await worker.fetch(request('/api/telegram/refresh?source=auto', 'POST', 'preview.example'), routeEnv, {})).status, 403);
-assert.equal(starts, 0);
-assert.equal((await worker.fetch(request('/api/telegram/refresh?source=auto', 'POST'), routeEnv, {})).status, 200);
-assert.equal(starts, 1);
-console.log('PASS Telegram timer: durable single claim, restart/replay protection, recent/active runs, recovery/backoff, secret isolation, read-only status and preview boundaries');
+assert.match(readFileSync('.github/workflows/telegram-refresh.yml','utf8'),/cron: '7,17,27,37,47,57/,'GitHub retains the independent schedule');
+assert.match(readFileSync('.github/workflows/telegram-refresh.yml','utf8'),/group: telegram-account-collection\s+cancel-in-progress: false/,'GitHub remains the source-execution mutex');
+const originalFetch=globalThis.fetch,originalCaches=globalThis.caches;
+try {
+  fail=false;recent=null;const cached=new Map();globalThis.fetch=fetcher;
+  globalThis.caches={default:{match:async request=>cached.get(request.url)?.clone(),put:async(request,value)=>cached.set(request.url,value.clone())}};
+  const pending=[],ctx={waitUntil:promise=>pending.push(promise)};
+  const routeEnv={...env,TELEGRAM_SCHEDULER:{getByName(){throw Error('Routes must not call a Durable Object');}}};
+  const request=(path,method='GET',host=TELEGRAM_PRODUCTION_HOST)=>new Request(`https://${host}${path}`,{method});
+  const start=posts;
+  assert.equal((await worker.fetch(request('/api/telegram/schedule'),routeEnv,ctx)).status,200);assert.equal(posts,start);
+  assert.equal((await worker.fetch(request('/api/telegram/refresh'),routeEnv,ctx)).status,405);
+  assert.equal((await worker.fetch(request('/api/telegram/refresh?source=auto','POST','preview.example'),routeEnv,ctx)).status,403);
+  const result=await worker.fetch(request('/api/telegram/refresh?source=auto','POST'),routeEnv,ctx);assert((await result.json()).dispatched);await Promise.all(pending);
+  const cooled=await worker.fetch(request('/api/telegram/refresh?source=auto','POST'),routeEnv,ctx);assert.equal((await cooled.json()).reason,'cooling-down');assert.equal(posts,start+1);
+}finally{globalThis.fetch=originalFetch;globalThis.caches=originalCaches;}
+console.log('PASS GitHub Telegram schedule: no Cloudflare state or timer, truthful run status, source cooldowns and orphan-run safety, read-only GET and production-only cached dispatch');

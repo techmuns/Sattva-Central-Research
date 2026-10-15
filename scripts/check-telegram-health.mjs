@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Read-only delivery and timer watchdog. It never dispatches, repairs alarms or contacts Telegram.
+// Read-only delivery and scheduling watchdog. It never dispatches or contacts Telegram.
 import { appendFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -41,6 +41,9 @@ export function assessTelegramHealth(capture, schedule, { now = Date.now() } = {
   else {
     if (!schedule.enabled) add('scheduler-disabled');
     else {
+      // Keep compatibility while an older deployment is still live. A GitHub
+      // schedule has no Cloudflare alarm or guaranteed next execution time.
+      if(schedule.runtime!=='github-actions') {
       const deadline = stamp(schedule.nextAttemptAt), alarm = stamp(schedule.alarmAt);
       if (!Number.isFinite(deadline)) add('scheduler-deadline-invalid');
       if (!Number.isFinite(alarm)) {
@@ -51,6 +54,7 @@ export function assessTelegramHealth(capture, schedule, { now = Date.now() } = {
       } else {
         if (now - alarm > 120000) add('scheduler-alarm-overdue');
         if (Number.isFinite(deadline) && Math.abs(alarm - deadline) > 1000) add('scheduler-alarm-mismatch');
+      }
       }
       if (!validTime(schedule.lastAttemptAt, now)) add('scheduler-attempt-time-invalid');
       else if (now - stamp(schedule.lastAttemptAt) > 75 * 60000) add('scheduler-attempt-overdue');
