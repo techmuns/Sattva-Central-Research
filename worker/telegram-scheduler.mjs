@@ -28,7 +28,7 @@ export class TelegramSchedule {
       return {...base,lastAttemptAt:iso(at),lastResult:runOverdue?'blocked':active?'running':recent.conclusion==='success'?'recent-run':'recent-run-failed',
         reason:runOverdue?'run-overdue':!active&&recent.conclusion!=='success'?'latest-run-failed':null,
         activeRun:active?{id:recent.id,status:recent.status,createdAt:recent.createdAt}:null,runOverdue};
-    }catch(error){return {...base,lastResult:'failed',reason:error.message==='configuration'?'configuration':REASONS.has(error.code)?error.code:'upstream'};}
+    }catch(error){return {...base,enabled:error.message==='configuration'?false:base.enabled,lastResult:'failed',reason:error.message==='configuration'?'configuration':REASONS.has(error.code)?error.code:'upstream'};}
   }
   async request(source='auto') {
     if(this.disabled())return {ok:false,dispatched:false,reason:'operator-disabled'};

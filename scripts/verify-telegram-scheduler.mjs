@@ -31,6 +31,7 @@ recent={id:11,status:'in_progress',created_at:new Date(time-TELEGRAM_RUN_OVERDUE
 assert.equal((await schedule.status()).runOverdue,true);assert.equal((await schedule.request('auto')).reason,'run-overdue');assert.equal(posts,1);
 const before=calls;assert.equal((await create({GH_REF:'preview'}).request()).reason,'configuration');
 assert.equal((await create({GH_REPO:'other/repo'}).request()).reason,'configuration');
+assert.equal((await create({GH_REPO:''}).status()).enabled,false,'Missing configuration cannot be reported as an enabled GitHub schedule');
 assert.equal((await create({TELEGRAM_SCHEDULER_DISABLED:'true'}).request()).reason,'operator-disabled');assert.equal(calls,before);
 fail=true;const failed=await schedule.request();assert.equal(failed.reason,'forbidden');assert(!JSON.stringify(failed).includes('private upstream'));
 assert.equal(TELEGRAM_INTERVAL_MS,600000);
