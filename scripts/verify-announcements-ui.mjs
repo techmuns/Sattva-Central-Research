@@ -419,8 +419,9 @@ try {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme}: no sideways page scroll at 390px`);
     // Resolve the mounted row inside the same browser task as its measurements: arriving
     // rows can replace a locator's earlier element handle while the viewport is resized.
-    const controls = await page.evaluate(() => {
+    const controls = await page.waitForFunction(() => {
       const row = document.querySelector('table[data-shared-column-layout="corp-announcements"] tbody tr[data-row-key]');
+      if(!row)return null;
       return {
         subjectWatch: row.querySelector('.record-subject-column [data-watch]') !== null,
         bookmark: row.querySelector('.record-identity-actions [data-bookmark-key]').getBoundingClientRect().width,
@@ -428,7 +429,8 @@ try {
         wrap: getComputedStyle(row.querySelector('[data-record-name]')).whiteSpace,
       };
     });
-    assert(!controls.subjectWatch && controls.bookmark >= 28 && controls.wrap === 'normal', `${theme}: mobile keeps separate reachable actions and complete title wrapping ${JSON.stringify(controls)}`);
+    const measured=await controls.jsonValue();await controls.dispose();
+    assert(!measured.subjectWatch && measured.bookmark >= 28 && measured.wrap === 'normal', `${theme}: mobile keeps separate reachable actions and complete title wrapping ${JSON.stringify(measured)}`);
     await page.locator('tbody tr[data-row-key]').first().locator('.ca-company-cell').click();
     await popup.waitFor();
     const box = await popup.boundingBox();
