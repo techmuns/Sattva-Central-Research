@@ -34,7 +34,7 @@ export async function decryptState(file,out,env=process.env) {
   try{await pipeline(fs.createReadStream(file,{start:17,end:size-17}),decipher,createGunzip(),fs.createWriteStream(temp));fs.renameSync(temp,out);}
   catch(error){fs.rmSync(temp,{force:true});throw error;}
 }
-export async function restoreState({env=process.env,legacyClient,fetcher=fetch,file=MF_LOCAL_FILE}={}) {
+export async function restoreState({env=process.env,legacyClient,fetcher=fetch,file=MF_LOCAL_FILE,onProgress=()=>{}}={}) {
   key(env);fs.mkdirSync(path.dirname(file),{recursive:true});
   const config=runnerEnv(env),snapshot=await mfManifest(config,{fetcher});
   if(snapshot) {
@@ -64,7 +64,7 @@ export async function restoreState({env=process.env,legacyClient,fetcher=fetch,f
         const page=await legacyClient({action:'export',table:name,cursor});
         if(!Array.isArray(page.rows))throw Error('Migration page missing');
         local.storage.transactionSync(()=>{for(const row of page.rows)insert.run(row.__migration_rowid,...columns.map(c=>row[c]??null));});
-        received+=page.rows.length;if(!page.cursor)break;if(page.cursor<=cursor)throw Error('Migration did not advance');cursor=page.cursor;
+        received+=page.rows.length;onProgress({table:name,received,count});if(!page.cursor)break;if(page.cursor<=cursor)throw Error('Migration did not advance');cursor=page.cursor;
       }
       if(received!==count)throw Error('Migration row count changed; source must be quiescent');
     }
@@ -110,7 +110,7 @@ export async function buildSnapshot(local,recipient,{env=process.env,out=path.re
     for(const [part,data] of parts) {
       // Neither a public hash of an ISIN/month nor its bucket is private: both
       // can be enumerated. Keep the directory encrypted and its filenames opaque.
-      const label=privateRead?createHmac('sha256',key(env)).update(`private-bucket:${part}`).digest('hex'):part;
+      const label=privateRead?createHmac('sha256',key(env)).update(`${repo}:private-bucket:${part}`).digest('hex'):part;
       const records=Object.entries(data).sort(([a],[b])=>a.localeCompare(b));index[part]=[];
       let page={},bytes=2,first=null,last=null;
       const flush=async()=>{

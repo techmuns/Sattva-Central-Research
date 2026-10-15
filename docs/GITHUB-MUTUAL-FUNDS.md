@@ -23,6 +23,9 @@ The first main-branch Actions run copies every row of the named MF tables throug
 a bounded, authenticated, read-only export. Source rowids, corrections, private
 observations and refusal cooldowns survive. Any unavailable table/page or count
 mismatch blocks publication instead of replacing history with an empty store.
+The one-time export streams up to 2,000 rows per response and stops below 2 MiB,
+so small observations do not require thousands of tiny requests. Wide revisions
+retain the same byte ceiling. Transfer logs show aggregate row counts only.
 While the first transfer is pending, legacy reads remain available. Once a GitHub
 manifest exists, reader requests use the prepared GitHub assets, with no Durable
 Object calls. Access failures do not fall back to a different dataset.
