@@ -186,11 +186,15 @@ async function main() {
     const result=await bootstrapBreakouts({client:()=>exportClient(input)});ready=true;return result;
   };
   const local=await githubBreakouts({legacyClient,recipient});
+  const {githubPriceLevels}=await import('./lib/price-levels-github.mjs');
+  let levelsReady=false;const levelExport=async input=>{const read=()=>exportClient({...input,action:'price-levels-export'});if(levelsReady||input.table)return read();const value=await bootstrapBreakouts({client:read});levelsReady=true;return value;};
+  const levels=await githubPriceLevels({legacyClient:levelExport,inputs:()=>exportClient({action:'price-levels-inputs'}),recipient});
+  const publish=local.publish;local.publish=async()=>{await levels.publish();return publish();};
   const {refreshBreakoutInputs}=await import('./lib/breakout-inputs.mjs');let inputRoot=resolve('public/data');
   const discover=async previous=>{let inputFailed=false;try{const next=await refreshBreakoutInputs();inputRoot=next.root;await local.storage.put('github-breakout-inputs',{revision:next.revision,checkedAt:Date.now()});}catch{inputFailed=true;}return discoverBreakoutTargets(previous,{inputRoot,inputFailed});};
   try {
-    await runBreakoutRunner(local,{discover,token:process.env.UPSTOX_BACKUP_ENABLED==='true'?process.env.UPSTOX_ACCESS_TOKEN||'':'',notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
+    await runBreakoutRunner(local,{discover,checkLevels:()=>levels.tick(),token:process.env.UPSTOX_BACKUP_ENABLED==='true'?process.env.UPSTOX_ACCESS_TOKEN||'':'',notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
     console.log('Retained minute and fallback quotes saved on GitHub; static publication requested.');
-  }finally{await local.close();}
+  }finally{await levels.close();await local.close();}
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) main().catch(() => { console.error('Breakout capture did not complete. Saved checkpoints are retained; inspect the capture health endpoint.'); process.exitCode = 1; });
