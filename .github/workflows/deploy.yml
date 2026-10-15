@@ -9,20 +9,62 @@ on:
       - "worker/**"
       - "wrangler.jsonc"
       - ".github/workflows/deploy.yml"
+      - "scripts/github-deploy-state.mjs"
   workflow_dispatch:
+  workflow_run:
+    branches: [main]
+    types: [completed]
+    workflows:
+      - "Alert pool refresh"
+      - "Announcement index refresh"
+      - "Corporate announcements refresh"
+      - "Breakout price and volume capture"
+      - "BSE read-only access check"
+      - "NSE and BSE bulk/block refresh"
+      - "Company feed access check"
+      - "Company news refresh"
+      - "Corporate actions refresh"
+      - "Family book sync"
+      - "Filings operational health"
+      - "Filings and four-category trades refresh"
+      - "Investor exchange disclosures"
+      - "IPOPlatform collection"
+      - "Market news refresh"
+      - "Mutual Fund disclosure capture"
+      - "Private MF Scanner capture"
+      - "News publication health"
+      - "News capture recovery"
+      - "NSE announcements refresh"
+      - "Price-move verification"
+      - "RSS news refresh"
+      - "Screener access check"
+      - "Screener concall collection"
+      - "Screener Insights collection"
+      - "Private Screener summaries"
+      - "Sector KPIs refresh"
+      - "Data refresh"
+      - "Telegram archive"
+      - "Telegram collection"
+      - "TradingView portfolio news"
+      - "Twitter refresh"
+  # GITHUB_TOKEN data commits do not trigger another push workflow.
+  schedule:
+    - cron: "4,9,14,19,24,29,34,39,44,49,54,59 * * * *"
 
 permissions:
   contents: read
+  deployments: write
 
 env:
   CLOUDFLARE_ACCOUNT_ID: a441977d2344922f96303859b74754d8
 
 concurrency:
   group: deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   secret:
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
@@ -35,20 +77,41 @@ jobs:
     needs: secret
     if: needs.secret.outputs.available == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          filter: blob:none
+          sparse-checkout: scripts
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
+      - name: Compare published inputs with the last successful upload
+        id: plan
+        run: node scripts/github-deploy-state.mjs plan
+      - name: Load the complete site for a changed publication
+        if: steps.plan.outputs.changed == 'true'
+        run: git sparse-checkout disable
       - name: Validate the bundle
+        if: steps.plan.outputs.changed == 'true'
         run: npx --yes wrangler@4 deploy --dry-run
       - name: Deploy
+        id: upload
+        if: steps.plan.outputs.changed == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: npx --yes wrangler@4 deploy
 
+      - name: Record the actual upload result
+        if: always() && steps.plan.outputs.deployment_id != ''
+        env:
+          DEPLOYMENT_ID: ${{ steps.plan.outputs.deployment_id }}
+          DEPLOY_OUTCOME: ${{ steps.upload.outcome }}
+        run: node scripts/github-deploy-state.mjs finish
       - name: Sync Worker secrets from the GitHub secret store
+        if: steps.upload.outcome == 'success'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
@@ -80,8 +143,8 @@ jobs:
           DEPLOY_RESULT: ${{ needs.deploy.result }}
         run: |
           if [ "$DEPLOY_RESULT" = success ]; then
-            echo '### Published from the free GitHub Actions runner' >> "$GITHUB_STEP_SUMMARY"
-            echo 'Wrangler uploaded the Worker and static assets directly; no Cloudflare build was used by this workflow.' >> "$GITHUB_STEP_SUMMARY"
+            echo '### GitHub publication check succeeded' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Changed Worker and static files were uploaded directly; unchanged inputs were skipped. No Cloudflare build was used by this workflow.' >> "$GITHUB_STEP_SUMMARY"
           elif [ "$AVAILABLE" != true ]; then
             echo '### GitHub publishing needs its deployment credential' >> "$GITHUB_STEP_SUMMARY"
             echo 'CLOUDFLARE_API_TOKEN is missing. This run published nothing. Do not disconnect the existing publish path until the credential is installed and this path is verified.' >> "$GITHUB_STEP_SUMMARY"
