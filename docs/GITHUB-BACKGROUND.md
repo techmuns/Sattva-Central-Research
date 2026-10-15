@@ -48,11 +48,49 @@ modules reach an already-open session. Background state uses the same existing
 repository secret supplied to MF, with a distinct feature/repository HKDF context.
 Do not rotate that secret without preserving and re-encrypting retained state.
 
+## Breakout quotes and history
+
+The existing GitHub workflow owns both the minute Upstox sampler and the independent
+fifteen-minute fallback walk. During the exchange window one standard runner keeps
+sampling for up to forty-five minutes; a slower fallback request does not suspend
+the minute loop. The existing workflow concurrency prevents overlapping owners.
+GitHub scheduling and runner handovers remain best effort. Source quote times,
+missing intervals, partial inventories and overdue checks remain visible; deployment
+or archive publication never advances a source's successful check time.
+
+Before source work, the first runner copies and verifies every capture table,
+original rowid, instrument configuration and timer metadata through the fixed
+main-workflow read-only export. It publishes an acknowledged encrypted restart
+bundle. Subsequent runs restore that bundle rather than re-importing Cloudflare.
+The old Cloudflare collector writes are rejected and both old quote alarms retire.
+Saved Cloudflare history remains available as the original migration source.
+
+The runner keeps the original quote providers, exact exchange/ISIN matching,
+oldest-first walk, retry ceilings and recovery rules. Each discovery refresh pins
+all public inputs to one current main revision. Failed input refreshes preserve
+prior targets and report partial discovery. Live portfolio and watchlist reads
+remain inputs; their request-time services do not perform collection.
+
+The encrypted `breakout-data` bundle contains the complete restart database and
+prepared reader files. Static hosting receives only encrypted reader envelopes.
+Four days of minute quotes, older detected changes, retained fallback observations,
+recovered rows and archived gap totals preserve the original retention rules.
+Prepared history preserves exact `(at, run)` ordering and older pagination cursors,
+including after new captures. Current quote selection uses the original freshness
+rules at read time, so a delayed minute publication can use a fresher fallback.
+Reader requests perform no Cloudflare SQL or GitHub metadata requests after the
+first prepared publication. Failed or corrupt prepared data fails visibly.
+
+The runner requests the existing static deployment after each saved generation;
+the existing deployment schedule also catches up. A queued deployment may coalesce
+several generations, while the full acknowledged quote history remains on GitHub.
+Source timestamps and the original two-minute freshness assessment expose delivery
+lags. Publication failures retain the last acknowledged archive and fail the job.
+
 ## Remaining transfer work
 
 Mutual Funds has its separate encrypted retained-state transfer and prepared reader snapshots documented in `GITHUB-MUTUAL-FUNDS.md`. Telegram's small scheduling change must not be presented as migrating the remaining engines:
 
-- Breakouts: the minute Upstox collector, fallback history, recovery gaps and source identity mappings.
 - Family price levels: interactive edits, tombstones, live quote checks and the hit ledger. Moving the checker cannot overwrite new edits or lose previously recorded hits.
 - Newsletter: private recipients and settings, content queue, provider budgets, edition claims, delivery acknowledgements and saved documents. An unknown delivery must not be retried as an unsent email.
 

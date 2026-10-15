@@ -1,14 +1,15 @@
+import {mergePrimary} from './breakout-store.mjs';
 import {readBackgroundView} from './github-background-views.mjs';
 import {readPrivateRecord} from './github-private-records.mjs';
 import {hash} from './mutual-funds-seal.mjs';
-import {tickerValid} from '../public/js/data/breakout-live-shared.js';
+import {marketWindow,tickerValid} from '../public/js/data/breakout-live-shared.js';
 import {mfRepo} from './mutual-funds-github.mjs';
 const recordKey=(kind,value)=>hash(new TextEncoder().encode(`${kind}:${value}`));
 const earlier=(row,cursor)=>!cursor||row.at<cursor.at||row.at===cursor.at&&row.run<cursor.run;
 
 // Prepared history retains the source's exact (at, run) cursor semantics. A
 // cursor from an older response remains valid after a new minute arrives.
-export async function preparedBreakouts(request,env) {
+export async function preparedBreakouts(request,env,{now=Date.now()}={}) {
   const head=await readBackgroundView(env,request.url,'breakouts','head.json');if(!head)return null;
   if(head.version!==1||head.repo!==mfRepo(env)||head.feature!=='breakouts'||!head.parts)throw Error('Invalid prepared breakout inventory');
   const memo=new Map(),read=id=>readPrivateRecord(env,request.url,'breakouts',head,id,{memo});
@@ -29,8 +30,16 @@ export async function preparedBreakouts(request,env) {
     const rows=found.slice(0,100),last=rows.at(-1);
     return {minuteRetentionDays:index.minuteRetentionDays,olderGapTotals:index.olderGapTotals,rows:rows.map(row=>row.value),nextCursor:found.length>100?JSON.stringify({at:last.at,run:last.run}):null};
   }
-  const kind=url.pathname==='/api/breakouts/fallback'?'fallback':'current',metadata=head[kind];
-  if(!metadata||!Array.isArray(metadata.pages))throw Error('Prepared current quotes missing');
-  const rows=[];for(const id of metadata.pages){const page=await read(id);if(!Array.isArray(page?.rows))throw Error('Prepared quote page missing');rows.push(...page.rows);}
-  const {pages,...rest}=metadata;return {...rest,rows,schedule:head.schedule,primarySchedule:head.primarySchedule,runtime:'github-actions',delivery:'static-assets'};
+  async function rowsFor(metadata){
+    if(!metadata||!Array.isArray(metadata.pages))throw Error('Prepared quote inventory missing');
+    const rows=[];for(const id of metadata.pages){const page=await read(id);if(!Array.isArray(page?.rows))throw Error('Prepared quote page missing');rows.push(...page.rows);}
+    const {pages,...rest}=metadata;return {...rest,rows};
+  }
+  const fallback=await rowsFor(head.fallback),primary=head.primary?await rowsFor(head.primary):null;
+  // Source choice is time-sensitive. Apply the original read-time selection to
+  // prepared evidence, so an aged minute quote can still use a fresher fallback.
+  const selected=url.pathname==='/api/breakouts/fallback'?fallback:mergePrimary(fallback,primary,now),at=now,active=marketWindow(at).collect;
+  const schedule={...head.schedule,overdue:head.schedule?.overdue===true||active&&at-(head.schedule?.lastAttemptAt||0)>30*60000};
+  const primarySchedule={...head.primarySchedule,overdue:head.primarySchedule?.overdue===true||active&&at-(head.primarySchedule?.lastAttemptAt||0)>120000};
+  return {...selected,schedule,primarySchedule,runtime:'github-actions',delivery:'static-assets'};
 }
