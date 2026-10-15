@@ -2,6 +2,7 @@ import { BREAKOUT_ORIGIN, BREAKOUT_OBJECT, liveCoverage } from '../public/js/dat
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { breakoutCollectorIdentity } from './breakout-auth.mjs';
 import { withTag, tagged, revalidate } from './http.mjs';
+import {PRICE_LEVELS_OBJECT} from '../public/js/data/price-levels-shared.js';
 import { PRIMARY_OBJECT } from './breakout-primary.mjs';
 import {preparedBreakouts} from './breakouts-github.mjs';
 
@@ -23,6 +24,7 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
     try {
       const body = await boundedJson(new Response(request.body), 2 * 1024 * 1024);
       if(!env.CAPTURE_REGISTRY)return reply({ok:false,reason:'storage-unavailable'},503);
+      if(['price-levels-export','price-levels-inputs'].includes(body.action))return reply(await env.CAPTURE_REGISTRY.getByName(PRICE_LEVELS_OBJECT).priceLevelsExport({table:body.table,cursor:body.cursor,inputs:body.action==='price-levels-inputs'}));
       if(body.action==='export'){
         const part=body.part||'capture',object=part==='primary'?PRIMARY_OBJECT:BREAKOUT_OBJECT;
         return reply(await env.CAPTURE_REGISTRY.getByName(object).breakoutExport({part,table:body.table,cursor:body.cursor}));

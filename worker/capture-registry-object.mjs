@@ -1,3 +1,4 @@
+import {exportPriceLevels} from './price-levels-export.mjs';
 import {PriceLevelStore} from './price-levels-store.mjs';
 import {PriceLevelSchedule,PRICE_LEVEL_TIMER} from './price-levels-schedule.mjs';
 import { AlertNotesStore } from './alert-notes-store.mjs';
@@ -81,8 +82,9 @@ export class CaptureRegistry extends DurableObject {
   announcementRead(input) { return settled(() => this.announcementReads.read(input)); }
   announcementReadStream(input) { return this.announcementReads.stream(input, (work) => this.ctx.waitUntil(work)); }
   announcementReadStatus() { return settled(() => this.announcementReads.status()); }
-  priceLevelsSnapshot(cursor) { return this.priceLevelSchedule.snapshot(cursor); }
-  async priceLevelsApply(intents) { const result=this.priceLevels.apply(intents);await this.priceLevelSchedule.arm();return {...result.snapshot,outcomes:result.outcomes,check:await this.priceLevelSchedule.status()}; }
+  priceLevelsExport(input) { return exportPriceLevels(this.ctx.storage,input); }
+  async priceLevelsSnapshot(cursor) { const value=await this.priceLevelSchedule.snapshot(cursor);return {...value,check:{...value.check,runtime:'github-actions',current:!value.pending,nextAt:null,state:value.pending?'waiting':'idle'}}; }
+  async priceLevelsApply(intents) { const result=this.priceLevels.apply(intents);return {...await this.priceLevelsSnapshot(),outcomes:result.outcomes}; }
   status() { return this.schedule.status(); }
   telegramPosts() { return this.telegramDelivery.response(); }
   summaryExport(input) { return exportSummaries(this.ctx.storage,input); }
@@ -148,7 +150,7 @@ export class CaptureRegistry extends DurableObject {
   mfPrivateRead(isins,cursor) { return this.mutualFundsScanner.read(isins,cursor); }
   mfPrivateDetail(isin,month) { return this.mutualFundsScanner.detail(isin,month); }
   async alarm() {
-    if(await this.ctx.storage.get(PRICE_LEVEL_TIMER)){await this.priceLevelSchedule.wake();return;}
+    if(await this.ctx.storage.get(PRICE_LEVEL_TIMER)){await this.ctx.storage.deleteAlarm();return;}
     if (await this.ctx.storage.get(MF_TIMER)) {
       await this.ctx.storage.deleteAlarm();return;
     }

@@ -10,6 +10,8 @@ on:
       - 'scripts/lib/breakout-*.mjs'
       - 'scripts/lib/breakouts-github.mjs'
       - 'worker/upstox*.mjs'
+      - 'worker/price-levels*.mjs'
+      - 'scripts/lib/price-levels*.mjs'
       - 'worker/breakout*.mjs'
       - 'worker/capture-registry-object.mjs'
       - 'worker/index.js'

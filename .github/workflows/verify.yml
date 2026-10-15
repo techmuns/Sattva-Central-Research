@@ -94,7 +94,7 @@ jobs:
       - name: Verify Claude streaming in the native local Worker runtime
         run: node scripts/verify-research-claude-runtime.mjs
       - name: Verify private shared price alerts, retained history and Worker restart
-        run: node scripts/verify-private-price-levels.mjs && npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-private-price-runtime.mjs && node scripts/verify-shared-workspace-runtime.mjs'
+        run: node scripts/verify-private-price-levels.mjs && node scripts/verify-price-levels-github.mjs && npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-private-price-runtime.mjs && node scripts/verify-shared-workspace-runtime.mjs'
       - name: Verify private portfolio bridge
         run: node scripts/verify-portfolio-bridge.mjs && node scripts/verify-holding-sizes.mjs
       - name: Verify comparable portfolio businesses and dated event returns
@@ -164,7 +164,7 @@ jobs:
       - name: Verify Screener concall pagination, deduplication and artifact integrity
         run: node scripts/verify-screener-concalls.mjs && node scripts/verify-concall-delivery.mjs && node scripts/verify-stockscans-contract.mjs
       - name: Verify private summaries, dynamic portfolio queue, durable quota and authorisation
-        run: node scripts/verify-concall-summaries.mjs && node scripts/verify-github-background-sqlite.mjs && node scripts/verify-summaries-local.mjs && node scripts/verify-summaries-export.mjs && node scripts/verify-summaries-github.mjs && node scripts/verify-summary-catalogue-github.mjs && node scripts/verify-github-private-records.mjs
+        run: node scripts/verify-concall-summaries.mjs && node scripts/verify-github-background-sqlite.mjs && node scripts/verify-summaries-local.mjs && node scripts/verify-summaries-export.mjs && node scripts/verify-summaries-github.mjs && node scripts/verify-background-export-ready.mjs && node scripts/verify-summary-catalogue-github.mjs && node scripts/verify-github-private-records.mjs
       - name: Verify Screener Insights capture and context-only correlation
         run: node scripts/verify-screener-insights.mjs
       - name: Verify complete General Alerts pool and scope isolation

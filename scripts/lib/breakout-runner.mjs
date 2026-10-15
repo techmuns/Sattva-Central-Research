@@ -3,7 +3,7 @@ import {prepareBreakoutCapture,collectBreakouts} from '../collect-breakouts.mjs'
 
 // One runner owns the saved store. The independent loops retain minute quotes
 // while the slower fallback walk waits on its providers. Publications serialize.
-export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms)),runWindow=45*60000,minuteInterval=60000,publishInterval=60000,collect=collectBreakouts,notify=async()=>{},token=''}={}) {
+export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms)),runWindow=45*60000,minuteInterval=60000,publishInterval=60000,collect=collectBreakouts,notify=async()=>{},token='',checkLevels=async()=>{}}={}) {
  if(typeof discover!=='function'||!Number.isSafeInteger(runWindow)||runWindow<1||runWindow>50*60000)throw Error('Invalid quote runner window');
  let stopped=false,firstError=null,partial=false,fallbackCycle=0,version=0,publishedVersion=-1;const started=now(),deadline=started+runWindow,active=marketWindow(started).collect;
  const wait=async ms=>{let left=ms;while(left>0&&!stopped){const part=Math.min(left,1000);await sleep(part);left-=part;}};
@@ -26,9 +26,10 @@ export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>n
   }while(!stopped&&now()<deadline-10*60000);
  }
  await publish(); // Verify retained history on GitHub before opening source work.
- if(!active){await fallback();await local.primary.wake();await publish();if(partial)throw Error('Quote capture is partial; retained progress was published');return;}
+ if(!active){const levelCheck=await checkLevels();partial||=levelCheck?.failed===true;await fallback();await local.primary.wake();await publish();if(partial)throw Error('Quote capture is partial; retained progress was published');return;}
  await Promise.all([
   guard(fallback()),
+  guard((async()=>{while(!stopped&&now()<deadline){const at=now();const levelCheck=await checkLevels();partial||=levelCheck?.failed===true;version++;await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
   guard((async()=>{while(!stopped&&now()<deadline){const at=now();await local.primary.wake();version++;await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
   guard((async()=>{while(!stopped&&now()<deadline){await wait(publishInterval);if(!stopped&&now()<deadline){await publish();}}})()),
  ]);
