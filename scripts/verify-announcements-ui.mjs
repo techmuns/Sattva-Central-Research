@@ -301,6 +301,9 @@ try {
   await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon());
   assert(await page.locator('#source-beacon-panel [data-filings-method]').isHidden(), 'leaving Announcements clears its collection action');
   await page.keyboard.press('Escape');
+  // The latest filing can belong to a newer IST day than the saved news.
+  // Exercise feedback on retained stories even when Today is correctly empty.
+  await page.getByRole('combobox', { name: 'News period', exact: true }).selectOption('30');
   await page.waitForSelector('[data-news-key] [data-news-feedback]', { timeout: 60000 });
   await page.evaluate(async () => {
     const { relevanceSettled } = await import('/js/data/surface-relevance.js');
