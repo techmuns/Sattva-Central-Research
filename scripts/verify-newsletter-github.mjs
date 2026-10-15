@@ -4,12 +4,12 @@ import {localNewsletter} from './lib/newsletter-local.mjs';
 import {githubNewsletter,decodeNewsletterColumn} from './lib/newsletter-github.mjs';
 import {exportNewsletter} from '../worker/newsletter-export.mjs';
 import {installPreparedBackground} from './lib/github-background-deployment.mjs';
-import {readerKeys,encode64,openForReader} from '../worker/mutual-funds-seal.mjs';
+import {readerKeys,encode64,openForReader,sealForReader} from '../worker/mutual-funds-seal.mjs';
 import {handleGithubNewsletter} from '../worker/newsletter-github.mjs';
 fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/newsletter-github-'));
 const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',at=Date.parse('2026-09-15T06:30:00Z'),now=()=>at;
 const env={NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
-let published=0,failUpload=false,providerCalls=0;
+let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false;
 let exists=false,sequence=1,body='',assetReads=0;const remote=new Map(),tag='newsletter-data';
 const fetcher=async(raw,options={})=>{
   const url=new URL(raw),method=options.method||'GET';
@@ -25,6 +25,7 @@ const fetcher=async(raw,options={})=>{
     if(url.pathname.endsWith('/assets'))return Response.json([...remote.values()].map(({bytes,...asset})=>asset));
     assert(url.pathname.endsWith('/releases/tags/'+tag));return exists?Response.json({id:77,tag_name:tag,body}):new Response(null,{status:404});
   }
+  if(url.hostname==='devde.muns.io'){emailCalls++;throw Error('The removed recipient must never reach a provider');}
   if(url.hostname==='api.openai.com'){providerCalls++;assert(published>0);assert(remote.size>0);return Response.json({status:'completed',output:[]});}
   assert.equal(options.headers?.authorization,undefined);const asset=remote.get(decodeURIComponent(url.pathname.split('/').at(-1)));assert(asset);return new Response(asset.bytes);
 };
@@ -35,7 +36,7 @@ try{
  const pdf=randomBytes(1500000);pdf.set(Buffer.from('%PDF-1.7'));const pdfId=source.store.saveDocument(pdf,'sattva-2026-09-14-morning-brief.pdf','old-unknown');
  const oldBudget=source.schedule.content.newsBudget.reserve({job:'old-news',model:'fixture',amount:1234,now:at});assert(oldBudget.ok);
  const before=source.db.prepare('SELECT total_changes() n').get().n,keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
- const options={env,fetcher,recipient,localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
+ const options={env,fetcher,recipient,verifyPdf:async()=>{if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
  runtime=await githubNewsletter({...options,file:path.join(root,'runner.sqlite'),out:path.join(root,'publication'),legacyClient:input=>exportNewsletter(source.storage,input)});
  assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before);assert.deepEqual(runtime.store.snapshot(),source.store.snapshot());assert.deepEqual(Buffer.from(runtime.store.document(pdfId).body),pdf);assert.equal(runtime.store.delivery('old-unknown').finishedAt,null);
  assert.throws(()=>decodeNewsletterColumn({blob64:'AA==',bytes:1,hash:'wrong'},'newsletter_documents','body'),/integrity/);
@@ -48,6 +49,9 @@ try{
  let requestEnvelope;
  response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({edition:'morning',to:'me',email:'fixture@example.com'})}),worker,{...common,fetcher:async(raw,options)=>{assert.equal(raw,`https://api.github.com/repos/${repo}/actions/workflows/newsletter-refresh.yml/dispatches`);const value=JSON.parse(options.body);assert.equal(value.ref,'main');assert(!value.inputs.request.includes('fixture@example.com'));requestEnvelope=JSON.parse(value.inputs.request);return new Response(null,{status:204});}});assert.equal(response.status,202);const queued=await response.json();assert(queued.requestId);assert.equal(queued.queued,true);
  const result=await runtime.processRequest(requestEnvelope);assert.equal(result.reason,'no-token');const count=runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n;await runtime.processRequest(requestEnvelope);assert.equal(runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n,count,'Replayed request does not reserve or send twice');
+ const originalSend=runtime.schedule.sendNow;runtime.schedule.sendNow=async()=>{runtime.store.beginDelivery({key:'waiting-pdf',edition:'morning',day:'2026-09-15',source:'button',recipients:1});return runtime.schedule.fetcher('https://devde.muns.io/email/send/raw',{method:'POST',body:JSON.stringify({email:'fixture@example.com',html:'Synthetic'})});};
+ removeDuringPdf=true;const queueKey=await readerKeys(env.BACKGROUND_STATE_KEY),removeEnvelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id:crypto.randomUUID(),at,edition:'morning',to:'all',email:null,token:null})),{kid:queueKey.kid,publicKey:encode64(queueKey.publicKey)},`${repo}:github-newsletter-request:v1`);
+ await assert.rejects(runtime.processRequest(removeEnvelope),/Recipient removed/);assert.equal(emailCalls,0,'An unsubscribe during static PDF publication is rechecked before email I/O');removeDuringPdf=false;runtime.schedule.sendNow=originalSend;source.store.apply([{op:'subscribe',email:'fixture@example.com',by:'Fixture',editions:['morning','evening']}]);
  const claim=runtime.schedule.content.newsBudget.reserve({job:'new-news',model:'fixture',amount:5678,now:at});assert(claim.ok);await runtime.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'});assert.equal(providerCalls,1);
  await runtime.close();runtime=null;restarted=await githubNewsletter({...options,file:path.join(root,'restarted.sqlite'),out:path.join(root,'restarted-publication'),legacyClient:async()=>{throw Error('An initialized archive cannot reset');}});assert(restarted.db.prepare('SELECT id FROM newsletter_news_ai_calls WHERE id=?').get(claim.id),'Metered I/O follows acknowledged restart storage containing its actual reservation');assert.equal(restarted.store.delivery('old-unknown').finishedAt,null);assert.deepEqual(Buffer.from(restarted.store.document(pdfId).body),pdf);
  failUpload=true;await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/archive rejected/);assert.equal(providerCalls,1);await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/stopped/);assert.equal(providerCalls,1);

@@ -36,6 +36,9 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
     if(!test&&!local.store.recipients(activeRequest?.edition).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
     const documents=local.db.prepare("SELECT id,filename,body FROM newsletter_documents WHERE delivery_state='pending' ORDER BY created_at DESC").all();
     for(const document of documents)await verifyPdf(document,env);
+    await refresh();
+    if(activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
+    if(!test&&!local.store.recipients(activeRequest?.edition).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
    }
   }
   if(blocked)throw Error('Newsletter publication failed; external work stopped');return fetcher(raw,options);
