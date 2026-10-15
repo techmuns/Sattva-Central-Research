@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-15T17:20:24.482Z",
-  "oldestDataAt": "2026-10-15T17:20:24.482Z",
-  "from": "2025-10-15",
-  "to": "2026-10-15",
+  "capturedAt": "2026-10-15T19:25:16.640Z",
+  "oldestDataAt": "2026-10-15T19:25:16.640Z",
+  "from": "2025-10-16",
+  "to": "2026-10-16",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 9,
+      "pagesRead": 2,
       "latestDate": "2026-10-15",
-      "oldestDate": "2026-10-14",
+      "oldestDate": "2026-10-15",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 225,
-      "capturedAt": "2026-10-15T17:20:24.482Z",
+      "rowCount": 50,
+      "capturedAt": "2026-10-15T19:25:16.640Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-15T17:20:24.482Z",
+      "capturedAt": "2026-10-15T19:25:16.640Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-15T17:20:24.482Z",
+      "capturedAt": "2026-10-15T19:25:16.640Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-15T17:20:24.482Z",
+      "capturedAt": "2026-10-15T19:25:16.640Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 1953,
   "emptyCount": 0,
-  "rowCount": 21451,
+  "rowCount": 21441,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -87021,50 +87021,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "EMBDL",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "Embassy Developments Ltd",
-          "Insider": "Bellanza Developers Private Limited",
-          "Category": "Promoter Group",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "8096067",
-          "Trade %": "0.53",
-          "Trade Value": "902792431",
-          "Post Holding Shares": "104026546",
-          "Post Holding %": "7.53",
-          "Mode": "Allotment",
-          "From Date": "2025-10-13",
-          "To Date": "2025-10-13",
-          "Broadcast Date": "2025-10-15",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "EMBDL",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "Embassy Developments Ltd",
-          "Insider": "Bellanza Developers Private Limited",
-          "Category": "Promoter Group",
-          "Security Type": "Warrants",
-          "Transaction": "Disposal",
-          "Trade Shares": "8096067",
-          "Trade %": "0.56",
-          "Trade Value": "225698108",
-          "Post Holding Shares": null,
-          "Post Holding %": "0",
-          "Mode": "Conversion of security",
-          "From Date": "2025-10-13",
-          "To Date": "2025-10-13",
-          "Broadcast Date": "2025-10-15",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "EVEREADY": [
@@ -126352,28 +126308,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "HCL Technologies Stock Options Trust",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "3947",
-          "Trade %": "0",
-          "Trade Value": "5881030",
-          "Post Holding Shares": "8144486",
-          "Post Holding %": "0.3",
-          "Mode": "ESOS",
-          "From Date": "2025-10-13",
-          "To Date": "2025-10-13",
-          "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "ANTHEM": [
@@ -145217,138 +145151,6 @@
           "From Date": "2025-09-18",
           "To Date": "2025-09-18",
           "Broadcast Date": "2025-10-16",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Peterhouse Investments India Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "40000",
-          "Trade %": "0.01",
-          "Trade Value": null,
-          "Post Holding Shares": "5591529",
-          "Post Holding %": "1.83",
-          "Mode": "Market",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Peterhouse Investments Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "150000",
-          "Trade %": "0.05",
-          "Trade Value": null,
-          "Post Holding Shares": "4300000",
-          "Post Holding %": "1.41",
-          "Mode": "Market",
-          "From Date": "2025-09-10",
-          "To Date": "2025-09-10",
-          "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Peterhouse Investments Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "200000",
-          "Trade %": "0.07",
-          "Trade Value": null,
-          "Post Holding Shares": "4450000",
-          "Post Holding %": "1.46",
-          "Mode": "Market",
-          "From Date": "2025-09-09",
-          "To Date": "2025-09-09",
-          "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Stuti Jhawar",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "10000",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "1250000",
-          "Post Holding %": "0.41",
-          "Mode": "Market",
-          "From Date": "2025-09-12",
-          "To Date": "2025-09-12",
-          "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Susmita Jhawar",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "10000",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "1685000",
-          "Post Holding %": "0.55",
-          "Mode": "Market",
-          "From Date": "2025-09-10",
-          "To Date": "2025-09-10",
-          "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Susmita Jhawar",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "11697",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "1675000",
-          "Post Holding %": "0.55",
-          "Mode": "Market",
-          "From Date": "2025-09-05",
-          "To Date": "2025-09-05",
-          "Broadcast Date": "2025-10-15",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -209570,28 +209372,6 @@
           "Price": "3657",
           "Broadcast Date": "2026-10-14",
           "Source": "Screener.in"
-        }
-      },
-      {
-        "ticker": "TATAELXSI",
-        "date": "2025-10-15",
-        "cells": {
-          "Company": "TATAELXSI",
-          "Insider": "Life Insurance Corporation of India",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "52000",
-          "Trade %": "0.08",
-          "Trade Value": null,
-          "Post Holding Shares": "3164654",
-          "Post Holding %": "5.08",
-          "Mode": "Market",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
         }
       }
     ],
