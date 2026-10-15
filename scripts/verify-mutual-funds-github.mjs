@@ -9,13 +9,13 @@ import { exportMutualFunds } from '../worker/mutual-funds-export.mjs';
 import { MF_ORIGIN,targetMonth,previousMonth } from '../worker/mutual-funds-model.mjs';
 import { collectorClient,legacyExportClient } from './collect-mutual-funds.mjs';
 import { publishSnapshot } from './mutual-funds-github.mjs';
-import { mfManifest,mfRelease } from '../worker/mutual-funds-github.mjs';
+import { mfManifest,mfRelease,mfSnapshotFile,mfDetailKey } from '../worker/mutual-funds-github.mjs';
 
 fs.mkdirSync('.cache',{recursive:true});
 const root=fs.mkdtempSync(path.resolve('.cache/mf-github-'));
 const file=path.join(root,'source.sqlite'),secret='fixture-worker-secret-only-123456789',repo='techmuns/Sattva-Central-Research';
 const env={GITHUB_REPOSITORY:repo,GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',MF_STATE_KEY:'fixture-github-secret-only-987654321'};
-const isin='INE090A01021',other='INE040A01034',month=targetMonth(),prior=previousMonth(month),stamp=new Date().toISOString();
+const isin='INE090A01021',other='INE040A01034',privateOnly='INE999Z01011',month=targetMonth(),prior=previousMonth(month),stamp=new Date().toISOString();
 try {
   let store=localMutualFunds(file);
   store.primary.begin('1:1',{targets:[isin,other],amcs:[{slug:'hdfc',status:'partial',month}],checkedAt:stamp});
@@ -25,10 +25,18 @@ try {
   const lease=store.scanner.reserve('2:1','1','stock'),sourceUrl='https://mfscanner.com/stock/fixture-bank';
   store.scanner.complete('2:1',{reservation:lease.reservation,isin,page:{isin,month,priorMonth:prior,checkedAt:stamp,sourceUrl,reportedFunds:1,unreportedFunds:0,unknownAmcs:0,funds:[{id:'scanner:fixture',amc:'hdfc',name:'Fixture Fund',months:{[month]:{shares:150,valueCr:null,pctOfAum:null,source:'MF Scanner',sourceUrl,checkedAt:stamp},[prior]:{shares:100,valueCr:null,pctOfAum:null,source:'MF Scanner',sourceUrl,checkedAt:stamp}}}]}});
   assert.equal(store.scanner.read([isin]).rows[0].totalShares,150);
+  store.scanner.inventory([{isin,name:'Fixture Bank'},{isin:privateOnly,name:'Private-only Fixture'}]);
+  const realNow=store.scanner.now;store.scanner.now=()=>Date.now()+60000;
+  const privateLease=store.scanner.reserve('2:1','2','stock');assert.equal(privateLease.company.isin,privateOnly);
+  store.scanner.complete('2:1',{reservation:privateLease.reservation,isin:privateOnly,page:{isin:privateOnly,month,priorMonth:prior,checkedAt:stamp,sourceUrl,reportedFunds:1,unreportedFunds:0,unknownAmcs:0,funds:[{id:'scanner:private',amc:'hdfc',name:'Private Fixture Fund',months:{[month]:{shares:73,valueCr:null,pctOfAum:null,source:'MF Scanner',sourceUrl,checkedAt:stamp}}}]}});
+  store.scanner.now=realNow;
   const expectedHistory=store.db.prepare('SELECT COUNT(*) n FROM mf_scanner_history').get().n;
   const keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
   const built=await buildSnapshot(store,recipient,{env,out:path.join(root,'published'),file,partBytes:1800});
-  assert(Object.values(built.manifest.privateParts).some(pages=>pages.length>1),'Retained monthly views split into bounded independently addressed pages');
+  assert.deepEqual(built.manifest.privateParts,{},'Public manifest contains no private routing ranges');
+  const publicManifest=JSON.stringify(built.manifest);
+  for(const identity of [privateOnly,await mfDetailKey(privateOnly),await mfDetailKey(privateOnly,month)])assert(!publicManifest.includes(identity),'Private identities cannot be enumerated from public routing hashes');
+  assert(Object.keys(built.manifest.files).filter(name=>/private-/.test(name)&&!name.includes('private-index')).every(name=>/private-[a-f0-9]{64}-\d+\.json$/.test(name)),'Private filenames do not expose ISIN-derived bucket numbers');
   const names=[...Object.keys(built.manifest.files),built.manifestName];
   const assets=names.map((name,i)=>({id:i+1,name,browser_download_url:`https://github.com/${repo}/releases/download/mutual-funds-data/${name}`}));
   let downloads=0;
@@ -38,11 +46,15 @@ try {
     return new Response(fs.readFileSync(path.join(built.out,name)));
   };
   const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,MF_RUNTIME:'github',CAPTURE_REGISTRY:{getByName(){throw Error('GitHub snapshot reads must not touch Durable Objects');}}};
+  const privateIndex=await mfSnapshotFile({manifest:built.manifest,assets:new Map(assets.map(a=>[a.name,a]))},built.manifest.privateIndex,worker,{privateRead:true,fetcher});
+  assert(Object.values(privateIndex.parts).some(pages=>pages.length>1),'Encrypted directory retains bounded independently addressed history pages');
   const read=(suffix,options={})=>handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds'+suffix),worker,{fetcher,authorise:async()=>({ok:true}),...options});
   let response=await read(`?isins=${isin}`);assert.equal(response.status,200);assert.equal((await response.json()).rows[0].totalShares,100);
   response=await read(`/private?isins=${isin}`);assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/private.*no-store/);assert.equal((await response.json()).rows[0].totalShares,150);
   response=await read(`/private/company?isin=${isin}&month=${month}`);assert.equal((await response.json()).company.totalShares,150);
   response=await read(`/private/company?isin=${isin}&month=${prior}`);assert.equal((await response.json()).company.totalShares,100,'Historical months remain readable across split pages');
+  response=await read(`/private/company?isin=${privateOnly}&month=${month}`);assert.equal((await response.json()).company.totalShares,73,'Private-only history resolves through the encrypted directory');
+  response=await read(`/company?isin=${privateOnly}&month=${month}`);assert.equal((await response.json()).company,null,'Private-only history never enters the public view');
   const cacheBefore=globalThis.caches,immutable=new Map();
   try {
     globalThis.caches={default:{match:async request=>immutable.get(request.url)?.clone(),put:async(request,value)=>immutable.set(request.url,value.clone())}};

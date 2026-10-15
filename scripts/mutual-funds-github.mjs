@@ -68,7 +68,10 @@ async function main() {
     // The automatic deployment may still be catching up with this merge.
     let ready=false;for(let attempt=0;attempt<60;attempt++){try{await recipient();ready=true;break;}catch{await new Promise(r=>setTimeout(r,10000));}}
     if(!ready)throw Error('Snapshot reader deployment is not ready');
-    await restoreState({legacyClient:legacyExportClient()});
+    let lastProgress=0;
+    await restoreState({legacyClient:legacyExportClient(),onProgress:({table,received,count})=>{
+      if(received===count||Date.now()-lastProgress>30000){console.log(`Retained transfer: ${table}: copied ${received} of ${count} rows.`);lastProgress=Date.now();}
+    }});
     console.log('Verified retained Mutual Funds state restored on the GitHub runner.');
   } else if(process.argv.includes('publish')) {
     if(!fs.existsSync(MF_LOCAL_FILE))throw Error('No verified runner state; refusing empty publication');
