@@ -76,7 +76,7 @@ export async function githubMutualFunds(request,env,{privateRead=false,fetcher=f
   if(company) {
     const isin=url.searchParams.get('isin'),month=url.searchParams.get('month');
     if(!validIsin(isin)||month&&!/^20\d\d-(0[1-9]|1[0-2])$/.test(month))throw Error('Invalid detail scope');
-    const parts=privateRead?snapshot.manifest.privateParts:snapshot.manifest.publicParts;
+    const parts=privateRead?(index.parts??snapshot.manifest.privateParts):snapshot.manifest.publicParts;
     const address=await mfDetailKey(isin,month),pages=parts[String(mfPart(isin))];
     const name=Array.isArray(pages)?pages.find(page=>address>=page.first&&address<=page.last)?.name:pages;
     const part=name?await mfSnapshotFile(snapshot,name,env,{privateRead,fetcher}):{};

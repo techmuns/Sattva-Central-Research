@@ -46,6 +46,12 @@ the existing reader before downloading/decrypting a private view and returns
 `private, no-store`; the existing browser session/cache boundary remains intact.
 This is request-time delivery of a prepared file, not scheduled processing.
 
+The private page directory is inside the encrypted private index. Public manifests
+contain no private ISIN/month hash ranges, and private filenames use keyed opaque
+bucket labels. A plain hash alone would allow readers to enumerate likely ISINs
+and infer private portfolio membership. Routing metadata follows the same privacy
+boundary as the holdings it addresses.
+
 Runner restart state is streamed through gzip and AES-GCM using `MF_STATE_KEY`,
 or the existing repository-specific Family/Glow read secret supplied as that
 workflow environment value. Keep this key stable. Before rotating it, preserve the

@@ -106,14 +106,16 @@ export async function buildSnapshot(local,recipient,{env=process.env,out=path.re
     }
   }
   manifest.publicIndex=await save('public-index',{meta:{...primaryMeta,supplement:scannerOperationalStatus(supplement)},rows:primaryRows});
-  manifest.privateIndex=await save('private-index',{meta:{...primaryMeta,supplement},rows:privateRows},{privateRead:true});
   async function pages(parts,index,prefix,privateRead=false) {
     for(const [part,data] of parts) {
+      // Neither a public hash of an ISIN/month nor its bucket is private: both
+      // can be enumerated. Keep the directory encrypted and its filenames opaque.
+      const label=privateRead?createHmac('sha256',key(env)).update(`private-bucket:${part}`).digest('hex'):part;
       const records=Object.entries(data).sort(([a],[b])=>a.localeCompare(b));index[part]=[];
       let page={},bytes=2,first=null,last=null;
       const flush=async()=>{
         if(!first)return;
-        const name=await save(`${prefix}-${part}-${index[part].length}`,page,{privateRead});
+        const name=await save(`${prefix}-${label}-${index[part].length}`,page,{privateRead});
         index[part].push({first,last,name});page={};bytes=2;first=null;
       };
       for(const [address,value] of records) {
@@ -126,7 +128,9 @@ export async function buildSnapshot(local,recipient,{env=process.env,out=path.re
     }
   }
   await pages(publicParts,manifest.publicParts,'public');
-  await pages(privateParts,manifest.privateParts,'private',true);
+  const privateDirectory={};
+  await pages(privateParts,privateDirectory,'private',true);
+  manifest.privateIndex=await save('private-index',{meta:{...primaryMeta,supplement},rows:privateRows,parts:privateDirectory},{privateRead:true});
   local.close();
   manifest.state=`${prefix}-state.bin`;
   await encryptState(file,path.join(out,manifest.state),env);files[manifest.state]=await fileHash(path.join(out,manifest.state));
