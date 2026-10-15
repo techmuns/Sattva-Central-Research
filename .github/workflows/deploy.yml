@@ -64,25 +64,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  secret:
-    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository)
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    outputs:
-      available: ${{ steps.check.outputs.available }}
-    steps:
-      - id: check
-        run: echo "available=${{ secrets.CLOUDFLARE_API_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
-
   deploy:
-    needs: secret
-    if: needs.secret.outputs.available == 'true'
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       GITHUB_TOKEN: ${{ github.token }}
     steps:
+      - name: Check the deployment credential
+        id: credential
+        run: echo "available=${{ secrets.CLOUDFLARE_API_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
+        if: steps.credential.outputs.available == 'true'
         with:
           filter: blob:none
           sparse-checkout: |
@@ -90,10 +83,12 @@ jobs:
             worker
             public/js
       - uses: actions/setup-node@v5
+        if: steps.credential.outputs.available == 'true'
         with:
           node-version: "22"
       - name: Compare published inputs with the last successful upload
         id: plan
+        if: steps.credential.outputs.available == 'true'
         run: node scripts/github-deploy-state.mjs plan
       - name: Load the complete site for a changed publication
         if: steps.plan.outputs.changed == 'true'
@@ -137,26 +132,20 @@ jobs:
           sync_one GH_DISPATCH_TOKEN "$GH_DISPATCH_TOKEN"
           sync_one MUNS_TOKEN "$MUNS_TOKEN"
 
-
-  report:
-    needs: [secret, deploy]
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
       - name: Report actual publication
+        if: always()
         env:
-          AVAILABLE: ${{ needs.secret.outputs.available }}
-          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          AVAILABLE: ${{ steps.credential.outputs.available }}
+          PLAN: ${{ steps.plan.outcome }}
+          UPLOAD: ${{ steps.upload.outcome }}
+          PRIOR_RESULT: ${{ job.status }}
         run: |
-          if [ "$DEPLOY_RESULT" = success ]; then
+          if [ "$AVAILABLE" != true ]; then
+            echo '::warning title=GitHub deployment not configured::CLOUDFLARE_API_TOKEN is missing; this run published nothing.'
+          elif [ "$PRIOR_RESULT" = success ] && [ "$PLAN" = success ] && { [ "$UPLOAD" = success ] || [ "$UPLOAD" = skipped ]; }; then
             echo '### GitHub publication check succeeded' >> "$GITHUB_STEP_SUMMARY"
-            echo 'Changed Worker and static files were uploaded directly; unchanged inputs were skipped. No Cloudflare build was used by this workflow.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "$AVAILABLE" != true ]; then
-            echo '### GitHub publishing needs its deployment credential' >> "$GITHUB_STEP_SUMMARY"
-            echo 'CLOUDFLARE_API_TOKEN is missing. This run published nothing. Do not disconnect the existing publish path until the credential is installed and this path is verified.' >> "$GITHUB_STEP_SUMMARY"
-            echo '::warning title=GitHub deployment not configured::CLOUDFLARE_API_TOKEN is missing; this workflow published nothing.'
+            echo 'Changed Worker and prepared static files were uploaded directly; unchanged inputs were skipped. No Cloudflare build was used.' >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "::error::GitHub deployment did not succeed ($DEPLOY_RESULT)."
+            echo '::error::GitHub deployment did not succeed.'
             exit 1
           fi
