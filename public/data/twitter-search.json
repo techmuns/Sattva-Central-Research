@@ -784,7 +784,7 @@
       "pending": []
     },
     "isin:INE084101034|Indo-Mim": {
-      "lastAttemptAt": "2026-10-10T00:08:30+00:00",
+      "lastAttemptAt": "2026-10-15T06:05:01+00:00",
       "error": "search-unavailable",
       "lastResultCount": 110,
       "targetThrough": "2026-09-12T14:15:30+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-15T05:51:49.554498+00:00"
+    "checkedAt": "2026-10-15T06:05:01.564133+00:00"
   }
 }
