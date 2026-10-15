@@ -170,7 +170,7 @@ export default {
     if (url.pathname === '/api/ipo-monitor') return handleIpoMonitor(request);
     if (url.pathname === '/api/ipo-filings') return handleIpoFilings(request, { readPlatform: ({ signal }) => readPlatformCollector({ token: env.GH_DISPATCH_TOKEN, signal }) });
     if (url.pathname === '/api/capture-registration') return handleCaptureRegistration(request, env);
-    if (['/api/mutual-funds','/api/mutual-funds/company','/api/mutual-funds/collector','/api/mutual-funds/health','/api/mutual-funds/private','/api/mutual-funds/private/company'].includes(url.pathname)) return handleMutualFunds(request, env);
+    if (['/api/mutual-funds','/api/mutual-funds/company','/api/mutual-funds/collector','/api/mutual-funds/health','/api/mutual-funds/private','/api/mutual-funds/private/company','/api/mutual-funds/publishing-key'].includes(url.pathname)) return handleMutualFunds(request, env);
     if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health', '/api/breakouts/fallback'].includes(url.pathname)) return handleBreakouts(request, env);
     if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
     if (url.pathname === '/api/alert-notes') return handleAlertNotes(request, env);

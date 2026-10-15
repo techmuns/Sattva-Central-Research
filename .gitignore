@@ -2,6 +2,7 @@
 # writes its state, its build cache and a local KV/D1 sandbox here. It is machine-local and a few
 # megabytes, and nothing in the deploy reads it.
 .wrangler/
+.cache/
 
 # Local browser results, traces and temporary test configurations stay in the checkout.
 .cache/

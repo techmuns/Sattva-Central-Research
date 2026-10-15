@@ -4,7 +4,8 @@ import { AlertNotesStore } from './alert-notes-store.mjs';
 import { AlertStoriesStore } from './alert-stories-store.mjs';
 import { MutualFundsStore } from './mutual-funds-store.mjs';
 import { MutualFundsScannerStore } from './mutual-funds-scanner-store.mjs';
-import { MutualFundsSchedule, MF_TIMER } from './mutual-funds-schedule.mjs';
+import { MF_TIMER } from './mutual-funds-schedule.mjs';
+import { exportMutualFunds } from './mutual-funds-export.mjs';
 import { DurableObject } from 'cloudflare:workers';
 import { TelegramSchedule } from './telegram-scheduler.mjs';
 import { TelegramDelivery } from './telegram-delivery.mjs';
@@ -53,7 +54,6 @@ export class CaptureRegistry extends DurableObject {
     this.mutualFunds = new MutualFundsStore(ctx.storage);
     this.mutualFundsScanner = new MutualFundsScannerStore(ctx.storage,this.mutualFunds);
     this.mutualFunds.scanner = this.mutualFundsScanner;
-    this.mutualFundsSchedule = new MutualFundsSchedule(ctx.storage, env);
     this.breakouts = new BreakoutStore(ctx.storage);
     this.breakoutSchedule = new BreakoutSchedule(ctx.storage, env);
     this.breakoutPrimary = new BreakoutPrimary(ctx.storage, env);
@@ -130,25 +130,28 @@ export class CaptureRegistry extends DurableObject {
   newsletterSend(input, token) { return this.newsletterSchedule.sendNow(input, token); }
   newsletterPdf(id) { return this.newsletter.document(id); }
   newsletterPreview(input) { return this.newsletterSchedule.preview(input); }
-  mfReports(run,reports) { return this.mutualFunds.reports(run,reports); }
-  mfFragment(run,fragment) { return this.mutualFunds.fragment(run,fragment); }
-  mfBegin(run,manifest) { return this.mutualFunds.begin(run,manifest); }
-  mfCheckpoint(run,companies) { return this.mutualFunds.checkpoint(run,companies); }
-  mfConfirm(run,companies) { return this.mutualFunds.confirm(run,companies); }
-  mfFinish(run) { return this.mutualFunds.finish(run); }
+  mfReports(run,reports) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
+  mfFragment(run,fragment) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
+  mfBegin(run,manifest) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
+  mfCheckpoint(run,companies) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
+  mfConfirm(run,companies) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
+  mfFinish(run) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
   mfRead(isins,cursor) { return this.mutualFunds.read(isins,cursor); }
   mfDetail(isin,month) { return this.mutualFunds.detail(isin,month); }
-  mfArm() { return this.mutualFundsSchedule.arm(); }
-  mfScheduleStatus() { return this.mutualFundsSchedule.status(); }
-  mfScannerInventory(companies) { return this.mutualFundsScanner.inventory(companies); }
-  mfScannerReserve(run,id,kind) { return this.mutualFundsScanner.reserve(run,id,kind); }
-  mfScannerComplete(run,input) { return this.mutualFundsScanner.complete(run,input); }
+  mfArm() { return {runtime:'github-actions',started:false}; }
+  mfExport(table,cursor) { return exportMutualFunds(this.ctx.storage.sql,table,cursor); }
+  mfScheduleStatus() { return {runtime:'github-actions',started:false}; }
+  mfScannerInventory(companies) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
+  mfScannerReserve(run,id,kind) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
+  mfScannerComplete(run,input) { throw Error('Mutual Funds capture moved to GitHub Actions'); }
   mfScannerStatus() { return this.mutualFundsScanner.status(); }
   mfPrivateRead(isins,cursor) { return this.mutualFundsScanner.read(isins,cursor); }
   mfPrivateDetail(isin,month) { return this.mutualFundsScanner.detail(isin,month); }
   async alarm() {
     if(await this.ctx.storage.get(PRICE_LEVEL_TIMER)){await this.priceLevelSchedule.wake();return;}
-    if (await this.ctx.storage.get(MF_TIMER)) { await this.mutualFundsSchedule.wake(); return; }
+    if (await this.ctx.storage.get(MF_TIMER)) {
+      await this.ctx.storage.deleteAlarm();return;
+    }
     if (await this.ctx.storage.get(PRIMARY_TIMER)) await this.breakoutPrimary.wake();
     else if (await this.ctx.storage.get(NEWSLETTER_TIMER_KEY)) await this.newsletterSchedule.wake();
     else if (await this.ctx.storage.get('breakout-timer')) await this.breakoutSchedule.wake();
