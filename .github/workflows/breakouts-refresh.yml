@@ -7,6 +7,8 @@ on:
     paths:
       - '.github/workflows/breakouts-refresh.yml'
       - 'scripts/collect-breakouts.mjs'
+      - 'scripts/lib/breakout-*.mjs'
+      - 'scripts/lib/breakouts-github.mjs'
       - 'worker/upstox*.mjs'
       - 'worker/breakout*.mjs'
       - 'worker/capture-registry-object.mjs'
@@ -26,49 +28,30 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
+  actions: write
   id-token: write
 
 jobs:
-  bootstrap:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: main
-          persist-credentials: false
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-      # A merge starts the timer independently of scheduled Actions or market-data success.
-      # Wait briefly for the existing publishing pipeline; failed publishing stays a failure.
-      - name: Start the minute primary collector and 15-minute fallback timer after publishing
-        run: node scripts/collect-breakouts.mjs --bootstrap
   collect:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'push'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 120
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      BACKGROUND_STATE_KEY: ${{ secrets.MF_STATE_KEY || secrets.FAMILY_HOLDINGS_TOKEN || secrets.GLOWVENTURES_READ_TOKEN }}
+      UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      UPSTOX_BACKUP_ENABLED: ${{ vars.UPSTOX_BACKUP_ENABLED }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      # One shared capture, no data commits or website rebuild per scan. Daily scores retain
-      # their existing completed-session workflow. The collector itself gates market hours.
-      - name: Capture current prices and volume, saving each completed batch
-        env:
-          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
-          UPSTOX_BACKUP_ENABLED: ${{ vars.UPSTOX_BACKUP_ENABLED }}
+      # The active runner captures minutes independently of the slower fallback
+      # walk. One waiting invocation is sufficient: all captured rows are retained
+      # in the acknowledged archive; superseded pending triggers carry no data.
+      - name: Restore history, collect quotes and publish prepared files on GitHub
         run: node scripts/collect-breakouts.mjs
-      - uses: actions/upload-artifact@v5
-        if: always()
-        with:
-          name: breakout-health
-          path: artifacts/breakout-health.json
-          if-no-files-found: ignore
-          retention-days: 30

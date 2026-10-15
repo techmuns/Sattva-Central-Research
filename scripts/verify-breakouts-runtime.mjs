@@ -1,13 +1,14 @@
 // Local workerd exercises the provisioned class, SQLite RPCs and alarm persistence across restart.
 import assert from 'node:assert/strict';
-import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
-import {tmpdir} from 'node:os';
+import {mkdirSync,mkdtempSync,writeFileSync,rmSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {createServer} from 'node:http';
+import {createServer as createPortFinder} from 'node:net';
 import {gzipSync} from 'node:zlib';
-const scratch=mkdtempSync(join(tmpdir(),'breakouts-runtime-')),port=19874,origin=`http://127.0.0.1:${port}`;
+mkdirSync('.cache',{recursive:true});const scratch=mkdtempSync(resolve('.cache/breakouts-runtime-'));
+const finder=createPortFinder();await new Promise(done=>finder.listen(0,'127.0.0.1',done));const port=finder.address().port;await new Promise(done=>finder.close(done));const origin=`http://127.0.0.1:${port}`;
 const config=join(scratch,'wrangler.json');
 const revision='a'.repeat(40);let redirectCommit=false,redirectRaw=false,followed=0;
 const upstream=createServer((req,res)=>{
@@ -30,7 +31,17 @@ import {primaryInstruments,minuteQuotes} from ${JSON.stringify(resolve('worker/b
 // across restarts; otherwise the five-day recovery assertion expires as calendar time advances.
 export class CaptureRegistry extends BaseCaptureRegistry {
  constructor(state,env){super(state,env);this.breakouts.now=()=>Date.parse('2026-09-15T06:05Z');}
+ fixtureBegin(run,targets){return this.breakouts.begin(run,targets,false);}
+ fixtureCheckpoint(run,rows,failures){return this.breakouts.checkpoint(run,rows,failures);}
+ fixtureFinish(run){return this.breakouts.finish(run);}
+ fixtureRecovery(run,ticker,from,to,rows){return this.breakouts.recovery(run,ticker,from,to,rows);}
+ fixturePrimary(input){return this.breakouts.primarySave(input);}
+ fixtureInventory(targets){return this.breakoutPrimary.inventory(targets,false);}
+ fixtureAlarm(){return this.ctx.storage.getAlarm();}
+ async fixtureRetire(kind){await this.ctx.storage.put(kind==='primary'?'upstox-minute-timer':'breakout-timer',{started:true});await this.ctx.storage.setAlarm(Date.now()+86400000);await this.alarm();return this.ctx.storage.getAlarm();}
+ async fixtureExport(input){const before=this.ctx.storage.sql.exec('SELECT total_changes() n').one().n;const exported=await this.breakoutExport(input);return {...exported,writes:this.ctx.storage.sql.exec('SELECT total_changes() n').one().n-before};}
 }
+
 export default {async fetch(request,env){const body=await request.json();
 if(body.action==='native-upstox') {
  const fetcher=(url,options)=>fetch(${JSON.stringify(upstreamOrigin)}+(new URL(url).hostname==='assets.upstox.com'?'/instruments':'/quotes'),options);
@@ -45,23 +56,25 @@ if(body.action==='daily') {
  return Response.json({status:result.status,revision:result.headers.get('x-sattva-revision'),delivery:result.headers.get('x-sattva-delivery'),data:await result.json()});
 }
 const store=env.STORE.getByName('breakout-local-fixture');
-if(body.action==='arm')return Response.json(await store.breakoutArm());
-if(body.action==='begin')return Response.json(await store.breakoutBegin(body.run,body.targets,false));
-if(body.action==='checkpoint')return Response.json(await store.breakoutCheckpoint(body.run,body.rows,body.failures));
-if(body.action==='finish')return Response.json(await store.breakoutFinish(body.run));
-if(body.action==='recovery')return Response.json(await store.breakoutRecovery(body.run,body.ticker,body.from,body.to,body.rows));
+if(body.action==='retire')return Response.json(await store.fixtureRetire(body.kind));
+if(body.action==='blocked'){try{await store.breakoutBegin('99:1',['TEST'],false);return Response.json({blocked:false});}catch{return Response.json({blocked:true});}}
+if(body.action==='export')return Response.json(await store.fixtureExport(body));
+if(body.action==='begin')return Response.json(await store.fixtureBegin(body.run,body.targets));
+if(body.action==='checkpoint')return Response.json(await store.fixtureCheckpoint(body.run,body.rows,body.failures));
+if(body.action==='finish')return Response.json(await store.fixtureFinish(body.run));
+if(body.action==='recovery')return Response.json(await store.fixtureRecovery(body.run,body.ticker,body.from,body.to,body.rows));
 if(body.action==='history')return Response.json(await store.breakoutHistory(body.ticker,body.before));
-if(body.action==='primary-save')return Response.json(await store.breakoutPrimarySave(body.input));
-if(body.action==='primary-inventory')return Response.json(await env.CAPTURE_REGISTRY.getByName('breakout-upstox:v1').upstoxInventory(body.targets,false));
-return Response.json({capture:await store.breakoutRead(),schedule:await store.breakoutScheduleStatus()});}};`);
+if(body.action==='primary-save')return Response.json(await store.fixturePrimary(body.input));
+if(body.action==='primary-inventory')return Response.json(await env.CAPTURE_REGISTRY.getByName('breakout-upstox:v1').fixtureInventory(body.targets));
+return Response.json({capture:await store.breakoutRead(),schedule:await store.breakoutScheduleStatus(),alarmAt:await store.fixtureAlarm()});}};`);
 writeFileSync(config,JSON.stringify({name:'breakout-local-test',main:join(scratch,'entry.mjs'),compatibility_date:'2026-05-23',durable_objects:{bindings:[{name:'STORE',class_name:'CaptureRegistry'},{name:'CAPTURE_REGISTRY',class_name:'CaptureRegistry'}]},migrations:[{tag:'v1',new_sqlite_classes:['CaptureRegistry']}]}));
 let child,logs='';
 async function call(body={}){const res=await fetch(origin,{method:'POST',body:JSON.stringify(body),signal:AbortSignal.timeout(5000)});assert(res.ok,await res.clone().text());return res.json();}
-async function start(){child=spawn('npx',['--yes','--offline','wrangler@4','dev','--local','--config',config,'--ip','127.0.0.1','--port',String(port),'--persist-to',join(scratch,'state')],{cwd:scratch,detached:true,env:{...process.env,CI:'true',WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});for(const stream of [child.stdout,child.stderr])stream.on('data',chunk=>{logs=(logs+chunk).slice(-12000);});const deadline=Date.now()+90000;while(Date.now()<deadline){if(child.exitCode!==null)throw Error(logs);try{await call();return;}catch{}await new Promise(done=>setTimeout(done,400));}throw Error(logs);}
+async function start(){logs='';child=spawn(process.env.WRANGLER_BIN||'npx',[...(process.env.WRANGLER_BIN?[]:['--yes','--offline','wrangler@4']),'dev','--local','--config',config,'--ip','127.0.0.1','--port',String(port),'--persist-to',join(scratch,'state')],{cwd:scratch,detached:true,env:{...process.env,CI:'true',WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});for(const stream of [child.stdout,child.stderr])stream.on('data',chunk=>{logs=(logs+chunk).slice(-12000);});const deadline=Date.now()+90000;while(Date.now()<deadline){if(child.exitCode!==null)throw Error(logs);if(logs.includes('Ready on '+origin)){try{await call();return;}catch{}}await new Promise(done=>setTimeout(done,400));}throw Error(logs);}
 async function stop(){if(!child||child.exitCode!==null)return;const done=once(child,'exit'),timer=setTimeout(()=>{try{process.kill(-child.pid,'SIGKILL');}catch{}},5000);try{process.kill(-child.pid,'SIGTERM');await done;}finally{clearTimeout(timer);}}
 const at=Date.parse('2026-09-15T06:00Z'),row={ticker:'TEST',name:'Test',price:105,volume:2000,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'},volumeBase:{average:1000,from:'2026-08-28',to:'2026-09-11',count:10,exchange:'NSE'}};
 try{
- await start();assert.equal((await call()).schedule.alarmAt,null);
+ await start();assert.equal((await call()).alarmAt,null);
  const native=await call({action:'native-upstox'});assert.equal(native.instruments.length,1);assert.equal(native.result.rows[0].price,111);
  // Use native workerd fetch against a local HTTP source. A mocked fetch cannot
  // detect request options rejected by the production runtime before any I/O.
@@ -71,12 +84,12 @@ try{
  redirectCommit=true;assert.equal((await call({action:'daily',path:'/api/technicals'})).delivery,'deployed-fallback');redirectCommit=false;
  redirectRaw=true;assert.equal((await call({action:'daily',path:'/api/technicals'})).delivery,'deployed-fallback');
  assert.equal((await call({action:'daily',path:'/api/technicals/atr-history?revision='+revision})).status,503);assert.equal(followed,0);redirectRaw=false;
- await call({action:'arm'});await stop();await start();
- assert((await call()).schedule.alarmAt);assert.equal((await call()).capture.state,'not-started');
+ assert.equal(await call({action:'retire',kind:'capture'}),null);assert.equal(await call({action:'retire',kind:'primary'}),null);assert.deepEqual(await call({action:'blocked'}),{blocked:true});await stop();await start();
+ assert.equal((await call()).alarmAt,null);assert.equal((await call()).capture.state,'not-started');
  await call({action:'begin',run:'1:1',targets:['TEST','MISSING']});
  await call({action:'checkpoint',run:'1:1',rows:[row]});
  await stop();await start();
- let state=await call();assert.equal(state.capture.state,'collecting');assert.equal(state.capture.rows[0].price,105);assert(state.schedule.alarmAt);
+ let state=await call();assert.equal(state.capture.state,'collecting');assert.equal(state.capture.rows[0].price,105);assert.equal(state.alarmAt,null);
  assert.deepEqual(state.capture.rows[0].volumeBase,row.volumeBase,'dated momentum volume history survives real SQLite RPC and restart');
  await call({action:'checkpoint',run:'1:1',rows:[],failures:[{ticker:'MISSING',reason:'unavailable'}]});await call({action:'finish',run:'1:1'});
  await call({action:'recovery',run:'1:1',ticker:'TEST',from:at-30*60000,to:at,rows:[{...row,kind:'recovered-candle'}]});
@@ -99,5 +112,6 @@ try{
  await stop();await start();
  state=await call();assert.equal(state.capture.rows[0].exchange,'BSE');assert.equal(state.capture.rows[0].price,104);
  assert.equal(state.capture.primary.primaryUsed,1);assert.equal(state.capture.primary.failures.length,0);
- console.log('PASS local workerd: native gzip and authenticated Upstox quote fetch; daily-file redirects; minute/fallback SQL history, large inventory, independent alarms and recovery survive restarts');
-}finally{await stop();await new Promise(done=>upstream.close(done));rmSync(scratch,{recursive:true,force:true});}
+ const exported=await call({action:'export',table:'breakout_quotes',cursor:0});assert.equal(exported.writes,0);assert(exported.rows.length>0);
+ console.log('PASS local workerd: native gzip and authenticated Upstox quote fetch; daily-file redirects; minute/fallback SQL history, large inventory, read-only source export, rejected collector writes, retired alarms and recovery survive restarts');
+}catch(error){writeFileSync(resolve('.cache/breakout-runtime-last-failure.log'),logs);throw error;}finally{await stop();await new Promise(done=>upstream.close(done));rmSync(scratch,{recursive:true,force:true});}

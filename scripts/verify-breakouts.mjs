@@ -441,14 +441,11 @@ test('long captures acquire a fresh identity for every checkpoint',async()=>{
  assert.deepEqual(seen,['Bearer token-1','Bearer token-2','Bearer token-3']);
 });
 
-test('merge bootstrap survives delayed publishing and arms without a quote or scheduled run',async()=>{
- let at=AT,calls=0,armed=0;
- const env={CAPTURE_REGISTRY:{getByName:()=>({upstoxStatus:async()=>({started:true,alarmAt:at+60000}),breakoutArm:async()=>{armed++;return {started:true,alarmAt:at+900000};}})}};
+test('migration readiness waits for the read-only export without arming or collecting',async()=>{
+ let at=AT,calls=0;const actions=[];
  const result=await bootstrapBreakouts({now:()=>at,sleep:async ms=>{at+=ms;},client:async input=>{
-  assert.equal(input.action,'arm');if(++calls<3)throw Error('not deployed');
-  const response=await handleBreakouts(new Request(BREAKOUT_ENDPOINT,{method:'POST',body:JSON.stringify(input)}),env,{identity:async()=>'1:1'});
-  return response.json();
+  actions.push(input.action);if(++calls<3)throw Error('not deployed');return {ok:true,tables:[{name:'breakout_runs',count:2}]};
  }});
- assert(result.schedule.started);assert.equal(armed,1);assert.equal(calls,3);
+ assert.equal(result.tables[0].count,2);assert.equal(calls,3);assert(actions.every(action=>action==='export'));
  await assert.rejects(bootstrapBreakouts({now:()=>at,sleep:async ms=>{at+=ms;},client:async()=>{throw Error('unpublished');}}),/publishing/);
 });

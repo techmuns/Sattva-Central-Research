@@ -3,6 +3,8 @@ import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { breakoutCollectorIdentity } from './breakout-auth.mjs';
 import { withTag, tagged, revalidate } from './http.mjs';
 import { PRIMARY_OBJECT } from './breakout-primary.mjs';
+import {preparedBreakouts} from './breakouts-github.mjs';
+
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
 function conditional(request, payload, age = 0) {
   const { body, tag } = withTag(payload);
@@ -11,8 +13,7 @@ function conditional(request, payload, age = 0) {
 
 export async function handleBreakouts(request, env, { fetcher = fetch, now = Date.now, identity = breakoutCollectorIdentity, edgeCache = globalThis.caches?.default } = {}) {
   const url = new URL(request.url);
-  if (!env.CAPTURE_REGISTRY) return reply({ ok: false, reason: 'storage-unavailable' }, 503);
-  const store = env.CAPTURE_REGISTRY.getByName(BREAKOUT_OBJECT);
+
   if (url.pathname === '/api/breakouts/collector') {
     if (request.method !== 'POST') return reply({ ok: false, reason: 'method' }, 405);
     if (url.origin !== BREAKOUT_ORIGIN) return reply({ ok: false, reason: 'collector-origin' }, 403);
@@ -21,17 +22,25 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
     catch { return reply({ ok: false, reason: 'collector-identity' }, 403); }
     try {
       const body = await boundedJson(new Response(request.body), 2 * 1024 * 1024);
-      if (body.action === 'arm') return reply({ok:true,schedule:await store.breakoutArm(),primary:await env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxStatus()});
-      if (body.action === 'inventory') return reply({ok:true,primary:await env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxInventory(body.targets,body.discoveryFailed)});
-      if (body.action === 'begin') return reply(await store.breakoutBegin(run, body.targets, body.discoveryFailed));
-      if (body.action === 'checkpoint') return reply(await store.breakoutCheckpoint(run, body.rows, body.failures));
-      if (body.action === 'recovery') return reply(await store.breakoutRecovery(run,body.ticker,body.from,body.to,body.rows));
-      if (body.action === 'finish') return reply(await store.breakoutFinish(run));
-      return reply({ ok: false, reason: 'invalid-action' }, 400);
+      if(!env.CAPTURE_REGISTRY)return reply({ok:false,reason:'storage-unavailable'},503);
+      if(body.action==='export'){
+        const part=body.part||'capture',object=part==='primary'?PRIMARY_OBJECT:BREAKOUT_OBJECT;
+        return reply(await env.CAPTURE_REGISTRY.getByName(object).breakoutExport({part,table:body.table,cursor:body.cursor}));
+      }
+      return reply({ok:false,reason:'github-actions-only'},410);
     } catch { return reply({ ok: false, reason: 'checkpoint-unavailable' }, 503); }
   }
   if (request.method !== 'GET') return reply({ ok: false, reason: 'method' }, 405);
   try {
+    const prepared=await preparedBreakouts(request,env,{now:now()});
+    if(prepared){
+      if(url.pathname==='/api/breakouts/history'||url.pathname==='/api/breakouts/fallback')return reply(prepared);
+      const health=liveCoverage(prepared,prepared.targets||[],now());
+      if(url.pathname==='/api/breakouts/health')return reply({...health,runId:prepared.runId,captureStartedAt:prepared.captureStartedAt,schedule:prepared.schedule,primarySchedule:prepared.primarySchedule},health.partial||prepared.schedule.overdue||prepared.primarySchedule.overdue?503:200);
+      return conditional(request,{...prepared,health});
+    }
+    if(!env.CAPTURE_REGISTRY)return reply({ok:false,reason:'storage-unavailable'},503);
+    const store=env.CAPTURE_REGISTRY.getByName(BREAKOUT_OBJECT);
     const cacheKey = new Request(new URL('/api/breakouts', request.url));
     if (url.pathname === '/api/breakouts' && edgeCache) {
       const cached = await edgeCache.match(cacheKey);

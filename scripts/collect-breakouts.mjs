@@ -142,36 +142,29 @@ export async function collectBreakouts({ targets, previous = null, client, prima
 export async function bootstrapBreakouts({client=breakoutClient(),now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
   const deadline=now()+8*60000;
   do {
-    try { const result=await client({action:'arm'}); if(result.schedule?.started && result.schedule.alarmAt && result.primary?.started && result.primary.alarmAt) return result; }
+    try { const result=await client({action:'export',part:'capture'}); if(result.ok===true&&Array.isArray(result.tables))return result; }
     catch { /* The new Worker may still be publishing. No source collection is needed. */ }
     await sleep(15000);
   } while(now()<deadline);
-  throw Error('The backup timer could not start; verify website publishing.');
+  throw Error('The retained quote export is unavailable; verify website publishing.');
 }
-async function main() {
-  if(process.argv.includes('--bootstrap')) { await bootstrapBreakouts(); console.log('Durable backup timer started.'); return; }
-  const now = Date.now();
-  let previous;
-  try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts/fallback`, {signal:AbortSignal.timeout(20000)}), 8*1024*1024); }
-  catch { if (!marketWindow(now).collect) throw Error('Capture service unavailable'); }
-  // The first scheduled run also seeds the latest closing observations after hours.
-  // Otherwise a newly published dashboard could display the old CMP until next morning.
-  if (!marketWindow(now).collect && previous?.version !== 1) throw Error('Capture service unavailable');
-  const technicals = JSON.parse(readFileSync('public/data/technicals.json', 'utf8'));
+export async function discoverBreakoutTargets(previous,{inputRoot=resolve('public/data'),inputFailed=false}={}) {
+  const sourceFile=name=>resolve(inputRoot,name);
+  const technicals = JSON.parse(readFileSync(sourceFile('technicals.json'), 'utf8'));
   const targets = new Map();
-  let discoveryFailed = false;
+  let discoveryFailed = inputFailed;
   let identify = target => target;
   try {
-    const nse = JSON.parse(readFileSync('public/data/filing-capture/nse-identities.json', 'utf8')).directories;
-    const bse = JSON.parse(readFileSync('public/data/announcement-identities.json', 'utf8'));
+    const nse = JSON.parse(readFileSync(sourceFile('filing-capture/nse-identities.json'), 'utf8')).directories;
+    const bse = JSON.parse(readFileSync(sourceFile('announcement-identities.json'), 'utf8'));
     identify = quoteTargetIdentity({ nseEntries: [...nse.equity.entries, ...nse.sme.entries], bseEntries: bse.entries });
   } catch { discoveryFailed = true; }
   const targetFor = company => identify(captureTarget(company));
   for (const c of technicals.companies) { const target=targetFor(c); if(target) targets.set(target.ticker,target); else discoveryFailed=true; }
-  const universe = JSON.parse(readFileSync('public/data/universe.json', 'utf8'));
+  const universe = JSON.parse(readFileSync(sourceFile('universe.json'), 'utf8'));
   for (const c of universe) { const target=targetFor(c); if(target) { if(!targets.has(target.ticker)) targets.set(target.ticker,target); } else discoveryFailed=true; }
   try {
-    const book = await loadActivePortfolio(resolve('public/data/portfolio-companies.json'), { live: true });
+    const book = await loadActivePortfolio(sourceFile('portfolio-companies.json'), { live: true });
     for (const c of book.holdings || []) { const target=targetFor(c); if(target) targets.set(target.ticker,target); }
   } catch { discoveryFailed = true; }
   try {
@@ -180,19 +173,24 @@ async function main() {
     for (const c of watchlist.companies) if (tickerValid(c.ticker) && !targets.has(c.ticker)) targets.set(c.ticker, targetFor(c));
   } catch { discoveryFailed = true; }
   if (discoveryFailed) for (const ticker of previous?.targets || []) if (!targets.has(ticker)) targets.set(ticker, {ticker,name:previous?.rows?.find(row=>row.ticker===ticker)?.name || ticker});
-  const client = breakoutClient();
-  const {primaryInventoryUpdated,skipCapture}=await prepareBreakoutCapture({targets:[...targets.values()],previous,client,discoveryFailed,now});
-  if(skipCapture) {
-    console.log(JSON.stringify({outsideMarketHours:true,primaryInventoryUpdated,targetCount:targets.size}));
-    if(!primaryInventoryUpdated)process.exitCode=1;
-    return;
-  }
-  const summary = await collectBreakouts({ targets: [...targets.values()].sort((a,b)=>(Date.parse(previous?.rows?.find(row=>row.ticker===a.ticker)?.quoteAt)||0)-(Date.parse(previous?.rows?.find(row=>row.ticker===b.ticker)?.quoteAt)||0)), previous, client, discoveryFailed,
-    token: process.env.UPSTOX_BACKUP_ENABLED === 'true' ? process.env.UPSTOX_ACCESS_TOKEN || '' : '' });
-  summary.primaryInventoryUpdated=primaryInventoryUpdated;
-  mkdirSync('artifacts', { recursive: true });
-  writeFileSync('artifacts/breakout-health.json', JSON.stringify(summary, null, 2));
-  console.log(JSON.stringify(summary));
-  if (summary.failures || summary.noBase || summary.discoveryFailed || !primaryInventoryUpdated || !marketWindow(now).calendarKnown) process.exitCode = 1;
+  const ages=new Map((previous?.rows||[]).map(row=>[row.ticker,Date.parse(row.quoteAt)||0]));
+  return {targets:[...targets.values()].sort((a,b)=>(ages.get(a.ticker)||0)-(ages.get(b.ticker)||0)),discoveryFailed};
+}
+async function main() {
+  if(process.env.GITHUB_ACTIONS!=='true'||process.env.GITHUB_REF!=='refs/heads/main'||process.env.GITHUB_REPOSITORY!=='techmuns/Sattva-Central-Research')throw Error('Quote capture requires its fixed main-branch runner');
+  const [{githubBreakouts},{runBreakoutRunner},{dispatchWorkflow}]=await Promise.all([import('./lib/breakouts-github.mjs'),import('./lib/breakout-runner.mjs'),import('../worker/github-actions.mjs')]);
+  const recipient=await boundedJson(await fetch(BREAKOUT_ORIGIN+'/api/mutual-funds/publishing-key',{redirect:'manual',signal:AbortSignal.timeout(20000)}),4096);
+  const exportClient=breakoutClient();let ready=false;
+  const legacyClient=async input=>{
+    if(ready||input.table)return exportClient(input);
+    const result=await bootstrapBreakouts({client:()=>exportClient(input)});ready=true;return result;
+  };
+  const local=await githubBreakouts({legacyClient,recipient});
+  const {refreshBreakoutInputs}=await import('./lib/breakout-inputs.mjs');let inputRoot=resolve('public/data');
+  const discover=async previous=>{let inputFailed=false;try{const next=await refreshBreakoutInputs();inputRoot=next.root;await local.storage.put('github-breakout-inputs',{revision:next.revision,checkedAt:Date.now()});}catch{inputFailed=true;}return discoverBreakoutTargets(previous,{inputRoot,inputFailed});};
+  try {
+    await runBreakoutRunner(local,{discover,token:process.env.UPSTOX_BACKUP_ENABLED==='true'?process.env.UPSTOX_ACCESS_TOKEN||'':'',notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
+    console.log('Retained minute and fallback quotes saved on GitHub; static publication requested.');
+  }finally{await local.close();}
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) main().catch(() => { console.error('Breakout capture did not complete. Saved checkpoints are retained; inspect the capture health endpoint.'); process.exitCode = 1; });

@@ -42,7 +42,7 @@ export function mergePrimary(fallback, primary, now=Date.now()) {
     primary:{at:primary.at,captureStartedAt:new Date(primary.firstAt || primary.at).toISOString(),checkedAt:new Date(primary.completedAt).toISOString(),primaryUsed,fallbackUsed,
       failures:primary.failures,instrumentFailures:primary.instrumentFailures,gaps:primary.gaps || [],intervalMs:60000,minuteRetentionDays:MINUTE_RETENTION_DAYS},
     captureStartedAt:fallback.captureStartedAt || new Date(primary.firstAt || primary.at).toISOString(),
-    retention:'Detailed minute snapshots are retained for four calendar days on Cloudflare; detected breakout changes and existing fallback history are retained separately. The dashboard loads current prices only. Minute snapshots are not a trade-by-trade archive. Missed intervals use available 15-minute recovery candles; finer gaps remain unrecoverable.'};
+    retention:'Detailed minute snapshots are retained for four calendar days in the retained capture archive; detected breakout changes and existing fallback history are retained separately. The dashboard loads current prices only. Minute snapshots are not a trade-by-trade archive. Missed intervals use available 15-minute recovery candles; finer gaps remain unrecoverable.'};
 }
 
 // One fixed object's SQLite tables. Every acknowledged observation survives a later failure.
