@@ -9,6 +9,7 @@ import { exportMutualFunds } from '../worker/mutual-funds-export.mjs';
 import { MF_ORIGIN,targetMonth,previousMonth } from '../worker/mutual-funds-model.mjs';
 import { collectorClient,legacyExportClient } from './collect-mutual-funds.mjs';
 import { publishSnapshot } from './mutual-funds-github.mjs';
+import { mfManifest } from '../worker/mutual-funds-github.mjs';
 
 fs.mkdirSync('.cache',{recursive:true});
 const root=fs.mkdtempSync(path.resolve('.cache/mf-github-'));
@@ -61,5 +62,36 @@ try {
   await restoreState({env,file:migrated,fetcher:async()=>new Response('',{status:404}),legacyClient:async body=>exportMutualFunds(legacy.storage.sql,body.table,body.cursor)});
   const copy=localMutualFunds(migrated);assert.equal(copy.scanner.read([isin]).rows[0].totalShares,150);assert.equal(copy.db.prepare('SELECT COUNT(*) n FROM mf_scanner_history').get().n,expectedHistory);copy.close();legacy.close();
   await assert.rejects(publishSnapshot(built,{env:{...env,GITHUB_ACTIONS:'false'}}),/main-branch/);
+  assert.equal(await mfManifest(worker,{fetcher:async()=>Response.json({assets:[{id:1,name:'mf-999-1-state.bin'}]})}),null,'An interrupted FIRST upload still permits the authenticated legacy migration');
+  // Crash before the manifest: prior history remains usable, and the next run
+  // clears orphaned transport uploads instead of exhausting the release limit.
+  const remote=new Map(assets.map(asset=>[asset.name,{...asset,bytes:fs.readFileSync(path.join(built.out,asset.name))}]));
+  remote.set('mf-999-1-orphan.json',{id:500,name:'mf-999-1-orphan.json'});
+  let sequence=600,failManifest=true;const removed=[];
+  const publishing=async(raw,options={})=>{
+    const url=new URL(raw);
+    if(url.hostname==='api.github.com'&&options.method==='DELETE') {
+      const id=Number(url.pathname.split('/').at(-1));
+      const match=[...remote.values()].find(a=>a.id===id);assert(match);removed.push(match.name);remote.delete(match.name);return new Response(null,{status:204});
+    }
+    if(url.hostname==='api.github.com')return Response.json({id:77,assets:[...remote.values()].map(({bytes,...asset})=>asset)});
+    if(url.hostname==='uploads.github.com') {
+      const name=url.searchParams.get('name'),chunks=[];
+      for await(const chunk of options.body)chunks.push(chunk);
+      if(failManifest&&name===again.manifestName)return new Response('',{status:503});
+      assert(!remote.has(name),'Orphaned uploads are removed before names can be retried');
+      const asset={id:sequence++,name,browser_download_url:`https://github.com/${repo}/releases/download/mutual-funds-data/${name}`,bytes:Buffer.concat(chunks)};
+      remote.set(name,asset);return Response.json({id:asset.id,name});
+    }
+    const asset=remote.get(decodeURIComponent(url.pathname.split('/').at(-1)));assert(asset?.bytes);return new Response(asset.bytes);
+  };
+  const publisher={...env,GITHUB_RUN_ID:'12346',GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_TOKEN:'fixture-actions-token'};
+  await assert.rejects(publishSnapshot(again,{env:publisher,fetcher:publishing}),/503/);
+  assert.equal((await mfManifest(worker,{fetcher:publishing})).manifest.state,built.manifest.state,'Previous complete generation survives a failed publish');
+  assert.deepEqual(removed,['mf-999-1-orphan.json'],'No referenced history is deleted before the replacement is complete');
+  failManifest=false;await publishSnapshot(again,{env:publisher,fetcher:publishing});
+  assert.equal((await mfManifest(worker,{fetcher:publishing})).manifest.state,again.manifest.state);
+  for(const name of names)assert(remote.has(name),'Both complete generations remain available after recovery');
+
   console.log('PASS GitHub-only MF: retained SQLite history, encrypted private views/state, public/private separation, immutable-part reuse, read-only migration, zero DO reads after publication, and rejected Cloudflare capture writes');
 }finally{fs.rmSync(root,{recursive:true,force:true});}

@@ -21,11 +21,12 @@ export async function mfRelease(env,{fetcher=fetch}={}) {
   const response=await fetcher(`https://api.github.com/repos/${repo}/releases/tags/${MF_RELEASE}`,{
     headers:{accept:'application/vnd.github+json','user-agent':'ResearchSnapshots',...(env.GH_DISPATCH_TOKEN?{authorization:`Bearer ${env.GH_DISPATCH_TOKEN}`}:{})},redirect:'error',signal:AbortSignal.timeout(15000)});
   if(response.status===404){await response.body?.cancel();return null;}
-  return boundedJson(response,1024*1024);
+  return boundedJson(response,4*1024*1024);
 }
 export async function mfManifest(env,options={}) {
   const release=await mfRelease(env,options);if(!release)return null;
   const candidates=(release.assets||[]).filter(a=>/^mf-\d+-\d+-manifest\.json$/.test(a.name)).sort((a,b)=>b.id-a.id);
+  if(!candidates.length)return null; // The first upload may have been interrupted.
   // An incomplete upload has no manifest. A missing/corrupt newest manifest
   // does not discard the previous fully published generation.
   for(const asset of candidates.slice(0,2)) {

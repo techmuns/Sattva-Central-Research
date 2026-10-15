@@ -26,6 +26,19 @@ export async function publishSnapshot(built,{env=process.env,fetcher=fetch}={}) 
   };
   let release=await mfRelease(config,{fetcher});
   if(!release)release=await api(`https://api.github.com/repos/${repo}/releases`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tag_name:MF_RELEASE,target_commitish:env.GITHUB_SHA,name:'Mutual Funds retained data',body:'GitHub Actions generated disclosure snapshots. Private source data and restart state are encrypted. This release does not deploy a Worker.',make_latest:'false'})});
+  // Clear only unreferenced transport leftovers. Without this before upload,
+  // repeated interrupted runs can exhaust the release's asset limit forever.
+  async function prune(current) {
+    const manifests=(current.assets||[]).filter(a=>/^mf-\d+-\d+-manifest\.json$/.test(a.name)).sort((a,b)=>b.id-a.id).slice(0,2);
+    const keep=new Set(manifests.map(a=>a.name));
+    for(const asset of manifests) {
+      const document=await boundedJson(await fetcher(asset.browser_download_url,{redirect:'follow',signal:AbortSignal.timeout(30000)}),1024*1024);
+      if(document.repo!==repo||document.version!==1||!document.files||typeof document.files!=='object')throw Error('Retention manifest invalid');
+      for(const name of Object.keys(document.files))keep.add(name);
+    }
+    for(const asset of current.assets||[])if(/^mf-\d+-\d+-/.test(asset.name)&&!keep.has(asset.name))await api(`https://api.github.com/repos/${repo}/releases/assets/${asset.id}`,{method:'DELETE'});
+  }
+  await prune(release);
   // The complete manifest is uploaded LAST. An interrupted publish leaves the
   // previous manifest and every referenced asset readable.
   for(const name of [...Object.keys(built.manifest.files),built.manifestName]) {
@@ -36,16 +49,7 @@ export async function publishSnapshot(built,{env=process.env,fetcher=fetch}={}) 
   }
   release=await mfRelease(config,{fetcher});
   if(!release.assets.some(a=>a.name===built.manifestName))throw Error('Published manifest was not acknowledged');
-  // Each state contains ALL observations/corrections. Two complete generations
-  // survive; pruning obsolete transport copies does not prune disclosure history.
-  const manifests=release.assets.filter(a=>/^mf-\d+-\d+-manifest\.json$/.test(a.name)).sort((a,b)=>b.id-a.id).slice(0,2);
-  const keep=new Set(manifests.map(a=>a.name));
-  for(const asset of manifests) {
-    const document=await boundedJson(await fetcher(asset.browser_download_url,{redirect:'follow',signal:AbortSignal.timeout(30000)}),1024*1024);
-    if(document.repo!==repo||document.version!==1)throw Error('Retention manifest invalid');
-    for(const name of Object.keys(document.files))keep.add(name);
-  }
-  for(const asset of release.assets)if(/^mf-\d+-\d+-/.test(asset.name)&&!keep.has(asset.name))await api(`https://api.github.com/repos/${repo}/releases/assets/${asset.id}`,{method:'DELETE'});
+  await prune(release);
 }
 async function main() {
   requirePublisher(process.env);
