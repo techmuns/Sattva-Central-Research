@@ -29,12 +29,18 @@ export async function publishSnapshot(built,{env=process.env,fetcher=fetch}={}) 
   // Clear only unreferenced transport leftovers. Without this before upload,
   // repeated interrupted runs can exhaust the release's asset limit forever.
   async function prune(current) {
-    const manifests=(current.assets||[]).filter(a=>/^mf-\d+-\d+-manifest\.json$/.test(a.name)).sort((a,b)=>b.id-a.id).slice(0,2);
-    const keep=new Set(manifests.map(a=>a.name));
+    const manifests=(current.assets||[]).filter(a=>/^mf-\d+-\d+-manifest\.json$/.test(a.name)).sort((a,b)=>b.id-a.id);
+    const keep=new Set();let valid=0;
     for(const asset of manifests) {
-      const document=await boundedJson(await fetcher(asset.browser_download_url,{redirect:'follow',signal:AbortSignal.timeout(30000)}),1024*1024);
-      if(document.repo!==repo||document.version!==1||!document.files||typeof document.files!=='object')throw Error('Retention manifest invalid');
-      for(const name of Object.keys(document.files))keep.add(name);
+      if(asset.state==='starter'||asset.size===0)continue;
+      let document;
+      try{document=await boundedJson(await fetcher(asset.browser_download_url,{redirect:'follow',signal:AbortSignal.timeout(30000)}),1024*1024);}
+      catch(error){if(error instanceof SyntaxError)continue;throw error;}
+      if(document.repo!==repo||document.version!==1||!document.files||typeof document.files!=='object')continue;
+      keep.add(asset.name);for(const name of Object.keys(document.files))keep.add(name);
+      // Retain the generation preceding the metadata-cache grace window too:
+      // it may have been current just before a burst of queued publications.
+      if(++valid>=2&&!(Date.parse(asset.created_at)>Date.now()-10*60000))break;
     }
     for(const asset of current.assets||[])if(/^mf-\d+-\d+-/.test(asset.name)&&!keep.has(asset.name))await api(`https://api.github.com/repos/${repo}/releases/assets/${asset.id}`,{method:'DELETE'});
   }
@@ -48,7 +54,8 @@ export async function publishSnapshot(built,{env=process.env,fetcher=fetch}={}) 
     await api(`https://uploads.github.com/repos/${repo}/releases/${release.id}/assets?name=${encodeURIComponent(name)}`,{method:'POST',headers:{'content-type':'application/octet-stream','content-length':String(size)},body:fs.createReadStream(file),duplex:'half'});
   }
   release=await mfRelease(config,{fetcher});
-  if(!release.assets.some(a=>a.name===built.manifestName))throw Error('Published manifest was not acknowledged');
+  const verified=await mfManifest(config,{fetcher});
+  if(verified?.manifest.state!==built.manifest.state)throw Error('Complete published manifest was not acknowledged');
   await prune(release);
 }
 async function main() {

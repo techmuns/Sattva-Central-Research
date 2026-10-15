@@ -9,7 +9,7 @@ import { exportMutualFunds } from '../worker/mutual-funds-export.mjs';
 import { MF_ORIGIN,targetMonth,previousMonth } from '../worker/mutual-funds-model.mjs';
 import { collectorClient,legacyExportClient } from './collect-mutual-funds.mjs';
 import { publishSnapshot } from './mutual-funds-github.mjs';
-import { mfManifest } from '../worker/mutual-funds-github.mjs';
+import { mfManifest,mfRelease } from '../worker/mutual-funds-github.mjs';
 
 fs.mkdirSync('.cache',{recursive:true});
 const root=fs.mkdtempSync(path.resolve('.cache/mf-github-'));
@@ -62,11 +62,19 @@ try {
   await restoreState({env,file:migrated,fetcher:async()=>new Response('',{status:404}),legacyClient:async body=>exportMutualFunds(legacy.storage.sql,body.table,body.cursor)});
   const copy=localMutualFunds(migrated);assert.equal(copy.scanner.read([isin]).rows[0].totalShares,150);assert.equal(copy.db.prepare('SELECT COUNT(*) n FROM mf_scanner_history').get().n,expectedHistory);copy.close();legacy.close();
   await assert.rejects(publishSnapshot(built,{env:{...env,GITHUB_ACTIONS:'false'}}),/main-branch/);
-  assert.equal(await mfManifest(worker,{fetcher:async()=>Response.json({assets:[{id:1,name:'mf-999-1-state.bin'}]})}),null,'An interrupted FIRST upload still permits the authenticated legacy migration');
+  assert.equal(await mfManifest(worker,{fetcher:async()=>Response.json({assets:[{id:1,name:'mf-999-1-manifest.json',state:'starter',size:0}]})}),null,'An interrupted FIRST upload still permits the authenticated legacy migration');
+  let cachedMetadata=null,metadataCalls=0;
+  const edgeCache={match:async()=>cachedMetadata?.clone(),put:async(_key,response)=>{assert.match(response.headers.get('cache-control'),/max-age=300/);cachedMetadata=response;}};
+  const publicLookup=async(_url,options)=>{metadataCalls++;assert(!options.headers.authorization,'Actions-only Worker credential never authorizes public Contents API reads');return Response.json({assets});};
+  await mfRelease(worker,{fetcher:publicLookup,edgeCache});await mfRelease(worker,{fetcher:publicLookup,edgeCache});assert.equal(metadataCalls,1,'Public release metadata is reused within the edge TTL');
+  await mfRelease({...worker,GH_RELEASE_TOKEN:'fixture-runner-contents-token'},{fetcher:async(_url,options)=>{assert.equal(options.headers.authorization,'Bearer fixture-runner-contents-token');return Response.json({assets});},edgeCache});
   // Crash before the manifest: prior history remains usable, and the next run
   // clears orphaned transport uploads instead of exhausting the release limit.
-  const remote=new Map(assets.map(asset=>[asset.name,{...asset,bytes:fs.readFileSync(path.join(built.out,asset.name))}]));
+  const remote=new Map(assets.map(asset=>[asset.name,{...asset,created_at:new Date().toISOString(),bytes:fs.readFileSync(path.join(built.out,asset.name))}]));
+  remote.set('mf-12344-1-manifest.json',{id:0,name:'mf-12344-1-manifest.json',created_at:'2000-01-01T00:00:00Z',bytes:Buffer.from(JSON.stringify(built.manifest)),browser_download_url:`https://github.com/${repo}/releases/download/mutual-funds-data/mf-12344-1-manifest.json`});
   remote.set('mf-999-1-orphan.json',{id:500,name:'mf-999-1-orphan.json'});
+  remote.set('mf-999-1-manifest.json',{id:501,name:'mf-999-1-manifest.json',state:'starter',size:0});
+  remote.set('mf-999-2-manifest.json',{id:502,name:'mf-999-2-manifest.json',bytes:Buffer.from('invalid JSON'),browser_download_url:`https://github.com/${repo}/releases/download/mutual-funds-data/mf-999-2-manifest.json`});
   let sequence=600,failManifest=true;const removed=[];
   const publishing=async(raw,options={})=>{
     const url=new URL(raw);
@@ -80,7 +88,7 @@ try {
       for await(const chunk of options.body)chunks.push(chunk);
       if(failManifest&&name===again.manifestName)return new Response('',{status:503});
       assert(!remote.has(name),'Orphaned uploads are removed before names can be retried');
-      const asset={id:sequence++,name,browser_download_url:`https://github.com/${repo}/releases/download/mutual-funds-data/${name}`,bytes:Buffer.concat(chunks)};
+      const asset={id:sequence++,name,created_at:new Date().toISOString(),browser_download_url:`https://github.com/${repo}/releases/download/mutual-funds-data/${name}`,bytes:Buffer.concat(chunks)};
       remote.set(name,asset);return Response.json({id:asset.id,name});
     }
     const asset=remote.get(decodeURIComponent(url.pathname.split('/').at(-1)));assert(asset?.bytes);return new Response(asset.bytes);
@@ -88,10 +96,12 @@ try {
   const publisher={...env,GITHUB_RUN_ID:'12346',GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_TOKEN:'fixture-actions-token'};
   await assert.rejects(publishSnapshot(again,{env:publisher,fetcher:publishing}),/503/);
   assert.equal((await mfManifest(worker,{fetcher:publishing})).manifest.state,built.manifest.state,'Previous complete generation survives a failed publish');
-  assert.deepEqual(removed,['mf-999-1-orphan.json'],'No referenced history is deleted before the replacement is complete');
+  assert.deepEqual(removed,['mf-999-1-orphan.json','mf-999-1-manifest.json','mf-999-2-manifest.json'],'No referenced history is deleted before the replacement is complete');
   failManifest=false;await publishSnapshot(again,{env:publisher,fetcher:publishing});
   assert.equal((await mfManifest(worker,{fetcher:publishing})).manifest.state,again.manifest.state);
   for(const name of names)assert(remote.has(name),'Both complete generations remain available after recovery');
+  assert(remote.has('mf-12344-1-manifest.json'),'The generation preceding the cache grace window is retained through a burst of publications');
 
+  for(const file of ['mutual-funds-refresh.yml','mutual-funds-scanner.yml'])assert.match(fs.readFileSync('.github/workflows/'+file,'utf8'),/group: mutual-funds-github-state\s+queue: max\s+cancel-in-progress: false/,'Both writers retain their pending runs');
   console.log('PASS GitHub-only MF: retained SQLite history, encrypted private views/state, public/private separation, immutable-part reuse, read-only migration, zero DO reads after publication, and rejected Cloudflare capture writes');
 }finally{fs.rmSync(root,{recursive:true,force:true});}

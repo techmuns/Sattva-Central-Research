@@ -11,7 +11,7 @@ which person or coding agent used it.
 
 Both existing 15-minute workflows now restore a local SQLite database, execute the
 existing reconciliation and source-cooldown rules on a standard GitHub runner, and
-publish prepared reader views. A shared concurrency group prevents one collector
+publish prepared reader views. A shared concurrency group with the 100-run FIFO queue prevents one collector
 from overwriting the other's state. Capture duration and GitHub scheduling delays
 can make checks late; source timestamps and partial/failure states remain truthful.
 The upstream AmfiBeas source keeps its own independent 15-minute GitHub schedule.
@@ -29,8 +29,8 @@ Object calls. Access failures do not fall back to a different dataset.
 
 GitHub Release `mutual-funds-data` holds authenticated encrypted restart state and
 prepared public/private views. The manifest is uploaded last; an interrupted
-upload cannot replace the previous complete publication. Two complete transport
-generations remain. Each database retains ALL captured observation and correction
+upload cannot replace the previous complete publication. At least two complete transport
+generations remain, plus the generation preceding a ten-minute cache grace window. Each database retains ALL captured observation and correction
 rows; pruning obsolete transport assets does not prune disclosure history.
 Unchanged view parts reuse their existing assets. There are no database snapshots
 in expiring Actions artifacts, caches, LFS or Git commits. Existing small aggregate
@@ -83,3 +83,5 @@ MF arithmetic, source, denominator, coverage, correction and scanner checks rema
 The currently active Cloudflare Git build connection is separate from this code. Before disconnecting it, an operator must authorize and install a user API token scoped to this account with the minimum Worker deployment permissions, then verify a successful GitHub deployment. Do not reuse Wrangler's broad personal OAuth token. Disconnect the Cloudflare Git trigger only after that path works, and verify a subsequent normal main-branch push reaches the live site without a Workers Build. Creating the credential, changing the build connection, or manually starting a production deployment requires the user's specific authorization under AGENTS.md.
 
 Collector commits made with GITHUB_TOKEN do not create another push-triggered Actions run. A five-minute best-effort GitHub schedule therefore checks the current main commit as well. The deployment record stores the exact successfully uploaded SHA; unchanged public/worker/configuration trees are skipped. Only an acknowledged Wrangler upload advances this baseline. The comparison uses Git tree IDs before downloading the full site, never data blobs or Cloudflare database work. Publication is serialized so one upload can finish while a newer main commit waits. GitHub scheduling delays remain possible.
+
+Public release metadata is read anonymously by the Worker and cached for five minutes; the Actions-only dispatch token is never sent to a Contents endpoint. The runner uses its own Contents-authorized GITHUB_TOKEN. Private plaintext remains uncached. Empty GitHub upload placeholders and invalid JSON manifests cannot prevent recovery to the last complete publication. Transient download failures stop pruning rather than deleting unverified history.

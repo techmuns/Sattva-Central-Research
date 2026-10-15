@@ -1,6 +1,6 @@
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { readableOwnership } from '../public/js/data/mutual-funds-ownership.js';
-import { coverageState, validIsin } from './mutual-funds-model.mjs';
+import { coverageState, validIsin, MF_ORIGIN } from './mutual-funds-model.mjs';
 import { openForReader, hash,decode64 } from './mutual-funds-seal.mjs';
 
 export const MF_RELEASE='mutual-funds-data';
@@ -16,25 +16,33 @@ export async function releaseAsset(asset,repo,{fetcher=fetch,limit=8*1024*1024}=
   if(!asset?.browser_download_url?.startsWith(prefix))throw Error('Invalid snapshot asset');
   return boundedJson(await fetcher(asset.browser_download_url,{redirect:'follow',signal:AbortSignal.timeout(20000)}),limit);
 }
-export async function mfRelease(env,{fetcher=fetch}={}) {
-  const repo=mfRepo(env);
+export async function mfRelease(env,{fetcher=fetch,edgeCache=globalThis.caches?.default}={}) {
+  const repo=mfRepo(env),key=new Request(`${MF_ORIGIN}/api/mutual-funds/github-release-metadata`);
+  // This metadata is public. The Worker's Actions-only dispatch credential is
+  // never sent to a Contents endpoint. Cache public metadata to protect the
+  // anonymous API allowance; decrypted reader data is never cached here.
+  if(!env.GH_RELEASE_TOKEN&&edgeCache) {
+    try{const cached=await edgeCache.match(key);if(cached)return await boundedJson(cached,4*1024*1024);}catch{/* Recheck GitHub. */}
+  }
   const response=await fetcher(`https://api.github.com/repos/${repo}/releases/tags/${MF_RELEASE}`,{
-    headers:{accept:'application/vnd.github+json','user-agent':'ResearchSnapshots',...(env.GH_DISPATCH_TOKEN?{authorization:`Bearer ${env.GH_DISPATCH_TOKEN}`}:{})},redirect:'error',signal:AbortSignal.timeout(15000)});
-  if(response.status===404){await response.body?.cancel();return null;}
-  return boundedJson(response,4*1024*1024);
+    headers:{accept:'application/vnd.github+json','user-agent':'ResearchSnapshots',...(env.GH_RELEASE_TOKEN?{authorization:`Bearer ${env.GH_RELEASE_TOKEN}`}:{})},redirect:'error',signal:AbortSignal.timeout(15000)});
+  if(response.status===404){await response.body?.cancel();if(!env.GH_RELEASE_TOKEN&&edgeCache)await edgeCache.put(key,Response.json(null,{headers:{'cache-control':'public, max-age=60'}})).catch(()=>{});return null;}
+  const release=await boundedJson(response,4*1024*1024);
+  if(!env.GH_RELEASE_TOKEN&&edgeCache)await edgeCache.put(key,Response.json(release,{headers:{'cache-control':'public, max-age=300'}})).catch(()=>{});
+  return release;
 }
 export async function mfManifest(env,options={}) {
   const release=await mfRelease(env,options);if(!release)return null;
-  const candidates=(release.assets||[]).filter(a=>/^mf-\d+-\d+-manifest\.json$/.test(a.name)).sort((a,b)=>b.id-a.id);
+  const candidates=(release.assets||[]).filter(a=>/^mf-\d+-\d+-manifest\.json$/.test(a.name)&&a.state!=='starter'&&a.size!==0).sort((a,b)=>b.id-a.id);
   if(!candidates.length)return null; // The first upload may have been interrupted.
   // An incomplete upload has no manifest. A missing/corrupt newest manifest
   // does not discard the previous fully published generation.
-  for(const asset of candidates.slice(0,2)) {
+  for(const asset of candidates) {
     try {
       const manifest=await releaseAsset(asset,mfRepo(env),{...options,limit:1024*1024});
       if(manifest.version!==1||manifest.repo!==mfRepo(env)||!manifest.state||!manifest.publicIndex)throw Error('Invalid snapshot manifest');
       const assets=new Map((release.assets||[]).map(a=>[a.name,a]));
-      if(Object.keys(manifest.files).some(name=>!assets.has(name)))throw Error('Incomplete snapshot');
+      if(Object.keys(manifest.files).some(name=>!assets.has(name)||assets.get(name).state==='starter'||assets.get(name).size===0))throw Error('Incomplete snapshot');
       return {manifest,assets};
     }catch{/* Try the retained complete generation. */}
   }

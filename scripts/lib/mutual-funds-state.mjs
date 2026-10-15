@@ -16,7 +16,7 @@ const key=env=>{
   if(!env.MF_STATE_KEY||env.MF_STATE_KEY.length<20)throw Error('GitHub snapshot key unavailable');
   return hkdfSync('sha256',env.MF_STATE_KEY,'mutual-funds-github-v1','runner-state',32);
 };
-export function runnerEnv(env=process.env) {return {...env,GH_REPO:env.GITHUB_REPOSITORY,GH_DISPATCH_TOKEN:env.GITHUB_TOKEN};}
+export function runnerEnv(env=process.env) {return {...env,GH_REPO:env.GITHUB_REPOSITORY,GH_RELEASE_TOKEN:env.GITHUB_TOKEN};}
 export async function fileHash(file) {const h=createHash('sha256');for await(const b of fs.createReadStream(file))h.update(b);return h.digest('hex');}
 export async function encryptState(file,out,env=process.env) {
   const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key(env),iv);cipher.setAAD(encoder.encode(`${env.GITHUB_REPOSITORY}:mf-state-v1`));
