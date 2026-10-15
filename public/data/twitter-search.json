@@ -872,7 +872,7 @@
       "pending": []
     },
     "isin:INE0SMY01017|JAYBEE-SM": {
-      "lastAttemptAt": "2026-10-10T04:24:05+00:00",
+      "lastAttemptAt": "2026-10-15T10:33:38+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-04T19:16:43+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-15T09:59:13.433599+00:00"
+    "checkedAt": "2026-10-15T10:33:38.921420+00:00"
   }
 }
