@@ -5,7 +5,7 @@ import {prepareBreakoutCapture,collectBreakouts} from '../collect-breakouts.mjs'
 // while the slower fallback walk waits on its providers. Publications serialize.
 export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms)),runWindow=45*60000,minuteInterval=60000,publishInterval=60000,collect=collectBreakouts,notify=async()=>{},token=''}={}) {
  if(typeof discover!=='function'||!Number.isSafeInteger(runWindow)||runWindow<1||runWindow>50*60000)throw Error('Invalid quote runner window');
- let stopped=false,firstError=null,fallbackCycle=0,version=0,publishedVersion=-1;const started=now(),deadline=started+runWindow,active=marketWindow(started).collect;
+ let stopped=false,firstError=null,partial=false,fallbackCycle=0,version=0,publishedVersion=-1;const started=now(),deadline=started+runWindow,active=marketWindow(started).collect;
  const wait=async ms=>{let left=ms;while(left>0&&!stopped){const part=Math.min(left,1000);await sleep(part);left-=part;}};
  const publish=async()=>{const revision=version,saved=await local.publish();publishedVersion=revision;try{await notify(saved);}catch{console.warn('Prepared quotes saved; automatic static delivery request was unavailable. Scheduled deployment checks remain active.');}return saved;};
  const guard=task=>task.catch(error=>{firstError||=error;stopped=true;});
@@ -19,14 +19,14 @@ export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>n
    const prepared=await prepareBreakoutCapture({targets:targets.targets,previous,client:local.client,discoveryFailed:targets.discoveryFailed,now:at});
    let result={reason:'retained-close',failures:0,noBase:0,discoveryFailed:targets.discoveryFailed};
    if(!prepared.skipCapture){local.beginCycle(++fallbackCycle);result=await collect({targets:targets.targets,previous,client:local.client,discoveryFailed:targets.discoveryFailed,token,now,sleep});}
-   const failed=!!(result.failures||result.noBase||result.discoveryFailed||!prepared.primaryInventoryUpdated);
+   const failed=!!(result.failures||result.noBase||result.recoveryFailed||result.discoveryFailed||!prepared.primaryInventoryUpdated||!marketWindow(at).calendarKnown);partial||=failed;
    await local.storage.put('github-breakout-fallback',{lastAttemptAt:at,lastCompletedAt:now(),reason:failed?'partial':'ok',failed});
    version++;if(!active)break;
    await wait(Math.max(1,Math.min(at+BREAKOUT_INTERVAL_MS,deadline)-now()));
   }while(!stopped&&now()<deadline-10*60000);
  }
  await publish(); // Verify retained history on GitHub before opening source work.
- if(!active){await fallback();await local.primary.wake();await publish();return;}
+ if(!active){await fallback();await local.primary.wake();await publish();if(partial)throw Error('Quote capture is partial; retained progress was published');return;}
  await Promise.all([
   guard(fallback()),
   guard((async()=>{while(!stopped&&now()<deadline){const at=now();await local.primary.wake();version++;await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
@@ -35,4 +35,5 @@ export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>n
  stopped=true;
  if(publishedVersion!==version||firstError)await publish();
  if(firstError)throw firstError;
+ if(partial)throw Error('Quote capture is partial; retained progress was published');
 }
