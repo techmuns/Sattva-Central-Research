@@ -48,7 +48,7 @@ import { handleMutualFunds } from './mutual-funds.mjs';
 import { readTelegramCollector } from './telegram-collector.mjs';
 import { TELEGRAM_DELIVERY_NAME } from './telegram-delivery.mjs';
 import { handleBreakouts, handleTechnicals } from './breakouts.mjs';
-import { TELEGRAM_SCHEDULER_NAME, TELEGRAM_PRODUCTION_HOST } from './telegram-scheduler.mjs';
+import { TelegramSchedule, TELEGRAM_PRODUCTION_HOST } from './telegram-scheduler.mjs';
 import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCalendarStrip, fetchCalendarDay, CALENDAR_PAGE_SIZE } from './mc.mjs';
 import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans } from './stockscans.mjs';
 import { newConcallHistory, advanceConcallHistory } from './concall-history.mjs';
@@ -170,7 +170,7 @@ export default {
     if (url.pathname === '/api/ipo-monitor') return handleIpoMonitor(request);
     if (url.pathname === '/api/ipo-filings') return handleIpoFilings(request, { readPlatform: ({ signal }) => readPlatformCollector({ token: env.GH_DISPATCH_TOKEN, signal }) });
     if (url.pathname === '/api/capture-registration') return handleCaptureRegistration(request, env);
-    if (['/api/mutual-funds','/api/mutual-funds/company','/api/mutual-funds/collector','/api/mutual-funds/health','/api/mutual-funds/private','/api/mutual-funds/private/company'].includes(url.pathname)) return handleMutualFunds(request, env);
+    if (['/api/mutual-funds','/api/mutual-funds/company','/api/mutual-funds/collector','/api/mutual-funds/health','/api/mutual-funds/private','/api/mutual-funds/private/company','/api/mutual-funds/publishing-key'].includes(url.pathname)) return handleMutualFunds(request, env);
     if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health', '/api/breakouts/fallback'].includes(url.pathname)) return handleBreakouts(request, env);
     if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
     if (url.pathname === '/api/alert-notes') return handleAlertNotes(request, env);
@@ -283,29 +283,21 @@ export default {
     if (url.pathname === '/api/twitter/run') {
       return handleWorkflowRunStatus(env, ctx, { workflow: TWITTER_WORKFLOW, cacheName: 'twitter-run-status' });
     }
-    // A refresh starts the persistent channel timer. Subsequent alarms continue without readers.
-    // GETs remain read-only; preview deployments cannot arm a production collector.
+    // GitHub owns recurring capture. These request-time routes report its runs or
+    // request a due check; no browser visit can arm a Cloudflare timer.
     if (url.pathname === '/api/telegram/posts') return handleTelegramPosts(request, env, ctx);
     if (url.pathname === '/api/telegram/schedule') {
       if (request.method !== 'GET') return json({ ok: false, reason: 'method' }, 405);
-      if (!env.TELEGRAM_SCHEDULER) return json({ ok: false, enabled: false, reason: 'unavailable' }, 503);
-      try {
-        return json({ ok: true, ...await env.TELEGRAM_SCHEDULER.getByName(TELEGRAM_SCHEDULER_NAME).status() });
-      } catch { return json({ ok: false, enabled: false, reason: 'unavailable' }, 503); }
+      return json({ ok: true, ...await new TelegramSchedule(null,env).status() });
     }
     if (url.pathname === '/api/telegram/refresh') {
       if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a collection with POST.' }, 405);
-      if (env.TELEGRAM_SCHEDULER) {
-        if (url.hostname !== TELEGRAM_PRODUCTION_HOST) return json({ ok: false, reason: 'not-production' }, 403);
-        try { return json(await env.TELEGRAM_SCHEDULER.getByName(TELEGRAM_SCHEDULER_NAME).request(sourceOf(url))); }
-        catch { return json({ ok: false, dispatched: false, reason: 'scheduler-unavailable' }, 503); }
-      }
-      // Compatibility for deployments that have not installed the binding yet.
-      return handleWorkflowDispatch(request, env, ctx, {
-        workflow: TELEGRAM_WORKFLOW,
-        cacheName: 'telegram-dispatch',
-        cooldownS: TELEGRAM_DISPATCH_COOLDOWN_S,
-      });
+      if (url.hostname !== TELEGRAM_PRODUCTION_HOST) return json({ ok: false, reason: 'not-production' }, 403);
+      const cache=caches.default,key=edgeKey('telegram-dispatch'),held=await cache.match(key);
+      if(held)return json({...await held.json(),dispatched:false,reason:'cooling-down'});
+      const result=await new TelegramSchedule(null,env).request(sourceOf(url));
+      if(result.ok)ctx.waitUntil(cache.put(key,Response.json(result,{headers:{'cache-control':`max-age=${TELEGRAM_DISPATCH_COOLDOWN_S}`}})));
+      return json(result);
     }
     if (url.pathname === '/api/telegram/run') {
       return handleWorkflowRunStatus(env, ctx, { workflow: TELEGRAM_WORKFLOW, cacheName: 'telegram-run-status' });

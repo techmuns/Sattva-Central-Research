@@ -10,9 +10,17 @@ import {MF_ENDPOINT,MF_ORIGIN,targetMonth,projectCompany,companyRevision} from '
 import {selectShareCount} from '../public/js/data/mutual-funds-ownership.js';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {loadActivePortfolio} from './lib/active-portfolio.mjs';
-export function collectorClient({fetcher=fetch,env=process.env,pause=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
+import {localMutualFunds} from './lib/mutual-funds-local.mjs';
+let runnerStore;
+export function collectorClient({env=process.env}={}) {
+  if(!env.MF_LOCAL_FILE)throw Error('Mutual Funds collection requires GitHub runner storage');
+  runnerStore ||= localMutualFunds(path.resolve(env.MF_LOCAL_FILE));
+  return runnerStore.client;
+}
+export function legacyExportClient({fetcher=fetch,env=process.env,pause=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
   let token=null,expires=0;
   return async body=>{
+    if(body?.action!=='export')throw Error('Cloudflare capture writes are disabled');
     if(!token||Date.now()>expires) {
       const url=new URL(env.ACTIONS_ID_TOKEN_REQUEST_URL||'');
       if(url.protocol!=='https:'||!url.hostname.endsWith('.actions.githubusercontent.com'))throw Error('OIDC unavailable');
@@ -27,7 +35,7 @@ export function collectorClient({fetcher=fetch,env=process.env,pause=ms=>new Pro
       try {response=await fetcher(MF_ENDPOINT,{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(60000)});}
       catch(error){if(attempt===3)throw error;await pause(1000*2**attempt);continue;}
       if([500,502,503,504].includes(response.status)&&attempt<3){await response.body?.cancel();await pause(1000*2**attempt);continue;}
-      const reply=await boundedJson(response,1024*1024);
+      const reply=await boundedJson(response,3*1024*1024);
       if(!reply.ok)throw Error('Capture not acknowledged');return reply;
     }
   };
@@ -41,8 +49,7 @@ export function mutualFundSourceCoverage(amcs,target) {
 }
 async function main() {
   if(process.argv.includes('--bootstrap')) {
-    const client=collectorClient();for(let attempt=0;attempt<45;attempt++){try{await client({action:'arm'});console.log('Mutual Funds timer armed');return;}catch{await new Promise(done=>setTimeout(done,10000));}}
-    throw Error('Mutual Funds publishing unavailable');
+    console.log('Mutual Funds runs on GitHub Actions; no Cloudflare timer is armed.');return;
   }
   const source=path.resolve(process.env.AMFIBEAS_PATH||'/tmp/sattva-amfibeas-source');
   const publish=process.argv.includes('--publish');
@@ -77,7 +84,7 @@ async function main() {
   fs.mkdirSync('artifacts',{recursive:true});fs.writeFileSync('artifacts/mutual-funds-health.json',JSON.stringify({meta,companies:companies.length,warnings},null,2));
   if(publish) {
     const client=collectorClient(),known=new Map();let cursor='',previousChecks=[];
-    do {const r=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?cursor=${cursor}`,{signal:AbortSignal.timeout(30000)}),3*1024*1024);if(!cursor)previousChecks=r.meta?.amcs||[];for(const row of r.rows||[])known.set(row.isin,row);cursor=r.nextCursor||'';}while(cursor);
+    do {const r=runnerStore.primary.read(null,cursor);if(!cursor)previousChecks=r.meta?.amcs||[];for(const row of r.rows||[])known.set(row.isin,row);cursor=r.nextCursor||'';}while(cursor);
     meta.amcs=reconcileSourceChecks(previousChecks,amcs);
     meta.checkedAt=meta.amcs.map(c=>c.checkedAt||c.lastAttemptAt).filter(Boolean).sort()[0]||null;
     fs.writeFileSync('artifacts/mutual-funds-health.json',JSON.stringify({meta,companies:companies.length,warnings},null,2));

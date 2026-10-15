@@ -4,32 +4,32 @@ import { breakoutCollectorIdentity } from './breakout-auth.mjs';
 import { withTag,tagged,revalidate } from './http.mjs';
 import { authoriseMutualFundsReader } from './mutual-funds-auth.mjs';
 import { scannerOperationalStatus } from './mutual-funds-scanner-model.mjs';
+import { githubMutualFunds } from './mutual-funds-github.mjs';
+import { readerKeys,encode64 } from './mutual-funds-seal.mjs';
 const reply=(body,status=200)=>Response.json(body,{status,headers:{'cache-control':'no-store'}});
 const privateReply=(body,status=200)=>Response.json(body,{status,headers:{'cache-control':'private, no-store',vary:'Authorization','x-content-type-options':'nosniff'}});
-export async function handleMutualFunds(request,env,{identity=breakoutCollectorIdentity,authorise=authoriseMutualFundsReader}={}) {
+export async function handleMutualFunds(request,env,{identity=breakoutCollectorIdentity,authorise=authoriseMutualFundsReader,fetcher=fetch}={}) {
   const url=new URL(request.url);
-  if(!env.CAPTURE_REGISTRY)return reply({ok:false,reason:'storage-unavailable'},503);
-  const store=env.CAPTURE_REGISTRY.getByName(MF_OBJECT);
+  if(url.pathname==='/api/mutual-funds/publishing-key') {
+    if(request.method!=='GET')return reply({ok:false},405);
+    try{const key=await readerKeys(env.GH_DISPATCH_TOKEN);return reply({kid:key.kid,publicKey:encode64(key.publicKey)});}catch{return reply({ok:false,reason:'publishing-unavailable'},503);}
+  }
   if(url.pathname==='/api/mutual-funds/collector') {
     if(request.method!=='POST'||url.origin!==MF_ORIGIN)return reply({ok:false},403);
     let body;try{body=await boundedJson(new Response(request.body),3*1024*1024);}catch{return reply({ok:false,reason:'invalid-body'},400);}
     if(!body||typeof body!=='object'||Array.isArray(body))return reply({ok:false,reason:'invalid-body'},400);
     const scannerAction=['scanner-inventory','scanner-reserve','scanner-complete','scanner-status'].includes(body.action);
-    let run;try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:scannerAction?MF_SCANNER_WORKFLOW:MF_WORKFLOW});}catch{return reply({ok:false,reason:'identity'},403);}
-    try{
-      if(body.action==='arm')return reply({ok:true,schedule:await store.mfArm()});
-      if(body.action==='begin')return reply(await store.mfBegin(run,body.manifest));
-      if(body.action==='reports')return reply(await store.mfReports(run,body.reports));
-      if(body.action==='fragment')return reply(await store.mfFragment(run,body.fragment));
-      if(body.action==='checkpoint')return reply(await store.mfCheckpoint(run,body.companies));
-      if(body.action==='confirm')return reply(await store.mfConfirm(run,body.companies));
-      if(body.action==='finish')return reply(await store.mfFinish(run));
-      if(body.action==='scanner-inventory')return privateReply(await store.mfScannerInventory(body.companies));
-      if(body.action==='scanner-reserve')return privateReply(await store.mfScannerReserve(run,body.requestId,body.kind));
-      if(body.action==='scanner-complete')return privateReply(await store.mfScannerComplete(run,body.input));
-      if(body.action==='scanner-status')return privateReply({ok:true,supplement:await store.mfScannerStatus()});
-      return reply({ok:false,reason:'action'},400);
-    }catch{return reply({ok:false,reason:'capture-rejected'},503);}
+    let run;
+    try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:scannerAction?MF_SCANNER_WORKFLOW:MF_WORKFLOW});}
+    catch{
+      // Only these two fixed main-branch identities may bootstrap retained history.
+      if(body.action!=='export')return reply({ok:false,reason:'identity'},403);
+      try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:MF_SCANNER_WORKFLOW});}catch{return reply({ok:false,reason:'identity'},403);}
+    }
+    if(body.action==='export') {
+      try{return privateReply(await env.CAPTURE_REGISTRY.getByName(MF_OBJECT).mfExport(body.table||null,body.cursor||0));}catch{return privateReply({ok:false,reason:'migration-unavailable'},503);}
+    }
+    return reply({ok:false,reason:'collection-moved-to-github'},410);
   }
   if(request.method!=='GET')return reply({ok:false},405);
   const privateRead=url.pathname==='/api/mutual-funds/private'||url.pathname==='/api/mutual-funds/private/company';
@@ -41,6 +41,18 @@ export async function handleMutualFunds(request,env,{identity=breakoutCollectorI
   try {
     const ids=url.searchParams.has('isins')?url.searchParams.get('isins').split(',').filter(Boolean):null;
     if(ids && (ids.length>250||ids.some(id=>!validIsin(id))))return reply({ok:false},400);
+    if(env.GH_REPO) {
+      const payload=await githubMutualFunds(request,env,{privateRead,fetcher});
+      if(payload) {
+        if(url.pathname==='/api/mutual-funds/health')return reply({...payload.meta,schedule:{runtime:'github-actions',started:false}},payload.meta.health.state==='current'?200:503);
+        if(privateRead)return privateReply(payload);
+        const {body,tag}=withTag(payload);return revalidate(request,tagged(body,tag,0),'github-snapshot');
+      }
+      // Only until the first verified GitHub publication: retain existing reads
+      // during the transfer. No capture endpoint or alarm can write or re-arm.
+    }
+    if(!env.CAPTURE_REGISTRY)return reply({ok:false,reason:'storage-unavailable'},503);
+    const store=env.CAPTURE_REGISTRY.getByName(MF_OBJECT);
     if(privateRead) {
       const payload=url.pathname.endsWith('/company')?await store.mfPrivateDetail(url.searchParams.get('isin'),url.searchParams.get('month')):await store.mfPrivateRead(ids,url.searchParams.get('cursor')||'');
       return privateReply(payload);

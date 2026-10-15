@@ -22,14 +22,15 @@ export async function scannerFetch(url,{fetcher=fetch}={}) {
   finally{reader.releaseLock();}
   return {html:Buffer.concat(chunks).toString('utf8')};
 }
-export async function collectScanner({client=collectorClient(),fetcher=fetch,sleep=pause,now=Date.now,companies,maxRequests=180}={}) {
+export async function collectScanner({client=collectorClient(),fetcher=fetch,sleep=pause,now=Date.now,companies,maxRequests=180,maxDurationMs=20*60000}={}) {
+  const deadline=now()+maxDurationMs;
   await client({action:'scanner-inventory',companies});
   let requestId=0,catalogue=null,completed=0,failed=0,reason=null;const failures={},failureReasons={},periods={},partialPages={pending:0,unknownAmcs:0};
   const result=()=>({completed,failed,failures,failureReasons,periods,partialPages,reason});
   const recordFailure=(kind,detail)=>{failed++;failures[kind]=(failures[kind]||0)+1;if(detail)failureReasons[detail]=(failureReasons[detail]||0)+1;};
   const reserve=async kind=>{
     const id=String(++requestId);
-    for(;;){const r=await client({action:'scanner-reserve',requestId:id,kind});if(r.waitUntil&&r.reason==='spacing'){await sleep(Math.min(3000,Math.max(1,r.waitUntil-now())));continue;}return r;}
+    for(;;){if(now()>=deadline){reason='capture-window';return {reason};}const r=await client({action:'scanner-reserve',requestId:id,kind});if(r.waitUntil&&r.reason==='spacing'){await sleep(Math.min(3000,Math.max(1,r.waitUntil-now())));continue;}return r;}
   };
   const catalog=await reserve('catalogue');
   if(catalog.catalogue)catalogue=catalog.catalogue;
@@ -55,7 +56,7 @@ export async function collectScanner({client=collectorClient(),fetcher=fetch,sle
   }
   return result();
 }
-export const scannerCaptureHealthy=(result,status)=>!result.failed&&status?.expectedCompanies>0&&status.currentCompanies===status.expectedCompanies&&!['source-cooldown','in-flight','reservation-expired'].includes(result.reason);
+export const scannerCaptureHealthy=(result,status)=>!result.failed&&status?.expectedCompanies>0&&status.currentCompanies===status.expectedCompanies&&!['source-cooldown','in-flight','reservation-expired','capture-window'].includes(result.reason);
 async function main() {
   const book=await loadActivePortfolio('public/data/portfolio-companies.json',{live:true});
   const identities=Object.values(JSON.parse(fs.readFileSync('public/data/exchange-deals.json')).securityMap||{});

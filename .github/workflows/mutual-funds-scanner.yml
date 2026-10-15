@@ -10,16 +10,21 @@ on:
         type: string
         default: manual
 permissions:
-  contents: read
+  contents: write
   id-token: write
 concurrency:
-  group: mutual-fund-scanner
+  group: mutual-funds-github-state
+  queue: max
   cancel-in-progress: false
 jobs:
   collect:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 90
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      MF_STATE_KEY: ${{ secrets.MF_STATE_KEY || secrets.FAMILY_HOLDINGS_TOKEN || secrets.GLOWVENTURES_READ_TOKEN }}
+      MF_LOCAL_FILE: .cache/mutual-funds/state.sqlite
     steps:
       - uses: actions/checkout@v5
         with:
@@ -28,5 +33,16 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Restore retained data on the GitHub runner
+        id: restore
+        timeout-minutes: 45
+        run: node scripts/mutual-funds-github.mjs restore
       - name: Capture private MF Scanner supplement
+        # The collector stops after 20 minutes; a stalled process is bounded too.
+        # Leave independent time for always() to publish progress and cooldowns.
+        timeout-minutes: 25
         run: node scripts/collect-mutual-funds-scanner.mjs
+      - name: Save retained data and prepared reader snapshots to GitHub
+        if: always() && steps.restore.outcome == 'success'
+        timeout-minutes: 15
+        run: node scripts/mutual-funds-github.mjs publish

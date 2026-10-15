@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {projectCompany} from '../worker/mutual-funds-model.mjs';
 import {publishCompanies} from './lib/mutual-funds-transport.mjs';
-import {collectorClient,mutualFundSourceCoverage} from './collect-mutual-funds.mjs';
+import {legacyExportClient,mutualFundSourceCoverage} from './collect-mutual-funds.mjs';
 import './verify-mutual-funds-feed.mjs';
 assert.deepEqual(mutualFundSourceCoverage([{status:'ok',month:'2026-09'},{status:'ok',month:'2026-08'},
  {status:'partial',month:'2026-09'},{status:'unavailable',month:null}],'2026-09'),
@@ -37,19 +37,19 @@ assert.equal(inFlight,0);assert.equal(acknowledged.size,books.length-1,'One fail
 console.log('PASS bounded publication: independent stocks overlap, each company remains ordered, and failures wait for all other checkpoints');
 const oidcEnv={ACTIONS_ID_TOKEN_REQUEST_URL:'https://fixture.actions.githubusercontent.com/token',ACTIONS_ID_TOKEN_REQUEST_TOKEN:'fixture'};
 const bodies=[],waits=[];let attempts=0;
-const retryClient=collectorClient({env:oidcEnv,pause:async ms=>waits.push(ms),fetcher:async(url,options)=>{
+const retryClient=legacyExportClient({env:oidcEnv,pause:async ms=>waits.push(ms),fetcher:async(url,options)=>{
   if(String(url).includes('actions.githubusercontent.com'))return Response.json({value:'fixture-identity'});
   bodies.push(options.body);attempts++;
   if(attempts===1)return new Response('',{status:503});
   if(attempts===2)throw Error('Acknowledgement lost');
   return Response.json({ok:true});
 }});
-await retryClient({action:'fragment',fragment:{part:0}});
+await retryClient({action:'export',table:'mf_companies',cursor:0});
 assert.equal(new Set(bodies).size,1,'Recovery repeats the exact idempotent request');assert.deepEqual(waits,[1000,2000]);
 let refused=0;
-await assert.rejects(collectorClient({env:oidcEnv,pause:async()=>{throw Error('Must not retry refusal');},fetcher:async url=>String(url).includes('actions.githubusercontent.com')?Response.json({value:'fixture'}):(refused++,new Response('',{status:403}))})({action:'arm'}),/403/);
+await assert.rejects(legacyExportClient({env:oidcEnv,pause:async()=>{throw Error('Must not retry refusal');},fetcher:async url=>String(url).includes('actions.githubusercontent.com')?Response.json({value:'fixture'}):(refused++,new Response('',{status:403}))})({action:'export'}),/403/);
 assert.equal(refused,1);
 let unavailable=0;
-await assert.rejects(collectorClient({env:oidcEnv,pause:async()=>{},fetcher:async url=>String(url).includes('actions.githubusercontent.com')?Response.json({value:'fixture'}):(unavailable++,new Response('',{status:503}))})({action:'arm'}),/503/);
+await assert.rejects(legacyExportClient({env:oidcEnv,pause:async()=>{},fetcher:async url=>String(url).includes('actions.githubusercontent.com')?Response.json({value:'fixture'}):(unavailable++,new Response('',{status:503}))})({action:'export'}),/503/);
 assert.equal(unavailable,4,'Repeated outages exhaust a bounded retry budget');
 console.log('PASS capture recovery: temporary server errors and lost acknowledgements retry unchanged requests, refusals stop, persistent failure remains bounded');
