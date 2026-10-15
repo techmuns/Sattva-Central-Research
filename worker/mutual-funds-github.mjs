@@ -6,15 +6,22 @@ import { openForReader, hash,decode64 } from './mutual-funds-seal.mjs';
 export const MF_RELEASE='mutual-funds-data';
 export const MF_PARTS=64;
 export const mfPart=isin=>[...isin].reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,0)%MF_PARTS;
+export const mfDetailKey=(isin,month=null)=>hash(new TextEncoder().encode(`${isin}:${month||'latest'}`));
 export function mfRepo(env) {
   const expected='techmuns/Sattva-Central-Research';
   if(env.GH_REPO!==expected)throw Error('Snapshot repository unavailable');
   return env.GH_REPO;
 }
-export async function releaseAsset(asset,repo,{fetcher=fetch,limit=8*1024*1024}={}) {
+export async function releaseAsset(asset,repo,{fetcher=fetch,limit=8*1024*1024,edgeCache=globalThis.caches?.default,validate=async()=>{}}={}) {
   const prefix=`https://github.com/${repo}/releases/download/${MF_RELEASE}/`;
   if(!asset?.browser_download_url?.startsWith(prefix))throw Error('Invalid snapshot asset');
-  return boundedJson(await fetcher(asset.browser_download_url,{redirect:'follow',signal:AbortSignal.timeout(20000)}),limit);
+  const cacheKey=Number.isSafeInteger(asset.id)?new Request(`${MF_ORIGIN}/api/mutual-funds/immutable-asset?id=${asset.id}`):null;
+  if(cacheKey&&edgeCache){try{const cached=await edgeCache.match(cacheKey);if(cached){const value=await boundedJson(cached,limit);await validate(value);return value;}}catch{/* Recheck the immutable asset. */}}
+  const value=await boundedJson(await fetcher(asset.browser_download_url,{redirect:'follow',signal:AbortSignal.timeout(20000)}),limit);
+  await validate(value);
+  // Private files are still ciphertext here. Decrypted facts never enter this cache.
+  if(cacheKey&&edgeCache)await edgeCache.put(cacheKey,Response.json(value,{headers:{'cache-control':'public, max-age=31536000'}})).catch(()=>{});
+  return value;
 }
 export async function mfRelease(env,{fetcher=fetch,edgeCache=globalThis.caches?.default}={}) {
   const repo=mfRepo(env),key=new Request(`${MF_ORIGIN}/api/mutual-funds/github-release-metadata`);
@@ -39,10 +46,11 @@ export async function mfManifest(env,options={}) {
   // does not discard the previous fully published generation.
   for(const asset of candidates) {
     try {
-      const manifest=await releaseAsset(asset,mfRepo(env),{...options,limit:1024*1024});
-      if(manifest.version!==1||manifest.repo!==mfRepo(env)||!manifest.state||!manifest.publicIndex)throw Error('Invalid snapshot manifest');
       const assets=new Map((release.assets||[]).map(a=>[a.name,a]));
-      if(Object.keys(manifest.files).some(name=>!assets.has(name)||assets.get(name).state==='starter'||assets.get(name).size===0))throw Error('Incomplete snapshot');
+      const manifest=await releaseAsset(asset,mfRepo(env),{...options,limit:1024*1024,validate:async value=>{
+        if(value.version!==1||value.repo!==mfRepo(env)||!value.state||!value.publicIndex)throw Error('Invalid snapshot manifest');
+        if(Object.keys(value.files).some(name=>!assets.has(name)||assets.get(name).state==='starter'||assets.get(name).size===0))throw Error('Incomplete snapshot');
+      }});
       return {manifest,assets};
     }catch{/* Try the retained complete generation. */}
   }
@@ -50,9 +58,9 @@ export async function mfManifest(env,options={}) {
 }
 export async function mfSnapshotFile(snapshot,name,env,{privateRead=false,fetcher=fetch}={}) {
   if(!Object.hasOwn(snapshot.manifest.files,name))throw Error('Unlisted snapshot part');
-  const payload=await releaseAsset(snapshot.assets.get(name),mfRepo(env),{fetcher});
-  const bytes=new TextEncoder().encode(JSON.stringify(payload));
-  if(await hash(bytes)!==snapshot.manifest.files[name])throw Error('Snapshot integrity failed');
+  const payload=await releaseAsset(snapshot.assets.get(name),mfRepo(env),{fetcher,validate:async value=>{
+    if(await hash(new TextEncoder().encode(JSON.stringify(value)))!==snapshot.manifest.files[name])throw Error('Snapshot integrity failed');
+  }});
   if(!privateRead)return payload;
   const plain=await openForReader(payload,env.GH_DISPATCH_TOKEN,`${mfRepo(env)}:${name}`);
   if(plain.byteLength>5*1024*1024)throw Error('Private snapshot part too large');
@@ -69,10 +77,11 @@ export async function githubMutualFunds(request,env,{privateRead=false,fetcher=f
     const isin=url.searchParams.get('isin'),month=url.searchParams.get('month');
     if(!validIsin(isin)||month&&!/^20\d\d-(0[1-9]|1[0-2])$/.test(month))throw Error('Invalid detail scope');
     const parts=privateRead?snapshot.manifest.privateParts:snapshot.manifest.publicParts;
-    const name=parts[String(mfPart(isin))];
+    const address=await mfDetailKey(isin,month),pages=parts[String(mfPart(isin))];
+    const name=Array.isArray(pages)?pages.find(page=>address>=page.first&&address<=page.last)?.name:pages;
     const part=name?await mfSnapshotFile(snapshot,name,env,{privateRead,fetcher}):{};
     const stored=part[isin];
-    const selected=stored&&(month?stored.months[month]:stored.latest);
+    const selected=Array.isArray(pages)?part[address]:stored&&(month?stored.months[month]:stored.latest);
     // Inflate only the requested prepared file, never a company's entire
     // retained archive or the complete universe of monthly views.
     const value=selected?await boundedJson(new Response(new Response(decode64(selected.gzip)).body.pipeThrough(new DecompressionStream('gzip'))),5*1024*1024):null;

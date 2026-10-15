@@ -62,6 +62,15 @@ await handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds/collector',{met
   {identity:async(_request,options)=>{assert.equal(options.workflow,'mutual-funds-scanner.yml');return '7:1';}});
 let fetchCalls=0;const denied=await scannerFetch(url,{fetcher:async(_url,options)=>{fetchCalls++;assert.equal(options.redirect,'manual');assert.equal(options.headers.authorization,undefined);return new Response('',{status:429,headers:{'retry-after':'7200'}});}});assert.equal(fetchCalls,1);assert.equal(denied.retryAfterMs,7200000);
 const out=await collectScanner({companies:[{isin,name:'Fixture Bank'}],client:async body=>body.action==='scanner-reserve'?{ok:true,reason:'source-cooldown'}:{ok:true},fetcher:()=>{throw Error('Cooldown must prevent source requests');}});assert.equal(out.reason,'source-cooldown');
+let budgetClock=0,budgetCompleted=0;
+const timed=await collectScanner({companies:[{isin,name:'Fixture Bank'},{isin:'INE040A01034',name:'Other'}],maxDurationMs:1000,now:()=>budgetClock,
+  client:async body=>{
+    if(body.action==='scanner-reserve')return body.kind==='catalogue'?{catalogue}:{reservation:'time-fixture',company:{isin,name:'Fixture Bank'},url};
+    if(body.action==='scanner-complete'){budgetCompleted++;budgetClock=1001;}
+    return {ok:true};
+  },fetcher:async()=>new Response(sample,{headers:{'content-type':'text/html'}})});
+assert.equal(budgetCompleted,1,'The in-flight response is saved before ending the capture window');
+assert.equal(timed.reason,'capture-window');assert(!scannerCaptureHealthy(timed,{expectedCompanies:1,currentCompanies:1}));
 assert.deepEqual(out.failureReasons,{});assert.deepEqual(out.periods,{});
 const invalidCatalogue=await collectScanner({companies:[{isin,name:'Fixture Bank'}],client:async body=>body.action==='scanner-reserve'?{reservation:'catalogue-fixture',url:'https://mfscanner.com/'}:{ok:true},fetcher:async()=>new Response('<html>truncated',{headers:{'content-type':'text/html'}})});
 assert.equal(invalidCatalogue.reason,'invalid-page');assert.equal(invalidCatalogue.failureReasons['incomplete-inventory'],1,'Early catalogue failures retain their validation reason');

@@ -19,7 +19,13 @@ export async function handleMutualFunds(request,env,{identity=breakoutCollectorI
     let body;try{body=await boundedJson(new Response(request.body),3*1024*1024);}catch{return reply({ok:false,reason:'invalid-body'},400);}
     if(!body||typeof body!=='object'||Array.isArray(body))return reply({ok:false,reason:'invalid-body'},400);
     const scannerAction=['scanner-inventory','scanner-reserve','scanner-complete','scanner-status'].includes(body.action);
-    let run;try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:scannerAction?MF_SCANNER_WORKFLOW:MF_WORKFLOW});}catch{return reply({ok:false,reason:'identity'},403);}
+    let run;
+    try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:scannerAction?MF_SCANNER_WORKFLOW:MF_WORKFLOW});}
+    catch{
+      // Only these two fixed main-branch identities may bootstrap retained history.
+      if(body.action!=='export')return reply({ok:false,reason:'identity'},403);
+      try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:MF_SCANNER_WORKFLOW});}catch{return reply({ok:false,reason:'identity'},403);}
+    }
     if(body.action==='export') {
       try{return privateReply(await env.CAPTURE_REGISTRY.getByName(MF_OBJECT).mfExport(body.table||null,body.cursor||0));}catch{return privateReply({ok:false,reason:'migration-unavailable'},503);}
     }

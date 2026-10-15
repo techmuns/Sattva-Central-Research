@@ -4,7 +4,7 @@ import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { createGzip,createGunzip,gzipSync } from 'node:zlib';
 import { randomBytes,hkdfSync,createCipheriv,createDecipheriv,createHash,createHmac } from 'node:crypto';
-import { mfRepo,MF_RELEASE,mfManifest,mfPart,releaseAsset } from '../../worker/mutual-funds-github.mjs';
+import { mfRepo,MF_RELEASE,mfManifest,mfPart,mfDetailKey } from '../../worker/mutual-funds-github.mjs';
 import { sealForReader,hash } from '../../worker/mutual-funds-seal.mjs';
 import { localMutualFunds } from './mutual-funds-local.mjs';
 import { scannerOperationalStatus } from '../../worker/mutual-funds-scanner-model.mjs';
@@ -71,7 +71,7 @@ export async function restoreState({env=process.env,legacyClient,fetcher=fetch,f
   }catch(error){local.close();fs.rmSync(file,{force:true});throw error;}
   local.close();
 }
-export async function buildSnapshot(local,recipient,{env=process.env,out=path.resolve('.cache/mutual-funds/publish'),file=MF_LOCAL_FILE,previous=null}={}) {
+export async function buildSnapshot(local,recipient,{env=process.env,out=path.resolve('.cache/mutual-funds/publish'),file=MF_LOCAL_FILE,previous=null,partBytes=4*1024*1024}={}) {
   fs.mkdirSync(out,{recursive:true});
   const repo=mfRepo(runnerEnv(env)),prefix=`mf-${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT||1}`,files={};
   const manifest={version:1,repo,createdAt:new Date().toISOString(),files,publicParts:{},privateParts:{},logical:{}};
@@ -98,14 +98,35 @@ export async function buildSnapshot(local,recipient,{env=process.env,out=path.re
     const privateSummary=local.scanner.read([isin],'').rows[0];if(privateSummary)privateRows.push(privateSummary);
     for(const [current,store,parts] of [[company,local.primary,publicParts],[merged,local.scanner,privateParts]]) {
       if(!current)continue;
-      const months={};for(const month of current.availableMonths||[])months[month]=prepared(store.company(isin,month));
-      if(!parts.has(part))parts.set(part,{});parts.get(part)[isin]={latest:prepared(current),months};
+      if(!parts.has(part))parts.set(part,{});
+      const entries=parts.get(part);entries[await mfDetailKey(isin)]=prepared(current);
+      // Each historical month is independently addressable. Growing history adds
+      // bounded pages instead of eventually making one bucket unreadably large.
+      for(const month of current.availableMonths||[])entries[await mfDetailKey(isin,month)]=prepared(store.company(isin,month));
     }
   }
   manifest.publicIndex=await save('public-index',{meta:{...primaryMeta,supplement:scannerOperationalStatus(supplement)},rows:primaryRows});
   manifest.privateIndex=await save('private-index',{meta:{...primaryMeta,supplement},rows:privateRows},{privateRead:true});
-  for(const [part,data] of publicParts)manifest.publicParts[part]=await save(`public-${part}`,data);
-  for(const [part,data] of privateParts)manifest.privateParts[part]=await save(`private-${part}`,data,{privateRead:true});
+  async function pages(parts,index,prefix,privateRead=false) {
+    for(const [part,data] of parts) {
+      const records=Object.entries(data).sort(([a],[b])=>a.localeCompare(b));index[part]=[];
+      let page={},bytes=2,first=null,last=null;
+      const flush=async()=>{
+        if(!first)return;
+        const name=await save(`${prefix}-${part}-${index[part].length}`,page,{privateRead});
+        index[part].push({first,last,name});page={};bytes=2;first=null;
+      };
+      for(const [address,value] of records) {
+        const size=Buffer.byteLength(JSON.stringify({[address]:value}));
+        if(size>partBytes)throw Error('One prepared monthly view exceeds delivery budget');
+        if(first&&bytes+size>partBytes)await flush();
+        first||=address;last=address;page[address]=value;bytes+=size;
+      }
+      await flush();
+    }
+  }
+  await pages(publicParts,manifest.publicParts,'public');
+  await pages(privateParts,manifest.privateParts,'private',true);
   local.close();
   manifest.state=`${prefix}-state.bin`;
   await encryptState(file,path.join(out,manifest.state),env);files[manifest.state]=await fileHash(path.join(out,manifest.state));

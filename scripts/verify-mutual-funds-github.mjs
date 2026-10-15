@@ -27,7 +27,8 @@ try {
   assert.equal(store.scanner.read([isin]).rows[0].totalShares,150);
   const expectedHistory=store.db.prepare('SELECT COUNT(*) n FROM mf_scanner_history').get().n;
   const keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
-  const built=await buildSnapshot(store,recipient,{env,out:path.join(root,'published'),file});
+  const built=await buildSnapshot(store,recipient,{env,out:path.join(root,'published'),file,partBytes:1800});
+  assert(Object.values(built.manifest.privateParts).some(pages=>pages.length>1),'Retained monthly views split into bounded independently addressed pages');
   const names=[...Object.keys(built.manifest.files),built.manifestName];
   const assets=names.map((name,i)=>({id:i+1,name,browser_download_url:`https://github.com/${repo}/releases/download/mutual-funds-data/${name}`}));
   let downloads=0;
@@ -41,20 +42,34 @@ try {
   let response=await read(`?isins=${isin}`);assert.equal(response.status,200);assert.equal((await response.json()).rows[0].totalShares,100);
   response=await read(`/private?isins=${isin}`);assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/private.*no-store/);assert.equal((await response.json()).rows[0].totalShares,150);
   response=await read(`/private/company?isin=${isin}&month=${month}`);assert.equal((await response.json()).company.totalShares,150);
+  response=await read(`/private/company?isin=${isin}&month=${prior}`);assert.equal((await response.json()).company.totalShares,100,'Historical months remain readable across split pages');
+  const cacheBefore=globalThis.caches,immutable=new Map();
+  try {
+    globalThis.caches={default:{match:async request=>immutable.get(request.url)?.clone(),put:async(request,value)=>immutable.set(request.url,value.clone())}};
+    await read(`?isins=${isin}`);const firstPageDownloads=downloads;
+    await read(`?cursor=${isin}`);assert.equal(downloads,firstPageDownloads,'Next index page reuses immutable manifest and full index without another transfer');
+    await read(`/private/company?isin=${isin}&month=${month}`);
+    for(const value of immutable.values())assert(!(await value.clone().text()).includes(sourceUrl),'Only ciphertext, never private plaintext, is cached');
+  }finally{globalThis.caches=cacheBefore;}
   const before=downloads;
   response=await read('/private',{authorise:async()=>({ok:false,reason:'no-session'})});assert.equal(response.status,401);assert.equal(downloads,before);
   for(const action of ['arm','begin','fragment','confirm','scanner-inventory','scanner-complete']) {
     const request=new Request(MF_ORIGIN+'/api/mutual-funds/collector',{method:'POST',body:JSON.stringify({action})});
     assert.equal((await handleMutualFunds(request,worker,{identity:async()=> '3:1'})).status,410);
   }
+  for(const workflow of ['mutual-funds-refresh.yml','mutual-funds-scanner.yml']) {
+    const exported=await handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds/collector',{method:'POST',body:JSON.stringify({action:'export'})}),{CAPTURE_REGISTRY:{getByName:()=>({mfExport:()=>({ok:true,tables:[]})})}},{identity:async(_request,options)=>{if(options.workflow!==workflow)throw Error('Wrong workflow');return '3:1';}});
+    assert.equal(exported.status,200,'Either fixed main-branch MF workflow can restore legacy history');
+  }
+  assert.equal((await handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds/collector',{method:'POST',body:JSON.stringify({action:'export'})}),worker,{identity:async()=>{throw Error('Untrusted workflow');}})).status,403);
   assert.throws(()=>collectorClient({env:{}}),/GitHub runner storage/);
   await assert.rejects(legacyExportClient()({action:'fragment'}),/writes are disabled/);
   for(const name of names.filter(n=>n.includes('private-')||n.endsWith('state.bin')))assert(!fs.readFileSync(path.join(built.out,name)).includes(Buffer.from('MF Scanner')),'Private facts are encrypted in every public asset');
   const restored=path.join(root,'restored.sqlite');
   await restoreState({env,fetcher,file:restored});
   store=localMutualFunds(restored);assert.equal(store.scanner.read([isin]).rows[0].totalShares,150);assert.equal(store.db.prepare('SELECT COUNT(*) n FROM mf_scanner_history').get().n,expectedHistory);
-  const again=await buildSnapshot(store,recipient,{env:{...env,GITHUB_RUN_ID:'12346'},out:path.join(root,'next'),file:restored,previous:built.manifest});
-  assert.equal(again.manifest.publicParts[Object.keys(built.manifest.publicParts)[0]],built.manifest.publicParts[Object.keys(built.manifest.publicParts)[0]],'Unchanged data parts are reused instead of repeatedly uploaded');
+  const again=await buildSnapshot(store,recipient,{env:{...env,GITHUB_RUN_ID:'12346'},out:path.join(root,'next'),file:restored,previous:built.manifest,partBytes:1800});
+  assert.deepEqual(again.manifest.publicParts,built.manifest.publicParts,'Unchanged data parts are reused instead of repeatedly uploaded');
   assert.equal(again.manifest.privateIndex,built.manifest.privateIndex,'Unchanged encrypted views reuse their protected revision');
   await assert.rejects(decryptState(path.join(built.out,built.manifest.state),path.join(root,'wrong.sqlite'),{...env,MF_STATE_KEY:'different-fixture-key-000000000'}));
   assert(!fs.existsSync(path.join(root,'wrong.sqlite')),'Unauthenticated state never becomes the next database');
