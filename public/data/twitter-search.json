@@ -776,7 +776,7 @@
       "pending": []
     },
     "isin:INE622H01018|INDOFARM": {
-      "lastAttemptAt": "2026-10-09T23:19:21+00:00",
+      "lastAttemptAt": "2026-10-15T05:51:49+00:00",
       "error": "search-unavailable",
       "lastResultCount": 8,
       "lastSuccessAt": "2026-09-12T14:15:30+00:00",
@@ -2505,6 +2505,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-15T05:21:09.352448+00:00"
+    "checkedAt": "2026-10-15T05:51:49.554498+00:00"
   }
 }
