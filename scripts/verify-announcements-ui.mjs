@@ -232,6 +232,20 @@ try {
   const target = feedbackPair(await caRows(), { pdf: true })?.row;
   assert(target, 'the page holds an exchange PDF with a comparable same-day peer for the read and feedback checks');
   const targetRow = page.locator(`tbody tr[data-row-key="${target.id}"]`);
+  // Real captures can put the comparable filing below the mounted window.
+  // Scroll the actual table, as a reader would, before focusing its action.
+  const filingScroller = page.locator('[data-table-scroll]').first();
+  await filingScroller.evaluate(el => { el.scrollTop = 0; });
+  await page.clock.runFor(80);
+  while (await targetRow.count() === 0) {
+    const moved = await filingScroller.evaluate(el => {
+      const before = el.scrollTop;
+      el.scrollTop += Math.max(1, el.clientHeight * 0.8);
+      return el.scrollTop > before;
+    });
+    await page.clock.runFor(80);
+    assert(moved || await targetRow.count() > 0, 'the chosen captured filing is reachable by scrolling');
+  }
   await targetRow.locator('[data-row-open]').focus(); await page.keyboard.press('Enter');
   const popup = page.locator('#modal-content [data-ann-read]');
   await popup.waitFor();

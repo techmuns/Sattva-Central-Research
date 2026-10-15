@@ -352,7 +352,18 @@ try {
   store.queries.clear();
   const after = await store.query({ period: 'all', limit: 500 });
   assert.equal(after.total, all.total, 'a vote hides nothing');
-  const sameDay = after.rows.filter((r) => r.date === top.date);
+  // The vote may legitimately move a retained filing beyond the first page.
+  // Follow that order before checking its new score and position.
+  const rerankedRows = [...after.rows];
+  let nextVotePage = after.nextOffset;
+  while (!rerankedRows.some(row => row.id === top.id) && nextVotePage !== null) {
+    const page = await store.query({ period: 'all', offset: nextVotePage, limit: 500 });
+    assert.equal(page.total, all.total, 'feedback pagination retains the full inventory');
+    assert(page.nextOffset === null || page.nextOffset > nextVotePage, 'feedback pagination advances');
+    rerankedRows.push(...page.rows);
+    nextVotePage = page.nextOffset;
+  }
+  const sameDay = rerankedRows.filter((r) => r.date === top.date);
   const voted = sameDay.find(row => row.id === top.id);
   assert(voted && voted.relevance < top.relevance, 'a Not important vote lowers the filing score');
   assert(sameDay.findIndex((r) => r.id === top.id) > beforePosition, 'a Not important vote moves the filing down its day');
