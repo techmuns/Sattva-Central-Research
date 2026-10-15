@@ -34,6 +34,7 @@ try{
  source=localNewsletter(path.join(root,'old.sqlite'),{env,now});source.store.apply([{op:'subscribe',by:'Fixture',email:'fixture@example.com',editions:['morning','evening']}]);
  source.store.beginDelivery({key:'old-unknown',edition:'morning',day:'2026-09-14',source:'timer',recipients:1});
  const pdf=randomBytes(1500000);pdf.set(Buffer.from('%PDF-1.7'));const pdfId=source.store.saveDocument(pdf,'sattva-2026-09-14-morning-brief.pdf','old-unknown');
+ source.db.prepare('UPDATE newsletter_documents SET rowid=0 WHERE id=?').run(pdfId);
  const oldBudget=source.schedule.content.newsBudget.reserve({job:'old-news',model:'fixture',amount:1234,now:at});assert(oldBudget.ok);
  const before=source.db.prepare('SELECT total_changes() n').get().n,keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
  const options={env,fetcher,recipient,verifyPdf:async()=>{if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};

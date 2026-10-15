@@ -3,7 +3,7 @@ export const LEVEL_TABLES=['price_level_meta','price_level_companies','price_lev
 export const LEVEL_KEYS=['price-level-timer'];
 // Fixed workflow only. Inputs remain the immediate interactive source of truth;
 // quote checks and newly observed hits never write back into this source.
-export async function exportPriceLevels(storage,{table=null,cursor=0,inputs=false}={}) {
+export async function exportPriceLevels(storage,{table=null,cursor=null,inputs=false}={}) {
  const existing=new Set(storage.sql.exec("SELECT name FROM sqlite_master WHERE type='table'").toArray().map(row=>row.name));
  if(inputs){
   if(!LEVEL_TABLES.some(table=>existing.has(table)))return {ok:true,revision:0,companies:[],levels:[]};

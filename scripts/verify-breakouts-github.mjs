@@ -31,6 +31,7 @@ let source,primary,runtime,restarted;
 const base={high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'},row={ticker:'TEST',name:'Fixture',price:108,volume:2300,prevClose:100,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Upstox',exchange:'NSE',kind:'quote',base};
 try{
  source=localBreakouts(path.join(root,'old-capture.sqlite'),{env,now:()=>at});source.beginCycle(1);await source.client({action:'begin',targets:['TEST']});await source.client({action:'checkpoint',rows:[row]});await source.client({action:'finish'});source.store.primarySave({at,completedAt:at,targets:['TEST'],rows:[{...row,price:111}],failures:[],discoveryFailed:false});
+ source.db.prepare('INSERT OR IGNORE INTO breakout_primary_latest VALUES(?,?)').run(0,'{}');
  primary=localBreakouts(path.join(root,'old-primary.sqlite'),{env,now:()=>at});await primary.primary.inventory([{ticker:'TEST',isin:'INE000000001',name:'Fixture'}]);
  const changes=()=>[source,primary].map(store=>store.db.prepare('SELECT total_changes() n').get().n),before=changes(),keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
  const options={env,fetcher,recipient,localOptions:{now:()=>at},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};

@@ -14,7 +14,7 @@ export function newsletterCollectorClient({env=process.env,fetcher=fetch}={}){
 }
 async function main(){
  if(process.env.GITHUB_ACTIONS!=='true'||process.env.GITHUB_REF!=='refs/heads/main'||process.env.GITHUB_REPOSITORY!=='techmuns/Sattva-Central-Research')throw Error('Newsletter requires its fixed main workflow');
- const legacy=newsletterCollectorClient();await backgroundExportReady(()=>legacy({action:'configuration'}),{valid:value=>value?.ok===true&&value.runtime==='github'});
+ const legacy=newsletterCollectorClient();await backgroundExportReady(()=>legacy({action:'configuration'}),{valid:value=>value?.ok===true&&value.rowidCursor===2&&value.runtime==='github'});
  const recipient=await boundedJson(await fetch(PRODUCTION_ORIGIN+'/api/mutual-funds/publishing-key',{redirect:'manual',signal:AbortSignal.timeout(20000)}),4096),verifiedPdfs=new Map();
  const verifyPdf=document=>{
   if(!verifiedPdfs.has(document.id))verifiedPdfs.set(document.id,(async()=>{

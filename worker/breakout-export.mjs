@@ -5,13 +5,13 @@ export const BREAKOUT_TABLES=['breakout_runs','breakout_quotes','breakout_recove
 const PARTS={capture:{tables:BREAKOUT_TABLES,keys:['breakout-timer']},primary:{tables:['upstox_config'],keys:[PRIMARY_TIMER]}};
 // The caller must authenticate the fixed main-branch workflow before invoking
 // this read-only helper. No arbitrary namespace, table or KV key is exportable.
-export async function exportBreakouts(storage,{part='capture',table=null,cursor=0}={}) {
+export async function exportBreakouts(storage,{part='capture',table=null,cursor=null}={}) {
   const allowed=PARTS[part];
-  if(!allowed||!Number.isSafeInteger(cursor)||cursor<0)throw Error('Invalid migration cursor');
+  if(!allowed||cursor!==null&&!Number.isSafeInteger(cursor))throw Error('Invalid migration cursor');
   const existing=new Set(storage.sql.exec("SELECT name FROM sqlite_master WHERE type='table'").toArray().map(row=>row.name));
   if(!table) {
     const keys=[];for(const key of allowed.keys){const value=await storage.get(key);if(value!==undefined)keys.push({key,value});}
-    return {ok:true,part,tables:allowed.tables.filter(name=>existing.has(name)).map(name=>({name,count:storage.sql.exec(`SELECT COUNT(*) n FROM ${name}`).one().n})),keys};
+    return {ok:true,rowidCursor:2,part,tables:allowed.tables.filter(name=>existing.has(name)).map(name=>({name,count:storage.sql.exec(`SELECT COUNT(*) n FROM ${name}`).one().n})),keys};
   }
   if(!allowed.tables.includes(table)||!existing.has(table))throw Error('Invalid migration table');
   return {...exportBackgroundTable(storage.sql,allowed.tables,table,cursor),part};
