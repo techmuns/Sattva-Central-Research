@@ -13,6 +13,7 @@ import { ConcallSummaryStore } from './concall-summary-store.mjs';
 import { ConcallSummarySchedule } from './concall-summary-schedule.mjs';
 import { SharedWatchlistStore } from './watchlist-store.mjs';
 import { WorkspaceStore } from './workspace-store.mjs';
+import {exportSummaries} from './summaries-export.mjs';
 import { BreakoutStore } from './breakout-store.mjs';
 import { BreakoutSchedule } from './breakout-schedule.mjs';
 import { BreakoutPrimary, PRIMARY_OBJECT, PRIMARY_TIMER } from './breakout-primary.mjs';
@@ -83,13 +84,14 @@ export class CaptureRegistry extends DurableObject {
   async priceLevelsApply(intents) { const result=this.priceLevels.apply(intents);await this.priceLevelSchedule.arm();return {...result.snapshot,outcomes:result.outcomes,check:await this.priceLevelSchedule.status()}; }
   status() { return this.schedule.status(); }
   telegramPosts() { return this.telegramDelivery.response(); }
-  summaryBeginInventory(run, syncId, manifest) { return this.summaries.beginInventory(run, syncId, manifest); }
-  summaryInventoryBatch(run, syncId, offset, targets) { return this.summaries.inventoryBatch(run, syncId, offset, targets); }
-  async summaryFinishInventory(run, syncId) { const result = this.summaries.finishInventory(run, syncId); await this.summarySchedule.arm(); return result; }
-  async summaryDiscoveryFailed() { const result = this.summaries.discoveryFailed(); await this.summarySchedule.arm(); return result; }
-  async summaryStatus() { return { ...this.summaries.status(), schedule: await this.summarySchedule.status() }; }
-  summaryReserve(run, requestId) { return this.summaries.reserve(run, requestId); }
-  summaryComplete(run, input) { return this.summaries.complete(run, input); }
+  summaryExport(input) { return exportSummaries(this.ctx.storage,input); }
+  summaryBeginInventory() { throw Error('Summary collection moved to GitHub Actions'); }
+  summaryInventoryBatch() { throw Error('Summary collection moved to GitHub Actions'); }
+  summaryFinishInventory() { throw Error('Summary collection moved to GitHub Actions'); }
+  summaryDiscoveryFailed() { throw Error('Summary collection moved to GitHub Actions'); }
+  summaryStatus() { return {...this.summaries.status(),schedule:{runtime:'github-actions',started:false}}; }
+  summaryReserve() { throw Error('Summary collection moved to GitHub Actions'); }
+  summaryComplete() { throw Error('Summary collection moved to GitHub Actions'); }
   summaryRead(ids) { return this.summaries.read(ids); }
   alertNotesRead(items) { return this.alertNotes.read(items); }
   storyReviewReserve(key) { return this.alertStories.reserve(key); }
@@ -155,7 +157,7 @@ export class CaptureRegistry extends DurableObject {
     if (await this.ctx.storage.get(PRIMARY_TIMER)) await this.breakoutPrimary.wake();
     else if (await this.ctx.storage.get(NEWSLETTER_TIMER_KEY)) await this.newsletterSchedule.wake();
     else if (await this.ctx.storage.get('breakout-timer')) await this.breakoutSchedule.wake();
-    else if (await this.ctx.storage.get('summary-timer')) await this.summarySchedule.wake();
+    else if (await this.ctx.storage.get('summary-timer')) await this.ctx.storage.deleteAlarm();
     else await this.ctx.storage.deleteAlarm(); // Retire the old Telegram dispatch alarm.
   }
   list() {

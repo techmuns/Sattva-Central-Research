@@ -68,6 +68,7 @@ function coverageStateMessage(state) {
 export function summaryScheduleMessage(state, now = Date.now()) {
   if (state?.enabled !== true) return '';
   const schedule = state.schedule;
+  if(schedule?.runtime==='github-actions')return schedule.overdue?'The latest GitHub collection publication is overdue.':'GitHub checks automatically; start times can be delayed.';
   if (!schedule?.started) return 'The collection timer has not started yet.';
   const failures = {
     unavailable: 'The collection timer could not check or start a collection run.',
