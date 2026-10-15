@@ -1049,7 +1049,7 @@
       "error": "search-unavailable"
     },
     "isin:INE101A01026|Mahindra & Mahindra": {
-      "lastAttemptAt": "2026-10-10T15:19:29+00:00",
+      "lastAttemptAt": "2026-10-15T15:30:55+00:00",
       "error": "search-unavailable",
       "lastResultCount": 85,
       "lastSuccessAt": "2026-09-27T08:32:05+00:00",
@@ -2514,6 +2514,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 235,
-    "checkedAt": "2026-10-15T14:57:56.929738+00:00"
+    "checkedAt": "2026-10-15T15:30:55.399896+00:00"
   }
 }
