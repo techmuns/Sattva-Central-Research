@@ -22,7 +22,9 @@ export function alertPriceHtml(ticker) {
 }
 
 export function watchAlertPrices(root) {
+  let stopped = false;
   const update = () => {
+    if (stopped) return;
     for (const node of root.querySelectorAll('[data-ai-price]')) {
       // Patch only the quote: evidence, focus, ranking and timeline scroll keep their nodes.
       const template = document.createElement('template');
@@ -35,5 +37,8 @@ export function watchAlertPrices(root) {
   };
   const offDaily = technicals.onChange(update);
   const offLive = live.watch(update);
-  return () => { offDaily(); offLive(); };
+  // Prepared alert pools can paint without loading technicals. Adopt their dated close
+  // fallback independently, including when the first daily read finishes after the cards.
+  void technicals.load().then(update).catch(() => { /* Quotes remain independently useful. */ });
+  return () => { stopped = true; offDaily(); offLive(); };
 }

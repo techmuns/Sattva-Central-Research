@@ -18,10 +18,8 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
 <body style="padding:16px"><main id="root"></main><script type="module">
 import * as coverage from '/js/data/coverage.js';
 import * as tab from '/js/tabs/ai-alerts.js';
-import * as technicals from '/js/data/technicals.js';
 window.tab=tab;
 coverage.prime({holdings:${JSON.stringify(companies.map(ticker => ({ ticker, name: `${ticker} Industries Limited` })))}});
-await technicals.load();
 tab.render({root:document.querySelector('#root'),scope:'universe',params:{}});
 </script></body></html>`;
 const feed = `export const onChange=()=>()=>{}; export const today=()=> '${day}';
