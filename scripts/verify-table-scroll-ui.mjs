@@ -195,7 +195,11 @@ async function checkTables(page, frame, label, retry = 0) {
     // attached-but-clipped tables still fail immediately (including the negative control).
     if (activeSurface && !await activeSurface.evaluate(el => el.isConnected)) {
       await activeSurface.dispose();
-      if (retry < 3) { await frames(frame); return checkTables(page, frame, label, retry + 1); }
+      // Each paged announcement append replaces its table; a 1,200-row fixture has several
+      // legitimate replacements. Other readers need only their initial source refreshes.
+      if (retry < (label.startsWith('corp-announcements/') ? 20 : 3)) {
+        await frames(frame); return checkTables(page, frame, label, retry + 1);
+      }
     }
     throw error;
   }

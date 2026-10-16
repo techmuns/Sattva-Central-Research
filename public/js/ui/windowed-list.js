@@ -56,6 +56,8 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   const head = () => content === scroller ? 0 : Math.max(0,
     content.getBoundingClientRect().top - viewportBox().top + scrollTop());
   const rowTop = () => Math.max(0, scrollTop() - head());
+  const atTableEnd = () => !pageScroll && scrollTop() > 0 &&
+    scroller.scrollHeight - scroller.clientHeight - scrollTop() < 2;
   const resetGeometry = () => {
     geometry = rowGeometry(rows.length, estimateHeight);
     rows.forEach((row, i) => { const old = measured.get(String(key(row))); if (old?.row === row) geometry.set(i, old.height); });
@@ -92,11 +94,14 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   }
   // Adopt natural heights before another task can read an estimated anchor.
   // During a thumb drag, retain the frozen scroll range until release.
-  function settle(index, { force = false, held = null } = {}) {
+  function settle(index, { force = false, held = null, keepEnd = false } = {}) {
     if (!paint(index, force)) return;
     if (!draggingScrollbar) {
       const changed = measureBoxes([...content.querySelectorAll(rowSelector)].map(el => el.getBoundingClientRect()));
-      if (held) restore(held);
+      // End/large wheel jumps reveal unmeasured rows. Their natural heights can enlarge
+      // the range; preserve the requested bottom rather than restoring an estimated top row.
+      if (keepEnd) setScrollTop(scroller.scrollHeight - scroller.clientHeight);
+      else if (held) restore(held);
       if (changed) scheduleViewport();
     }
   }
@@ -106,6 +111,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     // that range and writing scrollTop on each newly measured window makes the thumb lag behind
     // the pointer. Keep painting records during the gesture; settle their heights on release.
     if (disposed || !rows.length || draggingScrollbar) return;
+    const keepEnd = !settleScrollbar && atTableEnd();
     let held = anchor();
     // Read all geometry before writing spacer heights: no per-row read/write layout loop.
     const boxes = [...content.querySelectorAll(rowSelector)].map(el => el.getBoundingClientRect());
@@ -118,7 +124,8 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       settleScrollbar = false;
     }
     const changed = measureBoxes(boxes);
-    if (changed && scrollTop() > 0) restore(held);
+    if (changed && keepEnd) setScrollTop(scroller.scrollHeight - scroller.clientHeight);
+    else if (changed && scrollTop() > 0) restore(held);
     onWindow?.(start, pendingRows?.length ?? rows.length);
     // Measuring shorter rows can expose an unpainted part of the viewport without another
     // user scroll. Recheck coverage on the next frame after the spacer/anchor correction.
@@ -221,7 +228,9 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       frame = 0;
       const index = geometry.indexAt(rowTop());
       const lastVisible = geometry.indexAt(rowTop() + viewportHeight());
-      if (index < start + overscan / 2 || lastVisible >= end - overscan / 2) settle(index, { held: draggingScrollbar ? null : anchor() });
+      if (index < start + overscan / 2 || lastVisible >= end - overscan / 2) settle(index, {
+        held: draggingScrollbar ? null : anchor(), keepEnd: !draggingScrollbar && atTableEnd(),
+      });
     });
   }
   function onScroll() { onScrollActivity?.(); scheduleViewport(); }
