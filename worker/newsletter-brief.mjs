@@ -601,10 +601,15 @@ export async function readSessionQuotes({ env, now = Date.now(), edition, holdin
   if (!session) return { ...out, reason: 'no-session' };
 
   const fromCapture = async () => {
-    const object = env?.CAPTURE_REGISTRY?.getByName?.(BREAKOUT_OBJECT);
-    if (!object?.breakoutRead) return { reason: 'capture-unavailable', rows: [] };
     let capture;
-    try { capture = await object.breakoutRead(); } catch { return { reason: 'capture-unavailable', rows: [] }; }
+    try {
+      if (env?.NEWSLETTER_QUOTES?.read) capture = await env.NEWSLETTER_QUOTES.read();
+      else {
+        const object = env?.CAPTURE_REGISTRY?.getByName?.(BREAKOUT_OBJECT);
+        if (!object?.breakoutRead) return { reason: 'capture-unavailable', rows: [] };
+        capture = await object.breakoutRead();
+      }
+    } catch { return { reason: 'capture-unavailable', rows: [] }; }
     const rows = [];
     for (const row of Array.isArray(capture?.rows) ? capture.rows : []) {
       const ticker = upper(row?.ticker);
