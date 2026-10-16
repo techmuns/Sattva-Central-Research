@@ -185,6 +185,29 @@ jobs:
         run: node scripts/verify-breakouts.mjs && node scripts/verify-breakout-primary.mjs && node scripts/verify-breakout-local.mjs && node scripts/verify-breakout-export.mjs && node scripts/verify-breakout-inputs.mjs && node scripts/verify-breakout-runner.mjs && node scripts/verify-upstox-budget.mjs && node scripts/verify-breakout-live-delivery.mjs && node scripts/verify-breakout-prepared-history.mjs && node scripts/verify-breakouts-github.mjs && node scripts/verify-breakouts-runtime.mjs && node scripts/verify-mutual-funds-budget-runtime.mjs
       - name: Verify private summary persistence in the local Worker runtime
         run: node scripts/verify-concall-summaries-runtime.mjs
+  table-scrolling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Install pinned browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/scroll-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/scroll-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Reach the bottom of every dashboard table in every scope and window size
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/scroll-browser/node_modules/playwright
+        run: node scripts/verify-table-scroll-ui.mjs
+      - name: Preserve scroll audit results and failure screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: table-scroll-evidence
+          path: .cache/table-scroll/
+          include-hidden-files: true
   browser-tests:
     name: browser (${{ matrix.part }}/3)
     runs-on: ubuntu-latest

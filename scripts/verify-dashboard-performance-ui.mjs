@@ -99,6 +99,8 @@ researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrd
       res.end('export const snapshot=()=>({version:1,revision:0,tabs:[],order:[]});export const status=()=>({confirmed:false,pending:0,error:null,rejected:[]});export const onChange=()=>()=>{};export const start=()=>{};export const sync=async()=>({confirmed:false});export const edit=async()=>({confirmed:false});');
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
+    } else if (pathname === '/js/ui/table-viewport.js') {
+      res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableViewportRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/tabs/daily-alerts.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__alertsScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/alert-pool-format.js') {
@@ -269,6 +271,8 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'previous', 'returning session has the older arrivals module cached');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'previous', 'returning session has the older table renderer cached');
+  await page.evaluate(() => import('/js/ui/table-viewport.js'));
+  assert.equal(await page.evaluate(() => globalThis.__tableViewportRelease), 'previous', 'the returning session uses the previous shared table sizing module');
   await page.evaluate(() => import('/js/tabs/daily-alerts.js'));
   assert.equal(await page.evaluate(() => globalThis.__alertsScrollRelease), 'previous', 'returning session has the older All Alerts sizing module cached');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--alerts-shell-release').trim()), 'previous', 'returning session starts with the older HTML layout');
@@ -319,6 +323,8 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'current', 'existing session receives the scrolling fix');
+  await page.evaluate(() => import('/js/ui/table-viewport.js'));
+  assert.equal(await page.evaluate(() => globalThis.__tableViewportRelease), 'current', 'the returning session uses the current shared table sizing module');
   await page.evaluate(() => import('/js/tabs/daily-alerts.js'));
   assert.equal(await page.evaluate(() => globalThis.__alertsScrollRelease), 'current', 'the existing session receives the All Alerts page-scroll fix');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--alerts-shell-release').trim()), 'current', 'the existing session receives the corrected HTML layout');
