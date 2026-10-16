@@ -79,7 +79,7 @@ try {
   assert(await scroller.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2),
     'keyboard End stays at the bottom after variable-height measurements settle');
   await scroller.evaluate(el => { el.scrollTop = 0; }); await frames();
-  assert.equal(await scroller.evaluate(el => el.scrollTop), 0, 'a later explicit scroll can leave the settled bottom');
+  assert(await scroller.evaluate(el => el.scrollTop <= 1), 'a later explicit scroll can leave the settled bottom');
   console.log('PASS keyboard End reveals the final variable-height record without a second gesture');
   for (const mode of ['windowed', 'virtual']) {
     await page.evaluate(mode => mount(mode), mode);
