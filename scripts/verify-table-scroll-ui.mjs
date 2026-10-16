@@ -117,11 +117,13 @@ async function checkTables(page, frame, label) {
     const end = await table.evaluate(table => {
       const rows = [...table.querySelectorAll('tbody tr')].filter(row => !row.matches('[data-virtual-spacer]') && !row.querySelector('[data-window-spacer]'));
       const last = rows.at(-1), box = last?.getBoundingClientRect(), card = table.closest('[data-score-table]');
-      let right = innerWidth, bottom = innerHeight;
-      for (let node = table.parentElement; node; node = node.parentElement) {
+      let right = innerWidth, bottom = innerHeight, clipper = 'viewport';
+      // Body overflow propagates to the viewport; its document box is not a clipping box.
+      for (let node = table.parentElement; node && node !== document.body; node = node.parentElement) {
         const style = getComputedStyle(node), rect = node.getBoundingClientRect();
         if (style.overflowX !== 'visible') right = Math.min(right, rect.left + node.clientLeft + node.clientWidth);
-        if (style.overflowY !== 'visible') bottom = Math.min(bottom, rect.top + node.clientTop + node.clientHeight);
+        const edge = rect.top + node.clientTop + node.clientHeight;
+        if (style.overflowY !== 'visible' && edge < bottom) { bottom = edge; clipper = node.id || node.tagName; }
       }
       // Hit the row's visible content, clear of the native scrollbar gutter and source badge.
       const x = box ? Math.min(right, box.right) - 12 : 0;
@@ -131,7 +133,7 @@ async function checkTables(page, frame, label) {
       for (let node = table.parentElement; node; node = node.parentElement) {
         if (getComputedStyle(node).overflowY === 'hidden' && node.scrollTop > 1) hiddenScroll.push(node.id || node.tagName);
       }
-      return { rows: rows.length, bottom: box?.bottom, viewport: innerHeight, clipBottom: bottom,
+      return { rows: rows.length, bottom: box?.bottom, viewport: innerHeight, clipBottom: bottom, clipper,
         total: Number(card?.dataset.virtualTotal || 0), start: Number(card?.dataset.virtualStart || 0),
         virtual: card?.hasAttribute('data-virtualized'), pending: Number(card?.dataset.rowsPending || 0),
         hiddenScroll, hit: hit?.tagName, reachable: !!last && (hit === last || last.contains(hit)) };
