@@ -1,4 +1,4 @@
-// Full shell, local captures and synthetic fund returns. One browser/worker; no production calls.
+// Full shell, local captures and bounded paginated/returns fixtures. One worker; no production calls.
 import assert from 'node:assert/strict';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -36,7 +36,30 @@ const funds = Array.from({ length: 180 }, (_, i) => ({ schemecode: `scroll-${i}`
   fundName: `Scroll fixture fund ${i}`, classification: `Equity : Category ${i % 18}`,
   plan: 'direct', option: 'growth', cohortKey: `category-${i % 18}`,
   returns: { '1Y': { return: i / 10, categoryAverage: 8, categoryMedian: 7, rank: i % 10 + 1, peerCount: 10 } } }));
-const { server, origin } = await dashboardFixture({ respond(url, _req, res) {
+// Exercise the normal server-index path with enough variable-height records for several native
+// page transitions. Complete real-capture indexing/pagination has its own announcement suite.
+const companies = JSON.parse(readFileSync('public/data/portfolio-companies.json')).holdings.filter(row => row.ticker).slice(0, 24);
+const fixtureDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+const announcements = Array.from({ length: 1200 }, (_, i) => {
+  const company = companies[i % companies.length];
+  return { id: `scroll-announcement-${i}`, company: company.name, ticker: company.ticker, isin: company.isin,
+    date: fixtureDay, time: '10:00', title: `Scroll fixture announcement ${i}. ${'Reported company update. '.repeat(i % 3 + 1)}`,
+    sources: ['BSE'], categories: [], source: 'BSE', url: 'https://www.bseindia.com/fixture.pdf', relevance: 10, keys: [] };
+});
+const { server, origin } = await dashboardFixture({ respond(url, req, res) {
+  if (url.pathname === '/api/announcement-index/query' && req.method === 'POST') {
+    void (async () => {
+      const chunks = []; for await (const chunk of req) chunks.push(chunk);
+      const query = JSON.parse(Buffer.concat(chunks));
+      const wanted = new Set((query.companies || []).map(company => company.ticker));
+      const selected = announcements.filter(row => query.scope === 'universe' || wanted.has(row.ticker));
+      const offset = Math.max(0, Number(query.offset) || 0), limit = Math.min(500, Math.max(1, Number(query.limit) || 200));
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ ok: true, rows: selected.slice(offset, offset + limit), total: selected.length,
+        companies: new Set(selected.map(row => row.ticker)).size, index: { meta: {} } }));
+    })().catch(error => { res.writeHead(400); res.end(JSON.stringify({ message: error.message })); });
+    return true;
+  }
   if (url.pathname === '/fixture/viewport') {
     res.setHeader('content-type', 'text/html');
     res.end(index.replace(/<script type="module" src="js\/app\.js"><\/script>/, fixtureBoot)); return true;
