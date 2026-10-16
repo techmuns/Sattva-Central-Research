@@ -31,7 +31,7 @@ test('available Yahoo history repairs stale indicators using the existing precis
   const calls=[],checkpoints=[],time=clock();
   const result=await recoverTechnicals(input([old()]),{}, {...time,bars:async symbol=>{calls.push({symbol,at:time.now()});return source(symbol);},checkpoint:(payload,ledger)=>checkpoints.push(structuredClone({payload,ledger}))});
   const row=result.payload.companies[0],recent=series().filter(bar=>Date.parse(bar.date)>=time.now()-400*DAY),closes=recent.map(bar=>bar.close);
-  assert.equal(row.bar_date,'2026-10-15');assert.equal(row.price_date,'2026-10-15');
+  assert.equal(row.bar_date,'2026-10-15');assert.equal(row.price_date,undefined);
   assert.equal(row.delivery_avg_recent,35);assert.equal(row.privateField,'preserve');assert.equal(row.move_check,undefined);
   assert.equal(row.sma200,Math.round(sma(closes,200).at(-1)));
   assert(Math.abs(row.rsi_multi.daily.value-rsi(closes,14).at(-1))<=.05);

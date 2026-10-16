@@ -86,11 +86,14 @@ export async function recoverTechnicals(input, savedLedger={}, {now=Date.now, ba
       // confirmation for a different close into the repaired day move.
       for (const key of Object.keys(row)) if (key.startsWith('move_')) delete row[key];
       const deliverySnapshot=row.delivery_snapshot_at || input.generated_at;
-      Object.assign(row,indicators,computeLiquidityIndicators(recent),{price_date:last,momentum_volume_10d:volumeWindow10d(recent,null,symbol),
+      Object.assign(row,indicators,computeLiquidityIndicators(recent),{momentum_volume_10d:volumeWindow10d(recent,null,symbol),
         closeHistory:researchPriceHistory(recent,{sourceSymbol:symbol,capturedAt:new Date(now()).toISOString()}) || retainedPriceHistory(row.closeHistory),
         history_check:{checkedAt:new Date(now()).toISOString(),state:'current',source:'Yahoo Finance',symbol,through:last},
         index_reading_date:indexCurrent?indexBars.at(-1).date:input.price_date});
       if(row.delivery_days_count>0)row.delivery_snapshot_at=deliverySnapshot;
+      // bar_date is the stored row contract; the browser derives price_date
+      // from it. Never leave an older alias ahead of the newly repaired bar.
+      delete row.price_date;
       if(!indexCurrent) {
         const old=input.companies.find(item=>item.ticker===row.ticker);
         row.retained_index_reading=old.retained_index_reading || {date:old.bar_date,
