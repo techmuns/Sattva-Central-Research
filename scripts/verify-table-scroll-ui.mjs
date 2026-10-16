@@ -134,18 +134,24 @@ async function checkTables(page, frame, label, retry = 0) {
         await frame.waitForFunction(() => !document.querySelector('[data-ca-load-more]:disabled, [data-table-loading]'), null, { timeout: 30000 });
         await frames(frame);
         if (await surface.evaluate(el => {
+          if (!el.isConnected) throw new Error('Table replaced during native scrolling');
           const card = el.closest('[data-score-table]');
           const tail = !card?.hasAttribute('data-virtualized') ||
             Number(card.dataset.virtualStart) + el.querySelectorAll('tr[data-row-key]').length >= Number(card.dataset.virtualTotal);
-          return tail && el.scrollHeight - el.clientHeight - el.scrollTop < 2;
+          const rows = [...el.querySelectorAll('tbody tr')].filter(row => !row.matches('[data-virtual-spacer]') && !row.querySelector('[data-window-spacer]'));
+          const last = rows.at(-1)?.getBoundingClientRect(), box = el.getBoundingClientRect();
+          const bottom = Math.min(innerHeight, box.top + el.clientTop + el.clientHeight);
+          return tail && last && last.bottom <= bottom + 2 && el.scrollHeight - el.clientHeight - el.scrollTop < 2;
         }) &&
             !await frame.locator('[data-ca-load-more]').count()) break;
       }
       assert.equal(await frame.locator('[data-ca-load-more]').count(), 0, `${label}: native scrolling loads every announcement page`);
       assert(await surface.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2), `${label}: native wheel reaches the table's end`);
     }
-    if (!internal) await table.evaluate(table => table.querySelector('tbody tr:last-child')?.scrollIntoView({ block: 'end', behavior: 'instant' }));
-    await frames(frame);
+    if (!internal) {
+      await table.evaluate(table => table.querySelector('tbody tr:last-child')?.scrollIntoView({ block: 'end', behavior: 'instant' }));
+      await frames(frame);
+    }
     const end = await table.evaluate(table => {
       const rows = [...table.querySelectorAll('tbody tr')].filter(row => !row.matches('[data-virtual-spacer]') && !row.querySelector('[data-window-spacer]'));
       const last = rows.at(-1), box = last?.getBoundingClientRect(), card = table.closest('[data-score-table]');
