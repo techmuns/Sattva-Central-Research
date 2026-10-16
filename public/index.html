@@ -137,6 +137,15 @@
         font-variant-numeric: tabular-nums;
       }
 
+      /* Let the page move the final row above the floating source launcher. */
+      body:has(.beacon-launcher) #content-host:not(:has(.research-workspace)) {
+        padding-bottom: 64px;
+      }
+      /* A table can be taller than the remaining page or popup. Let vertical gestures reveal
+         its containing panel at the loaded boundary; keep horizontal scrolling in the table. */
+      .table-scroll-surface { overscroll-behavior-y: auto; }
+      #modal-overlay, #workspace-overlay, #drill-panel { overscroll-behavior-y: contain; }
+
       /*
        * Scrollbars for drill panels, dialogs and dropdowns.
        *

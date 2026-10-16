@@ -53,9 +53,12 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   let draggingScrollbar = false;
   let settleScrollbar = false;
   let pendingRows = null;
+  let followingEnd = false;
   const head = () => content === scroller ? 0 : Math.max(0,
     content.getBoundingClientRect().top - viewportBox().top + scrollTop());
   const rowTop = () => Math.max(0, scrollTop() - head());
+  const atTableEnd = () => !pageScroll && scrollTop() > 0 &&
+    scroller.scrollHeight - scroller.clientHeight - scrollTop() < 2;
   const resetGeometry = () => {
     geometry = rowGeometry(rows.length, estimateHeight);
     rows.forEach((row, i) => { const old = measured.get(String(key(row))); if (old?.row === row) geometry.set(i, old.height); });
@@ -92,11 +95,14 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   }
   // Adopt natural heights before another task can read an estimated anchor.
   // During a thumb drag, retain the frozen scroll range until release.
-  function settle(index, { force = false, held = null } = {}) {
+  function settle(index, { force = false, held = null, keepEnd = followingEnd } = {}) {
     if (!paint(index, force)) return;
     if (!draggingScrollbar) {
       const changed = measureBoxes([...content.querySelectorAll(rowSelector)].map(el => el.getBoundingClientRect()));
-      if (held) restore(held);
+      // End/large wheel jumps reveal unmeasured rows. Their natural heights can enlarge
+      // the range; preserve the requested bottom rather than restoring an estimated top row.
+      if (keepEnd) setScrollTop(scroller.scrollHeight - scroller.clientHeight);
+      else if (held) restore(held);
       if (changed) scheduleViewport();
     }
   }
@@ -106,6 +112,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     // that range and writing scrollTop on each newly measured window makes the thumb lag behind
     // the pointer. Keep painting records during the gesture; settle their heights on release.
     if (disposed || !rows.length || draggingScrollbar) return;
+    const keepEnd = !settleScrollbar && (followingEnd || atTableEnd());
     let held = anchor();
     // Read all geometry before writing spacer heights: no per-row read/write layout loop.
     const boxes = [...content.querySelectorAll(rowSelector)].map(el => el.getBoundingClientRect());
@@ -118,7 +125,9 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       settleScrollbar = false;
     }
     const changed = measureBoxes(boxes);
-    if (changed && scrollTop() > 0) restore(held);
+    if (changed && keepEnd) setScrollTop(scroller.scrollHeight - scroller.clientHeight);
+    else if (changed && scrollTop() > 0) restore(held);
+    if (followingEnd && !changed && end === rows.length && atTableEnd()) followingEnd = false;
     onWindow?.(start, pendingRows?.length ?? rows.length);
     // Measuring shorter rows can expose an unpainted part of the viewport without another
     // user scroll. Recheck coverage on the next frame after the spacer/anchor correction.
@@ -131,6 +140,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   }
   const scheduleMeasure = () => { if (!measureFrame && !disposed) measureFrame = requestAnimationFrame(measure); };
   function onPointerDown(event) {
+    followingEnd = false;
     if (event.button !== 0 || event.target !== scroller || scroller.scrollHeight <= scroller.clientHeight) return;
     const box = viewportBox();
     const left = box.left + scroller.clientLeft;
@@ -221,11 +231,32 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       frame = 0;
       const index = geometry.indexAt(rowTop());
       const lastVisible = geometry.indexAt(rowTop() + viewportHeight());
-      if (index < start + overscan / 2 || lastVisible >= end - overscan / 2) settle(index, { held: draggingScrollbar ? null : anchor() });
+      if (index < start + overscan / 2 || lastVisible >= end - overscan / 2) settle(index, {
+        held: draggingScrollbar ? null : anchor(), keepEnd: !draggingScrollbar && (followingEnd || atTableEnd()),
+      });
     });
   }
   function onScroll() { onScrollActivity?.(); scheduleViewport(); }
+  function onWheel(event) {
+    if (pageScroll) return;
+    const remaining = scroller.scrollHeight - scroller.clientHeight - scrollTop();
+    if (event.deltaY < 0) followingEnd = false;
+    else if (event.deltaMode === 0 && remaining > 2 && event.deltaY >= remaining - 2) followingEnd = true;
+  }
+  function onKeyDown(event) {
+    followingEnd = false;
+    if (pageScroll || event.shiftKey || event.altKey || event.target.closest?.('input,textarea,[contenteditable]')) return;
+    if (event.key !== 'End' && !(event.metaKey && event.key === 'ArrowDown')) return;
+    // Native smooth End animations target the old estimated range. Own this explicit table
+    // navigation so later measurements can complete the same request on every platform.
+    followingEnd = true;
+    event.preventDefault();
+    setScrollTop(scroller.scrollHeight - scroller.clientHeight);
+    scheduleViewport();
+  }
+  const stopFollowingEnd = () => { followingEnd = false; };
   function update(next, { resetScroll = false, anchorKey = null, anchorOffset = 0 } = {}) {
+    followingEnd = false; // Source arrivals retain the reader's record, rather than following new data.
     if (draggingScrollbar && !resetScroll) {
       const nextByKey = new Map(next.map(row => [String(key(row)), row]));
       if (rows.every(row => nextByKey.has(String(key(row))))) {
@@ -261,6 +292,9 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   scroller.style.overflowAnchor = 'none';
   scrollTarget.addEventListener('scroll', onScroll, { passive: true });
   scroller.addEventListener('pointerdown', onPointerDown, { passive: true });
+  scroller.addEventListener('wheel', onWheel, { passive: true });
+  scroller.addEventListener('keydown', onKeyDown);
+  scroller.addEventListener('touchstart', stopFollowingEnd, { passive: true });
   document.addEventListener('pointerup', endScrollbarDrag, true);
   document.addEventListener('pointercancel', endScrollbarDrag, true);
   window.addEventListener('blur', endScrollbarDrag);
@@ -287,6 +321,9 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       if (pageScroll) scroller.style.overflowAnchor = previousOverflowAnchor;
       observer.disconnect(); scrollTarget.removeEventListener('scroll', onScroll);
       scroller.removeEventListener('pointerdown', onPointerDown);
+      scroller.removeEventListener('wheel', onWheel);
+      scroller.removeEventListener('keydown', onKeyDown);
+      scroller.removeEventListener('touchstart', stopFollowingEnd);
       document.removeEventListener('pointerup', endScrollbarDrag, true);
       document.removeEventListener('pointercancel', endScrollbarDrag, true);
       window.removeEventListener('blur', endScrollbarDrag);

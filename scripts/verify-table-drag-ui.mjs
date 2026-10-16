@@ -68,6 +68,19 @@ try {
     const row = [...el.querySelectorAll('tr[data-row-key]')].find(row => row.getBoundingClientRect().bottom > boundary);
     return { key:row?.dataset.rowKey, offset:row ? row.getBoundingClientRect().top - boundary : null };
   });
+  await scroller.focus();
+  await page.keyboard.press('Control+End');
+  await page.waitForFunction(() => {
+    const el = document.querySelector('[data-table-scroll]'), last = el.querySelector('tr[data-row-key="2999"]');
+    return last && el.scrollHeight - el.clientHeight - el.scrollTop < 2 &&
+      last.getBoundingClientRect().bottom <= el.getBoundingClientRect().top + el.clientTop + el.clientHeight + 2;
+  });
+  await frames();
+  assert(await scroller.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2),
+    'keyboard End stays at the bottom after variable-height measurements settle');
+  await scroller.evaluate(el => { el.scrollTop = 0; }); await frames();
+  assert(await scroller.evaluate(el => el.scrollTop <= 1), 'a later explicit scroll can leave the settled bottom');
+  console.log('PASS keyboard End reveals the final variable-height record without a second gesture');
   for (const mode of ['windowed', 'virtual']) {
     await page.evaluate(mode => mount(mode), mode);
     await frames();

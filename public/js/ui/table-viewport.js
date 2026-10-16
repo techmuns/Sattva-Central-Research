@@ -7,7 +7,10 @@ export function fitTableViewport(root, { bottomGap = 24, minHeight = 120 } = {})
   const apply = () => {
     frame = 0;
     if (!scroller.isConnected) return;
-    const height = Math.max(minHeight, Math.floor(innerHeight - scroller.getBoundingClientRect().top - bottomGap));
+    // Measure from the document origin. A resize or late toolbar measurement can arrive
+    // after the reader scrolls the page; viewport-relative top would grow the table by scrollY.
+    const documentTop = scroller.getBoundingClientRect().top + window.scrollY;
+    const height = Math.max(minHeight, Math.floor(innerHeight - documentTop - bottomGap));
     scroller.style.height = scroller.style.maxHeight = `${height}px`;
   };
   const schedule = () => { if (!frame) frame = requestAnimationFrame(apply); };
