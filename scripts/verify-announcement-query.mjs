@@ -39,5 +39,25 @@ try {
   release(); await refresh;
   assert.deepEqual(query.rows(), rows.slice(0, 3), 'a superseded multi-page refresh cannot overwrite the new filter');
   assert.equal(query.meta().nextOffset, null);
-  console.log('PASS bounded multi-page refresh, arrivals/corrections, complete-window retention, failed-page preservation and filter cancellation');
+  let offline = false;
+  const localRows = [{ id: 'local-new', title: 'Local arrival' }, ...rows];
+  const localOffsets = [];
+  const failover = createAnnouncementQuery({
+    engine: { query: async q => {
+      localOffsets.push(q.offset);
+      return { rows: localRows.slice(q.offset, q.offset + q.limit), total: localRows.length };
+    } },
+    fetchImpl: async (_url, options) => {
+      const q = JSON.parse(options.body);
+      if (offline && q.offset === 500) return new Response('{}', { status: 503 });
+      return Response.json({ ok: true, rows: rows.slice(q.offset, q.offset + q.limit), total: rows.length });
+    },
+  });
+  await failover.load();
+  for (let i = 0; i < 5; i++) await failover.loadMore();
+  offline = true; await failover.refresh();
+  assert.deepEqual(failover.rows(), localRows.slice(0, 1200), 'failover re-reads the complete window from one source snapshot');
+  assert.deepEqual(localOffsets, [500, 0, 500, 1000]);
+  failover.suspend();
+  console.log('PASS bounded multi-page refresh, arrivals/corrections, complete-window retention, failed-page preservation, filter cancellation and consistent source failover');
 } finally { query.suspend(); globalThis.fetch = savedFetch; }

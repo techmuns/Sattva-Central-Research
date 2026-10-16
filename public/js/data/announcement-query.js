@@ -109,11 +109,15 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
       // bounded pages before publishing it, so a background poll cannot cut a long reading
       // session back to its first 500 rows or move its scrollbar away from the reader.
       if (!append && quiet) {
+        const answerMode = mode;
         const refreshed = [...answer.rows];
         while (refreshed.length < Math.min(retained, answer.total)) {
           const page = await ask({ ...q, offset: refreshed.length,
             limit: Math.min(500, retained - refreshed.length) }, () => mine === generation);
           if (mine !== generation) return;
+          // If the server failed over to local captures, re-read the window from its start.
+          // Offsets from two different source snapshots cannot safely be stitched together.
+          if (mode !== answerMode) return run({ quiet: true });
           if (!page.rows.length) throw new Error('The refreshed announcement window was incomplete');
           refreshed.push(...page.rows);
         }
