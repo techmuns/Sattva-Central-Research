@@ -195,7 +195,7 @@ try {
         await frame.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
         await frame.waitForTimeout(250);
         const scroller = frame.locator('[data-table-scroll]');
-        const layout = await scroller.evaluate(el => ({ height: el.clientHeight,
+        const layout = await scroller.evaluate(el => ({ height: el.getBoundingClientRect().height,
           bottom: el.getBoundingClientRect().bottom, viewport: innerHeight,
           overflow: document.documentElement.scrollWidth - innerWidth }));
         assert(layout.height >= 319, `All Alerts retains a usable table at ${viewport.width}x${viewport.height}: ${JSON.stringify(layout)}`);
@@ -209,7 +209,7 @@ try {
           // Refitting while the page is scrolled must not add that scroll offset to its height.
           await frame.evaluate(() => window.dispatchEvent(new Event('resize')));
           await frame.waitForTimeout(100);
-          assert(Math.abs(await scroller.evaluate(el => el.clientHeight) - layout.height) <= 1,
+          assert(Math.abs(await scroller.evaluate(el => el.getBoundingClientRect().height) - layout.height) <= 1,
             'resizing a scrolled page preserves the bounded table height');
         }
         await scroller.evaluate(el => { el.scrollTop = 0; });
