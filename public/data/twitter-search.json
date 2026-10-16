@@ -1287,79 +1287,119 @@
       "pending": []
     },
     "isin:INE417T01026|PB Fintech": {
-      "lastAttemptAt": "2026-10-11T03:17:25+00:00",
-      "lastResultCount": 89,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "lastResultCount": 103,
+      "error": "result-cap-incomplete",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
-      "targetThrough": null,
-      "pending": []
-    },
-    "isin:INE417T01026|POLICYBZR": {
-      "lastAttemptAt": "2026-10-11T03:50:26+00:00",
-      "lastResultCount": 32,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-09-08T19:20:14+00:00",
-      "targetThrough": null,
-      "pending": []
-    },
-    "isin:INE15B701018|Pine Labs": {
-      "lastAttemptAt": "2026-10-11T04:23:19+00:00",
-      "lastResultCount": 106,
-      "error": "search-unavailable",
-      "targetThrough": "2026-09-08T19:20:14+00:00",
+      "targetThrough": "2026-10-16T06:34:32+00:00",
       "pending": [
         {
-          "from": "2026-08-30T19:20:14.371302+00:00",
-          "to": "2026-09-04T07:20:14.185651+00:00"
+          "from": "2026-09-06T19:20:14+00:00",
+          "to": "2026-09-26T12:57:23+00:00"
         },
+        {
+          "from": "2026-09-26T12:57:23+00:00",
+          "to": "2026-10-16T06:34:32+00:00"
+        }
+      ]
+    },
+    "isin:INE417T01026|POLICYBZR": {
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "lastResultCount": 110,
+      "error": "result-cap-incomplete",
+      "lastSuccessAt": "2026-09-08T19:20:14+00:00",
+      "targetThrough": "2026-10-16T06:34:32+00:00",
+      "pending": [
+        {
+          "from": "2026-09-06T19:20:14+00:00",
+          "to": "2026-09-26T12:57:23+00:00"
+        },
+        {
+          "from": "2026-09-26T12:57:23+00:00",
+          "to": "2026-10-16T06:34:32+00:00"
+        }
+      ]
+    },
+    "isin:INE15B701018|Pine Labs": {
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "lastResultCount": 75,
+      "error": null,
+      "targetThrough": "2026-09-08T19:20:14+00:00",
+      "pending": [
         {
           "from": "2026-09-04T07:20:14.185651+00:00",
           "to": "2026-09-08T19:20:14+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-16T06:34:32+00:00"
     },
     "isin:INE15B701018|PINELABS": {
-      "lastAttemptAt": "2026-10-11T04:24:37+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 106,
+      "targetThrough": "2026-10-16T06:34:32+00:00",
+      "pending": [
+        {
+          "from": "2026-10-07T06:34:32.830839+00:00",
+          "to": "2026-10-11T18:34:32.415419+00:00"
+        },
+        {
+          "from": "2026-10-11T18:34:32.415419+00:00",
+          "to": "2026-10-16T06:34:32+00:00"
+        }
+      ]
     },
     "isin:INE572E01012|PNB Housing Fin": {
-      "lastAttemptAt": "2026-10-11T04:56:23+00:00",
-      "error": "search-unavailable"
-    },
-    "isin:INE572E01012|PNBHOUSING": {
-      "lastAttemptAt": "2026-10-11T05:29:24+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 52,
-      "lastSuccessAt": "2026-09-18T06:26:21+00:00",
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-16T06:34:32+00:00",
       "targetThrough": null,
       "pending": []
     },
-    "isin:INE722B01019|Praveg": {
-      "lastAttemptAt": "2026-10-11T06:02:12+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 45,
+    "isin:INE572E01012|PNBHOUSING": {
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 118,
       "lastSuccessAt": "2026-09-18T06:26:21+00:00",
+      "targetThrough": "2026-10-16T06:34:32+00:00",
+      "pending": [
+        {
+          "from": "2026-09-16T06:26:21+00:00",
+          "to": "2026-10-01T06:30:26.500000+00:00"
+        },
+        {
+          "from": "2026-10-01T06:30:26.500000+00:00",
+          "to": "2026-10-16T06:34:32+00:00"
+        }
+      ]
+    },
+    "isin:INE722B01019|Praveg": {
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "error": null,
+      "lastResultCount": 23,
+      "lastSuccessAt": "2026-10-16T06:34:32+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE722B01019|PRAVEG": {
-      "lastAttemptAt": "2026-10-11T06:35:35+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 45,
-      "lastSuccessAt": "2026-09-18T06:26:21+00:00",
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "error": null,
+      "lastResultCount": 23,
+      "lastSuccessAt": "2026-10-16T06:34:32+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE546Y01022|Praxis Home Retails": {
-      "lastAttemptAt": "2026-10-11T07:07:49+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-18T06:26:21+00:00",
+      "lastSuccessAt": "2026-10-16T06:34:32+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE546Y01022|PRAXIS": {
-      "lastAttemptAt": "2026-10-11T07:41:38+00:00",
+      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
       "error": "search-unavailable",
       "lastResultCount": 118,
       "targetThrough": "2026-09-18T06:26:21+00:00",
@@ -2512,8 +2552,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 244,
-    "checkedAt": "2026-10-16T05:50:21.379839+00:00"
+    "attempted": 10,
+    "incomplete": 240,
+    "checkedAt": "2026-10-16T06:34:32.830839+00:00"
   }
 }
