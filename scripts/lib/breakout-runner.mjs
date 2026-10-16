@@ -5,7 +5,7 @@ import {prepareBreakoutCapture,collectBreakouts} from '../collect-breakouts.mjs'
 // while the slower fallback walk waits on its providers. Publications serialize.
 export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms)),runWindow=45*60000,minuteInterval=60000,publishInterval=60000,archiveInterval=15*60000,collect=collectBreakouts,notify=async()=>{},handover=async()=>{},token='',checkLevels=async()=>{}}={}) {
  if(typeof discover!=='function'||!Number.isSafeInteger(runWindow)||runWindow<1||runWindow>50*60000)throw Error('Invalid quote runner window');
- let stopped=false,firstError=null,partial=false,fallbackCycle=0,version=0,publishedVersion=-1;const started=now(),deadline=started+runWindow,active=marketWindow(started).collect;
+ let stopped=false,firstError=null,partial=false,fallbackCycle=0,version=0,publishedVersion=-1,minuteVersion=0;const started=now(),deadline=started+runWindow,active=marketWindow(started).collect;
  const wait=async ms=>{let left=ms;while(left>0&&!stopped){const part=Math.min(left,1000);await sleep(part);left-=part;}};
  const publish=async()=>{const revision=version,saved=await local.publish();publishedVersion=revision;if(!local.publishArchive)try{await notify(saved);}catch{console.warn('Prepared quotes saved; automatic static delivery request was unavailable. Scheduled deployment checks remain active.');}return saved;};
  const archive=async()=>{try{const saved=await local.publishArchive();await notify(saved);}catch{partial=true;console.warn('Historical reader publication is delayed; the complete restart history remains in the live checkpoint.');}};
@@ -36,8 +36,8 @@ export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>n
  await Promise.all([
   guard(fallback()),
   guard((async()=>{while(!stopped&&now()<deadline){const at=now();await levels();version++;await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
-  guard((async()=>{while(!stopped&&now()<deadline){const at=now();await local.primary.wake();version++;const state=await local.primary.status?.();if(state)console.log('Minute quote coverage:',JSON.stringify({reason:state.reason,saved:state.saved,failed:state.failed,completedAt:state.completedAt}));await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
-  guard((async()=>{while(!stopped&&now()<deadline){await wait(publishInterval);if(!stopped&&now()<deadline){await publish();}}})()),
+  guard((async()=>{while(!stopped&&now()<deadline){const at=now();await local.primary.wake();version++;minuteVersion++;const state=await local.primary.status?.();if(state)console.log('Minute quote coverage:',JSON.stringify({reason:state.reason,saved:state.saved,failed:state.failed,completedAt:state.completedAt}));await wait(Math.max(1,Math.min(minuteInterval,(state?.nextAt||at+minuteInterval)-now())));}})()),
+  guard((async()=>{let delivered=0,last=now();while(!stopped&&now()<deadline){if(minuteVersion===delivered&&now()-last<publishInterval){await wait(Math.min(1000,publishInterval,Math.max(1,deadline-now())));continue;}if(!stopped&&now()<deadline){const revision=minuteVersion;await publish();delivered=revision;last=now();}}})()),
   ...(local.publishArchive?[guard((async()=>{while(!stopped&&now()<deadline){await wait(Math.min(archiveInterval,Math.max(1,deadline-now())));if(!stopped&&now()<deadline)await archive();}})())]:[]),
  ]);
  stopped=true;

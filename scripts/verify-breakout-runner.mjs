@@ -10,6 +10,7 @@ function fixture({failInitial=false,failOnce=false}={}){
  return {local,options,events,stats:()=>({publications,quotes,captures,finished})};
 }
 const normal=fixture();await runBreakoutRunner(normal.local,normal.options);assert.equal(normal.stats().captures,1);assert(normal.stats().quotes>=2);assert(normal.events[0].publication===1);assert(normal.events.some(event=>event.finished===true));
+assert(normal.events.findIndex(event=>event.publication===2)>normal.events.findIndex(event=>event==='quote'),'The first source observation wakes publication without waiting an extra minute');
 const initial=fixture({failInitial:true});await assert.rejects(runBreakoutRunner(initial.local,initial.options),/archive unavailable/);assert.equal(initial.stats().quotes,0);assert.equal(initial.stats().captures,0);
 const interrupted=fixture({failOnce:true});await assert.rejects(runBreakoutRunner(interrupted.local,interrupted.options),/archive unavailable/);assert(interrupted.events.some(event=>event.finished===true),'Interrupted source progress is retained before the run fails');const count=interrupted.stats().quotes;await delay(30);assert.equal(interrupted.stats().quotes,count,'A failed runner leaves no detached quote loop');
 const partial=fixture();partial.options.collect=async()=>({failures:1});assert.equal((await runBreakoutRunner(partial.local,partial.options)).partial,true);assert(partial.stats().publications>=2,'Partial captures publish their evidence without ending automatic collection');
