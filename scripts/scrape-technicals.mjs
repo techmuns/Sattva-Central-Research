@@ -40,8 +40,7 @@ import { verifyMoves, loadChecks, saveChecks, CHECKS_PATH } from './lib/muns-mar
 import { marketBreadth, priceDateOf } from './lib/technicals-file.mjs';
 import { researchPriceHistory, retainedPriceHistory } from './lib/research-price-history.mjs';
 import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { abdiRanaldoSpreadPct, amihudImpactPct, liquidityTier } from "./lib/liquidity-estimators.mjs";
 
 const IMPACT_COST_ORDER_SIZE_RUPEES = 5e7;   // ₹5 crore — standardized institutional position
@@ -101,6 +100,18 @@ function readExistingRows() {
   }
 }
 
+const recoveryPath=resolve(__dirname, '../public/data/technical-history-recovery.json');
+function recoveryState() {
+  try {return JSON.parse(readFileSync(recoveryPath,'utf8'));}
+  catch(error){if(error.code==='ENOENT')return {};throw error;}
+}
+function saveYahooRefusal(error) {
+  if(![401,403,429].includes(error.status))return;
+  const recovery=recoveryState(),strikes=(recovery.strikes||0)+1;
+  writeFileSync(recoveryPath,JSON.stringify({...recovery,version:1,strikes,
+    holdUntil:Math.max(Date.now()+Math.min(86400000,3600000*2**Math.min(strikes-1,5)),error.retryAt||0),reason:'source-cooldown'})+'\n');
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) run().catch((err) => {
   console.error("Fatal:", err.stack || err.message);
   process.exit(1);
@@ -110,10 +121,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
 async function run() {
   const previousRows = new Map(readExistingRows().map(row => [row.ticker, row]));
   const previousHistory = new Map([...previousRows].filter(([,row]) => row.closeHistory).map(([ticker,row]) => [ticker,row.closeHistory]));
-  try {
-    const recovery = JSON.parse(readFileSync(resolve(__dirname, '../public/data/technical-history-recovery.json'), 'utf8'));
-    if (recovery.holdUntil > Date.now()) throw Error(`Yahoo cooldown until ${new Date(recovery.holdUntil).toISOString()}; saved technicals retained.`);
-  } catch (error) { if (error.message.startsWith('Yahoo cooldown')) throw error; }
+  const recovery=recoveryState();
+  if (recovery.holdUntil>Date.now()) throw Error(`Yahoo cooldown until ${new Date(recovery.holdUntil).toISOString()}; saved technicals retained.`);
   const screenerRows = JSON.parse(readFileSync(COMPANIES_PATH, "utf8"));
   const bookRows = await bookCompaniesNotInScreener(screenerRows);
   const allCompanies = [...screenerRows, ...bookRows];
@@ -160,7 +169,7 @@ async function run() {
 
   // Fetch the index first — needed for relative strength and beta.
   console.log(`\nFetching ${INDEX_SYMBOL} (Nifty 500)...`);
-  const indexBars = await fetchBars(INDEX_SYMBOL, start, end);
+  const indexBars = await fetchBars(INDEX_SYMBOL, start, end).catch(error=>{saveYahooRefusal(error);throw error;});
   if (!indexBars.length) throw new Error("Could not load Nifty 500 index data — aborting.");
   console.log(`  ${indexBars.length} bars`);
   const indexReturns = dailyReturns(indexBars);
@@ -209,7 +218,10 @@ async function run() {
         const alts = [`${ticker}.BO`];
         if (/-SM$/.test(ticker)) alts.unshift(`${ticker.replace(/-SM$/, "")}.NS`, `${ticker.replace(/-SM$/, "")}.BO`);
         for (const altSym of alts) {
-          const alt = await fetchBars(altSym, momentumStart, end).catch(() => []);
+          const alt = await fetchBars(altSym, momentumStart, end).catch(error => {
+            if([401,403,429].includes(error.status))throw error;
+            return [];
+          });
           if (alt.length > longBars.length) {
             process.stdout.write(`(fallback ${altSym}) `);
             longBars = alt;
@@ -272,15 +284,13 @@ async function run() {
           closeHistory: retainedPriceHistory(previousHistory.get(ticker)) });
       console.log(`FAIL ${err.message}`);
       if ([401,403,429].includes(err.status)) {
-        const recoveryPath=resolve(__dirname, '../public/data/technical-history-recovery.json');
-        let recovery={};try{recovery=JSON.parse(readFileSync(recoveryPath,'utf8'));}catch{}
-        writeFileSync(recoveryPath,JSON.stringify({...recovery,version:1,holdUntil:Math.max(Date.now()+3600000,err.retryAt||0),reason:'source-cooldown'})+'\n');
+        saveYahooRefusal(err);
         // A source refusal ends the walk. Keep every unattempted company and its
         // actual last-good readings instead of issuing another 600 requests.
         for (const rest of companies.slice(i+1)) {
           const remainingTicker=extractTicker(rest['Screener URL']);if(!remainingTicker)continue;
           const old=previousRows.get(remainingTicker);
-          results.push(old ? {...old,history_check:{checkedAt:new Date().toISOString(),state:'failed',reason:'Yahoo source cooldown; not checked'}}
+          results.push(old ? {...old,history_check:{...old.history_check,reportedAt:new Date().toISOString(),state:'not-checked',reason:'Yahoo source cooldown; not checked'}}
             : {ticker:remainingTicker,name:rest.Company,screenerUrl:rest['Screener URL'],listSource:rest.listSource||'nse500',error:'Yahoo source cooldown; not checked'});
           failures++;
         }

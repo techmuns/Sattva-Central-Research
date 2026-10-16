@@ -173,6 +173,30 @@ jobs:
           echo "Push still failing after 4 attempts."
           exit 1
 
+      - name: Retain a source cooldown even if the index check stopped the daily walk
+        if: failure() && github.ref == 'refs/heads/main'
+        run: |
+          if [ ! -f public/data/technical-history-recovery.json ]; then
+            exit 0
+          fi
+          git restore --staged .
+          git add public/data/technical-history-recovery.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Retain Yahoo source cooldown'
+          # The daily job shares data-refresh ownership; no partial price file is published.
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git -c rebase.autoStash=true pull --rebase origin main || exit 1
+            sleep $((attempt * 2))
+          done
+          exit 1
+
   # The existing scrape has taken 30–40 minutes; a ~27-minute directory walk must not
   # consume its sixty-minute budget or delay publishing other feeds. Same triggers and
   # workflow concurrency, independent checkpoints and a separate single-file commit.

@@ -40,16 +40,8 @@ jobs:
           node-version: '22'
       - name: Repair only missing or overdue company histories
         run: node scripts/repair-technical-history.mjs
-      - name: Retain interrupted progress
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: technical-history-checkpoint
-          path: |
-            public/data/technicals.json
-            public/data/technical-history-recovery.json
-          if-no-files-found: warn
       - name: Publish repaired history and durable cooldowns
+        id: publish
         if: always() && !cancelled()
         run: |
           git config user.name 'github-actions[bot]'
@@ -71,3 +63,14 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+      # Ordinary progress is already retained in Git. Keep an artifact only when
+      # publication failed; empty timer checks must not consume artifact storage.
+      - name: Retain unpublished progress
+        if: failure() && steps.publish.outcome == 'failure'
+        uses: actions/upload-artifact@v5
+        with:
+          name: technical-history-checkpoint
+          path: |
+            public/data/technicals.json
+            public/data/technical-history-recovery.json
+          if-no-files-found: warn
