@@ -40,6 +40,7 @@
   // "Actions: read and write". Nothing else — it does not need contents, and a token that can
   // write code is not the token to hand an unauthenticated route.
   "vars": {
+    "BREAKOUT_LIVE_DELIVERY": "github-release",
     "MF_RUNTIME": "github",
     // Company news from free Google News search rather than the paid Brave search behind the Muns
     // news API (see worker/free-news.mjs and the budget requirement in AGENTS.md).

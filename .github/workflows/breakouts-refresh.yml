@@ -9,6 +9,8 @@ on:
       - 'scripts/collect-breakouts.mjs'
       - 'scripts/lib/breakout-*.mjs'
       - 'scripts/lib/breakouts-github.mjs'
+      - 'scripts/lib/upstox-budget.mjs'
+      - 'scripts/check-breakout-runner.mjs'
       - 'worker/upstox*.mjs'
       - 'worker/price-levels*.mjs'
       - 'scripts/lib/price-levels*.mjs'
@@ -44,6 +46,7 @@ jobs:
       BACKGROUND_STATE_KEY: ${{ secrets.MF_STATE_KEY || secrets.FAMILY_HOLDINGS_TOKEN || secrets.GLOWVENTURES_READ_TOKEN }}
       UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
       UPSTOX_BACKUP_ENABLED: ${{ vars.UPSTOX_BACKUP_ENABLED }}
+      BREAKOUT_LIVE_DELIVERY: github-release
     steps:
       - uses: actions/checkout@v5
         with:

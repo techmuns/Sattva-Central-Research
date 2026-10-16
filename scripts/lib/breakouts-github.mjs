@@ -1,20 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {githubBackgroundRelease} from './github-background-release.mjs';
-import {sealBackgroundState,openBackgroundState} from './github-background-seal.mjs';
-import {packBackgroundViews} from './github-background-package.mjs';
-import {privateRecordViews} from './github-private-records.mjs';
+import {openBackgroundState} from './github-background-seal.mjs';
 import {copyBackgroundStore} from './github-background-restore.mjs';
 import {localBreakouts} from './breakout-local.mjs';
-import {preparedBreakoutHistory,breakoutRecordKey} from './breakout-prepared-history.mjs';
+import {prepareBreakoutPublication} from './breakout-publication.mjs';
 import {BREAKOUT_TABLES} from '../../worker/breakout-export.mjs';
 import {backgroundContract} from '../../worker/github-background-contract.mjs';
 
 export async function githubBreakouts({env=process.env,fetcher=fetch,legacyClient,recipient,file=path.resolve('.cache/breakouts/state.sqlite'),out=path.resolve('.cache/breakouts/publication'),transportOptions={},localOptions={}}={}) {
- const transport=githubBackgroundRelease('breakouts',{env,fetcher,...transportOptions}),signature=await backgroundContract('breakouts');let local,cycle=0;
+ const archiveTransport=githubBackgroundRelease('breakouts',{env,fetcher,...transportOptions});
+ const live=env.BREAKOUT_LIVE_DELIVERY==='github-release',feature=live?'breakouts-live':'breakouts';
+ const transport=live?githubBackgroundRelease(feature,{env,fetcher,...transportOptions}):archiveTransport,signature=await backgroundContract(feature);let local,cycle=0,archiveCycle=0;
  fs.mkdirSync(path.dirname(file),{recursive:true});fs.mkdirSync(out,{recursive:true});
- const latest=await transport.latest();
- if(latest){const sealed=file+'.sealed';try{await transport.download(latest,'state',sealed,{sourceSignature:signature});await openBackgroundState(sealed,file,'breakouts',{env});}finally{fs.rmSync(sealed,{force:true});}}
+ let restore=transport,latest=await transport.latest();
+ if(!latest&&live){restore=archiveTransport;latest=await restore.latest();}
+ if(latest){const sealed=file+'.sealed';try{await restore.download(latest,'state',sealed,{sourceSignature:await backgroundContract(restore.feature)});await openBackgroundState(sealed,file,restore.feature,{env});}finally{fs.rmSync(sealed,{force:true});}}
  else if(fs.existsSync(file))throw Error('Unverified local quote state cannot replace retained history');
  local=localBreakouts(file,{env,...localOptions});local.primary.config('upstox-inventory');
  try{
@@ -27,24 +28,14 @@ export async function githubBreakouts({env=process.env,fetcher=fetch,legacyClien
   }
   if(local.db.prepare('PRAGMA quick_check').get().quick_check!=='ok')throw Error('Retained quote database invalid');
  }catch(error){await local.close();throw error;}
- async function publish(){
-  const backup=path.join(out,'checkpoint.sqlite'),state=path.join(out,'state.bin'),views=path.join(out,'views.gz');fs.rmSync(backup,{force:true});
-  await local.checkpoint(backup);let copy,prepared;
-  try{
-   copy=localBreakouts(backup,{env,...localOptions});const at=localOptions.now?.()??Date.now();
-   prepared=preparedBreakoutHistory(copy,path.join(out,'history.sqlite'),{now:at});
-   const fallback=copy.store.readFallback(),primaryRow=copy.db.prepare('SELECT payload FROM breakout_primary_current WHERE id=1').get();
-   const current=primaryRow?{...JSON.parse(primaryRow.payload),rows:copy.db.prepare('SELECT payload FROM breakout_primary_latest').all().flatMap(row=>Object.values(JSON.parse(row.payload))),gaps:copy.store.archive.gaps()}:null;
-   function currentPages(kind,value){const {rows,...metadata}=value,pages=[];for(let offset=0;offset<rows.length;offset+=500){const id=breakoutRecordKey(kind,String(offset));prepared.put(id,{rows:rows.slice(offset,offset+500)});pages.push(id);}return {...metadata,pages};}
-   const primary=await copy.primary.status();
-   const fallbackState=await copy.storage.get('github-breakout-fallback')||{},fallbackAt=fallbackState.lastAttemptAt||Date.parse(fallback.startedAt)||null;
-   const schedule={...fallbackState,runtime:'github-actions',started:true,lastAttemptAt:fallbackAt,publishedAt:at,overdue:fallbackState.failed===true||!!fallbackAt&&at-fallbackAt>30*60000};
-   const head={version:1,repo:transport.repo,feature:'breakouts',createdAt:new Date(at).toISOString(),primary:current?currentPages('primary',current):null,fallback:currentPages('fallback',fallback),schedule,primarySchedule:{...primary,runtime:'github-actions',alarmAt:null}};
-   const entries=privateRecordViews(prepared.ids,prepared.read,head,{repo:transport.repo,feature:'breakouts',env});
-   await packBackgroundViews(entries,recipient,views,{repo:transport.repo,feature:'breakouts',sourceSignature:signature});
-  }finally{prepared?.close();await copy?.close();}
-  await sealBackgroundState(backup,state,'breakouts',{env});
-  return transport.publish({cycle:++cycle,state,views,sourceSignature:signature});
+ async function publication(target,directory,cycle,history){
+  fs.mkdirSync(directory,{recursive:true});const backup=path.join(directory,'checkpoint.sqlite');fs.rmSync(backup,{force:true});
+  await local.checkpoint(backup);
+  const signature=await backgroundContract(target.feature),workerEnv={GITHUB_REPOSITORY:env.GITHUB_REPOSITORY,GITHUB_RUN_ID:env.GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT:env.GITHUB_RUN_ATTEMPT,BACKGROUND_STATE_KEY:env.BACKGROUND_STATE_KEY,UPSTOX_ACCESS_TOKEN:env.UPSTOX_ACCESS_TOKEN?'configured':''};
+  const prepared=await prepareBreakoutPublication({backup,out:directory,env:workerEnv,recipient,signature,feature:target.feature,at:localOptions.now?.()??Date.now(),history});
+  return target.publish({cycle,...prepared,sourceSignature:signature});
  }
- return {...local,publish};
+ const publish=()=>publication(transport,out,++cycle,!live);
+ const publishArchive=live?()=>publication(archiveTransport,path.join(out,'archive'),++archiveCycle,true):null;
+ return {...local,publish,publishArchive};
 }

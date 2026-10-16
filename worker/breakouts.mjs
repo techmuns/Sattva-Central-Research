@@ -5,6 +5,7 @@ import { withTag, tagged, revalidate } from './http.mjs';
 import {PRICE_LEVELS_OBJECT} from '../public/js/data/price-levels-shared.js';
 import { PRIMARY_OBJECT } from './breakout-primary.mjs';
 import {preparedBreakouts} from './breakouts-github.mjs';
+import {readLiveBreakouts} from './breakout-live-delivery.mjs';
 
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
 function conditional(request, payload, age = 0) {
@@ -34,7 +35,11 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
   }
   if (request.method !== 'GET') return reply({ ok: false, reason: 'method' }, 405);
   try {
-    const prepared=await preparedBreakouts(request,env,{now:now()});
+    const history=url.pathname==='/api/breakouts/history';
+    let deliveryFailed=false,live=null;
+    if(!history)try{live=await readLiveBreakouts(env,request.url,{fetcher,edgeCache,now:now(),fallbackOnly:url.pathname==='/api/breakouts/fallback'});}catch{deliveryFailed=true;}
+    let prepared=live||await preparedBreakouts(request,env,{now:now()});
+    if(prepared&&deliveryFailed)prepared={...prepared,deliveryFailed:true,primarySchedule:{...prepared.primarySchedule,overdue:true,deliveryFailed:true}};
     if(prepared){
       if(url.pathname==='/api/breakouts/history'||url.pathname==='/api/breakouts/fallback')return reply(prepared);
       const health=liveCoverage(prepared,prepared.targets||[],now());

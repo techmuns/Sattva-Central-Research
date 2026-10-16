@@ -7,7 +7,7 @@ import {boundedJson} from '../../public/js/data/family-book-contract.js';
 import {mfRepo} from '../../worker/mutual-funds-github.mjs';
 import {backgroundFileHash} from './github-background-seal.mjs';
 import {createBackgroundBundle,readBackgroundBundle,MAX_BACKGROUND_BUNDLE} from './github-background-bundle.mjs';
-const FEATURES={'mutual-funds':{tag:'mutual-funds-runner-data',prefix:'mfbg'},breakouts:{tag:'breakout-data',prefix:'br'},summaries:{tag:'summary-data',prefix:'su'},'price-levels':{tag:'price-level-data',prefix:'pl'},newsletter:{tag:'newsletter-data',prefix:'nl'}};
+const FEATURES={'mutual-funds':{tag:'mutual-funds-runner-data',prefix:'mfbg'},breakouts:{tag:'breakout-data',prefix:'br'},'breakouts-live':{tag:'breakout-live-data',prefix:'brlive'},summaries:{tag:'summary-data',prefix:'su'},'price-levels':{tag:'price-level-data',prefix:'pl'},newsletter:{tag:'newsletter-data',prefix:'nl'}};
 const INITIALIZED='Retained archive initialized';
 export function githubBackgroundRelease(feature,{env=process.env,fetcher=fetch,sleep=ms=>new Promise(done=>setTimeout(done,ms)),now=Date.now,head=()=>execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim()}={}) {
   const spec=FEATURES[feature],repo=mfRepo({GH_REPO:env.GITHUB_REPOSITORY});
@@ -64,7 +64,7 @@ export function githubBackgroundRelease(feature,{env=process.env,fetcher=fetch,s
   }
   async function prune(current) {
     const keep=new Set();let complete=0;
-    for(const asset of candidates(current)){keep.add(asset.name);if(++complete>=2&&!(Date.parse(asset.created_at)>now()-10*60000))break;}
+    for(const asset of candidates(current)){keep.add(asset.name);if(++complete>=2&&!(Date.parse(asset.created_at)>now()-(feature==='breakouts-live'?2:10)*60000))break;}
     for(const asset of current.assets)if(owned.test(asset.name)&&!keep.has(asset.name))await api(`${root}/releases/assets/${asset.id}`,{method:'DELETE'});
   }
   async function publish({cycle,state,views,sourceSignature}) {
