@@ -44,7 +44,10 @@ const bodies = {
 bodies['/data/corp-announcements.json'].byTicker.KAMATS = [{ ...filing('KAMATS', 1), scripCode: '539659' }];
 bodies['/data/corp-announcements.json'].byTicker.ASHIKAG = [{ ...filing('ASHIKAG', 1), scripCode: '543766' }];
 const indexHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
-const beaconStyles = indexHtml.slice(indexHtml.indexOf('.beacon-root {'), indexHtml.indexOf('/* Fullscreen Workspace Support */'));
+const beaconStart = indexHtml.indexOf('.beacon-root {');
+const beaconEnd = indexHtml.indexOf('</style>', beaconStart);
+assert(beaconStart >= 0 && beaconEnd > beaconStart, 'the fixture copies only the beacon stylesheet, never the app HTML or bootstrap');
+const beaconStyles = indexHtml.slice(beaconStart, beaconEnd);
 const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>#modal-overlay.is-open #modal-container{opacity:1}${beaconStyles}</style><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"></head><body class="bg-slate-50 p-4"><main id="root"></main><div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div><script type="module">
 import * as tab from '/js/tabs/corp-announcements.js';
 import { mount, openBeacon } from '/js/ui/source-beacon.js';

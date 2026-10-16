@@ -1224,17 +1224,9 @@
         }
       }
 
-      /* Fullscreen Workspace Support */
-      body:has([data-fullscreen-workspace]) { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-      body:has([data-fullscreen-workspace]) #app { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-      body:has([data-fullscreen-workspace]) #app > [data-app-header], body:has([data-fullscreen-workspace]) #app > [data-app-nav] { flex: 0 0 auto; width: 100%; }
-      body:has([data-fullscreen-workspace]) #app > [data-app-content] { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; padding-bottom: 0; }
-      body:has([data-fullscreen-workspace]) #dashboard-main, body:has([data-fullscreen-workspace]) #content-host { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-
-      [data-fullscreen-workspace] { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-      [data-fullscreen-workspace] > [data-alerts-controls] { flex: 0 0 auto; }
-      [data-fullscreen-workspace] [data-score-table] { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-      [data-fullscreen-workspace] [data-table-scroll] { flex: 1 1 auto; min-height: 0; max-height: none !important; }
+      /* All Alerts sizes its table to the available viewport. Keep the surrounding page in
+         normal flow so short host panels and wrapped controls can still scroll to its bottom. */
+      #app:has(.alerts-workspace) > [data-app-content] { padding-bottom: 0; }
 
       #modal-container:has(.mf-coverage) { background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-900); }
       .mf-table-control { max-width:100%; min-width:0; padding:7px 10px; border:1px solid rgb(var(--edge-slate-200,226 232 240)); border-radius:8px; background:rgb(var(--surface-slate-50,248 250 252)); color:var(--ink-900); font-size:13px; }

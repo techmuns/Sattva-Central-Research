@@ -604,7 +604,7 @@ function paint(ctx) {
   tableViews[horizon] = table.view;
 
   ctx.root.innerHTML = `
-    <div class="alerts-workspace" data-alerts-workspace data-alerts-collecting="${collecting > 0}" data-fullscreen-workspace aria-busy="${lastVisible.grouping}">
+    <div class="alerts-workspace" data-alerts-workspace data-alerts-collecting="${collecting > 0}" aria-busy="${lastVisible.grouping}">
     ${sectionHead({ title: 'All Alerts' })}
     <div class="alerts-controls" data-alerts-controls>
       <div class="alerts-view-controls">
@@ -908,10 +908,11 @@ function fitStreamToViewport(root) {
   };
   const apply = () => {
     if (!el.isConnected) return;
-    // Viewport-relative, and only meaningful at the top of the page — which is where the reader is
-    // when this matters, because a table that fills the viewport leaves the page nothing to scroll.
-    const top = el.getBoundingClientRect().top;
-    let h = Math.max(MIN_STREAM_PX, Math.round(window.innerHeight - top - STREAM_BOTTOM_GAP_PX));
+    // The header and filters can exceed a short iframe. Retain a usable table and let the page
+    // scroll to it. Measure from the document top so resizing or a late control update while the
+    // page is scrolled cannot inflate the table by the current page offset.
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    const h = Math.max(MIN_STREAM_PX, Math.round(window.innerHeight - top - STREAM_BOTTOM_GAP_PX));
     set(h);
     // NO "CORRECT FOR THE RESIDUAL PAGE SCROLL" PASS HERE, and that is deliberate. There is a 16px
     // overflow in a sandbox with no Tailwind — `body` keeps the browser's default 8px margin
