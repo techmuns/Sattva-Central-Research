@@ -236,7 +236,9 @@ try {
         if (await select.count() && await select.locator('option[value="all"]').count()) await select.selectOption('all');
       }
       await frame.waitForFunction(() => !document.querySelector('#content-host .skeleton-shimmer, [data-table-loading]') &&
-        document.querySelector('[data-alerts-workspace]')?.getAttribute('data-alerts-collecting') !== 'true', null, { timeout: 180000 });
+        document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') !== 'true', null, { timeout: 180000 });
+      // Geometry is ready once row grouping settles. Background source checks can continue while
+      // readers scroll; their freshness/completeness is verified separately by the alert suites.
       for (const size of sizes) {
         await page.setViewportSize(size);
         await frame.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
