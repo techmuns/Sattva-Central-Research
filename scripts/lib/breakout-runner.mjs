@@ -37,7 +37,7 @@ export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>n
   guard(fallback()),
   guard((async()=>{while(!stopped&&now()<deadline){const at=now();await levels();version++;await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
   guard((async()=>{while(!stopped&&now()<deadline){const at=now();await local.primary.wake();version++;minuteVersion++;const state=await local.primary.status?.();if(state)console.log('Minute quote coverage:',JSON.stringify({reason:state.reason,saved:state.saved,failed:state.failed,completedAt:state.completedAt}));await wait(Math.max(1,Math.min(minuteInterval,(state?.nextAt||at+minuteInterval)-now())));}})()),
-  guard((async()=>{let delivered=0,last=now();while(!stopped&&now()<deadline){if(minuteVersion===delivered&&now()-last<publishInterval){await wait(Math.min(1000,publishInterval,Math.max(1,deadline-now())));continue;}if(!stopped&&now()<deadline){const revision=minuteVersion;await publish();delivered=revision;last=now();}}})()),
+  guard((async()=>{let delivered=0,last=now();while(!stopped&&now()<deadline){if(minuteVersion===delivered&&now()-last<publishInterval){await wait(Math.min(1000,minuteInterval,publishInterval,Math.max(1,deadline-now())));continue;}if(!stopped&&now()<deadline){const revision=minuteVersion;await publish();delivered=revision;last=now();}}})()),
   ...(local.publishArchive?[guard((async()=>{while(!stopped&&now()<deadline){await wait(Math.min(archiveInterval,Math.max(1,deadline-now())));if(!stopped&&now()<deadline)await archive();}})())]:[]),
  ]);
  stopped=true;
