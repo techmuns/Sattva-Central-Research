@@ -1609,44 +1609,44 @@
       "pending": []
     },
     "isin:INE148I01020|Sammaan Capital": {
-      "lastAttemptAt": "2026-10-11T16:28:59+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": null,
+      "lastResultCount": 35,
+      "lastSuccessAt": "2026-10-16T13:03:01+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE148I01020|SAMMAANCAP": {
-      "lastAttemptAt": "2026-10-11T17:04:06+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": null,
+      "lastResultCount": 15,
+      "lastSuccessAt": "2026-10-16T13:03:01+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE860D01013|Sanjivani Paranteral": {
-      "lastAttemptAt": "2026-10-11T17:37:05+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-10-02T08:02:07+00:00",
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE953O01021|Sansera Engineering": {
-      "lastAttemptAt": "2026-10-11T18:09:50+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 59,
-      "targetThrough": "2026-09-28T06:40:42+00:00",
-      "pending": [
-        {
-          "from": "2026-09-23T18:40:42.233307+00:00",
-          "to": "2026-09-28T06:40:42+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-02T08:02:07+00:00"
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": null,
+      "lastResultCount": 19,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-16T13:03:01+00:00",
+      "lastSuccessAt": "2026-09-28T06:40:42+00:00"
     },
     "isin:INE953O01021|SANSERA": {
-      "lastAttemptAt": "2026-10-11T18:45:18+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 113,
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": null,
+      "lastResultCount": 58,
       "targetThrough": "2026-09-28T06:40:42+00:00",
       "pending": [
-        {
-          "from": "2026-09-23T18:40:42.233307+00:00",
-          "to": "2026-09-28T06:40:42+00:00"
-        },
         {
           "from": "2026-09-19T06:40:42.466615+00:00",
           "to": "2026-09-21T12:40:42.349961+00:00"
@@ -1656,34 +1656,43 @@
           "to": "2026-09-23T18:40:42.233307+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-02T08:02:07+00:00"
+      "lastDiscoveryAt": "2026-10-16T13:03:01+00:00"
     },
     "isin:INE08NE01025|Sanstar": {
-      "lastAttemptAt": "2026-10-11T19:18:00+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-02T08:02:07+00:00",
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": null,
+      "lastResultCount": 5,
+      "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE08NE01025|SANSTAR": {
-      "lastAttemptAt": "2026-10-11T20:29:26+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-02T08:02:07+00:00",
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": null,
+      "lastResultCount": 5,
+      "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE955I01044|Sejal Glass": {
-      "lastAttemptAt": "2026-10-11T21:21:15+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 110,
       "lastSuccessAt": "2026-10-02T08:02:07+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-10-16T13:03:01+00:00",
+      "pending": [
+        {
+          "from": "2026-09-30T08:02:07+00:00",
+          "to": "2026-10-08T10:32:34+00:00"
+        },
+        {
+          "from": "2026-10-08T10:32:34+00:00",
+          "to": "2026-10-16T13:03:01+00:00"
+        }
+      ]
     },
     "isin:INE955I01044|SEJALLTD": {
-      "lastAttemptAt": "2026-10-11T21:54:16+00:00",
+      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-02T08:02:07+00:00",
@@ -2553,8 +2562,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 236,
-    "checkedAt": "2026-10-16T12:15:16.126151+00:00"
+    "attempted": 9,
+    "incomplete": 231,
+    "checkedAt": "2026-10-16T13:03:01.670337+00:00"
   }
 }
