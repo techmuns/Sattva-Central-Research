@@ -1,3 +1,4 @@
+import {newsletterRequest} from './newsletter-request.mjs';
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
 import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys } from './newsletter-email.mjs';
 import { buildBrief, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
@@ -67,13 +68,13 @@ export async function sendEmail({ fetcher = fetch, token, email, subject, html =
   if (inReplyTo) Object.assign(body, { inReplyTo, references: [inReplyTo] });
   let res;
   try {
-    res = await fetcher(base, {
+    res = await newsletterRequest(fetcher,base, {
       method: 'POST',
       headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify(body),
       signal,
       redirect: 'manual',
-    });
+    },SEND_TIMEOUT_MS);
   } catch (error) {
     return { ok: false, status: null, reason: /abort|timeout/i.test(String(error?.name || '')) ? 'timeout' : 'unreachable' };
   }
@@ -302,7 +303,7 @@ export class NewsletterSchedule {
         part.bytes = emailBytes(html);
         progress();
         const result = await sendEmail({ fetcher: this.fetcher, token: credential, email: recipient.email, subject: message.subject, html,
-          inReplyTo: outcome.threadMessageId, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
+          inReplyTo: outcome.threadMessageId });
         Object.assign(part, result);
         if (result.ok) acceptedParts.add(i);
         if (i === 0) {

@@ -1,3 +1,4 @@
+import {newsletterRequest} from './newsletter-request.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 export const NEWS_MODEL = 'gpt-6-luna';
 export const NEWS_REVIEW_MODEL = 'gpt-6-sol';
@@ -24,9 +25,9 @@ export async function newsModelCall({ env, fetcher = fetch, budget, job, now = D
   if (!reservation.ok) throw failure(reservation.reason);
   let response;
   try {
-    response = await fetcher('https://api.openai.com/v1/responses', { method: 'POST', redirect: 'manual',
+    response = await newsletterRequest(fetcher,'https://api.openai.com/v1/responses', { method: 'POST', redirect: 'manual',
       headers: { authorization: `Bearer ${env.OPENAI_API_KEY}`, 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(body), signal: AbortSignal.timeout(40000) });
+      body: JSON.stringify(body) },40000);
   } catch { throw failure('model-unreachable'); }
   if (!response.ok) {
     await response.body?.cancel();

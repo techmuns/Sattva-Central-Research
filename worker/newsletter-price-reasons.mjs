@@ -1,3 +1,4 @@
+import {newsletterRequest} from './newsletter-request.mjs';
 // Price explanations use read source passages, never the size/sign of a move as its own cause.
 import { expectedSession, marketWindow } from '../public/js/data/breakout-live-shared.js';
 import { istInstant, istDay, istLabel } from '../public/js/data/newsletter-shared.js';
@@ -113,10 +114,9 @@ export async function attachPriceReasons({ brief, context, env, fetcher = fetch,
   const config = bedrockConfig(env);
   let parsed = null, failure = null;
   try {
-    const res = await fetcher(config.url, { method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(45000),
-      headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', accept: 'application/json', 'content-type': 'application/json' },
+    const res = await newsletterRequest(fetcher,config.url, { method: 'POST', redirect: 'manual', headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', accept: 'application/json', 'content-type': 'application/json' },
       body: JSON.stringify({ model: config.model, max_tokens: 6000, thinking: { type: 'disabled' },
-        system: [{ type: 'text', text: PRICE_REASON_INSTRUCTIONS }], messages: [{ role: 'user', content: JSON.stringify({ PRICE_MOVES: items }) }] }) });
+        system: [{ type: 'text', text: PRICE_REASON_INSTRUCTIONS }], messages: [{ role: 'user', content: JSON.stringify({ PRICE_MOVES: items }) }] }) },45000);
     if (!res.ok) { await res.body?.cancel(); failure = res.status === 429 ? 'rate-limited' : [401, 403].includes(res.status) ? 'refused' : 'upstream'; }
     else {
       const reply = await boundedJson(res, 50000);

@@ -1,3 +1,4 @@
+import {newsletterRequest} from './newsletter-request.mjs';
 // worker/newsletter-brief.mjs — the brief itself: what goes in it, where each figure comes from,
 // and the email it is rendered into. Pure apart from the injected `fetcher`, `env.ASSETS` and the
 // breakout capture's Durable Object, so `scripts/verify-newsletter.mjs` builds one offline against
@@ -1234,12 +1235,11 @@ export async function readAiNotes({ env, fetcher = fetch, now = Date.now(), comp
   if (!items.length) return mergeNews({ ...base, ok: false, reason: 'content-pending' });
   const config = bedrockConfig(env);
   try {
-    const res = await fetcher(config.url, {
+    const res = await newsletterRequest(fetcher,config.url, {
       method: 'POST', redirect: 'manual',
       headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', accept: 'application/json', 'content-type': 'application/json' },
       body: JSON.stringify(aiRequest(items, config.model)),
-      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-    });
+    },AI_TIMEOUT_MS);
     if (!res.ok) { await res.body?.cancel(); return mergeNews({ ...base, model: config.model, ok: false, reason: res.status === 401 || res.status === 403 ? 'refused' : res.status === 429 ? 'rate-limited' : 'upstream', status: res.status }); }
     const body = await boundedJson(res, 80000);
     if (body.stop_reason !== 'end_turn') return mergeNews({ ...base, model: config.model, ok: false, reason: 'incomplete-response' });
