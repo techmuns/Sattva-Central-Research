@@ -37,8 +37,7 @@ export function watchAlertPrices(root) {
   };
   const offDaily = technicals.onChange(update);
   const offLive = live.watch(update);
-  // Prepared alert pools can paint without loading technicals. Adopt their dated close
-  // fallback independently, including when the first daily read finishes after the cards.
-  void technicals.load().then(update).catch(() => { /* Quotes remain independently useful. */ });
+  // Prepared alerts stay independent of full technical-history downloads. The shared
+  // quote reader retains its own last-good snapshot; use daily closes when already loaded.
   return () => { stopped = true; offDaily(); offLive(); };
 }

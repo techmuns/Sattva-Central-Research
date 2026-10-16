@@ -66,6 +66,12 @@ try {
   assert.equal(reads, 1, 'One shared opening request, independent of the number of cards');
   assert.equal(await change('BHEL').innerText(), '+2.00% daily');
   assert.equal(await change('SBIN').innerText(), '-1.00% daily');
+  assert.equal(await cmp('LUPIN').innerText(), '—', 'Prepared cards do not force a technical-history download');
+  await page.evaluate(async () => {
+    await (await import('/js/data/technicals.js')).load();
+    await (await import('/js/data/breakout-live.js')).refresh();
+  });
+  await cmp('LUPIN').getByText('₹150.00', { exact: true }).waitFor();
   assert.equal(await cmp('LUPIN').innerText(), '₹150.00');
   assert.match(await card('LUPIN').locator('[data-ai-price-status]').innerText(), /Close · 2026-10-15/);
   assert.equal(await cmp('ZZUNKNOWN').innerText(), '—');
