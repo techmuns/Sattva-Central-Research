@@ -16,9 +16,26 @@ The edge caches short request acknowledgements. It does not hold the scheduler's
 ## Private Screener summaries
 
 The existing thirty-minute GitHub workflow owns portfolio discovery, catalogue
-readiness and summary capture. It uses the existing account and opt-in settings;
-the sixty-attempt rolling-day ceiling, fifteen-second source spacing, source
-refusals and cooldowns are unchanged. The dependency check preserves the original
+readiness and summary capture. Completion events from the trusted main-branch
+Screener catalogue, TradingView news and RSS collectors also wake it when cron is
+delayed. The shared workflow mutex and persisted discovery timestamps coalesce
+wakeups to the ordinary thirty-minute cadence. Crossing a known source eligibility
+boundary permits an earlier check; no browser visit is required. Neither these
+events nor a manual workflow can bypass the account ledger.
+
+One source attempt per run and at least thirty minutes between reservations spread
+requests across the day (at most 48 in a rolling day). The original sixty-attempt
+ceiling still counts every imported, interrupted or failed request. Current source
+cooldowns are retained unchanged. Subsequent consecutive rate-limit refusals wait
+one, two, four, then seven days, never shortening a longer source Retry-After. A
+successful saved report resets this refusal streak. Manual use of the same account
+is not observable, so the provider may still refuse requests below our ceiling.
+
+The prepare phase reconciles current holdings and catalogue metadata even during
+cooldown and publishes the next actual source eligibility separately. Browser setup
+and sign-in occur only if pending records are eligible. The collection phase restores
+the acknowledged ledger and rechecks every limit before reserving a request.
+The dependency check preserves the original
 half-freshness dispatch window and records a dispatch intent on GitHub before
 requesting the public catalogue workflow. An ambiguous dispatch is not retried
 as a new source job on each status poll. Invalid, overdue or unverified catalogue
@@ -35,6 +52,10 @@ bodies, interrupted attempts, day-long retry holds and older inactive records
 remain. A changed, incomplete or inaccessible inventory blocks publication.
 Cloudflare summary collector writes are rejected and its old alarm deletes itself.
 No manual production source request is used for migration validation.
+
+GitHub cron and completion events are both best-effort, and a GitHub-wide outage
+can delay all wakeups. An overdue publication remains visibly overdue; publishing
+or dispatching alone cannot establish fresh or complete source coverage.
 
 Each reservation is recorded locally and acknowledged in an encrypted GitHub
 restart bundle BEFORE the collector may sign in or open a metered summary page.

@@ -13,7 +13,7 @@ import { handleConcallSummaries } from '../worker/concall-summaries.mjs';
 import { summaryId, summaryIdsForRow, validateSummaryBody, summaryStateMessage, summaryScheduleMessage, SUMMARY_WINDOW_MS, SUMMARY_ORIGIN, SUMMARY_WORKFLOW, SUMMARY_INVENTORY_BATCH, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
 import { buildSummaryInventory } from './lib/concall-summary-inventory.mjs';
 import { summaryResponseError, summaryNavigationGate } from './lib/read-screener-summary.mjs';
-import { SUMMARY_INTERVAL_MS, SUMMARY_CRON_OFFSET_MS } from '../public/js/data/concall-summaries-shared.js';
+import { SUMMARY_INTERVAL_MS, SUMMARY_CRON_OFFSET_MS, SUMMARY_SOURCE_INTERVAL_MS } from '../public/js/data/concall-summaries-shared.js';
 import { runSummaryCollection, summaryCollectorClient } from './collect-screener-summaries.mjs';
 
 const START = Date.parse('2026-09-10T06:00:00Z');
@@ -80,7 +80,9 @@ test('durable budget counts attempts before requests, survives interruption, and
   assert.equal(store.reserve('2:1', randomUUID()).reason, 'busy');
   now += 6*60000; // Crash: no completion; its slot and per-record retry deadline survive.
   const restarted = new ConcallSummaryStore(backing,{now:()=>now});
-  for(let i=1;i<60;i++) { const claim=restarted.reserve('1:1',randomUUID()); assert(claim.reserved); complete(restarted,claim); now+=15001; }
+  assert.equal(restarted.reserve('1:1',randomUUID()).reason,'paced','A crash cannot bypass the cross-run source spacing');
+  // Imported attempts from the former burst collector still count against the original ceiling.
+  for(let i=1;i<60;i++) { backing.db.prepare('INSERT INTO summary_attempts VALUES(?,?,?,?,?,?,?)').run(randomUUID(),'1:1',String(i+1),randomUUID(),now,now+300000,'ready'); now+=15001; }
   assert.equal(restarted.reserve('1:1',randomUUID()).reason,'daily-budget');
   assert.equal(restarted.status().automatedRequestsLast24h,60);
   now = Date.parse('2026-09-11T00:01:00Z');
@@ -101,7 +103,7 @@ test('saved bodies survive real SQLite reopen, portfolio exits, repeat publicati
     backing.db.close(); backing=storage(path); store=new ConcallSummaryStore(backing,{now:()=>now});
     assert.deepEqual(store.read(['1'])[0].body,body);
     assert.deepEqual(store.status().readyIds,['1']);
-    now+=60000; const next=inventory(5,now);
+    now+=SUMMARY_SOURCE_INTERVAL_MS; const next=inventory(5,now);
     next.holdings[0]={isin:isin(6),ticker:'TEST6',name:'Test company 6',discovery:'matched',summaries:1};
     next.targets=next.targets.filter(t=>t.id!=='1'); next.targets.unshift({...next.targets[0],id:'6',isin:isin(6),companyKey:'TEST6',
       companyUrl:'https://www.screener.in/company/TEST6/',name:'Test company 6',sourceName:'Test company 6',url:source(6).summaryUrl,rank:0,publishedDate:'2026-09-10'});
@@ -186,6 +188,7 @@ test('GitHub OIDC checks the signature, audience, exact workflow, immutable repo
   const request=async changes=>{const text=`${b64({alg:'RS256',kid:'test'})}.${b64({...base,...changes})}`;const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',pair.privateKey,new TextEncoder().encode(text));return new Request(SUMMARY_ORIGIN,{headers:{authorization:`Bearer ${text}.${Buffer.from(sig).toString('base64url')}`}});};
   const options={now:START,fetcher:async()=>Response.json({keys:[jwk]})};
   assert.equal(await summaryCollectorIdentity(await request({}),options),'12:1');
+  assert.equal(await summaryCollectorIdentity(await request({event_name:'workflow_run'}),options),'12:1','Only the same signed main workflow gains completion wakeups');
   for(const changes of [{ref:'refs/heads/other'},{repository_id:'1'},{repository_owner_id:'1'},{aud:'elsewhere'},{event_name:'pull_request'},{exp:START/1000},{workflow_ref:'other'},{nbf:START/1000+60}]) {
     const req=await request(changes);await assert.rejects(()=>summaryCollectorIdentity(req,options));
   }

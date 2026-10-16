@@ -1,4 +1,4 @@
-import { SUMMARY_WINDOW_MS, SUMMARY_REQUEST_BUDGET, SUMMARY_GAP_MS, SUMMARY_INITIAL_STOP,
+import { SUMMARY_WINDOW_MS, SUMMARY_REQUEST_BUDGET, SUMMARY_GAP_MS, SUMMARY_SOURCE_INTERVAL_MS, SUMMARY_INITIAL_STOP,
   SUMMARY_RECORD_LIMIT, SUMMARY_FAILURES, SUMMARY_INVENTORY_BATCH, summaryId, validateSummaryBody } from '../public/js/data/concall-summaries-shared.js';
 
 const iso = at => new Date(at).toISOString();
@@ -167,13 +167,18 @@ export class ConcallSummaryStore {
       FROM summary_records WHERE active=1 GROUP BY isin`);
     const byIsin = new Map(counts.map(row => [row.isin, row]));
     const totals = this.rows('SELECT COUNT(*) AS total,SUM(CASE WHEN body IS NOT NULL THEN 1 ELSE 0 END) AS ready FROM summary_records')[0];
-    const attempts = this.rows('SELECT COUNT(*) AS count,MIN(started) AS oldest FROM summary_attempts WHERE started>?', at - SUMMARY_WINDOW_MS)[0];
+    const attempts = this.rows('SELECT COUNT(*) AS count,MIN(started) AS oldest,MAX(started) AS latest FROM summary_attempts WHERE started>?', at - SUMMARY_WINDOW_MS)[0];
+    const next = this.rows('SELECT MIN(next_attempt) AS earliest FROM summary_records WHERE active=1 AND body IS NULL')[0].earliest;
+    const budgetAt = attempts.count >= SUMMARY_REQUEST_BUDGET ? attempts.oldest + SUMMARY_WINDOW_MS : 0;
+    const sourceAt = next == null ? null : Math.max(next, Date.parse(state.cooldownUntil) || 0, budgetAt,
+      attempts.latest == null ? 0 : attempts.latest + SUMMARY_SOURCE_INTERVAL_MS);
     return { ...state, discoveryStatus: state.discoveryStatus === 'ok' && at - Date.parse(state.discoveredAt) > 90 * MINUTE ? 'stale'
       : state.discoveryStatus === 'checking' && at - Date.parse(state.discoveryAttemptedAt) > 15 * MINUTE ? 'failed' : state.discoveryStatus,
       ready: totals.ready || 0, retained: totals.total, pending: counts.reduce((n, row) => n + row.total - row.ready, 0),
       readyIds: this.rows('SELECT id FROM summary_records WHERE body IS NOT NULL ORDER BY id').map(row => row.id),
       automatedRequestsLast24h: attempts.count, requestBudget: SUMMARY_REQUEST_BUDGET,
-      nextBudgetAt: attempts.count >= SUMMARY_REQUEST_BUDGET ? iso(attempts.oldest + SUMMARY_WINDOW_MS) : null,
+      nextBudgetAt: budgetAt ? iso(budgetAt) : null,
+      sourceIntervalMs: SUMMARY_SOURCE_INTERVAL_MS, nextSourceAttemptAt: sourceAt == null ? null : iso(sourceAt),
       holdings: state.holdings.map(holding => ({ ...holding, ready: byIsin.get(holding.isin)?.ready || 0,
         pending: (byIsin.get(holding.isin)?.total || 0) - (byIsin.get(holding.isin)?.ready || 0) })) };
   }
@@ -194,8 +199,9 @@ export class ConcallSummaryStore {
         return { ok: true, reserved: false, reason: 'busy' };
       const attempts = this.rows('SELECT COUNT(*) AS count,MIN(started) AS oldest,MAX(started) AS latest FROM summary_attempts WHERE started>?', at - SUMMARY_WINDOW_MS)[0];
       if (attempts.count >= SUMMARY_REQUEST_BUDGET) return { ok: true, reserved: false, reason: 'daily-budget', retryAt: iso(attempts.oldest + SUMMARY_WINDOW_MS) };
-      if (attempts.latest != null && attempts.latest + SUMMARY_GAP_MS > at)
-        return { ok: true, reserved: false, reason: 'spacing', retryAt: iso(attempts.latest + SUMMARY_GAP_MS) };
+      const interval = Math.max(SUMMARY_GAP_MS, SUMMARY_SOURCE_INTERVAL_MS);
+      if (attempts.latest != null && attempts.latest + interval > at)
+        return { ok: true, reserved: false, reason: 'paced', retryAt: iso(attempts.latest + interval) };
       const record = this.rows(`SELECT * FROM summary_records WHERE active=1 AND body IS NULL AND next_attempt<=?
         ORDER BY rank,published_date DESC,id LIMIT 1`, at)[0];
       if (!record) return { ok: true, reserved: false, reason: 'no-due-summaries' };
@@ -220,6 +226,7 @@ export class ConcallSummaryStore {
       this.rows('UPDATE summary_attempts SET outcome=? WHERE id=?', input.outcome, input.requestId);
       if (body) {
         this.rows("UPDATE summary_records SET body=COALESCE(body,?),fetched_at=COALESCE(fetched_at,?),status='ready' WHERE id=?", json(body), iso(at), attempt.record_id);
+        this.putState({ ...this.state(), rateLimitStreak: 0 });
       } else {
         this.rows('UPDATE summary_records SET status=?,next_attempt=? WHERE id=? AND body IS NULL', input.outcome,
           at + (input.outcome === 'not-published' ? 7 : 1) * SUMMARY_WINDOW_MS, attempt.record_id);
@@ -227,8 +234,11 @@ export class ConcallSummaryStore {
           const requestedRetry = Date.parse(input.retryAt);
           const retryAt = Number.isFinite(requestedRetry) ? requestedRetry : at;
           const state = this.state();
+          const streak = input.outcome === 'rate-limited' ? Math.min(4, (state.rateLimitStreak || 0) + 1) : state.rateLimitStreak || 0;
+          const backoff = input.outcome === 'rate-limited' ? Math.min(7, 2 ** (streak - 1)) * SUMMARY_WINDOW_MS : SUMMARY_WINDOW_MS;
           this.putState({ ...state, stopReason: input.outcome, stoppedAt: iso(at),
-            cooldownUntil: iso(Math.max(at + SUMMARY_WINDOW_MS, retryAt, Date.parse(state.cooldownUntil) || 0)) });
+            rateLimitStreak: streak,
+            cooldownUntil: iso(Math.max(at + backoff, retryAt, Date.parse(state.cooldownUntil) || 0)) });
         }
       }
       return { ok: true, saved: !!body };

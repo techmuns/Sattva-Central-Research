@@ -1569,7 +1569,7 @@
       "lastDiscoveryAt": "2026-10-02T06:48:54+00:00"
     },
     "isin:INE425Y01011|RPSG Ventures Limite": {
-      "lastAttemptAt": "2026-10-11T13:42:25+00:00",
+      "lastAttemptAt": "2026-10-16T09:52:02+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-02T06:48:54+00:00",
@@ -1577,7 +1577,7 @@
       "pending": []
     },
     "isin:INE425Y01011|RPSGVENT": {
-      "lastAttemptAt": "2026-10-11T14:15:24+00:00",
+      "lastAttemptAt": "2026-10-16T10:02:24+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-02T06:48:54+00:00",
@@ -1585,7 +1585,7 @@
       "pending": []
     },
     "isin:INE500L01026|S H Kelkar & Company": {
-      "lastAttemptAt": "2026-10-11T14:48:34+00:00",
+      "lastAttemptAt": "2026-10-16T10:47:54+00:00",
       "error": "search-unavailable",
       "lastResultCount": 1,
       "lastSuccessAt": "2026-10-02T06:48:54+00:00",
@@ -2555,6 +2555,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 236,
-    "checkedAt": "2026-10-16T09:11:37.174486+00:00"
+    "checkedAt": "2026-10-16T10:47:54.403059+00:00"
   }
 }
