@@ -94,7 +94,8 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
 
   async function run({ append = false, quiet = false } = {}) {
     const mine = ++generation;
-    const q = { ...query, offset: append ? rows.length : 0, limit: append ? pageSize : Math.max(pageSize, quiet ? rows.length : 0) };
+    const retained = Math.max(pageSize, quiet ? rows.length : 0);
+    const q = { ...query, offset: append ? rows.length : 0, limit: append ? pageSize : retained };
     q.limit = Math.min(q.limit, 500);
     if (append) state = 'more';
     else if (!quiet || state !== 'ready') state = 'loading';
@@ -104,6 +105,20 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
       void loadModel();
       const answer = await ask(q, () => mine === generation);
       if (mine !== generation) return;
+      // Each index request is capped at 500 rows. Refresh the complete loaded window in
+      // bounded pages before publishing it, so a background poll cannot cut a long reading
+      // session back to its first 500 rows or move its scrollbar away from the reader.
+      if (!append && quiet) {
+        const refreshed = [...answer.rows];
+        while (refreshed.length < Math.min(retained, answer.total)) {
+          const page = await ask({ ...q, offset: refreshed.length,
+            limit: Math.min(500, retained - refreshed.length) }, () => mine === generation);
+          if (mine !== generation) return;
+          if (!page.rows.length) throw new Error('The refreshed announcement window was incomplete');
+          refreshed.push(...page.rows);
+        }
+        answer.rows = refreshed;
+      }
       // A re-ask that changed nothing keeps the very same rows, so the table (and the reader's
       // focused search field, scroll position and open lists) is left exactly as it was.
       const next = append ? [...rows, ...answer.rows] : answer.rows;

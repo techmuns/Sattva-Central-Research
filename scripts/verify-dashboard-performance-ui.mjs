@@ -99,6 +99,8 @@ researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrd
       res.end('export const snapshot=()=>({version:1,revision:0,tabs:[],order:[]});export const status=()=>({confirmed:false,pending:0,error:null,rejected:[]});export const onChange=()=>()=>{};export const start=()=>{};export const sync=async()=>({confirmed:false});export const edit=async()=>({confirmed:false});');
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
+    } else if (pathname === '/js/data/announcement-query.js') {
+      res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__announcementQueryRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/ui/table-viewport.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableViewportRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/tabs/daily-alerts.js') {
@@ -271,6 +273,8 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'previous', 'returning session has the older arrivals module cached');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'previous', 'returning session has the older table renderer cached');
+  await page.evaluate(() => import('/js/data/announcement-query.js'));
+  assert.equal(await page.evaluate(() => globalThis.__announcementQueryRelease), 'previous', 'the returning session uses the previous announcement pagination module');
   await page.evaluate(() => import('/js/ui/table-viewport.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableViewportRelease), 'previous', 'the returning session uses the previous shared table sizing module');
   await page.evaluate(() => import('/js/tabs/daily-alerts.js'));
@@ -323,6 +327,8 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'current', 'existing session receives the scrolling fix');
+  await page.evaluate(() => import('/js/data/announcement-query.js'));
+  assert.equal(await page.evaluate(() => globalThis.__announcementQueryRelease), 'current', 'the returning session uses the current announcement pagination module');
   await page.evaluate(() => import('/js/ui/table-viewport.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableViewportRelease), 'current', 'the returning session uses the current shared table sizing module');
   await page.evaluate(() => import('/js/tabs/daily-alerts.js'));
