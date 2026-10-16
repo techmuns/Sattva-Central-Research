@@ -1856,7 +1856,7 @@
       "pending": []
     },
     "isin:INE073K01018|SONACOMS": {
-      "lastAttemptAt": "2026-10-12T01:38:11+00:00",
+      "lastAttemptAt": "2026-10-16T17:32:28+00:00",
       "error": "search-unavailable",
       "lastResultCount": 108,
       "targetThrough": "2026-10-02T10:43:50+00:00",
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-16T17:01:20.724489+00:00"
+    "checkedAt": "2026-10-16T17:32:28.859210+00:00"
   }
 }
