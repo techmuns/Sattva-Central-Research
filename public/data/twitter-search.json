@@ -1535,7 +1535,7 @@
       "pending": []
     },
     "isin:INE027A01015|Rashtriya Chemicals": {
-      "lastAttemptAt": "2026-10-11T13:08:35+00:00",
+      "lastAttemptAt": "2026-10-16T09:11:37+00:00",
       "error": "search-unavailable",
       "lastResultCount": 14,
       "lastSuccessAt": "2026-09-13T23:47:09+00:00",
@@ -2555,6 +2555,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 236,
-    "checkedAt": "2026-10-16T08:33:49.194407+00:00"
+    "checkedAt": "2026-10-16T09:11:37.174486+00:00"
   }
 }
