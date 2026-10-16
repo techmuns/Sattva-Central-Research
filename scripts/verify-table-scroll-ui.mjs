@@ -215,20 +215,18 @@ try {
   const context = await browser.newContext({ viewport: sizes[0], serviceWorkers: 'block', reducedMotion: 'reduce' });
   await context.route('**/*', route => route.request().url().startsWith(origin + '/')
     ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
-  await context.addInitScript(origin => {
+  await context.addInitScript(({ origin, watch }) => {
     localStorage.setItem('sattva:chatter-base', `${origin}/fixture/chatter`);
     localStorage.setItem('sattva:amfibeas-base', origin);
-  }, origin);
+    localStorage.setItem('sattva:watchlist', JSON.stringify(watch));
+    localStorage.setItem('sattva:watchlist:shape', '3');
+    localStorage.setItem('sattva:watchlist:seeded', '1');
+  }, { origin, watch: companies.slice(0, 12).map(row => ({ ticker: row.ticker, name: row.name,
+    addedAt: new Date().toISOString(), addedBy: 'Local scroll fixture' })) });
   const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${origin}/embed`);
   const frame = await (await page.locator('iframe').elementHandle()).contentFrame();
   await frame.locator('#content-host').waitFor();
-  await frame.evaluate(async () => {
-    const coverage = await import('/js/data/coverage.js'), watchlist = await import('/js/core/watchlist.js');
-    const payload = await (await fetch('/data/portfolio-companies.json')).json();
-    coverage.prime(payload);
-    for (const row of payload.holdings.filter(row => row.ticker).slice(0, 12)) watchlist.add(row.ticker, row.name, 'Local scroll fixture');
-  });
   for (const scope of ['universe', 'portfolio', 'watchlist']) for (const route of routes) {
     const [path, section] = route.split('|'), url = `#/research/${path}${path.includes('?') ? '&' : '?'}scope=${scope}`;
     try {
