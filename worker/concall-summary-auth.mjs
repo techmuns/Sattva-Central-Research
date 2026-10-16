@@ -20,7 +20,7 @@ export async function summaryCollectorIdentity(request, { fetcher = fetch, now =
       claims.repository !== SUMMARY_REPO || String(claims.repository_id) !== '1329567087' ||
       String(claims.repository_owner_id) !== '278697674' || claims.ref !== 'refs/heads/main' ||
       claims.workflow_ref !== `${SUMMARY_REPO}/.github/workflows/${SUMMARY_WORKFLOW}@refs/heads/main` ||
-      !['schedule', 'workflow_dispatch', 'repository_dispatch', 'push'].includes(claims.event_name) ||
+      !['schedule', 'workflow_dispatch', 'repository_dispatch', 'push', 'workflow_run'].includes(claims.event_name) ||
       !Number.isFinite(claims.exp) || claims.exp <= seconds || !Number.isFinite(claims.iat) ||
       claims.iat > seconds + 30 || seconds - claims.iat > 600 || !Number.isFinite(claims.nbf) || claims.nbf > seconds + 30 ||
       !/^\d+$/.test(String(claims.run_id || '')) || !/^\d+$/.test(String(claims.run_attempt || '')))

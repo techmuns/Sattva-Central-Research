@@ -3,7 +3,7 @@
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, appendFileSync } from 'node:fs';
 import { buildSummaryInventory } from './lib/concall-summary-inventory.mjs';
 import { readScreenerSummary, summaryResponseError, summaryNavigationGate } from './lib/read-screener-summary.mjs';
 import { loadActivePortfolio } from './lib/active-portfolio.mjs';
@@ -14,9 +14,10 @@ import { SUMMARY_ORIGIN, SUMMARY_FAILURES, SUMMARY_INVENTORY_BATCH, SUMMARY_TRAN
 import {backgroundExportReady} from './lib/background-export-ready.mjs';
 import {githubSummaries} from './lib/summaries-github.mjs';
 import {ensureSummaryCatalogue} from './lib/summary-catalogue-github.mjs';
+import {summaryRefreshPlan} from './lib/summary-refresh-plan.mjs';
 
 const ENDPOINT = `${SUMMARY_ORIGIN}/api/concall-summaries/collector`;
-const MAX_BATCH = 10;
+const MAX_BATCH = 1;
 const diagnosticTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 
 export function summaryCollectorClient({ fetcher = fetch, env = process.env } = {}) {
@@ -55,23 +56,34 @@ export function summaryCollectorClient({ fetcher = fetch, env = process.env } = 
 
 export async function runSummaryCollection({ client, inventory, openSession, read = readScreenerSummary,
   sleep = ms => new Promise(resolve => setTimeout(resolve, ms)), now = Date.now, uuid = randomUUID }) {
+  const synced = await prepareSummaryCollection({ client, inventory });
+  return collectSummaryQueue({ client, state: synced.state, openSession, read, sleep, now, uuid });
+}
+
+export async function prepareSummaryCollection({ client, inventory }) {
+  let plan;
+  try { plan = await inventory(); }
+  catch { await client({ action: 'discovery-failed' }); throw Error('Current portfolio or source catalogue unavailable'); }
+  let synced;
+  try { synced = await client({ action: 'sync', inventory: plan }); }
+  catch {
+    // A rejected reconciliation or an oversized inventory must invalidate the previous
+    // coverage claim immediately, even though the retained records remain untouched.
+    try { await client({ action: 'discovery-failed' }); } catch { /* Checkpoint outage: age stays visible. */ }
+    throw Error('Private summary inventory could not be reconciled');
+  }
+  return synced;
+}
+
+export async function collectSummaryQueue({ client, state, openSession, read = readScreenerSummary,
+  sleep = ms => new Promise(resolve => setTimeout(resolve, ms)), now = Date.now, uuid = randomUUID }) {
   let session, saved = 0, attempted = 0;
   try {
-    let plan;
-    try { plan = await inventory(); }
-    catch { await client({ action: 'discovery-failed' }); throw Error('Current portfolio or source catalogue unavailable'); }
-    let synced;
-    try { synced = await client({ action: 'sync', inventory: plan }); }
-    catch {
-      // A rejected reconciliation or an oversized inventory must invalidate the previous
-      // coverage claim immediately, even though the retained records remain untouched.
-      try { await client({ action: 'discovery-failed' }); } catch { /* Checkpoint outage: age stays visible. */ }
-      throw Error('Private summary inventory could not be reconciled');
-    }
-    if (Date.parse(synced.state?.cooldownUntil) > now()) return { saved, attempted, reason: 'source-cooldown',
-      cooldownUntil: diagnosticTime(synced.state.cooldownUntil) };
+    state ||= (await client({ action: 'status' })).state;
+    if (Date.parse(state?.cooldownUntil) > now()) return { saved, attempted, reason: 'source-cooldown',
+      cooldownUntil: diagnosticTime(state.cooldownUntil) };
     // Do not even sign in if the rolling daily allowance has already been consumed.
-    if (synced.state?.automatedRequestsLast24h >= synced.state?.requestBudget) return { saved, attempted, reason: 'daily-budget' };
+    if (state?.automatedRequestsLast24h >= state?.requestBudget) return { saved, attempted, reason: 'daily-budget' };
     for (let index = 0; index < MAX_BATCH; index++) {
       let claim = await client({ action: 'reserve', requestId: uuid() });
       if (!claim.reserved && claim.reason === 'spacing') {
@@ -81,7 +93,7 @@ export async function runSummaryCollection({ client, inventory, openSession, rea
           claim = await client({ action: 'reserve', requestId: uuid() });
         }
       }
-      if (!claim.reserved) return { saved, attempted, reason: claim.reason };
+      if (!claim.reserved) return { saved, attempted, reason: claim.reason, ...(claim.retryAt ? { retryAt: diagnosticTime(claim.retryAt) } : {}) };
       attempted++;
       let body;
       try {
@@ -115,9 +127,13 @@ async function main() {
   const runtime=await githubSummaries({legacyClient,recipient});
   let result;
   try {
+  const prepare=process.argv.includes('--prepare'),collect=process.argv.includes('--collect');
+  const output=value=>{if(process.env.GITHUB_OUTPUT)appendFileSync(process.env.GITHUB_OUTPUT,`source_due=${value}\n`);};
+  // Coalesce cron, repository events and independent completion wakeups before discovery,
+  // browser installation or publishing another unchanged generation.
+  if(prepare&&!summaryRefreshPlan(runtime.store.status(),{force:['push','repository_dispatch'].includes(process.env.GITHUB_EVENT_NAME)}).due){output(false);console.log('Summary check is not due; existing history and source allowance retained.');return;}
   if(process.env.SUMMARY_COLLECTION_ENABLED!=='true'||!configuration.enabled){await runtime.publish();console.log('Retained summary history published; source collection remains disabled.');return;}
-  result = await runSummaryCollection({ client:runtime.client,
-    inventory: async () => {
+  const inventory=async () => {
       await ensureSummaryCatalogue(runtime);
       const [portfolio, result] = await Promise.all([
         loadActivePortfolio(new URL('../public/data/portfolio-companies.json', import.meta.url), { live: true }),
@@ -126,8 +142,16 @@ async function main() {
       if (result.source.collectorLatestFailed) throw Error('Source catalogue has a newer failed check');
       const identities = JSON.parse(readFileSync(new URL('../public/data/announcement-identities.json', import.meta.url), 'utf8')).entries || [];
       return buildSummaryInventory(portfolio, result.capture, { identities });
-    },
-    openSession: async () => {
+    };
+  if(prepare){
+    const synced=await prepareSummaryCollection({client:runtime.client,inventory});
+    const plan=summaryRefreshPlan(synced.state);
+    output(plan.sourceDue);
+    console.log(JSON.stringify({checked:true,sourceDue:plan.sourceDue,nextCheckAt:plan.nextCheckAt,
+      nextSourceAttemptAt:synced.state.nextSourceAttemptAt,automatedRequestsLast24h:synced.state.automatedRequestsLast24h}));
+    return;
+  }
+  const openSession=async () => {
       if (!username || !password || !process.env.PLAYWRIGHT_ROOT) throw Error('Summary source account unavailable');
       const { chromium } = await import(pathToFileURL(resolve(process.env.PLAYWRIGHT_ROOT, 'index.mjs')).href);
       // Do not pass GitHub OIDC credentials to the browser subprocess.
@@ -155,13 +179,15 @@ async function main() {
         if (!(await context.cookies('https://www.screener.in')).some(cookie => cookie.name === 'sessionid' && cookie.value)) throw Error('Source sign-in failed');
         return { page, prepare: target => navigation.arm(target), close: () => browser.close() };
       } catch (error) { await browser.close(); throw error; }
-    },
-  });await runtime.publish();
+    };
+  // The prepare phase has already published a verified complete inventory. A fresh runner
+  // restore and the store's atomic claim recheck every limit after browser setup.
+  result = await (collect ? collectSummaryQueue : runSummaryCollection)({client:runtime.client,inventory,openSession});
   }finally{await runtime.close();}
   // Counters, fixed stage/reason, numeric status and canonical cooldown only; never source text,
   // arbitrary error messages, account identity, URLs, headers or tokens.
   console.log(JSON.stringify(result));
-  if (!['source-cooldown', 'daily-budget', 'spacing', 'busy', 'no-due-summaries', 'batch-complete'].includes(result.reason)) process.exitCode = 1;
+  if (!['source-cooldown', 'daily-budget', 'spacing', 'paced', 'busy', 'no-due-summaries', 'batch-complete'].includes(result.reason)) process.exitCode = 1;
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   main().catch(() => { console.error('Private summary collection could not finish; durable checkpoints and budget remain retained.'); process.exitCode = 1; });

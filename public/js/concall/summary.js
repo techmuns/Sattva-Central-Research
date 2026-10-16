@@ -44,7 +44,7 @@ function checkBackMessage(records) {
   const github=state?.schedule?.runtime==='github-actions';
   const alarm = github?Math.ceil((now-SUMMARY_CRON_OFFSET_MS)/SUMMARY_INTERVAL_MS)*SUMMARY_INTERVAL_MS+SUMMARY_CRON_OFFSET_MS:future(state?.schedule?.alarmAt);
   if (!alarm) return 'Please check back later.';
-  const account = Math.max(...[Date.parse(state?.cooldownUntil), Date.parse(state?.nextBudgetAt)].map(future));
+  const account = Math.max(...[Date.parse(state?.cooldownUntil), Date.parse(state?.nextBudgetAt), Date.parse(state?.nextSourceAttemptAt)].map(future));
   const eligible = Math.min(...records.filter(record => record.active === true)
     .map(record => Math.max(account, future(Date.parse(record.nextAttemptAt)))));
   const timer = alarm + Math.max(0, Math.ceil((eligible - alarm) / SUMMARY_INTERVAL_MS)) * SUMMARY_INTERVAL_MS;
@@ -118,6 +118,8 @@ function coverageHtml() {
   return `${header('Portfolio summary coverage')}<div class="space-y-4 p-6">${coverageNote()}
     <p class="text-xs text-slate-500">Portfolio checked: ${e(date(state?.portfolioCheckedAt))}<br>Source catalogue checked: ${e(date(state?.sourceCheckedAt))}</p>
     <p data-summary-schedule class="text-xs text-slate-500">Automatic collection: ${e(summaryScheduleMessage(state) || (state?.enabled ? 'Source coverage is reported separately.' : 'Not enabled.'))}<br>${state?.schedule?.runtime==='github-actions'?'Latest saved check':'Timer last checked'}: ${e(date(state?.schedule?.lastAttemptAt ? new Date(state.schedule.lastAttemptAt).toISOString() : null))}${state?.schedule?.runtime==='github-actions'?'':`<br>Next timer check: ${e(date(state?.schedule?.alarmAt ? new Date(state.schedule.alarmAt).toISOString() : null))}`}</p>
+    ${state?.schedule?.nextCheckAt ? `<p class="text-xs text-slate-500">Next automatic check eligible: ${e(date(state.schedule.nextCheckAt))}. Actual start times can be delayed.</p>` : ''}
+    ${state?.sourceIntervalMs ? `<p data-summary-pacing class="text-xs text-slate-500">Source requests are spaced at least ${e(state.sourceIntervalMs / 60000)} minutes apart. ${e(state.automatedRequestsLast24h || 0)} of ${e(state.requestBudget)} reserved attempts used in the rolling 24-hour budget.<br>Next source attempt eligible: ${state.nextSourceAttemptAt ? e(date(state.nextSourceAttemptAt)) : 'No pending source notes.'} A source refusal extends the pause.</p>` : ''}
     <p class="text-xs text-slate-500">New holdings join automatically on the next successful portfolio and catalogue check. Saved notes have no automatic expiry. Source corrections without a new summary ID are not re-fetched automatically.</p>
     ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table data-column-layout="summary:2" class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th><th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td><td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
 }

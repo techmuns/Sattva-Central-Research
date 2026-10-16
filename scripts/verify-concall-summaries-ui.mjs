@@ -29,7 +29,8 @@ let readBudget=Infinity;
 let alarmAt=Date.now()+1800000;
 let getCount=0, postCount=0;
 const state = () => ({ok:true,enabled,ready:savedIds.length,readyIds:savedIds,pending:1,discoveryStatus,cooldownUntil,portfolioCheckedAt:new Date().toISOString(),sourceCheckedAt:new Date().toISOString(),
-  schedule:{started:true,reason:timerReason,alarmAt,lastAttemptAt:Date.now(),...(githubRuntime?{runtime:'github-actions'}:{})},
+  sourceIntervalMs:1800000,requestBudget:60,automatedRequestsLast24h:1,nextSourceAttemptAt:null,
+  schedule:{started:true,reason:timerReason,alarmAt,lastAttemptAt:Date.now(),...(githubRuntime?{runtime:'github-actions',recovery:true,nextCheckAt:new Date(Date.now()+1800000).toISOString()}:{})},
   holdings:[{isin:'INE000000001',name:'Summary fixture company',ready:2,pending:1,discovery:'matched'},
     {isin:'INE000000002',name:'New portfolio holding',ready:0,pending:0,discovery:'no-published-summary'}]});
 const server = createServer(async (req,res) => {
@@ -74,7 +75,7 @@ try {
     window.MunshotDashboardSDK={createDashboardClientSdk:()=>({getContext:()=>ctx,onMessage:fn=>{listeners.push(fn);return()=>{};},onRequest:()=>()=>{},onEvent:()=>()=>{},emit:()=>false,requestContext:()=>false})};
     window.fixtureSession=token=>{ctx={session:token?{token,email:'fixture@example.test'}:null};listeners.forEach(fn=>fn());};
   });
-  const page=await context.newPage();page.setDefaultTimeout(15000);
+  const page=await context.newPage();page.setDefaultTimeout(15000);await page.clock.install({time:new Date()});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`${origin}/#/research/concall?scope=universe`);
   const button=page.locator('[data-screener-summary]').first();
@@ -103,6 +104,8 @@ try {
   assert((await page.locator('[data-summary-schedule]').innerText()).includes('Next timer check:'));
   githubRuntime=true;await page.evaluate(async()=>{await(await import('/js/data/concall-summaries.js')).refresh({force:true});});
   assert((await page.locator('[data-summary-schedule]').innerText()).includes('GitHub checks automatically'));assert(!(await page.locator('[data-summary-schedule]').innerText()).includes('Next timer check:'));
+  assert((await page.locator('[data-summary-pacing]').innerText()).includes('at least 30 minutes apart'));
+  assert((await page.locator('#modal-content').innerText()).includes('Next automatic check eligible:'));
   githubRuntime=false;timerReason='recent-run';
   discoveryStatus='failed';cooldownUntil=new Date(Date.now()+86400000).toISOString();
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
@@ -138,8 +141,10 @@ try {
   const deferredDay=new Date(alarmAt+6*86400000+31*60000).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long',day:'numeric',month:'long'});
   await page.waitForFunction(day=>document.querySelector('[data-summary-check-back]')?.textContent.includes(day),deferredDay);
   pendingId='124';savedIds=['123'];pendingNextAttemptAt=null;readBudget=1;
-  await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
+  const automaticGets=getCount;
+  await page.clock.fastForward(61000);
   await page.locator('[data-summary-body]').waitFor();
+  assert(getCount>automaticGets,'The visible-page timer reads newly published coverage without a manual refresh');
   assert((await page.locator('[data-summary-body]').innerText()).includes(body.title),'the first saved report is shown even if subsequent reads fail');
   assert.equal(await page.locator('[data-summary-check-back]').count(),0,'a saved report replaces the open pending message');
   assert.equal(postCount,6,'partial readiness renders the returned records without rereading pending IDs');

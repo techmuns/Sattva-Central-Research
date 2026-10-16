@@ -133,6 +133,34 @@ identity resolution still determine coverage.
 
 ## Quota, failures and cadence
 
+**Current runtime, updated 16 October 2026:** collection and encrypted restart state
+are on free GitHub Actions, as described in `GITHUB-BACKGROUND.md`. The older
+Durable Object timer described below is retired; its retained data was imported
+without resetting history, attempts or cooldowns.
+
+The half-hour cron also receives recovery wakeups from completed main-branch Screener
+catalogue, TradingView portfolio news and RSS jobs. A shared non-cancelling workflow
+mutex and persisted discovery timestamps coalesce these events. Due portfolio and
+catalogue checks continue during source cooldown; browser installation and source
+sign-in are skipped until a pending record is eligible. Crossing a cooldown, rolling
+budget or pacing deadline permits recovery before the next ordinary cron slot.
+
+Source requests are now **one per run, at least 30 minutes apart across all runs**
+(at most 48 per rolling day). The original 60-attempt hard ceiling remains, including
+older imported bursts and interrupted claims. Consecutive rate-limit refusals back
+off for 24, 48, 96, then at most 168 hours, preserving longer Retry-After values;
+success resets the streak. Existing cooldowns are not extended just by deployment.
+All pending history stays queued. Shared manual account usage cannot be measured,
+so these protections reduce rate-limit risk without promising the source will allow
+every request. GitHub-wide delays can still postpone recovery and are shown honestly.
+
+The authenticated coverage view reports actual checks, next check eligibility,
+request spacing, rolling budget and next source eligibility. The existing visible-page
+minute timer and focus/reconnection checks adopt saved reports automatically, including
+replacing an already-open pending popup, without requesting the source.
+
+The following records the original storage/timer design and safety constraints:
+
 - Scheduled every 30 minutes and on `family-book-updated`; at most 10 source attempts per run.
 - A private Durable Object reserves each attempt **before** opening the source, serialises account
   access and enforces at least 15 seconds between attempts, with at most **60 in rolling 24 hours**.

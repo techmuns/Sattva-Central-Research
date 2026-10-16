@@ -400,6 +400,10 @@ in the coverage report even without a confirmed source identity or published not
 join after the next successful check. Saved notes survive exits, discovery failures and source
 cooldowns. The private account ledger caps attempts at 60 per rolling day and records attempts
 before source access, including interrupted runs. Source refusal overrides the local allowance.
+All wakeups share a thirty-minute source spacing and one-attempt run limit, so automation
+normally stays at or below 48 attempts per rolling day. Consecutive rate-limit refusals
+extend backoff without shortening the provider's deadline. Independent trusted collector
+completions recover missed GitHub cron checks; ordinary discovery continues during cooldown.
 Catalogue/portfolio timestamps and pending counts must stay distinct from saved-body age and timer
 health. Initial backfill is quota-limited; same-ID source corrections are not automatically checked.
 See `CONCALL-SUMMARIES.md` for retention limits, activation gates and the unverified live source

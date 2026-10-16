@@ -6,6 +6,8 @@ export const SUMMARY_OBJECT = 'screener-account-summaries-v1';
 export const SUMMARY_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const SUMMARY_REQUEST_BUDGET = 60;
 export const SUMMARY_INTERVAL_MS = 30 * 60 * 1000;
+// Spread the allowance across the day rather than exhausting it in ten-request bursts.
+export const SUMMARY_SOURCE_INTERVAL_MS = SUMMARY_INTERVAL_MS;
 export const SUMMARY_CRON_OFFSET_MS = 11 * 60 * 1000; // Workflow runs at :11/:41 UTC.
 export const SUMMARY_GAP_MS = 15000;
 export const SUMMARY_BODY_LIMIT = 128 * 1024;
@@ -68,7 +70,7 @@ function coverageStateMessage(state) {
 export function summaryScheduleMessage(state, now = Date.now()) {
   if (state?.enabled !== true) return '';
   const schedule = state.schedule;
-  if(schedule?.runtime==='github-actions')return schedule.overdue?'The latest GitHub collection publication is overdue.':'GitHub checks automatically; start times can be delayed.';
+  if(schedule?.runtime==='github-actions')return schedule.overdue?'The latest GitHub collection publication is overdue. Automatic recovery is pending.':schedule.recovery?'GitHub checks automatically every 30 minutes, with recovery when other collectors finish. Start times can be delayed.':'GitHub checks automatically; start times can be delayed.';
   if (!schedule?.started) return 'The collection timer has not started yet.';
   const failures = {
     unavailable: 'The collection timer could not check or start a collection run.',

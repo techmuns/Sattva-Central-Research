@@ -8,6 +8,7 @@ on:
       - 'scripts/collect-screener-summaries.mjs'
       - 'scripts/lib/summaries-*.mjs'
       - 'scripts/lib/summary-catalogue-github.mjs'
+      - 'scripts/lib/summary-refresh-plan.mjs'
       - 'scripts/lib/background-export-ready.mjs'
       - 'worker/summaries-*.mjs'
       - 'worker/concall-summaries.mjs'
@@ -15,6 +16,12 @@ on:
     - cron: '11,41 * * * *'
   repository_dispatch:
     types: [family-book-updated]
+  # GitHub cron is best-effort. Independent collector completions recover missed checks,
+  # including after cooldown, with no open dashboard and no self-triggering workflow loop.
+  workflow_run:
+    workflows: [Screener concall collection, TradingView portfolio news, RSS news refresh]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
     inputs:
       source:
@@ -35,7 +42,7 @@ jobs:
   collect:
     # Premium view allowance does not grant redistribution rights. Enable only for an approved
     # private caching arrangement, alongside the Worker's SCREENER_SUMMARIES_ENABLED setting.
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
@@ -50,12 +57,18 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Reconcile due portfolio coverage and plan paced source access
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/collect-screener-summaries.mjs --prepare
       - name: Install pinned browser runtime
-        if: vars.SCREENER_SUMMARIES_ENABLED == 'true'
+        if: steps.plan.outputs.source_due == 'true'
         run: |
           npm install --prefix "$RUNNER_TEMP/summary-browser" --no-save --package-lock=false playwright@1.62.1
           node "$RUNNER_TEMP/summary-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Discover the current portfolio and collect due summaries within the durable budget
+        if: steps.plan.outputs.source_due == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
@@ -63,4 +76,4 @@ jobs:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/summary-browser/node_modules/playwright
           DEBUG: ''
           PWDEBUG: ''
-        run: node scripts/collect-screener-summaries.mjs
+        run: node scripts/collect-screener-summaries.mjs --collect
