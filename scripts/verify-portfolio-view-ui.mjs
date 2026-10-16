@@ -308,6 +308,7 @@ try {
   await frame.waitForFunction(() => document.querySelector('[data-score-table]')?.dataset.virtualTotal > 0);
   for (const size of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(size);
+    await frame.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await frame.waitForTimeout(200);
     // A cached first row can appear while the remaining sources are still being read. Measure
     // the completed reading layout, not whichever partial-feed status wrapped on that tick.
@@ -377,7 +378,20 @@ try {
       // remaining frame rather than requiring the former compressed header's 55% budget.
       assert(normal.navigationGap >= 20 && normal.readerGap >= 19, `main tabs, subtabs and content keep dedicated space: ${JSON.stringify(normal)}`);
       assert(normal.height >= Math.min(240, Math.max(120, normal.viewport - normal.top)) - 2, `the table keeps readable rows in the remaining viewport: ${JSON.stringify(normal)}`);
-      assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
+      if (normal.bottom > normal.viewport + 2) {
+        // The header can leave less than the table's minimum reading height. A short frame
+        // must let the reader scroll the page to the whole table rather than clipping its end.
+        const hostFrame = await page.locator('iframe[title="Research workspace"]').boundingBox();
+        await page.mouse.move(hostFrame.x + 4, hostFrame.y + 100);
+        await page.mouse.wheel(0, 2000);
+        await frame.waitForFunction(() => window.scrollY > 0 &&
+          document.querySelector('[data-table-scroll]').getBoundingClientRect().bottom <= innerHeight + 2);
+        const revealed = await measure();
+        assert(revealed.visibleHeight >= Math.min(normal.height, normal.viewport) - 2,
+          `page scrolling reveals the whole table: ${JSON.stringify(revealed)}`);
+      } else {
+        assert(normal.visibleHeight >= normal.height - 2, `the fitted table is fully visible: ${JSON.stringify(normal)}`);
+      }
     }
     // Native details updates `open` now but queues `toggle` for a later task. Force the
     // same repaint a source arrival can cause before that event, in both directions.
