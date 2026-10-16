@@ -17,13 +17,14 @@ async function bytes(response,maximum){
 // never contacts Upstox, starts Actions, or reads/writes a capture database.
 export async function readLiveBreakouts(env,origin,{fetcher=fetch,edgeCache=globalThis.caches?.default,now=Date.now(),fallbackOnly=false}={}){
   if(env.BREAKOUT_LIVE_DELIVERY!=='github-release')return null;
-  const repo=mfRepo(env),cacheKey=name=>new Request(new URL(`/_prepared-quotes/${name}`,origin));
+  const repo=mfRepo(env),cacheKey=name=>new Request(new URL(`/_prepared-quotes/${name}`,origin)),deadline=Date.now()+10000;
+  const signal=()=>AbortSignal.timeout(Math.max(1,deadline-Date.now()));
   async function cached(name,ttl,load){
     const key=cacheKey(name),found=await edgeCache?.match(key).catch(()=>null);if(found)return found;
     const value=await load();if(edgeCache)await edgeCache.put(key,value.clone()).catch(()=>{});return value;
   }
   const metadata=await cached('release',15,async()=>{
-    const response=await fetcher(`https://api.github.com/repos/${repo}/releases/tags/${TAG}`,{headers:{accept:'application/vnd.github+json','user-agent':'SattvaPreparedQuotes',...(env.GH_DISPATCH_TOKEN?{authorization:`Bearer ${env.GH_DISPATCH_TOKEN}`}:{})},redirect:'manual',signal:AbortSignal.timeout(8000)});
+    const response=await fetcher(`https://api.github.com/repos/${repo}/releases/tags/${TAG}`,{headers:{accept:'application/vnd.github+json','user-agent':'SattvaPreparedQuotes',...(env.GH_DISPATCH_TOKEN?{authorization:`Bearer ${env.GH_DISPATCH_TOKEN}`}:{})},redirect:'manual',signal:signal()});
     if(response.status===404){await response.body?.cancel();return Response.json({missing:true},{headers:{'cache-control':'public, max-age=15'}});}
     const value=await boundedJson(response,1024*1024);
     if(value.tag_name!==TAG||!Array.isArray(value.assets)||value.assets.length>=100)throw Error('Invalid prepared quote inventory');
@@ -32,12 +33,12 @@ export async function readLiveBreakouts(env,origin,{fetcher=fetch,edgeCache=glob
     const asset=assets[0];if(asset.browser_download_url!==`https://github.com/${repo}/releases/download/${TAG}/${asset.name}`)throw Error('Invalid prepared quote destination');
     return Response.json(asset,{headers:{'cache-control':'public, max-age=15'}});
   });
-  const asset=await metadata.json();if(asset.missing)return null;
+  const asset=await metadata.json();if(asset.missing)throw Error('Live quote publication unavailable');
   async function range(start,end){
     let url=asset.browser_download_url;
     for(let redirects=0;redirects<3;redirects++){
       // A repository token must never be forwarded to a release/CDN redirect.
-      const response=await fetcher(url,{headers:{range:`bytes=${start}-${end}`,'user-agent':'SattvaPreparedQuotes'},redirect:'manual',signal:AbortSignal.timeout(10000)});
+      const response=await fetcher(url,{headers:{range:`bytes=${start}-${end}`,'user-agent':'SattvaPreparedQuotes'},redirect:'manual',signal:signal()});
       if([301,302,303,307,308].includes(response.status)){
         const next=new URL(response.headers.get('location'),url);await response.body?.cancel();
         if(next.protocol!=='https:'||next.username||next.password||next.port||!['github.com','release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(next.hostname))throw Error('Invalid prepared quote redirect');

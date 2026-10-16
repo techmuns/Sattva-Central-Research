@@ -53,12 +53,17 @@ try{
  const after=metadataReads,downloaded=transferred;for(let i=0;i<10;i++)assert.equal((await read('/api/breakouts/health')).status,200);assert.equal(metadataReads,after);assert.equal(transferred,downloaded,'Visible readers share cached immutable prepared files');
  assert(transferred<150000,'A 600-company current read never downloads the complete restart/history database');
  response=await read('/api/breakouts/fallback');assert.equal((await response.json()).primary,undefined,'Fallback reads never mistake a primary success for a completed fallback');
+ at+=60000;runtime.store.primarySave({at,completedAt:at,targets:tickers,rows:rows.map(row=>({...row,price:112,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString()})),failures:[],discoveryFailed:false});
+ await runtime.storage.put('upstox-minute-timer',{started:true,lastAttemptAt:at,nextAt:at+60000,completedAt:at,reason:'ok',saved:600,failed:0});
+ await runtime.publish();response=await read('/api/breakouts');capture=await response.json();assert.equal(capture.rows[0].price,112,'An existing reader receives a new generation without a static redeployment');assert.equal(capture.health.checked,600);
+ const expectedHistory=runtime.store.history('T0');
  at+=3*60000;response=await read('/api/breakouts/health');assert.equal(response.status,503);assert.equal((await response.json()).primarySchedule.overdue,true,'Cached generations age honestly when a runner stops');
  cacheEntries.clear();ignoreRange=true;await assert.rejects(readLiveBreakouts(worker,'https://fixture.research',{fetcher,edgeCache:cache,now:at}),/range/);ignoreRange=false;
  cacheEntries.clear();corrupt=true;await assert.rejects(readLiveBreakouts(worker,'https://fixture.research',{fetcher,edgeCache:cache,now:at}));corrupt=false;
+ await assert.rejects(readLiveBreakouts(worker,'https://fixture.research',{fetcher:async()=>new Response(null,{status:404}),edgeCache:null,now:at}),/unavailable/,'Missing live publication must explicitly degrade saved-data health');
  await runtime.close();runtime=null;
  restarted=await githubBreakouts({...options,env:{...env,GITHUB_RUN_ID:'12346'},file:path.join(root,'restarted.sqlite'),out:path.join(root,'restart-publication'),legacyClient:async()=>{throw Error('Live checkpoint must restore all retained history');}});
- assert.equal(restarted.store.history('T0').rows.length,source.store.history('T0').rows.length);assert.equal(restarted.store.read().rows.length,600);
+ assert.deepEqual(restarted.store.history('T0'),expectedHistory);assert.equal(restarted.store.read().rows.length,600);
  assert.equal((await restarted.storage.get('upstox-minute-timer')).saved,600);
  console.log('PASS 600-company live delivery: encrypted current-only byte ranges, shared cache, unchanged source clocks, overdue health, rejected corrupt/ignored ranges, independent fallback and complete retained-history restart');
 }finally{await runtime?.close();await restarted?.close();await source?.close();fs.rmSync(root,{recursive:true,force:true});}

@@ -11,7 +11,7 @@ import {backgroundContract} from '../../worker/github-background-contract.mjs';
 export async function githubBreakouts({env=process.env,fetcher=fetch,legacyClient,recipient,file=path.resolve('.cache/breakouts/state.sqlite'),out=path.resolve('.cache/breakouts/publication'),transportOptions={},localOptions={}}={}) {
  const archiveTransport=githubBackgroundRelease('breakouts',{env,fetcher,...transportOptions});
  const live=env.BREAKOUT_LIVE_DELIVERY==='github-release',feature=live?'breakouts-live':'breakouts';
- const transport=live?githubBackgroundRelease(feature,{env,fetcher,...transportOptions}):archiveTransport,signature=await backgroundContract(feature);let local,cycle=0,archiveCycle=0;
+ const transport=live?githubBackgroundRelease(feature,{env,fetcher,...transportOptions}):archiveTransport;let local,cycle=0,archiveCycle=0;
  fs.mkdirSync(path.dirname(file),{recursive:true});fs.mkdirSync(out,{recursive:true});
  let restore=transport,latest=await transport.latest();
  if(!latest&&live){restore=archiveTransport;latest=await restore.latest();}
