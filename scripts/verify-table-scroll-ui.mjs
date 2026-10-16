@@ -97,7 +97,7 @@ async function checkTables(page, frame, label, retry = 0) {
     if (!populated) { checked.push({ rows: 0 }); continue; }
     // Wheel on the page margin first. Programmatic scrollIntoView alone would also move an
     // overflow:hidden parent and could falsely certify the original page-scroll lock.
-    const pageScroll = await table.evaluate(table => ({ below: table.getBoundingClientRect().bottom > innerHeight,
+    const pageScroll = await table.evaluate(table => ({ below: table.getBoundingClientRect().bottom > innerHeight - (document.querySelector('.beacon-launcher') ? 64 : 0),
       top: scrollY, max: document.scrollingElement.scrollHeight - innerHeight }));
     if (pageScroll.below && pageScroll.max > pageScroll.top + 2 && !await frame.locator('body').evaluate(el => el.classList.contains('workspace-open'))) {
       const iframe = await page.locator('iframe').boundingBox();
@@ -114,7 +114,7 @@ async function checkTables(page, frame, label, retry = 0) {
     activeSurface = surface;
     const internal = await surface.evaluate(el => el !== document.scrollingElement);
     if (internal) {
-      await surface.evaluate(el => el.scrollIntoView({ block: 'end', behavior: 'instant' }));
+      await surface.evaluate(el => el.scrollIntoView({ block: 'nearest', behavior: 'instant' }));
       await surface.evaluate(el => { el.scrollTop = 0; });
       await frames(frame);
       const point = await surface.evaluate(el => {
@@ -149,7 +149,7 @@ async function checkTables(page, frame, label, retry = 0) {
       assert(await surface.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2), `${label}: native wheel reaches the table's end`);
     }
     if (!internal) {
-      await table.evaluate(table => table.querySelector('tbody tr:last-child')?.scrollIntoView({ block: 'end', behavior: 'instant' }));
+      await table.evaluate(table => table.querySelector('tbody tr:last-child')?.scrollIntoView({ block: 'nearest', behavior: 'instant' }));
       await frames(frame);
     }
     const end = await table.evaluate(table => {
