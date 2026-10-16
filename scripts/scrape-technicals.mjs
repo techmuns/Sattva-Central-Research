@@ -472,7 +472,7 @@ function spreadFromMeta(meta) {
 }
 
 // Recovery advances every OHLCV-derived liquidity field with the same bars as
-// the price indicators. Exchange delivery inputs remain separately dated.
+// the price indicators. Recovery retains the previous exchange-delivery snapshot.
 export function computeLiquidityIndicators(bars) {
   const adtv=adtv20Cr(bars);
   return {adtv_20d_cr:adtv,bid_ask_spread_pct:spreadFromMeta(bars.meta),
