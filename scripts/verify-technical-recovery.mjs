@@ -91,7 +91,12 @@ test('an index outage does not block momentum recovery or erase existing index-r
   assert.equal(result.payload.companies[0].retained_index_reading.beta_1y,1.3);
   assert.equal(result.payload.companies[0].index_reading_date,'2026-10-14');
   assert.equal(needsHistory(result.payload.companies[0],'2026-10-15'),true);
-  const recovered=await recoverTechnicals(result.payload,result.ledger,{now:()=>AT+16*60000,sleep:async()=>{},bars:source});
+  const asked=[];
+  const pending=await recoverTechnicals(result.payload,result.ledger,{now:()=>AT+16*60000,sleep:async()=>{},bars:async symbol=>{
+    asked.push(symbol);throw Error('index still unavailable');
+  }});
+  assert.deepEqual(asked,['^CRSLDX']);assert.equal(pending.summary.pending,1);
+  const recovered=await recoverTechnicals(pending.payload,pending.ledger,{now:()=>AT+32*60000,sleep:async()=>{},bars:source});
   assert.equal(recovered.summary.pending,0);assert.equal(recovered.payload.companies[0].retained_index_reading,undefined);
   assert(Number.isFinite(recovered.payload.companies[0].relative_strength_6m));
 });

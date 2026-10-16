@@ -76,6 +76,12 @@ export async function recoverTechnicals(input, savedLedger={}, {now=Date.now, ba
   for (const row of due) {
     if (summary.requests>=maxRequests || now()>=at+budgetMs) break;
     const previous=ledger.companies[row.ticker], symbol=yahooSymbol(row);
+    if(!indexCurrent && row.retained_index_reading && !needsHistory({...row,retained_index_reading:null},session)) {
+      // The stock history is already current. While the benchmark is still
+      // unavailable, one index probe is enough; do not re-download 600 histories.
+      ledger.companies[row.ticker]={...previous,at:now(),session,state:'index-pending',retryAt:now()+15*MINUTE};
+      summary.skipped++;continue;
+    }
     ledger.companies[row.ticker]={...previous,at:now(),session,state:'checking',retryAt:now()+15*MINUTE};
     await save(); // An interrupted attempt remains paced on the next runner.
     try {
