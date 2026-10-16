@@ -1880,7 +1880,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0M4D01010|SETL": {
-      "lastAttemptAt": "2026-10-12T03:16:53+00:00",
+      "lastAttemptAt": "2026-10-16T19:32:20+00:00",
       "error": "search-unavailable"
     },
     "isin:INE089C01029|Sterlite Technologies": {
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-16T18:32:50.329800+00:00"
+    "checkedAt": "2026-10-16T19:32:20.396338+00:00"
   }
 }
