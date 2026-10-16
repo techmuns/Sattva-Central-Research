@@ -7,12 +7,26 @@ import {once} from 'node:events';
 import {createServer} from 'node:http';
 import {createServer as createPortFinder} from 'node:net';
 import {gzipSync} from 'node:zlib';
+import {createHash} from 'node:crypto';
+import {readerKeys,encode64} from '../worker/mutual-funds-seal.mjs';
+import {packBackgroundViews} from './lib/github-background-package.mjs';
+import {backgroundContract} from '../worker/github-background-contract.mjs';
 mkdirSync('.cache',{recursive:true});const scratch=mkdtempSync(resolve('.cache/breakouts-runtime-'));
 const finder=createPortFinder();await new Promise(done=>finder.listen(0,'127.0.0.1',done));const port=finder.address().port;await new Promise(done=>finder.close(done));const origin=`http://127.0.0.1:${port}`;
 const config=join(scratch,'wrangler.json');
 const revision='a'.repeat(40);let redirectCommit=false,redirectRaw=false,followed=0;
+const liveRepo='techmuns/Sattva-Central-Research',liveSecret='fixture-native-reader-only-123456789',liveAt=Date.parse('2026-09-15T06:00Z'),liveKeys=await readerKeys(liveSecret),liveSignature=await backgroundContract('breakouts-live');
+const liveRow={ticker:'TEST',name:'Fixture',price:111,volume:2500,prevClose:100,quoteAt:new Date(liveAt).toISOString(),checkedAt:new Date(liveAt).toISOString(),sessionDate:'2026-09-15',provider:'Upstox',exchange:'NSE',kind:'quote'};
+const liveValue={version:1,repo:liveRepo,feature:'breakouts-live',createdAt:new Date(liveAt).toISOString(),fallback:{version:1,state:'complete',targets:['TEST'],rows:[liveRow],failures:[]},primary:null,schedule:{lastAttemptAt:liveAt},primarySchedule:{started:true,configured:true,lastAttemptAt:liveAt,reason:'ok'}};
+const liveFile=join(scratch,'live-views.gz');await packBackgroundViews([{name:'head.json',value:liveValue}],{kid:liveKeys.kid,publicKey:encode64(liveKeys.publicKey)},liveFile,{repo:liveRepo,feature:'breakouts-live',sourceSignature:liveSignature});
+const liveViews=(await import('node:fs')).readFileSync(liveFile),virtualState=300*1024*1024;
+const liveManifest=Buffer.from(JSON.stringify({version:1,repo:liveRepo,feature:'breakouts-live',sourceSignature:liveSignature,files:{state:{size:virtualState},views:{size:liveViews.length,hash:createHash('sha256').update(liveViews).digest('hex')}}}));
+const liveHeader=Buffer.alloc(16393);liveHeader.write('GHRB1');liveHeader.writeUInt32BE(liveManifest.length,5);liveManifest.copy(liveHeader,9);
+const liveOffset=9+liveManifest.length+virtualState,liveSize=liveOffset+liveViews.length;let liveBytes=0;
 const upstream=createServer((req,res)=>{
  const path=new URL(req.url,'http://fixture').pathname;
+ if(path==='/live-metadata'){assert.equal(req.headers.authorization,`Bearer ${liveSecret}`);res.setHeader('content-type','application/json');res.end(JSON.stringify({tag_name:'breakout-live-data',assets:[{id:123,name:'brlive-123-1-1-bundle.bin',size:liveSize,state:'uploaded',browser_download_url:`https://github.com/${liveRepo}/releases/download/breakout-live-data/brlive-123-1-1-bundle.bin`}]}));return;}
+ if(path==='/live-bundle'){assert.equal(req.headers.authorization,undefined);const [,start,end]=/^bytes=(\d+)-(\d+)$/.exec(req.headers.range).map(Number);const body=start===0?liveHeader:liveViews;assert.equal(end-start+1,body.length);liveBytes+=body.length;res.writeHead(206,{'content-range':`bytes ${start}-${end}/${liveSize}`}).end(body);return;}
  if(['/instruments','/quotes'].includes(path) && req.headers['user-agent']!=='SattvaCentralResearch/1.0'){res.writeHead(403).end('Application identification required');return;}
  if(path==='/instruments'){res.end(gzipSync(JSON.stringify([{segment:'NSE_EQ',instrument_key:'NSE_EQ|INE000000001',trading_symbol:'TEST'}])));return;}
  if(path==='/quotes'){assert.equal(req.headers.authorization,'Bearer local-fixture');res.setHeader('content-type','application/json');res.end(JSON.stringify({status:'success',data:{TEST:{instrument_token:'NSE_EQ|INE000000001',symbol:'TEST',last_price:111,volume:2500,net_change:11,last_trade_time:Date.parse('2026-09-15T06:00Z')}}}));return;}
@@ -27,6 +41,7 @@ writeFileSync(join(scratch,'entry.mjs'),`
 import {CaptureRegistry as BaseCaptureRegistry} from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
 import {handleTechnicals} from ${JSON.stringify(resolve('worker/breakouts.mjs'))};
 import {primaryInstruments,minuteQuotes} from ${JSON.stringify(resolve('worker/breakout-primary.mjs'))};
+import {readLiveBreakouts} from ${JSON.stringify(resolve('worker/breakout-live-delivery.mjs'))};
 // Pin only the fixture store clock to its dated candles. The real alarm clock remains live
 // across restarts; otherwise the five-day recovery assertion expires as calendar time advances.
 export class CaptureRegistry extends BaseCaptureRegistry {
@@ -43,6 +58,10 @@ export class CaptureRegistry extends BaseCaptureRegistry {
 }
 
 export default {async fetch(request,env){const body=await request.json();
+if(body.action==='native-live-delivery'){
+ const fetcher=(url,options)=>fetch(${JSON.stringify(upstreamOrigin)}+(new URL(url).hostname==='api.github.com'?'/live-metadata':'/live-bundle'),options);
+ return Response.json(await readLiveBreakouts({GH_REPO:${JSON.stringify(liveRepo)},GH_DISPATCH_TOKEN:${JSON.stringify(liveSecret)},BREAKOUT_LIVE_DELIVERY:'github-release'},'https://fixture',{fetcher,edgeCache:null,now:${liveAt}}));
+}
 if(body.action==='native-upstox') {
  const fetcher=(url,options)=>fetch(${JSON.stringify(upstreamOrigin)}+(new URL(url).hostname==='assets.upstox.com'?'/instruments':'/quotes'),options);
  const instruments=await primaryInstruments('NSE',fetcher);
@@ -75,6 +94,7 @@ async function stop(){if(!child||child.exitCode!==null)return;const done=once(ch
 const at=Date.parse('2026-09-15T06:00Z'),row={ticker:'TEST',name:'Test',price:105,volume:2000,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'},volumeBase:{average:1000,from:'2026-08-28',to:'2026-09-11',count:10,exchange:'NSE'}};
 try{
  await start();assert.equal((await call()).alarmAt,null);
+ const live=await call({action:'native-live-delivery'});assert.equal(live.rows[0].price,111);assert.equal(live.delivery,'github-release');assert(liveBytes<100000,'Native delivery skips a 300 MB restart archive and fetches current encrypted bytes only');
  const native=await call({action:'native-upstox'});assert.equal(native.instruments.length,1);assert.equal(native.result.rows[0].price,111);
  // Use native workerd fetch against a local HTTP source. A mocked fetch cannot
  // detect request options rejected by the production runtime before any I/O.

@@ -66,6 +66,43 @@ GitHub scheduling and runner handovers remain best effort. Source quote times,
 missing intervals, partial inventories and overdue checks remain visible; deployment
 or archive publication never advances a source's successful check time.
 
+The 16 October repair queues one successor when an owner starts. Deployment
+completion also checks for an absent market-hours owner; this step runs inside
+the existing deployment job, outside the collection mutex, and cannot start a
+duplicate owner. Closed markets do not chain source jobs. No extra workflow-run
+trigger is added, avoiding a deployment/recovery feedback loop. Existing cron starts remain a
+fallback to these automatic handovers. No manual production retry is required.
+
+Current quotes now use the separate encrypted `breakout-live-data` release. Each
+acknowledged generation includes the **complete** restart database and one small
+current-price reader file. The Worker caches release metadata for 15 seconds and
+uses verified byte ranges to fetch only the encrypted reader file, skipping the
+restart database entirely. Readers never call Upstox or start work. A missing
+initial live release can use static prepared data; failed/corrupt delivery keeps
+saved data visible with an explicit unhealthy primary state. Original quote and
+check times still determine freshness. A cached file never becomes a fresh check.
+
+Historical page construction runs in a separate Node thread, at most once per
+15-minute interval, and retains the existing static-history publication path.
+SQLite's online backup copies each quote checkpoint in small asynchronous steps,
+preserving rowids and allowing the owner to keep sampling while history is copied.
+It cannot block minute network timeouts, quote sampling or current-price delivery.
+Every minute's complete encrypted restart checkpoint retains those observations
+even if the less frequent historical-reader publication is delayed. Restart
+prefers the latest verified live checkpoint, with the original archive as the
+one-time transition source. Two recent complete generations remain available.
+
+One persisted Upstox budget is shared by minute quotes, backup history and private
+price-level checks: 200 ms spacing, at most 60 requests/minute and 900/30 minutes.
+Historical backfill uses lower ceilings, reserving capacity for live quote batches.
+The roughly 600-company quote inventory still needs two requests per minute, not
+one per company or reader. HTTP 429 honors Retry-After and increasing cooldowns;
+authentication refusal pauses that token for an hour and a deliberately replaced
+token can recover. The ledger stores a fingerprint, never the raw token, and is
+retained in restart checkpoints. The source's per-user limits may also be consumed
+by other applications. Source outages, missing/suspended identities and incomplete
+history remain partial coverage, never invented prices or successful live filters.
+
 Before source work, the first runner copies and verifies every capture table,
 original rowid, instrument configuration and timer metadata through the fixed
 main-workflow read-only export. It publishes an acknowledged encrypted restart
@@ -89,7 +126,7 @@ rules at read time, so a delayed minute publication can use a fresher fallback.
 Reader requests perform no Cloudflare SQL or GitHub metadata requests after the
 first prepared publication. Failed or corrupt prepared data fails visibly.
 
-The runner requests the existing static deployment after each saved generation;
+The runner requests the existing static deployment after each historical generation;
 the existing deployment schedule also catches up. A queued deployment may coalesce
 several generations, while the full acknowledged quote history remains on GitHub.
 Source timestamps and the original two-minute freshness assessment expose delivery

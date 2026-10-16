@@ -1,5 +1,12 @@
 # Automatic breakout capture
 
+**Current runtime (16 October 2026):** GitHub owns collection and retained state;
+the legacy Cloudflare alarms described below are retired. See
+[`GITHUB-BACKGROUND.md`](GITHUB-BACKGROUND.md#breakout-quotes-and-history) for the
+automatic runner handover, separate small current-price delivery, independent
+historical publication and shared Upstox request/cooldown budget. Current prices
+do not wait for a website redeployment or a complete historical-page rebuild.
+
 The daily technical score and the current price are separate measurements. The
 16-rule score still uses the completed daily series. Strong Breakouts recomputes
 its 30-session base breakout and volume classification from captured price and

@@ -3,7 +3,7 @@ import {mkdtempSync,mkdirSync,rmSync} from 'node:fs';
 import {resolve,join} from 'node:path';
 import {githubBackgroundSqlite} from './lib/github-background-sqlite.mjs';
 mkdirSync('.cache',{recursive:true});const root=mkdtempSync(resolve('.cache/github-job-sqlite-'));
-let source,copy;
+let source,copy,onlineCopy;
 try {
   const file=join(root,'state.sqlite');source=githubBackgroundSqlite(file);const {storage}=source;
   storage.sql.exec('CREATE TABLE observations (id INTEGER PRIMARY KEY,value TEXT)');
@@ -23,5 +23,14 @@ try {
   await storage.put('later',true);storage.sql.exec('UPDATE observations SET value=? WHERE id=1','changed after checkpoint');
   copy=githubBackgroundSqlite(checkpoint);assert.equal(await copy.storage.get('later'),undefined);assert.equal(copy.storage.sql.exec('SELECT value FROM observations WHERE id=1').one().value,'retained');assert.deepEqual(await copy.storage.get('inventory'),{targets:['FIXTURE'],nested:{at:123}});
   await source.close();source=githubBackgroundSqlite(file);assert.equal(await source.storage.get('later'),true);assert.equal(await source.storage.getAlarm(),456,'Restart preserves the runner deadline as metadata, with no external timer');
+  source.db.exec('CREATE TABLE checkpoint_rows (key TEXT PRIMARY KEY,payload BLOB)');
+  const insert=source.db.prepare('INSERT INTO checkpoint_rows(rowid,key,payload) VALUES(?,?,zeroblob(8192))');
+  source.storage.transactionSync(()=>{for(let i=0;i<1200;i++)insert.run(i*3,String(i));});
+  let ticks=0;const timer=setInterval(()=>{ticks++;},0),online=join(root,'online.sqlite');
+  try{await source.checkpoint(online,{online:true});}finally{clearInterval(timer);}
+  assert(ticks>0,'Online checkpoints yield to the quote/timer event loop while copying retained history');
+  onlineCopy=githubBackgroundSqlite(online);assert.equal(onlineCopy.db.prepare('SELECT COUNT(*) n FROM checkpoint_rows').get().n,1200);
+  assert.deepEqual(onlineCopy.db.prepare('SELECT rowid FROM checkpoint_rows ORDER BY rowid LIMIT 2').all().map(row=>row.rowid),[0,3],'Online copying preserves original rowid zero and gaps');
+  assert.deepEqual(await onlineCopy.storage.get('inventory'),{targets:['FIXTURE'],nested:{at:123}});
   console.log('PASS local GitHub background state: SQL rollback, serialized KV claims, isolated asynchronous failures, immutable checkpoints and process restart');
-}finally{await copy?.close();await source?.close();rmSync(root,{recursive:true,force:true});}
+}finally{await onlineCopy?.close();await copy?.close();await source?.close();rmSync(root,{recursive:true,force:true});}

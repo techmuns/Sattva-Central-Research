@@ -56,6 +56,7 @@ on:
 permissions:
   contents: read
   deployments: write
+  actions: write
 
 env:
   CLOUDFLARE_ACCOUNT_ID: a441977d2344922f96303859b74754d8
@@ -113,6 +114,9 @@ jobs:
           DEPLOYMENT_ID: ${{ steps.plan.outputs.deployment_id }}
           DEPLOY_OUTCOME: ${{ steps.upload.outcome }}
         run: node scripts/github-deploy-state.mjs finish
+      - name: Recover an absent market-hours quote runner
+        if: always() && steps.credential.outputs.available == 'true' && steps.plan.outcome != 'skipped'
+        run: node scripts/check-breakout-runner.mjs
       - name: Sync Worker secrets from the GitHub secret store
         if: steps.upload.outcome == 'success'
         env:

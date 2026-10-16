@@ -1,4 +1,4 @@
-import {DatabaseSync} from 'node:sqlite';
+import {DatabaseSync,backup as onlineBackup} from 'node:sqlite';
 import {mkdirSync,existsSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
 
@@ -49,7 +49,7 @@ export function githubBackgroundSqlite(file) {
     }),
   };
   return {db,storage,
-    async checkpoint(destination){await tail;if(depth||existsSync(destination)||resolve(destination)===resolve(file))throw Error('Invalid checkpoint destination');mkdirSync(dirname(destination),{recursive:true});db.prepare('VACUUM INTO ?').run(destination);},
+    async checkpoint(destination,{online=false}={}){await tail;if(depth||existsSync(destination)||resolve(destination)===resolve(file))throw Error('Invalid checkpoint destination');mkdirSync(dirname(destination),{recursive:true});if(online)await onlineBackup(db,destination,{rate:128});else db.prepare('VACUUM INTO ?').run(destination);},
     async close(){await tail;db.close();},
   };
 }
