@@ -111,11 +111,16 @@ async function checkTables(page, frame, label) {
       const x = box ? Math.min(innerWidth - 8, Math.max(8, box.left + 20)) : 0;
       const y = box ? Math.min(innerHeight - 2, box.bottom - 2) : 0;
       const hit = document.elementFromPoint(x, y);
+      const hiddenScroll = [];
+      for (let node = table.parentElement; node; node = node.parentElement) {
+        if (getComputedStyle(node).overflowY === 'hidden' && node.scrollTop > 1) hiddenScroll.push(node.id || node.tagName);
+      }
       return { rows: rows.length, bottom: box?.bottom, viewport: innerHeight,
         total: Number(card?.dataset.virtualTotal || 0), start: Number(card?.dataset.virtualStart || 0),
         virtual: card?.hasAttribute('data-virtualized'), pending: Number(card?.dataset.rowsPending || 0),
-        reachable: !!last && (hit === last || last.contains(hit)) };
+        hiddenScroll, reachable: !!last && (hit === last || last.contains(hit)) };
     });
+    assert.deepEqual(end.hiddenScroll, [], `${label}: no hidden ancestor had to scroll to reveal the final row`);
     assert(end.rows > 0 && end.bottom <= end.viewport + 2 && end.reachable, `${label}: final row is visible and receives pointer input: ${JSON.stringify(end)}`);
     if (end.virtual) assert(end.start + end.rows >= end.total, `${label}: the final retained record is mounted: ${JSON.stringify(end)}`);
     checked.push(end);
@@ -172,6 +177,7 @@ try {
     } catch (error) {
       failures.push({ route, scope, error: error.message }); console.error(JSON.stringify(failures.at(-1)));
       await page.screenshot({ path: resolve(evidence, `failure-${failures.length}.png`) });
+      throw error;
     }
   }
   // Shared viewport helper: a source/footer or saved-view header can leave the document scrolled
@@ -187,6 +193,21 @@ try {
     const next = await frame.locator('[data-table-scroll]').evaluate(el => el.getBoundingClientRect().height);
     assert(Math.abs(height - next) < 2, `shared viewport height is stable after page scroll at ${size.width}px: ${height} → ${next}`);
   }
+  // Negative control: reproduce a clipped app shell. A programmatic scrollIntoView can reveal
+  // its rows, but the audit must still reject the hidden parent that a reader cannot scroll.
+  await frame.evaluate(() => {
+    scrollTo(0, 0);
+    document.body.style.cssText = 'height:100vh;overflow:hidden';
+    document.querySelector('#app').style.cssText = 'height:100vh;overflow:hidden';
+    document.querySelector('[data-app-header]').style.height = '700px';
+    dispatchEvent(new Event('resize'));
+  });
+  await frames(frame);
+  await assert.rejects(checkTables(page, frame, 'clipped-shell negative control'), /hidden ancestor/);
+  await frame.evaluate(() => {
+    document.body.style.cssText = '';
+    document.querySelector('#app').style.cssText = '';
+  });
   for (const kind of ['modal', 'workspace']) {
     await frame.evaluate(kind => window.fixtureMount(kind), kind);
     for (const size of sizes) {
