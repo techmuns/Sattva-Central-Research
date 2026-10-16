@@ -11,7 +11,7 @@ Cloudflare collection job or new Cloudflare storage. Existing repository-pinned 
 publishes repaired rows without requiring a deployment for each history update.
 
 Only outdated, failed, legacy or exchange-mismatched rows are fetched. Each request is at least two
-seconds apart; one walk uses at most 300 requests or ten minutes. Current rows are reused, and an
+seconds apart; one walk uses at most 650 requests or 25 minutes. Current rows are reused, and an
 unfinished walk resumes from per-company receipts. The durable public
 `technical-history-recovery.json` records retry times and provider cooldowns across runner restarts.
 403/429 ends a walk immediately and honors Retry-After with at least an hour's cooldown. Ordinary

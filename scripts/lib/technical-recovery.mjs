@@ -22,7 +22,7 @@ function coverage(rows, session) {
     complete:current.length===rows.length};
 }
 export async function recoverTechnicals(input, savedLedger={}, {now=Date.now, bars=fetchBars,
-  sleep=ms=>new Promise(done=>setTimeout(done,ms)), checkpoint=()=>{}, budgetMs=10*MINUTE, maxRequests=300}={}) {
+  sleep=ms=>new Promise(done=>setTimeout(done,ms)), checkpoint=()=>{}, budgetMs=25*MINUTE, maxRequests=650}={}) {
   const at=now(), session=completedSession(at);
   if (!Array.isArray(input?.companies) || !input.companies.length || new Set(input.companies.map(row=>row.ticker)).size!==input.companies.length) throw Error('Invalid technical inventory');
   const payload=structuredClone(input), ledger={version:1,...structuredClone(savedLedger),companies:{...savedLedger.companies}};
