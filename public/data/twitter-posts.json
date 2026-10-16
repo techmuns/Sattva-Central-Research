@@ -9455,9 +9455,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-10-16T07:17:22.121Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-10-16T07:51:13.267Z",
     "lastSuccessAt": null
   }
 }
