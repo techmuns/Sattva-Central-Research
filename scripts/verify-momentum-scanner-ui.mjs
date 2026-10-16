@@ -118,8 +118,8 @@ const server = createServer((req, res) => {
         .replace('    ${momentumControls(gate, thresholds)}', '    ${momentumControls(gate, thresholds)}<div class="stat-card">Scanned 4</div><div class="stat-card">Strong Momentum 3</div><div class="stat-card">Volume + Momentum 0</div><div class="stat-card">Pass Both 0</div><section aria-label="Passing stocks by sector">Passers by sector</section>')
         .replace(/function momentumControls\([\s\S]*?(?=function momentumControlFocus\()/, () => previousControls)
         .replace(
-          "'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',",
-          "'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',\n      meta: livePill().html + scopeSummary({ scope: ctx.scope, count: passers.length, noun: 'passing', book: coverage.meta() }),",
+          "'A live, universe-wide momentum screener — every Nifty 500 company plus the book, recomputed on the live price. Adjust the thresholds and the list re-filters instantly.',",
+          "'A live, universe-wide momentum screener — every Nifty 500 company plus the book, recomputed on the live price. Adjust the thresholds and the list re-filters instantly.',\n      meta: livePill().html + scopeSummary({ scope: ctx.scope, count: passers.length, noun: 'passing', book: coverage.meta() }),",
         );
     }
     if (path === '/css/theme.css' && previousRelease) {
@@ -178,7 +178,8 @@ const readView = () => ({
   thresholdInputs: document.querySelectorAll('#content-host [data-mthreshold]').length,
   emeraldPills: document.querySelectorAll('#content-host [data-score-table] tbody .bg-emerald-50.text-emerald-700').length,
   rosePills: document.querySelectorAll('#content-host [data-score-table] tbody .bg-rose-50.text-rose-700').length,
-  pendingNote: /pending.*refresh/i.test(document.querySelector('#content-host')?.textContent || ''),
+  pendingShown: /\d+ pending\b/.test(document.querySelector('#content-host')?.textContent || ''),
+  universeNote: /Scanning all .* companies \(Nifty 500/.test(document.querySelector('#content-host')?.textContent || ''),
   headerHasBadges: !!document.querySelector('#content-host [data-section-head] [data-live-info]') || /passing/.test(document.querySelector('#content-host [data-section-head]')?.textContent || ''),
   docScrollW: document.documentElement.scrollWidth,
   bodyScrollW: document.body.scrollWidth,
@@ -205,7 +206,8 @@ try {
 
     ok('summary cards and sector chart are absent', v.statCards.length === 0 && !v.sector);
     ok('the result count still reflects the eligible fixture', /3 of 4 stocks pass Strong Momentum/.test(await page.locator('#content-host').innerText()));
-    ok('no pending-refresh claim', !v.pendingNote);
+    ok('the count line surfaces the pending (not-yet-evaluable) count', v.pendingShown);
+    ok('the count line states the scanner is universe-wide, independent of scope', v.universeNote);
     ok('the scanner header has no price-status or scope-count badges', !v.headerHasBadges);
     const exceptionButton = page.locator('#content-host [data-momentum-coverage]');
     await exceptionButton.focus();
@@ -228,20 +230,21 @@ try {
     await page.click('#content-host [data-mgate="strong-momentum"]');
     await page.waitForSelector('#content-host [data-mgate="strong-momentum"][aria-pressed="true"]');
 
-    const expectedCols = ['Stock', 'Price', 'Strong Momentum', 'Volume + Momentum', 'Volume vs 10D Avg', 'RSI Daily', 'RSI Weekly', 'RSI Monthly', 'MACD', '20-DMA Status'];
+    const expectedCols = ['Stock', 'Price', 'Strong Momentum', 'Volume + Momentum', 'MACD Crossover', 'Volume vs 10D Avg', 'RSI Daily', 'RSI Weekly', 'RSI Monthly', 'MACD', '20-DMA Status'];
     ok('ranked table carries every momentum column', expectedCols.every((c) => v.ths.some((th) => th === c || th.startsWith(c))), v.ths.join(' · '));
 
-    ok('the gate toggle offers three options', v.gateButtons === 3, `${v.gateButtons}`);
-    ok('five adjustable threshold inputs', v.thresholdInputs === 5, `${v.thresholdInputs}`);
+    ok('the gate toggle offers four options', v.gateButtons === 4, `${v.gateButtons}`);
+    ok('six adjustable threshold inputs', v.thresholdInputs === 6, `${v.thresholdInputs}`);
     const ruleGroups = page.locator('[data-momentum-group]');
-    ok('criteria are grouped with three RSI fields and two volume-momentum fields',
-      await ruleGroups.count() === 2 && await ruleGroups.first().locator('[data-mthreshold]').count() === 3 && await ruleGroups.last().locator('[data-mthreshold]').count() === 2);
+    ok('criteria are grouped: three Strong Momentum fields, two Volume + Momentum, one MACD Crossover',
+      await ruleGroups.count() === 3 && await ruleGroups.nth(0).locator('[data-mthreshold]').count() === 3 && await ruleGroups.nth(1).locator('[data-mthreshold]').count() === 2 && await ruleGroups.nth(2).locator('[data-mthreshold]').count() === 1);
     ok('only Strong Momentum is applied by default, with an accessible selected mode',
       v.selectedGate === 'strong-momentum' && v.appliedGroups.join('|') === 'strong-momentum');
     ok('thresholds have unique accessible names and the volume average is explicit',
       await page.getByRole('spinbutton', { name: 'Strong Momentum · RSI daily >', exact: true }).count() === 1 &&
       await page.getByRole('spinbutton', { name: 'Volume + Momentum · RSI daily >', exact: true }).count() === 1 &&
-      (await ruleGroups.last().innerText()).includes('Volume / 10D avg'));
+      await page.getByRole('spinbutton', { name: 'MACD Crossover · RSI daily >', exact: true }).count() === 1 &&
+      (await ruleGroups.nth(1).innerText()).includes('Volume / 10D avg'));
 
     ok('condition pills are colourful — emerald pass and rose fail both present', v.emeraldPills >= 1 && v.rosePills >= 1, `emerald ${v.emeraldPills}, rose ${v.rosePills}`);
 
@@ -306,11 +309,23 @@ try {
     await page.waitForFunction(() => !/mgate=|mrd1=|mvm=/.test(location.hash) &&
       document.querySelector('[data-mgate="strong-momentum"]')?.getAttribute('aria-pressed') === 'true' &&
       document.querySelector('[data-mthreshold="rsiD1"]')?.value === '70');
-    ok('Reset defaults restores all five values and Strong Momentum while preserving scope and other filters',
+    ok('Reset defaults restores all six values and Strong Momentum while preserving scope and other filters',
       /scope=universe/.test(page.url()) && /vol=all/.test(page.url()) &&
-      (await page.locator('[data-mthreshold]').evaluateAll(inputs => inputs.map(input => input.value))).join('|') === '70|70|65|50|1.5' &&
+      (await page.locator('[data-mthreshold]').evaluateAll(inputs => inputs.map(input => input.value))).join('|') === '70|70|65|50|1.5|55' &&
       await page.locator('[data-mgate="strong-momentum"]').getAttribute('aria-pressed') === 'true');
     ok('Reset retains keyboard focus', await page.locator('[data-mreset]').evaluate(el => el === document.activeElement));
+
+    // Filter 3 · MACD Crossover (the client's own filter): a fresh MACD cross, above the 20 DMA, RSI firm.
+    await page.locator('[data-mgate="macd-crossover"]').click();
+    await page.waitForSelector('[data-mgate="macd-crossover"][aria-pressed="true"]');
+    await page.waitForFunction(() => /mgate=macd-crossover/.test(location.hash));
+    ok('the MACD Crossover gate selects only its own group and offers its RSI threshold',
+      await page.locator('[data-momentum-group][data-applied="true"]').count() === 1 &&
+      await page.locator('[data-momentum-group="macd-crossover"][data-applied="true"]').count() === 1 &&
+      await page.getByRole('spinbutton', { name: 'MACD Crossover · RSI daily >', exact: true }).count() === 1);
+    ok('its count line names MACD Crossover', /pass(es)? MACD Crossover/.test(await page.locator('#content-host').innerText()));
+    await page.locator('[data-mreset]').click();
+    await page.waitForSelector('[data-mgate="strong-momentum"][aria-pressed="true"]');
 
     // Impossible thresholds retain the polished empty state and coverage access.
     await page.evaluate((o) => { location.hash = '#/research/breakouts/momentum-scanner?scope=universe&mrd1=99&mrw=99&mrm=99'; void o; }, origin);
@@ -370,18 +385,29 @@ try {
     await context.close();
   }
 
+  // The Momentum Scanner is universe-wide by design: the global scope does not narrow it, and a
+  // fresh-quote stock with insufficient history is an Exception for that reason, not a quote outage.
   {
     const { context, page } = await newPage(1440, 1000);
     await page.goto(ROUTE, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#content-host [data-score-table]');
+    const countFor = () => page.evaluate(() => Number((document.querySelector('#content-host')?.textContent.match(/Scanning all ([\d,]+) companies/) || [])[1]?.replace(/,/g, '')) || 0);
+    const universeCount = await countFor();
     await page.evaluate(async () => {
-      (await import('/js/core/watchlist.js')).add('MOMOF', 'Young Stock');
+      (await import('/js/core/watchlist.js')).add('MOMOA', 'Alpha Momentum');
       location.hash = '#/research/breakouts/momentum-scanner?scope=watchlist';
     });
-    await page.waitForFunction(() => /Current prices are available, but the history required/.test(document.querySelector('#content-host')?.textContent));
-    const text = await page.locator('#content-host').innerText();
-    ok('fresh quotes with insufficient history are never described as a quote outage', text.includes('Young Stock') &&
-      text.includes('Exception') && !/current data is unavailable|Saved daily close/.test(text));
+    await page.waitForSelector('#content-host [data-score-table]');
+    await page.waitForFunction(() => /Scanning all .* companies/.test(document.querySelector('#content-host')?.textContent || ''));
+    const watchlistCount = await countFor();
+    ok('the Watchlist scope does not narrow the universe-wide Momentum Scanner',
+      universeCount === watchlistCount && universeCount === companies.length, `${universeCount} vs ${watchlistCount}`);
+    await page.click('#content-host [data-momentum-coverage]');
+    await page.locator('[data-momentum-exception-list]').waitFor();
+    const youngReason = await page.locator('[data-momentum-exception-list] tbody tr', { hasText: 'Young Stock' }).innerText();
+    ok('a fresh-quote stock with insufficient history reads as a history gap, not an outage',
+      /Not enough price history/.test(youngReason) && !/unavailable|outdated|Saved/.test(youngReason), youngReason);
+    await page.locator('#modal-content [data-modal-close]').click();
     await context.close();
   }
 
@@ -395,7 +421,7 @@ try {
     const v = await page.evaluate(readView);
 
     ok('summary cards and sector chart are absent at 390px', v.statCards.length === 0 && !v.sector);
-    ok('gate toggle and thresholds still present at 390px', v.gateButtons === 3 && v.thresholdInputs === 5, `gates ${v.gateButtons}, inputs ${v.thresholdInputs}`);
+    ok('gate toggle and thresholds still present at 390px', v.gateButtons === 4 && v.thresholdInputs === 6, `gates ${v.gateButtons}, inputs ${v.thresholdInputs}`);
     ok('no horizontal PAGE overflow at 390px', v.docScrollW <= v.winW + 1 && v.bodyScrollW <= v.winW + 1, `doc ${v.docScrollW} / body ${v.bodyScrollW} vs win ${v.winW}`);
     const groupRects = await page.locator('[data-momentum-group]').evaluateAll(groups => groups.map(group => ({ x: group.getBoundingClientRect().x, y: group.getBoundingClientRect().y, bottom: group.getBoundingClientRect().bottom })));
     ok('mobile stacks the groups with all fields inside their panel', groupRects[0].x === groupRects[1].x && groupRects[1].y > groupRects[0].bottom &&
@@ -433,14 +459,16 @@ try {
     const oldCaches = await page.evaluate(() => caches.keys());
     ok('the cached previous scanner displays summary cards and sector chart', (await page.evaluate(readView)).statCards.length === 4 && !!(await page.evaluate(readView)).sector);
     ok('returning-session fixture genuinely uses the old module cache', oldCaches.some(key => key.includes('previous-momentum-release')));
-    ok('returning-session fixture starts on the previous flat criteria panel', await page.locator('[data-mthreshold]').count() === 5 && await page.locator('[data-momentum-group]').count() === 0);
+    // The old flat panel renders one input per THRESHOLD_FIELDS entry (now six, including rsiD3),
+    // and — the point of this check — no grouped fieldsets. The upgrade below adds the three groups.
+    ok('returning-session fixture starts on the previous flat criteria panel', await page.locator('[data-mthreshold]').count() === 6 && await page.locator('[data-momentum-group]').count() === 0);
     previousRelease = false;
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(() => document.querySelector('#content-host [data-score-table]') && !document.querySelector('#content-host [data-section-head] [data-live-info]'), null, { timeout: 60000 });
     const upgradedView = await page.evaluate(readView);
     ok('the already-open scanner automatically removes badges, summary cards and sector chart', !upgradedView.headerHasBadges && upgradedView.statCards.length === 0 && !upgradedView.sector);
     await page.waitForSelector('[data-momentum-group]');
-    ok('the already-open scanner receives grouped criteria and their matching stylesheet', await page.locator('[data-momentum-group]').count() === 2 &&
+    ok('the already-open scanner receives grouped criteria and their matching stylesheet', await page.locator('[data-momentum-group]').count() === 3 &&
       await page.locator('.momentum-rule-groups').evaluate(el => getComputedStyle(el).display === 'grid'));
     await page.click('#content-host [data-momentum-coverage]');
     ok('the upgraded reader can open the complete exception list', await page.locator('[data-momentum-exception-list] tbody tr').count() === 6);

@@ -190,7 +190,7 @@ export function scannerIndicators(company, quote, {now = Date.now(), unavailable
 // A stock passes a filter when EVERY condition tests true AND the row is evaluable.
 // ---------------------------------------------------------------------------------------
 
-export const THRESHOLD_DEFAULTS = Object.freeze({ rsiD1: 70, rsiW: 70, rsiM: 65, rsiD2: 50, volMult: 1.5 });
+export const THRESHOLD_DEFAULTS = Object.freeze({ rsiD1: 70, rsiW: 70, rsiM: 65, rsiD2: 50, volMult: 1.5, rsiD3: 55 });
 
 // The adjustable thresholds, grouped by the filter they belong to. Drives the UI controls and the
 // URL round-trip; `clampThresholds` keeps a pasted or bookmarked value sane.
@@ -200,6 +200,7 @@ export const THRESHOLD_FIELDS = Object.freeze([
   { key: 'rsiM', filter: 'strong-momentum', label: 'RSI monthly >', min: 0, max: 100, step: 1 },
   { key: 'rsiD2', filter: 'volume-momentum', label: 'RSI daily >', min: 0, max: 100, step: 1 },
   { key: 'volMult', filter: 'volume-momentum', label: 'Volume ≥ ×', min: 0, max: 20, step: 0.1 },
+  { key: 'rsiD3', filter: 'macd-crossover', label: 'RSI daily >', min: 0, max: 100, step: 1 },
 ]);
 
 const n1 = (x) => (x == null ? '—' : Number(x).toFixed(1));
@@ -235,6 +236,18 @@ export const MOMENTUM_FILTERS = Object.freeze({
       { key: 'macd', label: () => 'MACD bullish', test: (v) => v.macdBullish === true, live: (v) => (v.macdBullish == null ? '—' : v.macdBullish ? 'bullish' : 'bearish') },
     ],
   },
+  'macd-crossover': {
+    id: 'macd-crossover',
+    label: 'MACD Crossover',
+    short: 'Filter 3',
+    description: 'A fresh bullish MACD crossover, holding above the 20 DMA, with daily RSI firm.',
+    required: ['price', 'above20dma', 'rsiDaily', 'macdBullish'],
+    conditions: [
+      { key: 'cross', label: () => 'Fresh MACD bullish crossover', test: (v) => v.freshCross === true, live: (v) => (v.macdBullish == null ? '—' : v.freshCross ? 'fresh cross' : v.macdBullish ? 'already bullish' : 'bearish') },
+      { key: 'above20', label: () => 'Price > 20 DMA', test: (v) => v.above20dma === true, live: (v) => (v.sma20 == null ? '—' : `20DMA ${v.sma20.toFixed(0)}`) },
+      { key: 'rsiD', label: (t) => `RSI daily > ${t.rsiD3}`, test: (v, t) => v.rsiDaily != null && v.rsiDaily > t.rsiD3, live: (v) => `RSI(D) ${n1(v.rsiDaily)}` },
+    ],
+  },
 });
 
 /** Evaluate one filter against live values. `{ pass, evaluable, conditions: [{key,label,ok,live}] }`. */
@@ -257,10 +270,11 @@ export function passesGate(gate, v, thresholds = THRESHOLD_DEFAULTS) {
   if (!v || !v.evaluable) return false;
   if (gate === 'both') return evaluateFilter('strong-momentum', v, thresholds).pass && evaluateFilter('volume-momentum', v, thresholds).pass;
   if (gate === 'volume-momentum') return evaluateFilter('volume-momentum', v, thresholds).pass;
+  if (gate === 'macd-crossover') return evaluateFilter('macd-crossover', v, thresholds).pass;
   return evaluateFilter('strong-momentum', v, thresholds).pass;
 }
 
-export const GATES = Object.freeze(['strong-momentum', 'volume-momentum', 'both']);
+export const GATES = Object.freeze(['strong-momentum', 'volume-momentum', 'macd-crossover', 'both']);
 
 /** Keep a supplied threshold map within each field's declared bounds, falling back to the default. */
 export function clampThresholds(input = {}) {

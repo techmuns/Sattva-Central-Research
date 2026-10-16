@@ -85,8 +85,8 @@ function loadingHtml(subview) {
     <div class="skeleton-shimmer h-96 rounded-2xl bg-slate-100"></div>`;
 }
 
-function extraScopeTickers(ctx) {
-  return scopeTickers(ctx?.scope, coverage.holdings()) ||
+function extraScopeTickers(scope, ctx) {
+  return scopeTickers(scope, coverage.holdings()) ||
     new Set(scopeLists.apply('universe', ctx?.data?.universe || []).map(row => row.ticker));
 }
 
@@ -100,13 +100,17 @@ function paint(ctx) {
   const selector = active?.matches('input[type="search"]') ? 'input[type="search"]'
     : active?.matches('[data-row-open]') ? `[data-row-open="${CSS.escape(active.dataset.rowOpen)}"]`
     : active?.getAttribute('placeholder') ? `input[placeholder="${CSS.escape(active.getAttribute('placeholder'))}"]` : null;
-  const rows = filterByScope(live.decorate(technicals.all(), extraScopeTickers(ctx)), ctx.scope, coverage.holdings(), s => s.company.ticker);
   const view = {
     'strong-breakouts': renderStrongBreakouts,
     'technical-scanner': renderScanner,
     'momentum-scanner': renderMomentumScanner,
     'fii-accumulation': renderFiiAccumulation,
   }[ctx.subview] || renderMomentumScanner;
+  // The Momentum Scanner is a universe-wide discovery tool: it ALWAYS scans the full
+  // Nifty 500 + book universe, regardless of the global Portfolio / Watchlist scope, so the
+  // reader never has to switch scope to screen the whole market. The other sub-views stay scoped.
+  const scope = view === renderMomentumScanner ? 'universe' : ctx.scope;
+  const rows = filterByScope(live.decorate(technicals.all(), extraScopeTickers(scope, ctx)), scope, coverage.holdings(), s => s.company.ticker);
 
   view(ctx, rows);
   if (scrollTop != null) ctx.root.closest('main').scrollTop = scrollTop;
@@ -176,7 +180,7 @@ export function freshnessOf(generatedAt, now = Date.now()) {
 }
 function livePill() {
   const expected = scopeTickers(ctxRef?.scope, coverage.holdings());
-  const tickers = expected ? [...expected] : filterByScope(live.decorate(technicals.all(), extraScopeTickers(ctxRef)), 'universe', null, s => s.company.ticker).map(s => s.company.ticker);
+  const tickers = expected ? [...expected] : filterByScope(live.decorate(technicals.all(), extraScopeTickers(ctxRef?.scope, ctxRef)), 'universe', null, s => s.company.ticker).map(s => s.company.ticker);
   const health = live.coverageFor(tickers);
   const label = !live.snapshot() ? 'Current prices unavailable' : `${health.partial ? 'Partial update' : 'Prices checked'} · ${health.checked}/${health.total}`;
   return {html:`<span data-live-info class="rounded-full px-3 py-1 text-xs ${health.partial ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-700'}" title="Last completed check: ${escapeHtml(live.stamp(health.checkedAt))}">${escapeHtml(label)}</span>`,wire() {}};
@@ -708,7 +712,7 @@ function dmaPill(v) {
 
 // URL params, namespaced so they cannot collide with the other sub-views' chip params.
 const MGATE_PARAM = 'mgate';
-const MTHRESH_PARAM = { rsiD1: 'mrd1', rsiW: 'mrw', rsiM: 'mrm', rsiD2: 'mrd2', volMult: 'mvm' };
+const MTHRESH_PARAM = { rsiD1: 'mrd1', rsiW: 'mrw', rsiM: 'mrm', rsiD2: 'mrd2', volMult: 'mvm', rsiD3: 'mrd3' };
 
 function readMomentumGate(params) {
   return momentum.GATES.includes(params[MGATE_PARAM]) ? params[MGATE_PARAM] : 'strong-momentum';
@@ -731,6 +735,7 @@ function momentumLiveFor(s, thresholds) {
     !!live.snapshot()?.failures.some(row => row.ticker === c.ticker)});
   v.f1 = momentum.evaluateFilter('strong-momentum', v, thresholds);
   v.f2 = momentum.evaluateFilter('volume-momentum', v, thresholds);
+  v.f3 = momentum.evaluateFilter('macd-crossover', v, thresholds);
   return v;
 }
 
@@ -783,7 +788,8 @@ function momentumControls(gate, thresholds) {
   const gates = [
     { id: 'strong-momentum', label: momentum.MOMENTUM_FILTERS['strong-momentum'].label },
     { id: 'volume-momentum', label: momentum.MOMENTUM_FILTERS['volume-momentum'].label },
-    { id: 'both', label: 'Both signals' },
+    { id: 'macd-crossover', label: momentum.MOMENTUM_FILTERS['macd-crossover'].label },
+    { id: 'both', label: 'Strong + Volume' },
   ];
   const gateBtns = gates
     .map((g) => `<button type="button" data-mgate="${g.id}" aria-pressed="${gate === g.id}" class="momentum-mode">
@@ -796,9 +802,12 @@ function momentumControls(gate, thresholds) {
     rsiM: { label: 'Monthly RSI', operator: '>', condition: 'rsiM' },
     rsiD2: { label: 'Daily RSI', operator: '>', condition: 'rsiD' },
     volMult: { label: 'Volume / 10D avg', operator: '≥', suffix: '×', condition: 'vol' },
+    rsiD3: { label: 'Daily RSI', operator: '>', condition: 'rsiD' },
   };
+  // 'both' means Strong Momentum ∩ Volume + Momentum (its two groups), not every filter.
+  const appliedGates = gate === 'both' ? ['strong-momentum', 'volume-momentum'] : [gate];
   const groups = gates.filter((g) => g.id !== 'both').map((g) => {
-    const applied = gate === g.id || gate === 'both';
+    const applied = appliedGates.includes(g.id);
     const adjustable = momentum.THRESHOLD_FIELDS.filter((f) => f.filter === g.id);
     const fixedRules = momentum.MOMENTUM_FILTERS[g.id].conditions
       .filter((c) => !adjustable.some((f) => fields[f.key].condition === c.key))
@@ -912,14 +921,15 @@ function renderMomentumScanner(ctx, rows) {
   const focusSelector = momentumControlFocus(ctx.root);
   const gate = readMomentumGate(ctx.params || {});
   const thresholds = readMomentumThresholds(ctx.params || {});
-  const gateLabel = { 'strong-momentum': 'Strong Momentum', 'volume-momentum': 'Volume + Momentum', both: 'both filters' }[gate];
+  const gateLabel = { 'strong-momentum': 'Strong Momentum', 'volume-momentum': 'Volume + Momentum', 'macd-crossover': 'MACD Crossover', both: 'Strong + Volume' }[gate];
 
   // One recompute per row, shared by every cell, the gate and the sort.
   const liveMap = new Map(rows.map((s) => [s.company.ticker, momentumLiveFor(s, thresholds)]));
   const vf = (s) => liveMap.get(s.company.ticker);
 
   const evaluable = rows.filter((s) => gate === 'both' ? vf(s).f1.evaluable && vf(s).f2.evaluable
-    : gate === 'volume-momentum' ? vf(s).f2.evaluable : vf(s).f1.evaluable);
+    : gate === 'volume-momentum' ? vf(s).f2.evaluable
+    : gate === 'macd-crossover' ? vf(s).f3.evaluable : vf(s).f1.evaluable);
   const exceptions = rows.filter((s) => !evaluable.includes(s));
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
   // A source gap is not an empty company universe. Keep saved, dated readings searchable in
@@ -954,6 +964,7 @@ function renderMomentumScanner(ctx, rows) {
       { label: 'Price', get: priceCell, html: true, align: 'right', sortValue: (s) => vf(s).price ?? -1 },
       col('Strong Momentum', (v) => filterPill(v.f1), (v) => (v.f1.pass ? 1 : 0)),
       col('Volume + Momentum', (v) => filterPill(v.f2), (v) => (v.f2.pass ? 1 : 0)),
+      col('MACD Crossover', (v) => filterPill(v.f3), (v) => (v.f3.pass ? 1 : 0)),
       col('Volume vs 10D Avg', (v) => momentumVolCell(v, thresholds.volMult), (v) => v.volRatio10d ?? -1, 'right'),
       col('RSI Daily', (v) => rsiLiveCell(v, 'rsiDaily'), (v) => v.rsiDaily ?? -1, 'right'),
       col('RSI Weekly', (v) => rsiLiveCell(v, 'rsiWeekly'), (v) => v.rsiWeekly ?? -1, 'right'),
@@ -961,27 +972,31 @@ function renderMomentumScanner(ctx, rows) {
       col('MACD', (v) => macdPill(v), (v) => (v.freshCross ? 2 : v.macdBullish ? 1 : 0)),
       col('20-DMA Status', (v) => dma20Pill(v), (v) => (v.above20dma ? 1 : 0)),
     ],
-    // The two filter columns carry their full names now, so let headings wrap to two lines
-    // instead of forcing those columns as wide as "Volume + Momentum".
+    // The three filter columns carry their full names now, so let headings wrap to two lines
+    // instead of forcing those columns as wide as "Volume + Momentum", and run dense padding so
+    // the extra filter column still fits without the page scrolling sideways.
     wrapHeads: true,
+    dense: true,
     initialSort: { key: 'RSI Daily', dir: 'desc' },
     exportName: `sattva-momentum-${todayStamp()}`,
     onExport: (visible, filename) => runMomentumExport(visible, filename, thresholds),
   });
 
-  const scopeHint =
-    ctx.scope !== 'universe'
-      ? ` <span class="text-slate-400">This screener is built for the full universe — switch scope to Universe to screen every listed company.</span>`
-      : '';
+  // The scanner is universe-wide by design (see paint), so there is no "switch to Universe"
+  // hint; the count line states the full-market coverage and how many names are pending instead.
+  const pendingNote = exceptions.length
+    ? ` <span class="text-amber-700" title="These stocks can't be evaluated yet — the daily momentum data hasn't refreshed, or no live quote is available. See scan coverage below.">· ${formatNumber(exceptions.length)} pending</span>`
+    : '';
+  const universeNote = ` <span class="text-slate-400">Scanning all ${formatNumber(rows.length)} companies (Nifty 500 + the book), independent of the selected scope.</span>`;
 
   ctx.root.innerHTML = `
     ${sectionHead({
       title: meta.title,
       description:
-        'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',
+        'A live, universe-wide momentum screener — every Nifty 500 company plus the book, recomputed on the live price. Adjust the thresholds and the list re-filters instantly.',
     })}
     ${momentumControls(gate, thresholds)}
-    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${unscannable ? ` ${escapeHtml(exceptionNote)}` : ''}${scopeHint}</div>
+    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${pendingNote}${unscannable ? ` ${escapeHtml(exceptionNote)}` : ''}${universeNote}</div>
     ${table.html}
     <div class="mt-6 border-t border-slate-100 pt-4 text-center">
       <button type="button" data-momentum-coverage
@@ -1018,6 +1033,7 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Quote source and time', key: 'quote_time', width: 40, get: (s) => vf(s).isLiveQuote ? live.priceInfo(s.company).label : `Saved daily close · ${s.company.price_date || s.company.bar_date || 'date unavailable'}` },
     { header: 'Filter 1 (Strong Momentum)', key: 'f1', width: 24, get: (s) => vf(s).f1.evaluable ? yn(vf(s).f1.pass) : 'Exception' },
     { header: 'Filter 2 (Volume + Momentum)', key: 'f2', width: 26, get: (s) => vf(s).f2.evaluable ? yn(vf(s).f2.pass) : 'Exception' },
+    { header: 'Filter 3 (MACD Crossover)', key: 'f3', width: 24, get: (s) => vf(s).f3.evaluable ? yn(vf(s).f3.pass) : 'Exception' },
     { header: 'Volume / 10-day average', key: 'vol', width: 30, get: (s) => (vf(s).volRatio10d == null ? null : Number(vf(s).volRatio10d.toFixed(2))) },
     { header: 'RSI Daily', key: 'rsid', width: 16, get: (s) => (vf(s).rsiDaily == null ? null : Number(vf(s).rsiDaily.toFixed(2))) },
     { header: 'RSI Weekly', key: 'rsiw', width: 16, get: (s) => (vf(s).rsiWeekly == null ? null : Number(vf(s).rsiWeekly.toFixed(2))) },
@@ -1028,7 +1044,7 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Above 50 DMA', key: 'd50', width: 16, get: (s) => yn(vf(s).above50dma) },
     { header: 'Above 100 DMA', key: 'd100', width: 17, get: (s) => yn(vf(s).above100dma) },
     { header: 'Above 200 DMA', key: 'd200', width: 17, get: (s) => yn(vf(s).above200dma) },
-    { header: 'Thresholds', key: 'thr', width: 44, get: () => `RSI D1>${thresholds.rsiD1}, W>${thresholds.rsiW}, M>${thresholds.rsiM}; F2 RSI D>${thresholds.rsiD2}, Vol≥${thresholds.volMult}×` },
+    { header: 'Thresholds', key: 'thr', width: 60, get: () => `RSI D1>${thresholds.rsiD1}, W>${thresholds.rsiW}, M>${thresholds.rsiM}; F2 RSI D>${thresholds.rsiD2}, Vol≥${thresholds.volMult}×; F3 RSI D>${thresholds.rsiD3}, fresh MACD cross + >20 DMA` },
   ];
   exportRows({ filename, sheetName: 'Momentum Scanner', columns, rows }).then((ok) => {
     if (!ok) console.warn('[breakouts] momentum export did not complete — exceljs unavailable.');
