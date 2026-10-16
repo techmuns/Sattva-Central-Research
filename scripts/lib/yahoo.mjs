@@ -133,7 +133,7 @@ export async function fetchBars(symbol, start, end, { includeInProgress = false,
       lastErr = err;
       attempt++;
       // A refusal is a cooldown, not a request to send the same query again.
-      if ([403,429].includes(err.status)) throw err;
+      if ([401,403,429].includes(err.status)) throw err;
       if (attempt < maxAttempts) await pause(800 * attempt);
     }
   }

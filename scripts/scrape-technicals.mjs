@@ -111,6 +111,7 @@ function saveYahooRefusal(error) {
   writeFileSync(recoveryPath,JSON.stringify({...recovery,version:1,strikes,
     holdUntil:Math.max(Date.now()+Math.min(86400000,3600000*2**Math.min(strikes-1,5)),error.retryAt||0),reason:'source-cooldown'})+'\n');
 }
+export const resetYahooStrikes = state => ({...state,strikes:0,holdUntil:0,reason:null});
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) run().catch((err) => {
   console.error("Fatal:", err.stack || err.message);
@@ -190,6 +191,7 @@ async function run() {
 
   const results = [];
   let failures = 0;
+  let yahooRefused = false;
   for (let i = 0; i < companies.length; i++) {
     const c = companies[i];
     const ticker = extractTicker(c["Screener URL"]);
@@ -284,6 +286,7 @@ async function run() {
           closeHistory: retainedPriceHistory(previousHistory.get(ticker)) });
       console.log(`FAIL ${err.message}`);
       if ([401,403,429].includes(err.status)) {
+        yahooRefused = true;
         saveYahooRefusal(err);
         // A source refusal ends the walk. Keep every unattempted company and its
         // actual last-good readings instead of issuing another 600 requests.
@@ -299,6 +302,12 @@ async function run() {
     }
     await sleep(FETCH_DELAY_MS);
     if ((i + 1) % 25 === 0) flush(results, indexBars, failures);   // checkpoint
+  }
+
+  if (!yahooRefused && TECH_LIMIT===0) {
+    const previous=recoveryState();
+    if(previous.strikes || previous.holdUntil || previous.reason==='source-cooldown')
+      writeFileSync(recoveryPath,JSON.stringify(resetYahooStrikes(previous))+'\n');
   }
 
   // Every move that reaches the check threshold is re-derived from the Muns market-data
@@ -317,7 +326,7 @@ async function run() {
   }
   flush(results, indexBars, failures);
 
-  // ATR Stability accumulator: append today's atr14_pct per ticker to a
+  // ATR Stability accumulator: append each observed session's atr14_pct to a
   // rolling 30-day history. Used by the Sentiment & Liquidity ATR rule
   // to detect declining-vs-rising volatility trend (client framework).
   updateATRHistory(results);
@@ -338,19 +347,26 @@ function updateATRHistory(results) {
     history = JSON.parse(readFileSync(ATR_HISTORY_PATH, "utf8"));
     if (typeof history !== "object" || Array.isArray(history)) history = {};
   } catch { /* file doesn't exist yet — start fresh */ }
-  const today = new Date().toISOString().slice(0, 10);
+  history=accumulateATRHistory(history,results);
+  writeFileSync(ATR_HISTORY_PATH, JSON.stringify(history) + "\n");
+  console.log(`ATR history updated: ${Object.keys(history).length} tickers tracked; observations use actual bar dates`);
+}
+
+export function accumulateATRHistory(previous, results) {
+  const history=structuredClone(previous);
   for (const r of results) {
-    if (r.error || r.atr14_pct == null || !r.ticker) continue;
+    if (r.error || !Number.isFinite(r.atr14_pct) || !r.ticker || !/^\d{4}-\d{2}-\d{2}$/.test(r.bar_date || '') ||
+      (r.history_check && r.history_check.state!=='current')) continue;
+    const date=r.bar_date;
     if (!history[r.ticker]) history[r.ticker] = [];
-    // Dedupe by date — replace today's entry if it exists
-    history[r.ticker] = history[r.ticker].filter((e) => e.date !== today);
-    history[r.ticker].push({ date: today, atr_pct: r.atr14_pct });
+    // Dedupe by actual bar date, retaining earlier observation history.
+    history[r.ticker] = history[r.ticker].filter((e) => e.date !== date);
+    history[r.ticker].push({ date, atr_pct: r.atr14_pct });
     // Trim to last 30 days
     history[r.ticker].sort((a, b) => a.date.localeCompare(b.date));
     if (history[r.ticker].length > 30) history[r.ticker] = history[r.ticker].slice(-30);
   }
-  writeFileSync(ATR_HISTORY_PATH, JSON.stringify(history) + "\n");
-  console.log(`ATR history updated: ${Object.keys(history).length} tickers tracked, latest snapshot for today`);
+  return history;
 }
 
 function parsePercentValue(v) {

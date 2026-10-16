@@ -213,7 +213,7 @@ try {
     await exceptionButton.focus();
     await page.keyboard.press('Enter');
     await page.locator('[data-momentum-exception-list]').waitFor();
-    const exceptionRows = await page.locator('[data-momentum-exception-list] tbody tr').evaluateAll(rows => rows.map(row => [...row.cells].map(cell => cell.textContent).join(' ')));
+    const exceptionRows = await page.locator('[data-momentum-exception-list] tbody tr').evaluateAll(rows => rows.map(row => [...row.cells].slice(0,2).map(cell => cell.textContent).join(' ')));
     const expectedReasons = ['Epsilon History Price history incomplete', 'Missing Code Stock code not found', 'Missing Price Price unavailable',
       'Short History Not enough price history', 'Source Failure Price history unavailable', 'Young Stock Not enough price history'];
     ok('the coverage panel lists every excluded stock with its actual short reason', JSON.stringify(exceptionRows.map(text => text.replace(/\s+/g, ' ').trim())) === JSON.stringify(expectedReasons), exceptionRows.join(' | '));
@@ -396,6 +396,8 @@ try {
       const text=await page.locator('#content-host').innerText();
       ok('outdated history keeps the actual live price visible', /107/.test(await page.locator('[data-cmp="MOMOA"]').innerText()) && /Muns API live price/.test(text));
       ok('outdated history remains pending despite a fresh quote', /0 of 0 stocks pass/.test(text));
+      const indicatorTitles=await page.locator('#content-host [data-score-table] tbody tr').filter({hasText:'Alpha Momentum'}).locator('[title]').evaluateAll(nodes=>nodes.map(node=>node.title));
+      ok('saved indicators retain their own price basis beside the live price',indicatorTitles.some(title=>/Saved daily close 100\.00 vs 20 DMA 90\.00/.test(title)) && /Saved/.test(text));
       await page.getByRole('button',{name:'Scan coverage and excluded stocks'}).click();
       const row=page.locator('[data-momentum-exception-list] tbody tr').filter({hasText:'Alpha Momentum'});
       ok('excluded stocks retain their live quote with the history reason', /Price history outdated/.test(await row.innerText()) && /107/.test(await row.innerText()) && /Muns API live price/.test(await row.innerText()));
@@ -403,7 +405,7 @@ try {
       await page.evaluate(()=>{window.exported={rows:[]};window.ExcelJS={Workbook:class{constructor(){this.xlsx={writeBuffer:async()=>new Uint8Array()};}addWorksheet(){return {set columns(value){},addRow(row){window.exported.rows.push(row);},getRow(){return {};}};}}};});
       await page.locator('#content-host [data-export]').click();await page.waitForFunction(()=>window.exported.rows.length>0);
       const exported=await page.evaluate(()=>window.exported.rows.find(row=>row.ticker==='MOMOA'));
-      ok('pending-history exports use the live price without certifying a pass',exported.price===107 && /Muns API live price/.test(exported.quote_time) && exported.f1==='Exception');
+      ok('pending-history exports use the live price without certifying a pass',exported.price===107 && /Muns API live price/.test(exported.quote_time) && exported.f1==='Exception' && exported.indicator_basis==='Saved daily reading · 2026-10-07');
     } finally {await context.close();companies.forEach((c,i)=>{c.bar_date=dates[i];});quoteDelta=0;}
   }
 

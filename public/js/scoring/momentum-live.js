@@ -172,6 +172,8 @@ export function scannerIndicators(company, quote, {now = Date.now(), unavailable
     sessionDate,
     averageVolume: volumeBase ? volumeBase.average : null,
   });
+  value.indicatorPrice = value.price;
+  value.indicatorDate = dailyDate;
   // A valid quote remains a current price even when the indicator history is
   // behind. History alignment gates the filters, never the displayed price.
   value.isLiveQuote = fresh;

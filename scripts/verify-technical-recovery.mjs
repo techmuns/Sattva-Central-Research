@@ -4,6 +4,7 @@ import {completedSession,needsHistory,recoverTechnicals} from './lib/technical-r
 import {fetchBars} from './lib/yahoo.mjs';
 import {scannerIndicators,evaluateFilter} from '../public/js/scoring/momentum-live.js';
 import {rsi,sma} from './lib/indicators.mjs';
+import {accumulateATRHistory,resetYahooStrikes} from './scrape-technicals.mjs';
 
 const AT=Date.parse('2026-10-16T06:30:00Z'), DAY=86400000;
 function series() {
@@ -89,13 +90,36 @@ test('an index outage does not block momentum recovery or erase existing index-r
   assert.equal(result.payload.companies[0].retained_index_reading.relative_strength_6m,.2);
   assert.equal(result.payload.companies[0].retained_index_reading.beta_1y,1.3);
   assert.equal(result.payload.companies[0].index_reading_date,'2026-10-14');
+  assert.equal(needsHistory(result.payload.companies[0],'2026-10-15'),true);
+  const recovered=await recoverTechnicals(result.payload,result.ledger,{now:()=>AT+16*60000,sleep:async()=>{},bars:source});
+  assert.equal(recovered.summary.pending,0);assert.equal(recovered.payload.companies[0].retained_index_reading,undefined);
+  assert(Number.isFinite(recovered.payload.companies[0].relative_strength_6m));
 });
 test('fresh quotes remain visible while outdated or different-exchange history cannot certify a pass',()=>{
   const q={ticker:'TEST',price:125,prevClose:120,volume:1000,quoteAt:new Date(AT).toISOString(),checkedAt:new Date(AT).toISOString(),sessionDate:'2026-10-16',provider:'Upstox',exchange:'NSE'};
   for(const c of [old(),{...old(),bar_date:'2026-10-15',price_date:'2026-10-15',closeHistory:{sourceSymbol:'TEST.BO'}}]){
     const value=scannerIndicators(c,q,{now:AT});assert.equal(value.price,125);assert.equal(value.isLiveQuote,true);
+    assert.equal(value.indicatorPrice,90);assert.equal(value.historyAligned,false);
     for(const filter of ['strong-momentum','volume-momentum','macd-crossover'])assert.equal(evaluateFilter(filter,value).pass,false);
   }
+});
+test('retained failures never fabricate ATR observations and successful rows use their bar date',()=>{
+  const previous={TEST:[{date:'2026-10-14',atr_pct:2}]};
+  for(const state of ['failed','not-checked','checking'])assert.deepEqual(accumulateATRHistory(previous,[{...old(),atr14_pct:5,history_check:{state}}]),previous);
+  const updated=accumulateATRHistory(previous,[{...old(),bar_date:'2026-10-15',atr14_pct:3,history_check:{state:'current'}}]);
+  assert.deepEqual(updated.TEST,[...previous.TEST,{date:'2026-10-15',atr_pct:3}]);assert.equal(previous.TEST.length,1);
+});
+test('a successful full walk resets prior refusal escalation while retaining company checkpoints',()=>{
+  const previous={strikes:5,holdUntil:AT-1,reason:'source-cooldown',companies:{TEST:{retryAt:AT+DAY}}};
+  assert.deepEqual(resetYahooStrikes(previous),{...previous,strikes:0,holdUntil:0,reason:null});
+  assert.equal(previous.strikes,5);
+});
+test('an unknown future or special-session calendar stops recovery without querying every company',async()=>{
+  const at=Date.parse('2027-01-26T11:00:00Z');
+  assert.equal(completedSession(at),null);assert.equal(completedSession(Date.parse('2026-11-08T11:00:00Z')),null);
+  const result=await recoverTechnicals(input([old()]),{}, {now:()=>at,bars:async()=>{throw Error('must not query');}});
+  assert.equal(result.summary.requests,0);assert.equal(result.summary.pending,1);assert.equal(result.payload.history_recovery.calendarKnown,false);
+  assert.deepEqual(result.payload.companies,[old()]);
 });
 test('Yahoo fetches have a timeout and never retry source refusals in the same walk',async()=>{
   let requests=0;

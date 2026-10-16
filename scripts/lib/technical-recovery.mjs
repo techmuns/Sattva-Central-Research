@@ -1,6 +1,6 @@
 // Incremental, public-source recovery. Runs only on GitHub; no broker token or paid source.
 import {fetchBars, istDay} from './yahoo.mjs';
-import {expectedSession} from '../../public/js/data/breakout-live-shared.js';
+import {expectedSession,marketWindow} from '../../public/js/data/breakout-live-shared.js';
 import {yahooSymbol} from '../../worker/upstox-market.mjs';
 import {computeIndicators, computeLiquidityIndicators, recentWindow} from '../scrape-technicals.mjs';
 import {volumeWindow10d} from '../../public/js/scoring/momentum-history.js';
@@ -9,15 +9,17 @@ import {marketBreadth, priceDateOf} from './technicals-file.mjs';
 
 const MINUTE=60000, DAY=86400000;
 export function completedSession(at) {
+  if(!marketWindow(at).calendarKnown)return null;
   const day=istDay(at), local=new Date(at+19800000), settled=local.getUTCHours()>=16;
-  return expectedSession(settled ? at : Date.parse(`${day}T09:00:00+05:30`));
+  const session=expectedSession(settled ? at : Date.parse(`${day}T09:00:00+05:30`));
+  return session && marketWindow(Date.parse(`${session}T12:00:00+05:30`)).calendarKnown ? session : null;
 }
 export function needsHistory(row, session) {
   return !!row.error || (row.price_date || row.bar_date || '')<session ||
-    row.closeHistory?.sourceSymbol!==yahooSymbol(row) || !row.rsi_multi?.daily || !row.macd?.state;
+    row.closeHistory?.sourceSymbol!==yahooSymbol(row) || !row.rsi_multi?.daily || !row.macd?.state || !!row.retained_index_reading;
 }
 function coverage(rows, session) {
-  const current=rows.filter(row=>!needsHistory(row,session));
+  const current=session ? rows.filter(row=>!needsHistory(row,session)) : [];
   return {expectedSession:session,total:rows.length,current:current.length,pending:rows.length-current.length,
     complete:current.length===rows.length};
 }
@@ -27,6 +29,13 @@ export async function recoverTechnicals(input, savedLedger={}, {now=Date.now, ba
   if (!Array.isArray(input?.companies) || !input.companies.length || new Set(input.companies.map(row=>row.ticker)).size!==input.companies.length) throw Error('Invalid technical inventory');
   const payload=structuredClone(input), ledger={version:1,...structuredClone(savedLedger),companies:{...savedLedger.companies}};
   const summary={requests:0,repaired:0,failed:0,skipped:0,...coverage(payload.companies,session)};
+  if(!session) {
+    if(ledger.calendarRetryAt>at)return {payload:input,ledger:savedLedger,summary:{...summary,held:true,reason:'exchange-calendar-unavailable'}};
+    payload.history_recovery={...summary,checkedAt:new Date(at).toISOString(),calendarKnown:false,reason:'exchange-calendar-unavailable'};
+    ledger.calendarRetryAt=at+6*60*MINUTE;
+    await checkpoint(payload,ledger);
+    return {payload,ledger,summary:{...summary,reason:'exchange-calendar-unavailable'}};
+  }
   if (ledger.holdUntil>at || ledger.lastAttemptAt>at-15*MINUTE) return {payload:input,ledger:savedLedger,summary:{...summary,held:true}};
   const due=payload.companies.filter(row=>needsHistory(row,session)).filter(row=>{
     const old=ledger.companies[row.ticker];
@@ -105,7 +114,7 @@ export async function recoverTechnicals(input, savedLedger={}, {now=Date.now, ba
         delete row.retained_index_reading;
       }
       delete row.error;
-      ledger.companies[row.ticker]={at:now(),session,state:'current',retryAt:0,attempts:0};
+      ledger.companies[row.ticker]={at:now(),session,state:indexCurrent?'current':'index-pending',retryAt:indexCurrent?0:now()+15*MINUTE,attempts:0};
       summary.repaired++;
     } catch(error) {
       summary.failed++;

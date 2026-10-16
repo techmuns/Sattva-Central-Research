@@ -779,6 +779,8 @@ export function sourceGroups() {
   for (const [name, meta, maxAgeMs] of snapshots) {
     const item = groups.flatMap(g => g.items).find(i => i.name === name);
     if (!item) continue;
+    if(meta?.history_recovery?.calendarKnown===false)item.details=[...(item.details||[]),
+      'The exchange calendar for this session is unconfirmed. Saved prices remain dated; history recovery waits for a confirmed trading calendar.'];
     item.readState = sourceReadState({ at: meta?.fetchedAt || meta?.capturedAt || meta?.generated_at || meta?.checkedAt,
       failed: !!meta?.reason || !!meta?.degraded || !!meta?.lastReadFailed || !!meta?.error || meta?.deliveryFailed === true,
       partial: meta?.history_recovery?.pending > 0 || meta?.identityDirectory?.ok === false || Number(meta?.failed) > 0 || (Array.isArray(meta?.failures) ? meta.failures.length > 0 : Number(meta?.failures) > 0), maxAgeMs });

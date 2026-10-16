@@ -754,34 +754,37 @@ function filterPill(result) {
   return `<span class="${mPillBase} ${cls}" title="${escapeHtml(conditionTitle(result))}">${text}</span>`;
 }
 // In-progress periods use the live price; saved completed readings retain their source basis.
-const provNote = (live) => (live ? 'Current source observation; in-progress periods remain provisional.' : 'Saved daily reading; current market data is unavailable.');
+const provNote = v => v.historyAligned ? 'Current source observation; in-progress periods remain provisional.'
+  : `Saved daily reading · ${v.indicatorDate || 'date unavailable'}.`;
 function rsiLiveCell(v, tf) {
   const val = v[tf];
   if (val == null) return '<span class="text-slate-300">—</span>';
   const tone = val >= 55 && val <= 75 ? 'pos' : val > 75 ? 'warn' : val < 40 ? 'neg' : null;
-  return `<span title="${escapeHtml(provNote(v.isLiveQuote))}">${toneSpan(num(val, 1), tone)}</span>`;
+  return `<span title="${escapeHtml(provNote(v))}">${toneSpan(num(val, 1), tone)}${v.historyAligned ? '' : ' · Saved'}</span>`;
 }
 function momentumVolCell(v, volMult) {
   if (v.volRatio10d == null) return `<span class="text-slate-300" title="No live volume yet, or no 10-day average in the daily file.">—</span>`;
   const r = v.volRatio10d;
-  const title = `Today's cumulative volume so far vs the 10-day average. Threshold ≥ ${Number(volMult).toFixed(1)}×. ${provNote(v.isLiveQuote)}`;
+  const title = `Today's cumulative volume so far vs the 10-day average. Threshold ≥ ${Number(volMult).toFixed(1)}×. ${provNote(v)}`;
   return `<span title="${escapeHtml(title)}">${toneSpan(`${num(r, 2)}×`, r >= volMult ? 'pos' : r >= 1 ? 'warn' : 'neg')}</span>`;
 }
 function macdPill(v) {
   if (v.macdBullish == null) return `<span class="${mPillBase} ${M_NA}">—</span>`;
-  const title = `MACD line ${num(v.macdLine, 2)} vs signal ${num(v.macdSignal, 2)} · ${v.macdAboveZero ? 'above' : 'below'} zero. ${provNote(v.isLiveQuote)}`;
-  if (v.freshCross) return `<span class="${mPillBase} ${M_PASS}" title="${v.isLiveQuote ? 'Fresh bullish crossover on the live candle.' : 'Bullish crossover in the saved daily reading.'} ${escapeHtml(title)}">⚡ Bullish</span>`;
-  if (v.macdBullish) return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}">Bullish</span>`;
-  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">Bearish</span>`;
+  const title = `MACD line ${num(v.macdLine, 2)} vs signal ${num(v.macdSignal, 2)} · ${v.macdAboveZero ? 'above' : 'below'} zero. ${provNote(v)}`;
+  const saved=v.historyAligned ? '' : 'Saved · ';
+  if (v.freshCross) return `<span class="${mPillBase} ${M_PASS}" title="${v.historyAligned ? 'Fresh bullish crossover on the live candle.' : 'Bullish crossover in the saved daily reading.'} ${escapeHtml(title)}">${saved}⚡ Bullish</span>`;
+  if (v.macdBullish) return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}">${saved}Bullish</span>`;
+  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">${saved}Bearish</span>`;
 }
 function dma20Pill(v) {
   if (v.above20dma == null) return `<span class="${mPillBase} ${M_NA}">—</span>`;
-  const title = `${v.isLiveQuote ? 'Live price' : 'Saved daily close'} ${v.price == null ? '—' : v.price.toFixed(2)} vs 20 DMA ${v.sma20 == null ? '—' : v.sma20.toFixed(2)}.`;
+  const title = `${v.historyAligned ? 'Live price' : 'Saved daily close'} ${v.indicatorPrice == null ? '—' : v.indicatorPrice.toFixed(2)} vs 20 DMA ${v.sma20 == null ? '—' : v.sma20.toFixed(2)}. ${provNote(v)}`;
+  const saved=v.historyAligned ? '' : 'Saved · ';
   if (v.above20dma) {
-    const crossed = v.isLiveQuote && v.priorAbove20dma === false;
-    return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}${crossed ? ' Crossed above today.' : ''}">${crossed ? 'Crossed ↑' : 'Above'}</span>`;
+    const crossed = v.historyAligned && v.priorAbove20dma === false;
+    return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}${crossed ? ' Crossed above today.' : ''}">${saved}${crossed ? 'Crossed ↑' : 'Above'}</span>`;
   }
-  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">Below</span>`;
+  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">${saved}Below</span>`;
 }
 
 function momentumControls(gate, thresholds) {
@@ -1033,6 +1036,7 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Sector', key: 'sector', width: 22, get: (s) => s.company.sector || '' },
     { header: 'Price', key: 'price', width: 12, get: (s) => vf(s).price ?? null },
     { header: 'Quote source and time', key: 'quote_time', width: 40, get: (s) => vf(s).isLiveQuote ? live.priceInfo(s.company).label : `Saved daily close · ${s.company.price_date || s.company.bar_date || 'date unavailable'}` },
+    { header: 'Indicator basis and date', key: 'indicator_basis', width: 45, get:s=>vf(s).historyAligned ? `Current price with history through ${vf(s).indicatorDate}` : `Saved daily reading · ${vf(s).indicatorDate || 'date unavailable'}` },
     { header: 'Filter 1 (Strong Momentum)', key: 'f1', width: 24, get: (s) => vf(s).f1.evaluable ? yn(vf(s).f1.pass) : 'Exception' },
     { header: 'Filter 2 (Volume + Momentum)', key: 'f2', width: 26, get: (s) => vf(s).f2.evaluable ? yn(vf(s).f2.pass) : 'Exception' },
     { header: 'Filter 3 (MACD Crossover)', key: 'f3', width: 24, get: (s) => vf(s).f3.evaluable ? yn(vf(s).f3.pass) : 'Exception' },

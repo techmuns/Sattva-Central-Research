@@ -2,7 +2,8 @@
 
 Live prices and indicator history are separate inputs. The minute collector owns Upstox quotes;
 Yahoo completed daily bars supply RSI, MACD and averages. A fresh quote remains visible in the
-scanner, scan coverage and exports even while its history is pending. A pending filter never passes.
+scanner, scan coverage and exports even while its history is pending. Saved indicator values retain
+their own price/date basis beside that quote, including workbook provenance. A pending filter never passes.
 
 `technical-history-recovery.yml` runs on standard public-repository GitHub Actions runners. It
 follows daily refresh and quote-run completion, has a half-hour weekday schedule, and starts after
@@ -26,6 +27,13 @@ Calendar holidays, source symbols, ordered unique dates, exchange identity and t
 session are checked. Old move-verification receipts cannot confirm a newly recovered close.
 An index outage does not block momentum; prior index-relative evidence remains separately dated
 while unavailable current index-dependent inputs stay null.
+Deferred index-relative inputs remain eligible for automatic recovery. Retained failures never add
+new ATR observations, and new observations use actual bar dates. A successful full walk clears old
+refusal escalation while preserving per-company receipts.
+
+The shared exchange calendar currently confirms ordinary 2026 sessions. Unknown future calendars
+and unconfirmed special-session hours stop recovery without querying the universe; coverage and
+Sources show that limitation. The calendar must be maintained before those sessions are certified.
 
 No scheduler, unofficial source or broker can guarantee uninterrupted data. Failed and incomplete
 rows retain their actual source dates and explicit coverage. New listings may genuinely lack
