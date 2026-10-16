@@ -82,19 +82,20 @@ for (const type of ['my-managers', 'investors']) for (const category of type ===
 }
 const frames = frame => frame.evaluate(async () => { for (let i = 0; i < 5; i++) await new Promise(requestAnimationFrame); });
 async function checkTables(page, frame, label, retry = 0) {
-  let activeSurface = null;
+  let activeSurface = null, activeTable = null;
+  const tableSelector = '#content-host table:visible, #fixture table:visible, #modal-content table:visible, #workspace-panel table:visible';
   try {
   const iframeBox = await page.locator('iframe').boundingBox();
   await page.mouse.move(iframeBox.x + iframeBox.width - 24, iframeBox.y + 16);
   const beaconClose = frame.locator('[data-beacon-close]:visible');
   if (await beaconClose.count()) await beaconClose.click();
-  const tableCount = await frame.locator('#content-host table:visible, #fixture table:visible, #modal-content table:visible, #workspace-panel table:visible').count();
+  const tableCount = await frame.locator(tableSelector).count();
   const checked = [];
   for (let i = 0; i < tableCount; i++) {
-    const table = frame.locator('#content-host table:visible, #fixture table:visible, #modal-content table:visible, #workspace-panel table:visible').nth(i);
+    const table = activeTable = await frame.locator(tableSelector).nth(i).elementHandle();
     const populated = await table.evaluate(table => [...table.querySelectorAll('tbody tr')].some(row =>
       !row.matches('[data-virtual-spacer]') && !row.querySelector('[data-window-spacer], [data-loading-row]') && row.cells.length > 1));
-    if (!populated) { checked.push({ rows: 0 }); continue; }
+    if (!populated) { checked.push({ rows: 0 }); await table.dispose(); activeTable = null; continue; }
     // Wheel on the page margin first. Programmatic scrollIntoView alone would also move an
     // overflow:hidden parent and could falsely certify the original page-scroll lock.
     const pageScroll = await table.evaluate(table => ({ below: table.getBoundingClientRect().bottom > innerHeight - (document.querySelector('.beacon-launcher') ? 64 : 0),
@@ -187,17 +188,22 @@ async function checkTables(page, frame, label, retry = 0) {
     assert(end.rows > 0 && end.bottom <= Math.min(end.viewport, end.clipBottom) + 2 && end.reachable, `${label}: final row is visible and receives pointer input: ${JSON.stringify(end)}`);
     if (end.virtual) assert(end.start + end.rows >= end.total, `${label}: the final retained record is mounted: ${JSON.stringify(end)}`);
     checked.push(end);
-    await surface.dispose(); activeSurface = null;
+    await surface.dispose(); await table.dispose(); activeSurface = activeTable = null;
   }
   return checked;
   } catch (error) {
     // A source check may replace its table during the gesture. Retry only a retired DOM node;
     // attached-but-clipped tables still fail immediately (including the negative control).
-    if (activeSurface && !await activeSurface.evaluate(el => el.isConnected)) {
-      await activeSurface.dispose();
+    const retiredTable = activeTable && !await activeTable.evaluate(el => {
+      const box = el.getBoundingClientRect(); return el.isConnected && box.width > 0 && box.height > 0;
+    });
+    const retiredSurface = activeSurface && !await activeSurface.evaluate(el => el.isConnected);
+    if (retiredTable || retiredSurface) {
+      await activeSurface?.dispose(); await activeTable?.dispose();
       // Each paged announcement append replaces its table; a 1,200-row fixture has several
       // legitimate replacements. Other readers need only their initial source refreshes.
       if (retry < (label.startsWith('corp-announcements/') ? 20 : 3)) {
+        await frame.locator(tableSelector).first().waitFor({ state: 'visible', timeout: 30000 });
         await frames(frame); return checkTables(page, frame, label, retry + 1);
       }
     }
