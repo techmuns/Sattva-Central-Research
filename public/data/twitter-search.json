@@ -1708,80 +1708,98 @@
       "pending": []
     },
     "isin:INE597J01018|SHALBY": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
-      "error": null,
-      "lastResultCount": 61,
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 103,
       "lastSuccessAt": "2026-10-11T22:57:17+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-10-16T14:21:24+00:00",
+      "pending": [
+        {
+          "from": "2026-10-09T22:57:17+00:00",
+          "to": "2026-10-13T06:39:20.500000+00:00"
+        },
+        {
+          "from": "2026-10-13T06:39:20.500000+00:00",
+          "to": "2026-10-16T14:21:24+00:00"
+        }
+      ]
     },
     "isin:INE024F01011|Shilchar Technologies": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": null,
-      "lastResultCount": 39,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
+      "lastResultCount": 40,
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE024F01011|SHILCTECH": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": null,
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
+      "lastResultCount": 5,
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE109A01011|Shipping Corporation of India": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": null,
-      "lastResultCount": 52,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
+      "lastResultCount": 30,
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE526E01018|SPR Auto Technologies": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": null,
-      "lastResultCount": 8,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
+      "lastResultCount": 6,
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE526E01018|Shriram Pistons & Rings": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE526E01018|SHRIPISTON": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": null,
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
+      "lastResultCount": 3,
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1NPP01017|Siemens Energy India": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": null,
-      "lastResultCount": 33,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
+      "lastResultCount": 16,
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1NPP01017|ENRIN": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
-      "error": null,
-      "lastResultCount": 26,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 110,
+      "targetThrough": "2026-10-16T14:21:24+00:00",
+      "pending": [
+        {
+          "from": "2026-09-30T10:43:50+00:00",
+          "to": "2026-10-08T12:32:37+00:00"
+        },
+        {
+          "from": "2026-10-08T12:32:37+00:00",
+          "to": "2026-10-16T14:21:24+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-11T22:57:17+00:00",
       "lastSuccessAt": "2026-10-02T10:43:50+00:00"
     },
     "isin:INE01IU01018|Sky Gold": {
-      "lastAttemptAt": "2026-10-11T22:57:17+00:00",
+      "lastAttemptAt": "2026-10-16T14:21:24+00:00",
       "error": "search-unavailable",
       "lastResultCount": 104,
       "targetThrough": "2026-10-02T10:43:50+00:00",
@@ -1795,7 +1813,7 @@
           "to": "2026-10-02T10:43:50+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-06T06:49:53+00:00"
+      "lastDiscoveryAt": "2026-10-16T14:21:24+00:00"
     },
     "isin:INE01IU01018|SKYGOLD": {
       "lastAttemptAt": "2026-10-11T23:32:20+00:00",
@@ -2562,8 +2580,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 231,
-    "checkedAt": "2026-10-16T13:41:05.599263+00:00"
+    "attempted": 10,
+    "incomplete": 224,
+    "checkedAt": "2026-10-16T14:21:24.704005+00:00"
   }
 }
