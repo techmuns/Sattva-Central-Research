@@ -6,6 +6,7 @@ import {exportNewsletter} from '../worker/newsletter-export.mjs';
 import {installPreparedBackground} from './lib/github-background-deployment.mjs';
 import {readerKeys,encode64,openForReader,sealForReader} from '../worker/mutual-funds-seal.mjs';
 import {handleGithubNewsletter} from '../worker/newsletter-github.mjs';
+import {newsletterAssets} from './collect-newsletter.mjs';
 fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/newsletter-github-'));
 const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',at=Date.parse('2026-09-15T06:30:00Z'),now=()=>at;
 const env={NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
@@ -27,10 +28,17 @@ const fetcher=async(raw,options={})=>{
   }
   if(url.hostname==='devde.muns.io'){emailCalls++;throw Error('The removed recipient must never reach a provider');}
   if(url.hostname==='api.openai.com'){providerCalls++;assert(published>0);assert(remote.size>0);return Response.json({status:'completed',output:[]});}
+  if(/^bedrock-runtime\./.test(url.hostname)){providerCalls++;throw Error('Previews must never call a model');}
+  if(url.hostname!=='github.com')return new Response(null,{status:404}); // Offline market/source unavailability.
   assert.equal(options.headers?.authorization,undefined);const asset=remote.get(decodeURIComponent(url.pathname.split('/').at(-1)));assert(asset);return new Response(asset.bytes);
 };
 let source,runtime,restarted;
 try{
+ const inputRoot=path.join(root,'source');fs.mkdirSync(path.join(inputRoot,'data'),{recursive:true});fs.writeFileSync(path.join(inputRoot,'data/portfolio-companies.json'),JSON.stringify({holdings:[]}));
+ fs.writeFileSync(path.join(inputRoot,'outside.json'),'{}');fs.symlinkSync(path.join(inputRoot,'outside.json'),path.join(inputRoot,'data/escape.json'));
+ env.ASSETS=newsletterAssets(inputRoot);
+ assert.deepEqual(await (await env.ASSETS.fetch(new Request('https://fixture.test/data/portfolio-companies.json'))).json(),{holdings:[]});
+ for(const pathname of ['/outside.json','/data/%2e%2e/outside.json','/data/escape.json','/data/missing.json'])assert.equal((await env.ASSETS.fetch(new Request('https://fixture.test'+pathname))).status,404,'The runner source binding reads only the pinned data tree');
  source=localNewsletter(path.join(root,'old.sqlite'),{env,now});source.store.apply([{op:'subscribe',by:'Fixture',email:'fixture@example.com',editions:['morning','evening']}]);
  source.store.beginDelivery({key:'old-unknown',edition:'morning',day:'2026-09-14',source:'timer',recipients:1});
  const pdf=randomBytes(1500000);pdf.set(Buffer.from('%PDF-1.7'));const pdfId=source.store.saveDocument(pdf,'sattva-2026-09-14-morning-brief.pdf','old-unknown');
@@ -41,12 +49,19 @@ try{
  runtime=await githubNewsletter({...options,file:path.join(root,'runner.sqlite'),out:path.join(root,'publication'),legacyClient:input=>exportNewsletter(source.storage,input)});
  assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before);assert.deepEqual(runtime.store.snapshot(),source.store.snapshot());assert.deepEqual(Buffer.from(runtime.store.document(pdfId).body),pdf);assert.equal(runtime.store.delivery('old-unknown').finishedAt,null);
  assert.throws(()=>decodeNewsletterColumn({blob64:'AA==',bytes:1,hash:'wrong'},'newsletter_documents','body'),/integrity/);
+ const stalePreview=()=>runtime.db.prepare('INSERT OR REPLACE INTO newsletter_views VALUES(?,?)').run('preview-morning-html-2',JSON.stringify({ok:true,body:'Old second part',part:2,parts:2}));
+ stalePreview();await runtime.preparePreviews();assert.equal(providerCalls,0);assert.equal(emailCalls,0);
+ const preview=JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-1').payload);assert.equal(preview.ok,true);assert.equal(preview.part,1);assert.equal(preview.parts,1);
  const saved=await runtime.publish(),site=path.join(root,'public');await installPreparedBackground([saved],{env,fetcher,publicRoot:site,scratch:path.join(root,'install')});
  const cipherFiles=new Map(fs.readdirSync(path.join(site,'generated-views/newsletter')).map(name=>[name,fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8')]));
  const again=await runtime.publish();await installPreparedBackground([again],{env,fetcher,publicRoot:site,scratch:path.join(root,'install-again')});for(const [name,value]of cipherFiles)assert.equal(fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8'),value,'Unchanged private readers reuse ciphertext instead of reuploading PDF history');
  const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,ASSETS:{fetch:async request=>{assetReads++;const file=path.join(site,new URL(request.url).pathname);return fs.existsSync(file)?new Response(fs.readFileSync(file)):new Response(null,{status:404});}}};
  const common={object:{newsletterPdf(){throw Error('Prepared saved PDFs cannot touch Cloudflare SQL');}},now,pdfHeaders:filename=>({'content-type':'application/pdf','cache-control':'private, no-store'}),guardWrite:async()=>null};
  let response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/pdf/'+pdfId),worker,common);assert.equal(response.status,200);assert.deepEqual(Buffer.from(await response.arrayBuffer()),pdf);
+ response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/preview?edition=morning'),worker,common);assert.equal(response.status,200);assert.equal(response.headers.get('x-newsletter-part'),'1');assert.equal(await response.text(),preview.body,'The default preview URL serves the actual prepared HTML through encrypted static delivery');
+ response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/preview?edition=morning&part=2'),worker,common);assert.equal(response.status,503);assert.equal((await response.json()).reason,'preview-unavailable','A bookmark to a removed part cannot serve an older edition');
+ stalePreview();fs.rmSync(path.join(inputRoot,'data/portfolio-companies.json'));await runtime.preparePreviews();assert.equal(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-2'),undefined);assert.equal(JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-1').payload).ok,false,'A failed build replaces its current preview and clears older parts');
+ fs.writeFileSync(path.join(inputRoot,'data/portfolio-companies.json'),JSON.stringify({holdings:[]}));await runtime.preparePreviews();assert.equal(providerCalls,0);assert.equal(emailCalls,0);
  let requestEnvelope;
  response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({edition:'morning',to:'me',email:'fixture@example.com'})}),worker,{...common,fetcher:async(raw,options)=>{assert.equal(raw,`https://api.github.com/repos/${repo}/actions/workflows/newsletter-refresh.yml/dispatches`);const value=JSON.parse(options.body);assert.equal(value.ref,'main');assert(!value.inputs.request.includes('fixture@example.com'));requestEnvelope=JSON.parse(value.inputs.request);return new Response(null,{status:204});}});assert.equal(response.status,202);const queued=await response.json();assert(queued.requestId);assert.equal(queued.queued,true);
  const result=await runtime.processRequest(requestEnvelope);assert.equal(result.reason,'no-token');const count=runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n;await runtime.processRequest(requestEnvelope);assert.equal(runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n,count,'Replayed request does not reserve or send twice');
