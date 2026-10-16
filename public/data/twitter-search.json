@@ -1892,7 +1892,7 @@
       "error": "search-unavailable"
     },
     "isin:INE089C01029|Sterlite analyst day": {
-      "lastAttemptAt": "2026-10-12T04:55:56+00:00",
+      "lastAttemptAt": "2026-10-16T21:25:59+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-02T12:58:36+00:00",
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-16T20:51:30.919633+00:00"
+    "checkedAt": "2026-10-16T21:25:59.745493+00:00"
   }
 }
