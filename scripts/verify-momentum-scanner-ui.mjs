@@ -397,6 +397,10 @@ try {
       (await import('/js/core/watchlist.js')).add('MOMOA', 'Alpha Momentum');
       location.hash = '#/research/breakouts/momentum-scanner?scope=watchlist';
     });
+    // The count is deliberately identical across scopes, so it cannot establish that the
+    // queued route render has finished. Clicking the old coverage button can lose its dialog.
+    await page.locator('#scope-toggle-mount [data-value="watchlist"][aria-pressed="true"]').waitFor();
+    await page.waitForFunction(() => !document.querySelector('#content-host')?.inert && !document.querySelector('[data-table-loading]'));
     await page.waitForSelector('#content-host [data-score-table]');
     await page.waitForFunction(() => /Scanning all .* companies/.test(document.querySelector('#content-host')?.textContent || ''));
     const watchlistCount = await countFor();
