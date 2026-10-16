@@ -1872,7 +1872,7 @@
       ]
     },
     "isin:INE12Z301012|Sotefin Bharat": {
-      "lastAttemptAt": "2026-10-12T02:10:35+00:00",
+      "lastAttemptAt": "2026-10-16T18:08:58+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0M4D01010|Standard Engineering Technology": {
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-16T17:32:28.859210+00:00"
+    "checkedAt": "2026-10-16T18:08:58.600420+00:00"
   }
 }
