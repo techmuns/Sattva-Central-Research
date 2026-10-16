@@ -140,8 +140,13 @@ async function checkTables(page, frame, label, retry = 0) {
           const tail = !card?.hasAttribute('data-virtualized') ||
             Number(card.dataset.virtualStart) + el.querySelectorAll('tr[data-row-key]').length >= Number(card.dataset.virtualTotal);
           const rows = [...el.querySelectorAll('tbody tr')].filter(row => !row.matches('[data-virtual-spacer]') && !row.querySelector('[data-window-spacer]'));
-          const last = rows.at(-1)?.getBoundingClientRect(), box = el.getBoundingClientRect();
-          const bottom = Math.min(innerHeight, box.top + el.clientTop + el.clientHeight);
+          const last = rows.at(-1)?.getBoundingClientRect();
+          let bottom = innerHeight;
+          for (let node = el; node && node !== document.body; node = node.parentElement) {
+            if (getComputedStyle(node).overflowY !== 'visible') {
+              bottom = Math.min(bottom, node.getBoundingClientRect().top + node.clientTop + node.clientHeight);
+            }
+          }
           return tail && last && last.bottom <= bottom + 2 && el.scrollHeight - el.clientHeight - el.scrollTop < 2;
         }) &&
             !await frame.locator('[data-ca-load-more]').count()) break;
