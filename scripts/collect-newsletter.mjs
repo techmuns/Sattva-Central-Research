@@ -5,6 +5,20 @@ import {dispatchWorkflow} from '../worker/github-actions.mjs';
 import {githubNewsletter} from './lib/newsletter-github.mjs';
 import {backgroundExportReady} from './lib/background-export-ready.mjs';
 const endpoint=PRODUCTION_ORIGIN+'/api/newsletter/collector';
+// The Worker reads committed source captures through ASSETS. On GitHub the
+// checkout pins those same JSON files to the workflow revision; never fetch a
+// changing deployment or expose other files as source inputs.
+export function newsletterAssets(root=resolve('public')){
+ return {fetch:async request=>{
+  try{
+   const pathname=decodeURIComponent(new URL(request.url).pathname),file=resolve(root,'.'+pathname);
+   if(!pathname.startsWith('/data/')||!pathname.endsWith('.json')||!file.startsWith(resolve(root,'data')+'/'))return new Response(null,{status:404});
+   const actual=fs.realpathSync(file);if(!actual.startsWith(fs.realpathSync(resolve(root,'data'))+'/'))return new Response(null,{status:404});
+   const stat=fs.statSync(actual);if(!stat.isFile()||stat.size>32*1024*1024)return new Response(null,{status:404});
+   return new Response(fs.readFileSync(actual),{headers:{'content-type':'application/json'}});
+  }catch{return new Response(null,{status:404});}
+ }};
+}
 export function newsletterCollectorClient({env=process.env,fetcher=fetch}={}){
  return async input=>{
   const url=new URL(env.ACTIONS_ID_TOKEN_REQUEST_URL||'');if(url.protocol!=='https:'||!url.hostname.endsWith('.actions.githubusercontent.com')||url.username||url.password||url.port)throw Error('OIDC unavailable');url.searchParams.set('audience',endpoint);
@@ -25,7 +39,7 @@ async function main(){
    }while(Date.now()<deadline);throw Error('PDF was not published; email was not sent');
   })());return verifiedPdfs.get(document.id);
  };
- const runtime=await githubNewsletter({legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
+ const runtime=await githubNewsletter({env:{...process.env,ASSETS:newsletterAssets()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
  try{
   await runtime.publish();let request=null,bootstrap=false;
   if(process.env.GITHUB_EVENT_PATH){const stat=fs.statSync(process.env.GITHUB_EVENT_PATH);if(stat.size>8*1024*1024)throw Error('Workflow event too large');const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));bootstrap=event.inputs?.bootstrap===true||event.inputs?.bootstrap==='true';if(event.inputs?.request){if(typeof event.inputs.request!=='string'||event.inputs.request.length>64000)throw Error('Newsletter request too large');request=JSON.parse(event.inputs.request);}}

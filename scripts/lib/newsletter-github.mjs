@@ -84,7 +84,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
    try{
     const brief=await buildBrief({edition,day:istDay(at),settings:local.store.settings(),env,fetcher:guardedFetch,now:at,to:at,reported:local.store.reportedLookup(),includeAi:false,contentService:local.schedule.content}),options=local.schedule.renderOptions();
     const messages=renderBriefEmails(brief,options),base={ok:true,edition,subject:briefSubject(brief,options),builtAt:new Date(at).toISOString(),summary:briefSummary(brief)};
-    for(const message of messages)save(`preview-${edition}-html-${message.part}`,{...base,subject:message.subject,part:message.part,parts:messages.length,body:renderBriefHtml(brief,{...options,part:message.part,preview:true})});
+    for(const message of messages){const part=message.part?.index||1;save(`preview-${edition}-html-${part}`,{...base,subject:message.subject,part,parts:messages.length,body:renderBriefHtml(brief,{...options,part:message.part,preview:true})});}
     save(`preview-${edition}-text-1`,{...base,body:renderBriefText(brief,options)});
     save(`preview-${edition}-pdf-1`,{...base,body:Buffer.from(renderBriefPdf(brief,options)).toString('base64'),binary:true,filename:pdfFilename(brief)});
    }catch{for(const format of ['html','text','pdf'])save(`preview-${edition}-${format}-1`,{ok:false,reason:'preview-build-failed',builtAt:new Date(at).toISOString()});}

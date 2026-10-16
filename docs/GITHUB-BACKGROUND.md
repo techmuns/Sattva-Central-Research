@@ -134,6 +134,7 @@ including after restart; a failed job cannot automatically resend that edition.
 PDF bytes are acknowledged on GitHub and their exact hash is verified at the live
 opaque download URL before an email containing that link may leave the runner.
 No model or email request is made by the website after cutover.
+The runner reads the committed JSON source captures from its fixed workflow checkout through a data-only local assets binding. Missing inputs remain unavailable. Prepared HTML previews use numeric parts starting at 1, matching their download URLs.
 
 Subscribers and schedule edits remain immediate interactive inputs. The runner
 refreshes them before metered work and before email, and refuses removed recipients.
