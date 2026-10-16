@@ -2,7 +2,7 @@
 import {fetchBars, istDay} from './yahoo.mjs';
 import {expectedSession} from '../../public/js/data/breakout-live-shared.js';
 import {yahooSymbol} from '../../worker/upstox-market.mjs';
-import {computeIndicators, recentWindow} from '../scrape-technicals.mjs';
+import {computeIndicators, computeLiquidityIndicators, recentWindow} from '../scrape-technicals.mjs';
 import {volumeWindow10d} from '../../public/js/scoring/momentum-history.js';
 import {researchPriceHistory,retainedPriceHistory} from './research-price-history.mjs';
 import {marketBreadth, priceDateOf} from './technicals-file.mjs';
@@ -85,10 +85,12 @@ export async function recoverTechnicals(input, savedLedger={}, {now=Date.now, ba
       // A new close invalidates old move-verification receipts. Never carry a
       // confirmation for a different close into the repaired day move.
       for (const key of Object.keys(row)) if (key.startsWith('move_')) delete row[key];
-      Object.assign(row,indicators,{price_date:last,momentum_volume_10d:volumeWindow10d(recent,null,symbol),
+      const deliveryDate=row.delivery_reading_date || row.bar_date;
+      Object.assign(row,indicators,computeLiquidityIndicators(recent),{price_date:last,momentum_volume_10d:volumeWindow10d(recent,null,symbol),
         closeHistory:researchPriceHistory(recent,{sourceSymbol:symbol,capturedAt:new Date(now()).toISOString()}) || retainedPriceHistory(row.closeHistory),
         history_check:{checkedAt:new Date(now()).toISOString(),state:'current',source:'Yahoo Finance',symbol,through:last},
         index_reading_date:indexCurrent?indexBars.at(-1).date:input.price_date});
+      if(row.delivery_days_count>0)row.delivery_reading_date=deliveryDate;
       if(!indexCurrent) {
         const old=input.companies.find(item=>item.ticker===row.ticker);
         row.retained_index_reading=old.retained_index_reading || {date:old.bar_date,

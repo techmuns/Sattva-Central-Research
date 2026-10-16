@@ -17,7 +17,8 @@ unfinished walk resumes from per-company receipts. The durable public
 403/429 ends a walk immediately and honors Retry-After with at least an hour's cooldown. Ordinary
 failures back off from 15 minutes to six hours; short listing histories are checked on the next
 completed session. The full daily scrape also respects the saved provider cooldown, paces requests
-and retains previous rows on failure. The three technicals writers share workflow concurrency.
+and retains previous rows on failure. The three technicals writers share workflow concurrency
+with a queue, so a recovery timer cannot cancel a waiting daily refresh or verifier.
 
 Recovery reuses the daily scraper's indicator functions and full long-history query rather than
 splicing new prices into rounded RSI state. Today's unfinished bar is excluded until 16:00 IST.

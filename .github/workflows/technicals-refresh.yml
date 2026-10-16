@@ -55,6 +55,7 @@ run-name: Data refresh (${{ github.event_name == 'schedule' && 'github-cron' || 
 # Only one refresh in flight at a time — concurrent runs would race on committed snapshots.
 concurrency:
   group: data-refresh
+  queue: max
   cancel-in-progress: false
 
 jobs:

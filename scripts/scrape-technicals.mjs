@@ -471,6 +471,16 @@ function spreadFromMeta(meta) {
   return Math.round(pct * 1000) / 1000; // 3 decimal places
 }
 
+// Recovery advances every OHLCV-derived liquidity field with the same bars as
+// the price indicators. Exchange delivery inputs remain separately dated.
+export function computeLiquidityIndicators(bars) {
+  const adtv=adtv20Cr(bars);
+  return {adtv_20d_cr:adtv,bid_ask_spread_pct:spreadFromMeta(bars.meta),
+    bid_ask_spread_pct_est:abdiRanaldoSpreadPct(bars,30),
+    impact_cost_pct_est_5cr:amihudImpactPct(bars,30,IMPACT_COST_ORDER_SIZE_RUPEES),
+    liquidity_tier:liquidityTier(adtv)};
+}
+
 // The last HISTORY_DAYS of the long series — exactly the bars a 400-day fetch returns, so every
 // existing daily indicator computed over it is unchanged. `.meta` (Yahoo's snapshot fields, read
 // by spreadFromMeta) is carried across, as `completedBars` already carries it.
