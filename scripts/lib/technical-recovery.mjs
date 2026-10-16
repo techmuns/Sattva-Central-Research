@@ -51,7 +51,7 @@ export async function recoverTechnicals(input, savedLedger={}, {now=Date.now, ba
     const status=coverage(payload.companies,session);
     payload.price_date=priceDateOf(payload.companies);
     payload.price_date_rows=payload.companies.filter(item=>item.bar_date===payload.price_date).length;
-    payload.failures=payload.companies.filter(item=>item.error || item.history_check?.state==='failed').length;
+    payload.failures=payload.companies.filter(item=>item.error || ['failed','not-checked'].includes(item.history_check?.state)).length;
     payload.market_breadth=marketBreadth(payload.companies);
     if(summary.repaired)payload.generated_at=new Date(now()).toISOString();
     payload.history_recovery={checkedAt:new Date(now()).toISOString(),...status,requests:summary.requests,
