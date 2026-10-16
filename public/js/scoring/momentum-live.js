@@ -172,7 +172,11 @@ export function scannerIndicators(company, quote, {now = Date.now(), unavailable
     sessionDate,
     averageVolume: volumeBase ? volumeBase.average : null,
   });
-  value.isLiveQuote = usable;
+  // A valid quote remains a current price even when the indicator history is
+  // behind. History alignment gates the filters, never the displayed price.
+  value.isLiveQuote = fresh;
+  if (fresh) value.price = quote.price;
+  value.historyAligned = usable;
   value.evaluable = value.evaluable && usable;
   value.unavailableReason = !fresh ? 'Current market data unavailable or outdated.'
     : !sameExchange ? 'Price and historical indicators use different exchanges.'

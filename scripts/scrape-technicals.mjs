@@ -41,6 +41,7 @@ import { marketBreadth, priceDateOf } from './lib/technicals-file.mjs';
 import { researchPriceHistory, retainedPriceHistory } from './lib/research-price-history.mjs';
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pathToFileURL } from 'node:url';
 import { abdiRanaldoSpreadPct, amihudImpactPct, liquidityTier } from "./lib/liquidity-estimators.mjs";
 
 const IMPACT_COST_ORDER_SIZE_RUPEES = 5e7;   // ₹5 crore — standardized institutional position
@@ -63,7 +64,7 @@ const HISTORY_DAYS = 400;          // calendar days back; ~280 trading days — 
 // `bars_count` and all existing values stay exactly as a 400-day run produced them.
 const MOMENTUM_HISTORY_DAYS = 4050;
 const INDEX_SYMBOL = "^CRSLDX";    // Nifty 500 on Yahoo Finance
-const FETCH_DELAY_MS = 200;        // be polite — ~5 req/sec
+const FETCH_DELAY_MS = 2000;       // public Yahoo chart access: pace the full walk too
 const TECH_LIMIT = Number(process.env.TECH_LIMIT || 0) || 0;   // 0 = all companies
 
 // TECH_FILL_GAPS=1 — scrape only the companies the committed file does not already carry, and
@@ -100,14 +101,19 @@ function readExistingRows() {
   }
 }
 
-run().catch((err) => {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) run().catch((err) => {
   console.error("Fatal:", err.stack || err.message);
   process.exit(1);
 });
 
 // ---------- main ----------
 async function run() {
-  const previousHistory = new Map(readExistingRows().filter(row => row.closeHistory).map(row => [row.ticker, row.closeHistory]));
+  const previousRows = new Map(readExistingRows().map(row => [row.ticker, row]));
+  const previousHistory = new Map([...previousRows].filter(([,row]) => row.closeHistory).map(([ticker,row]) => [ticker,row.closeHistory]));
+  try {
+    const recovery = JSON.parse(readFileSync(resolve(__dirname, '../public/data/technical-history-recovery.json'), 'utf8'));
+    if (recovery.holdUntil > Date.now()) throw Error(`Yahoo cooldown until ${new Date(recovery.holdUntil).toISOString()}; saved technicals retained.`);
+  } catch (error) { if (error.message.startsWith('Yahoo cooldown')) throw error; }
   const screenerRows = JSON.parse(readFileSync(COMPANIES_PATH, "utf8"));
   const bookRows = await bookCompaniesNotInScreener(screenerRows);
   const allCompanies = [...screenerRows, ...bookRows];
@@ -214,6 +220,7 @@ async function run() {
       }
       const bars = recentWindow(longBars, start);
       if (bars.length < 60) throw new Error(`only ${bars.length} bars`);
+      if ((previousRows.get(ticker)?.bar_date || '') > bars.at(-1).date) throw new Error('Price history regressed; retained the newer saved series');
       const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose, longBars, istDay(end));
       const delivery = deliveryTrends[ticker] || null;
       results.push({
@@ -259,9 +266,26 @@ async function run() {
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
     } catch (err) {
       failures++;
-      results.push({ ticker, name: c.Company, screenerUrl: c["Screener URL"], listSource: c.listSource || "nse500", error: err.message,
-        closeHistory: retainedPriceHistory(previousHistory.get(ticker)) });
+      const previous = previousRows.get(ticker);
+      results.push(previous && !previous.error ? {...previous, history_check:{checkedAt:new Date().toISOString(),state:'failed',reason:err.message}}
+        : { ticker, name: c.Company, screenerUrl: c["Screener URL"], listSource: c.listSource || "nse500", error: err.message,
+          closeHistory: retainedPriceHistory(previousHistory.get(ticker)) });
       console.log(`FAIL ${err.message}`);
+      if ([401,403,429].includes(err.status)) {
+        const recoveryPath=resolve(__dirname, '../public/data/technical-history-recovery.json');
+        let recovery={};try{recovery=JSON.parse(readFileSync(recoveryPath,'utf8'));}catch{}
+        writeFileSync(recoveryPath,JSON.stringify({...recovery,version:1,holdUntil:Math.max(Date.now()+3600000,err.retryAt||0),reason:'source-cooldown'})+'\n');
+        // A source refusal ends the walk. Keep every unattempted company and its
+        // actual last-good readings instead of issuing another 600 requests.
+        for (const rest of companies.slice(i+1)) {
+          const remainingTicker=extractTicker(rest['Screener URL']);if(!remainingTicker)continue;
+          const old=previousRows.get(remainingTicker);
+          results.push(old ? {...old,history_check:{checkedAt:new Date().toISOString(),state:'failed',reason:'Yahoo source cooldown; not checked'}}
+            : {ticker:remainingTicker,name:rest.Company,screenerUrl:rest['Screener URL'],listSource:rest.listSource||'nse500',error:'Yahoo source cooldown; not checked'});
+          failures++;
+        }
+        break;
+      }
     }
     await sleep(FETCH_DELAY_MS);
     if ((i + 1) % 25 === 0) flush(results, indexBars, failures);   // checkpoint
@@ -440,7 +464,7 @@ function spreadFromMeta(meta) {
 // The last HISTORY_DAYS of the long series — exactly the bars a 400-day fetch returns, so every
 // existing daily indicator computed over it is unchanged. `.meta` (Yahoo's snapshot fields, read
 // by spreadFromMeta) is carried across, as `completedBars` already carries it.
-function recentWindow(longBars, start) {
+export function recentWindow(longBars, start) {
   const cutoff = start.getTime();
   const out = longBars.filter((b) => Date.parse(`${b.date}T00:00:00Z`) >= cutoff);
   out.meta = longBars.meta;
@@ -448,7 +472,7 @@ function recentWindow(longBars, start) {
 }
 
 // ---------- indicators ----------
-function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars = bars, referenceDate = istDay(new Date())) {
+export function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars = bars, referenceDate = istDay(new Date())) {
   const close = bars.map((b) => b.close);
   const high  = bars.map((b) => b.high);
   const low   = bars.map((b) => b.low);

@@ -780,8 +780,8 @@ export function sourceGroups() {
     const item = groups.flatMap(g => g.items).find(i => i.name === name);
     if (!item) continue;
     item.readState = sourceReadState({ at: meta?.fetchedAt || meta?.capturedAt || meta?.generated_at || meta?.checkedAt,
-      failed: !!meta?.reason || !!meta?.degraded || !!meta?.lastReadFailed || !!meta?.error,
-      partial: meta?.identityDirectory?.ok === false || Number(meta?.failed) > 0 || (Array.isArray(meta?.failures) ? meta.failures.length > 0 : Number(meta?.failures) > 0), maxAgeMs });
+      failed: !!meta?.reason || !!meta?.degraded || !!meta?.lastReadFailed || !!meta?.error || meta?.deliveryFailed === true,
+      partial: meta?.history_recovery?.pending > 0 || meta?.identityDirectory?.ok === false || Number(meta?.failed) > 0 || (Array.isArray(meta?.failures) ? meta.failures.length > 0 : Number(meta?.failures) > 0), maxAgeMs });
   }
   const telegramSource = groups.flatMap(g => g.items).find(i => i.name === 'Telegram — a public research channel');
   const chatterSource = groups.flatMap(g => g.items).find(i => i.name === 'SentimentDash — mention counts and sentiment');

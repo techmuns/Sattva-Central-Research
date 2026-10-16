@@ -130,6 +130,7 @@ jobs:
             public/data/technicals.json
             public/data/atr-history.json
             public/data/price-move-checks.json
+            public/data/technical-history-recovery.json
             public/data/earnings-live.json
             public/data/mc-ticker-map.json
             public/data/result-returns.json
@@ -147,6 +148,7 @@ jobs:
           # The technicals scraper also updates its verification checkpoint. Leaving it unstaged
           # made the next fetch/rebase fail after an otherwise successful 20-minute collection.
           [ -f public/data/price-move-checks.json ] && git add public/data/price-move-checks.json || true
+          [ -f public/data/technical-history-recovery.json ] && git add public/data/technical-history-recovery.json || true
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
           for f in earnings-live mc-ticker-map result-returns earnings-calendar concall-scans super-investors; do
             [ -f "public/data/$f.json" ] && git add "public/data/$f.json" || true

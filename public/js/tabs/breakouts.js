@@ -894,7 +894,7 @@ function wireMomentumControls(root, ctx) {
 
 // Excluded-stock reasons remain available in the coverage panel below the table.
 function momentumExceptionReason(company, values) {
-  if (company.error === 'ticker not found') return 'Stock code not found';
+  if (company.error === 'ticker not found') return values.isLiveQuote ? 'Price history unavailable' : 'Stock code not found';
   if (/^only \d+ bars$/.test(company.error || '') ||
       (Number.isFinite(company.bars_count) && company.bars_count < 200 && !Number.isFinite(company.sma200))) return 'Not enough price history';
   if (company.error) return 'Price history unavailable';
@@ -909,10 +909,17 @@ function momentumExceptionList(exceptions, vf) {
   const ordered = [...exceptions].sort((a, b) => (a.company.name || a.company.ticker).localeCompare(b.company.name || b.company.ticker));
   return `<div class="max-h-96 overflow-y-auto" data-momentum-exception-list>
     <table class="w-full text-left text-sm">
-      <thead class="bg-slate-50"><tr><th class="p-3" scope="col">Stock</th><th class="p-3" scope="col">Reason</th></tr></thead>
-      <tbody>${ordered.map(s => `<tr class="border-b border-slate-100"><td class="p-3 font-semibold text-slate-900">${escapeHtml(s.company.name || s.company.ticker)}</td><td class="p-3">${escapeHtml(momentumExceptionReason(s.company, vf(s)))}</td></tr>`).join('')}</tbody>
+      <thead class="bg-slate-50"><tr><th class="p-3" scope="col">Stock</th><th class="p-3" scope="col">Reason</th><th class="p-3" scope="col">Price</th></tr></thead>
+      <tbody>${ordered.map(s => `<tr class="border-b border-slate-100"><td class="p-3 font-semibold text-slate-900">${escapeHtml(s.company.name || s.company.ticker)}</td><td class="p-3">${escapeHtml(momentumExceptionReason(s.company, vf(s)))}</td><td class="p-3">${momentumPriceCell(s, vf(s))}</td></tr>`).join('')}</tbody>
     </table>
   </div>`;
+}
+
+function momentumPriceCell(s, values) {
+  if (values.isLiveQuote) return cmpCell(s.company);
+  const c = s.company;
+  return `<span class="font-semibold text-slate-800">${c.cmp == null ? '—' : formatRupee(c.cmp, {decimals:2})}</span>
+    <div class="text-[10px] text-amber-700">Saved daily close · ${escapeHtml(c.price_date || c.bar_date || 'date unavailable')}</div>`;
 }
 
 function renderMomentumScanner(ctx, rows) {
@@ -943,12 +950,7 @@ function renderMomentumScanner(ctx, rows) {
     : allHistoryOutdated ? 'Saved readings are shown as exceptions while daily price history is outdated.'
       : allQuotesCurrent ? 'Current prices are available, but the history required for this filter is incomplete.'
         : `${rows.every(s => !vf(s).isLiveQuote) ? 'Saved' : 'Available'} readings are shown as exceptions; see scan coverage for the missing data.`;
-  const priceCell = s => {
-    if (vf(s).isLiveQuote) return cmpCell(s.company);
-    const c = s.company;
-    return `<span class="font-semibold text-slate-800">${c.cmp == null ? '—' : formatRupee(c.cmp, {decimals:2})}</span>
-      <div class="text-[10px] text-amber-700">Saved daily close · ${escapeHtml(c.price_date || c.bar_date || 'date unavailable')}</div>`;
-  };
+  const priceCell = s => momentumPriceCell(s, vf(s));
 
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 

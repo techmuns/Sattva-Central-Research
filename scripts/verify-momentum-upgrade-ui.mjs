@@ -14,12 +14,14 @@ const company={cmp:100,bar_date:'2026-10-08',sma20:90,sma50:85,sma100:80,sma200:
 const quote={price:102,prevClose:100,volume:136606*1.73,sessionDate:'2026-10-09',quoteAt:new Date(now).toISOString(),checkedAt:new Date(now).toISOString(),provider:'Upstox',exchange:'NSE',
   volumeBase:{average:188762.5,from:'2026-09-24',to:'2026-10-08',count:10,exchange:'NSE'}};
 const values=momentum.scannerIndicators(company,quote,{now});
-reading.textContent=JSON.stringify({ratio:values.volRatio10d,pass:momentum.evaluateFilter('volume-momentum',values).pass});
+const pending=momentum.scannerIndicators({...company,bar_date:'2026-10-07'},quote,{now});
+reading.textContent=JSON.stringify({ratio:values.volRatio10d,pass:momentum.evaluateFilter('volume-momentum',values).pass,
+  pendingPrice:pending.price,pendingLive:pending.isLiveQuote,pendingPass:momentum.evaluateFilter('strong-momentum',pending).pass});
 watchWorkerChanges(navigator.serviceWorker,()=>location.reload());
 await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;window.ready=true;
 </script>`;
-const oldModule=`export function scannerIndicators(c,q){return {volRatio10d:q.volume/c.avg_volume_10d};}
-export function evaluateFilter(_,v){return {pass:v.volRatio10d>=1.5};}`;
+const oldModule=`export function scannerIndicators(c,q){return {volRatio10d:q.volume/c.avg_volume_10d,price:c.cmp,isLiveQuote:false,evaluable:c.bar_date==='2026-10-08'};}
+export function evaluateFilter(_,v){return {pass:v.evaluable&&v.volRatio10d>=1.5};}`;
 const server=createServer((req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;res.setHeader('cache-control','no-cache');
   try {
@@ -43,11 +45,12 @@ try {
   await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.fulfill({status:200,body:''}));
   await page.goto(origin);await page.waitForFunction(()=>window.ready&&navigator.serviceWorker.controller);
   await page.reload();await page.waitForFunction(()=>window.ready);
-  assert.deepEqual(JSON.parse(await page.locator('#reading').innerText()),{ratio:1.73,pass:true});
+  assert.deepEqual(JSON.parse(await page.locator('#reading').innerText()),{ratio:1.73,pass:true,pendingPrice:100,pendingLive:false,pendingPass:false});
   assert((await page.evaluate(()=>caches.keys())).some(key=>key.includes('previous-momentum-release')));
   upgraded=true;await page.evaluate(async()=>(await navigator.serviceWorker.getRegistration()).update());
   await page.waitForFunction(()=>JSON.parse(document.querySelector('#reading').textContent).pass===false);
   const reading=JSON.parse(await page.locator('#reading').innerText());assert(reading.ratio>1.25&&reading.ratio<1.26);
+  assert.equal(reading.pendingPrice,102);assert.equal(reading.pendingLive,true);assert.equal(reading.pendingPass,false);
   assert(!(await page.evaluate(()=>caches.keys())).some(key=>key.includes('previous-momentum-release')));
   assert.deepEqual(errors,[]);
   console.log('PASS warm momentum reader replaces the immutable module, corrects 1.73x to 1.25x, and removes the false pass without manual reload');
