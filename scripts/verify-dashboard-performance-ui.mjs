@@ -74,7 +74,8 @@ function fetchAndCache(...args) {
 }`;
       res.end(previousRelease ? source.replace(/const CACHE_NAME = ([^;\n]+);/, 'const CACHE_NAME = $1 + "-previous-fixture";') : source);
     } else if (pathname === '/index.html') {
-      res.end(readFileSync(path, 'utf8').replaceAll(sdkUrl, '/sdk-fixture.js'));
+      res.end(readFileSync(path, 'utf8').replaceAll(sdkUrl, '/sdk-fixture.js')
+        .replace('</head>', `<style>:root { --alerts-shell-release: ${previousRelease ? 'previous' : 'current'}; }</style></head>`));
     } else if (pathname === '/js/core/watchlist.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__watchlistRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/core/alert-arrivals.js') {
@@ -98,6 +99,8 @@ researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrd
       res.end('export const snapshot=()=>({version:1,revision:0,tabs:[],order:[]});export const status=()=>({confirmed:false,pending:0,error:null,rejected:[]});export const onChange=()=>()=>{};export const start=()=>{};export const sync=async()=>({confirmed:false});export const edit=async()=>({confirmed:false});');
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
+    } else if (pathname === '/js/tabs/daily-alerts.js') {
+      res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__alertsScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/alert-pool-format.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__alertPoolRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/news-working-set.js') {
@@ -266,6 +269,9 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'previous', 'returning session has the older arrivals module cached');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'previous', 'returning session has the older table renderer cached');
+  await page.evaluate(() => import('/js/tabs/daily-alerts.js'));
+  assert.equal(await page.evaluate(() => globalThis.__alertsScrollRelease), 'previous', 'returning session has the older All Alerts sizing module cached');
+  assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--alerts-shell-release').trim()), 'previous', 'returning session starts with the older HTML layout');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--table-scroll-release').trim()), 'previous', 'returning session has the older scrollbar stylesheet cached');
   await page.evaluate(() => import('/js/data/alert-pool-format.js'));
   assert.equal(await page.evaluate(() => globalThis.__alertPoolRelease), 'previous', 'the retained session has the older alert-pool module');
@@ -313,6 +319,9 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'current', 'existing session receives the scrolling fix');
+  await page.evaluate(() => import('/js/tabs/daily-alerts.js'));
+  assert.equal(await page.evaluate(() => globalThis.__alertsScrollRelease), 'current', 'the existing session receives the All Alerts page-scroll fix');
+  assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--alerts-shell-release').trim()), 'current', 'the existing session receives the corrected HTML layout');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--table-scroll-release').trim()), 'current', 'existing session receives the scrollbar stylesheet fix');
   await page.evaluate(() => import('/js/data/alert-pool-format.js'));
   assert.equal(await page.evaluate(() => globalThis.__alertPoolRelease), 'current', 'the same returning session receives the context retention fix');

@@ -183,6 +183,50 @@ try {
       const taskBudgetMs = { 'insider-trades?scope=universe': 2500, 'ai-alerts?scope=universe': 1800, 'daily-alerts?scope=universe': 1800 }[route];
       if (taskBudgetMs) assert(result.maxTaskMs < taskBudgetMs, `${route}: longest main-thread task ${result.maxTaskMs}ms stays under ${taskBudgetMs}ms`);
     }
+    if (route === 'daily-alerts?scope=universe') {
+      // Exercise the shipped shell as well as the table: the isolated tab fixture cannot catch
+      // a body scroll lock or flex rules that clip the table beneath the header/subview controls.
+      await frame.getByRole('combobox', { name: 'Date range' }).selectOption('all');
+      await frame.waitForFunction(() => !document.querySelector('[data-table-loading]') &&
+        Number(document.querySelector('[data-score-table]')?.dataset.virtualTotal) > 100);
+      for (const viewport of [{ width: 1345, height: 622 }, { width: 1024, height: 640 },
+        { width: 390, height: 600 }, { width: 1440, height: 1100 }]) {
+        await page.setViewportSize(viewport);
+        await frame.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+        await frame.waitForTimeout(250);
+        const scroller = frame.locator('[data-table-scroll]');
+        const layout = await scroller.evaluate(el => ({ height: el.clientHeight,
+          bottom: el.getBoundingClientRect().bottom, viewport: innerHeight,
+          overflow: document.documentElement.scrollWidth - innerWidth }));
+        assert(layout.height >= 319, `All Alerts retains a usable table at ${viewport.width}x${viewport.height}: ${JSON.stringify(layout)}`);
+        assert(layout.overflow <= 2, 'short frames do not introduce horizontal page overflow');
+        if (layout.bottom > layout.viewport + 2) {
+          const iframe = await page.locator('iframe').boundingBox();
+          await page.mouse.move(iframe.x + 4, iframe.y + 100);
+          await page.mouse.wheel(0, 2000);
+          await frame.waitForFunction(() => window.scrollY > 0 &&
+            document.querySelector('[data-table-scroll]').getBoundingClientRect().bottom <= innerHeight + 2);
+          // Refitting while the page is scrolled must not add that scroll offset to its height.
+          await frame.evaluate(() => window.dispatchEvent(new Event('resize')));
+          await frame.waitForTimeout(100);
+          assert(Math.abs(await scroller.evaluate(el => el.clientHeight) - layout.height) <= 1,
+            'resizing a scrolled page preserves the bounded table height');
+        }
+        await scroller.evaluate(el => { el.scrollTop = 0; });
+        await scroller.hover({ position: { x: 100, y: 100 } });
+        await page.mouse.wheel(0, 1000);
+        await frame.waitForFunction(() => document.querySelector('[data-table-scroll]').scrollTop > 100);
+        await scroller.focus();
+        await page.keyboard.press('Control+End');
+        await frame.waitForFunction(() => {
+          const el = document.querySelector('[data-table-scroll]');
+          const rows = [...el.querySelectorAll('tr[data-row-key]')];
+          return el.scrollHeight - el.clientHeight - el.scrollTop < 2 && rows.length > 0 && rows.length <= 160 &&
+            rows.at(-1).getBoundingClientRect().bottom <= Math.min(el.getBoundingClientRect().bottom, innerHeight) + 2;
+        });
+      }
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
   }
   assert.deepEqual(errors, [], 'zero application exceptions across the complete tab sweep');
   console.log(`PASS: ${routes.length} full-data route/view visits inside an iframe.`);
