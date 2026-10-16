@@ -92,6 +92,7 @@ one-time transition source. Two recent complete generations remain available.
 
 One persisted Upstox budget is shared by minute quotes, backup history and private
 price-level checks: 200 ms spacing, at most 60 requests/minute and 900/30 minutes.
+Historical backfill uses lower ceilings, reserving capacity for live quote batches.
 The roughly 600-company quote inventory still needs two requests per minute, not
 one per company or reader. HTTP 429 honors Retry-After and increasing cooldowns;
 authentication refusal pauses that token for an hour and a deliberately replaced

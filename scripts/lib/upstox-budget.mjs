@@ -10,8 +10,10 @@ export function upstoxBudget({storage,token,fetcher=fetch,now=Date.now,sleep=ms=
     let at=now(),state=await store.get(KEY)||{},attempts=(state.attempts||[]).filter(value=>Number.isFinite(value)&&value>at-WINDOW);
     if(state.token!==fingerprint&&state.reason==='authentication')state={...state,holdUntil:0,reason:null};
     if(state.holdUntil>at)return held(state.reason,state.holdUntil);
-    const minute=attempts.filter(value=>value>at-60000);
-    if(attempts.length>=900||minute.length>=60){const until=Math.max(attempts.length>=900?attempts[0]+WINDOW:0,minute.length>=60?minute[0]+60000:0);return held('rate-limited',until);}
+    const minute=attempts.filter(value=>value>at-60000),quote=new URL(url).pathname.includes('/market-quote/');
+    // Historical backfill cannot consume the capacity reserved for live prices.
+    const minuteLimit=quote?60:50,windowLimit=quote?900:600;
+    if(attempts.length>=windowLimit||minute.length>=minuteLimit){const until=Math.max(attempts.length>=windowLimit?attempts[0]+WINDOW:0,minute.length>=minuteLimit?minute[0]+60000:0);return held('rate-limited',until);}
     const spacing=200-(at-(attempts.at(-1)||0));if(spacing>0)await sleep(spacing);at=now();
     state={...state,token:fingerprint,attempts:[...attempts,at],holdUntil:0,reason:null};await store.put(KEY,state);
     const response=await fetcher(url,options);
