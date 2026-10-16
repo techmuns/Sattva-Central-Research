@@ -7,6 +7,7 @@ import { mountAlertCardGrid } from '../ui/alert-card-grid.js';
 import { AI_EVENT_TYPES, aiEventTypes, matchesAIEvent, loadAIEventFilters, saveAIEventFilters } from '../data/ai-alert-types.js';
 import { developmentOfRow, developmentSource, publisherOf, venuesOf, storyKindOf, KIND_LABEL } from '../data/alert-developments.js';
 import { alertReadingHtml, watchAlertReadings } from '../ui/alert-reading.js';
+import { alertPriceHtml, watchAlertPrices } from '../ui/alert-price.js';
 // tabs/ai-alerts.js — THE SMALL, EXPLAINABLE READING LIST ABOVE ALL ALERTS.
 //
 // All Alerts is the complete chronological record. This tab deliberately is not: it groups
@@ -202,6 +203,7 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(watchAlertReadings(ctx.root));
+    unsubs.push(watchAlertPrices(ctx.root));
     unsubs.push(watchCalendar());
     unsubs.push(watchFreshness());
     unsubs.push(onCaptureLanded(sourceChanged));
@@ -867,7 +869,10 @@ function cardMarkup(card, scope, day, archived = false) {
               ${escapeHtml(card.ticker || 'No exchange ticker')}${card.sector ? ` · ${escapeHtml(card.sector)}` : ''}${card.holding ? ' · In portfolio' : ''}
             </div>
           </div>
-          <span class="shrink-0 rounded-md px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ${tone.badge}">${escapeHtml(badge.label)}</span>
+          <div class="ai-card-market">
+            <span class="shrink-0 rounded-md px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ${tone.badge}">${escapeHtml(badge.label)}</span>
+            ${alertPriceHtml(card.ticker)}
+          </div>
         </div>
 
         <p data-ai-date class="mt-2 text-xs leading-relaxed text-slate-500" title="Date of the newest noteworthy source event behind this alert. Source dates and times use IST; refreshing the page does not make an old event new.">
