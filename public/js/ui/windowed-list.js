@@ -239,8 +239,9 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   function onScroll() { onScrollActivity?.(); scheduleViewport(); }
   function onWheel(event) {
     if (pageScroll) return;
-    followingEnd = event.deltaY > 0 && (atTableEnd() || (event.deltaMode === 0 &&
-      event.deltaY >= scroller.scrollHeight - scroller.clientHeight - scrollTop() - 2));
+    const remaining = scroller.scrollHeight - scroller.clientHeight - scrollTop();
+    if (event.deltaY < 0) followingEnd = false;
+    else if (event.deltaMode === 0 && remaining > 2 && event.deltaY >= remaining - 2) followingEnd = true;
   }
   function onKeyDown(event) {
     followingEnd = false;
