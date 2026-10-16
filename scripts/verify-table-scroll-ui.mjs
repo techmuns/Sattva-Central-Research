@@ -117,20 +117,27 @@ async function checkTables(page, frame, label) {
     const end = await table.evaluate(table => {
       const rows = [...table.querySelectorAll('tbody tr')].filter(row => !row.matches('[data-virtual-spacer]') && !row.querySelector('[data-window-spacer]'));
       const last = rows.at(-1), box = last?.getBoundingClientRect(), card = table.closest('[data-score-table]');
-      const x = box ? Math.min(innerWidth, box.right) - 32 : 0;
-      const y = box ? Math.min(innerHeight - 2, box.bottom - 2) : 0;
+      let right = innerWidth, bottom = innerHeight;
+      for (let node = table.parentElement; node; node = node.parentElement) {
+        const style = getComputedStyle(node), rect = node.getBoundingClientRect();
+        if (style.overflowX !== 'visible') right = Math.min(right, rect.left + node.clientLeft + node.clientWidth);
+        if (style.overflowY !== 'visible') bottom = Math.min(bottom, rect.top + node.clientTop + node.clientHeight);
+      }
+      // Hit the row's visible content, clear of the native scrollbar gutter and source badge.
+      const x = box ? Math.min(right, box.right) - 12 : 0;
+      const y = box ? Math.min(bottom, box.bottom) - 8 : 0;
       const hit = document.elementFromPoint(x, y);
       const hiddenScroll = [];
       for (let node = table.parentElement; node; node = node.parentElement) {
         if (getComputedStyle(node).overflowY === 'hidden' && node.scrollTop > 1) hiddenScroll.push(node.id || node.tagName);
       }
-      return { rows: rows.length, bottom: box?.bottom, viewport: innerHeight,
+      return { rows: rows.length, bottom: box?.bottom, viewport: innerHeight, clipBottom: bottom,
         total: Number(card?.dataset.virtualTotal || 0), start: Number(card?.dataset.virtualStart || 0),
         virtual: card?.hasAttribute('data-virtualized'), pending: Number(card?.dataset.rowsPending || 0),
-        hiddenScroll, reachable: !!last && (hit === last || last.contains(hit)) };
+        hiddenScroll, hit: hit?.tagName, reachable: !!last && (hit === last || last.contains(hit)) };
     });
     assert.deepEqual(end.hiddenScroll, [], `${label}: no hidden ancestor had to scroll to reveal the final row`);
-    assert(end.rows > 0 && end.bottom <= end.viewport + 2 && end.reachable, `${label}: final row is visible and receives pointer input: ${JSON.stringify(end)}`);
+    assert(end.rows > 0 && end.bottom <= Math.min(end.viewport, end.clipBottom) + 2 && end.reachable, `${label}: final row is visible and receives pointer input: ${JSON.stringify(end)}`);
     if (end.virtual) assert(end.start + end.rows >= end.total, `${label}: the final retained record is mounted: ${JSON.stringify(end)}`);
     checked.push(end);
     await surface.dispose();
