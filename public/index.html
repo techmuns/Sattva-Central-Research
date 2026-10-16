@@ -137,6 +137,11 @@
         font-variant-numeric: tabular-nums;
       }
 
+      /* Let the page move the final row above the floating source launcher. */
+      body:has(.beacon-launcher) #content-host:not(:has(.research-workspace)) {
+        padding-bottom: 64px;
+      }
+
       /*
        * Scrollbars for drill panels, dialogs and dropdowns.
        *
