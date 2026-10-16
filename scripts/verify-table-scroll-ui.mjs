@@ -81,7 +81,9 @@ for (const type of ['my-managers', 'investors']) for (const category of type ===
   for (const view of ['overview', 'changes', 'holdings']) routes.push(`super-investors?type=${type}&category=${category}&view=${view}`);
 }
 const frames = frame => frame.evaluate(async () => { for (let i = 0; i < 5; i++) await new Promise(requestAnimationFrame); });
-async function checkTables(page, frame, label) {
+async function checkTables(page, frame, label, retry = 0) {
+  let activeSurface = null;
+  try {
   const iframeBox = await page.locator('iframe').boundingBox();
   await page.mouse.move(iframeBox.x + iframeBox.width - 24, iframeBox.y + 16);
   const beaconClose = frame.locator('[data-beacon-close]:visible');
@@ -109,6 +111,7 @@ async function checkTables(page, frame, label) {
       }
       return document.scrollingElement;
     });
+    activeSurface = surface;
     const internal = await surface.evaluate(el => el !== document.scrollingElement);
     if (internal) {
       await surface.evaluate(el => el.scrollIntoView({ block: 'end', behavior: 'instant' }));
@@ -171,9 +174,18 @@ async function checkTables(page, frame, label) {
     assert(end.rows > 0 && end.bottom <= Math.min(end.viewport, end.clipBottom) + 2 && end.reachable, `${label}: final row is visible and receives pointer input: ${JSON.stringify(end)}`);
     if (end.virtual) assert(end.start + end.rows >= end.total, `${label}: the final retained record is mounted: ${JSON.stringify(end)}`);
     checked.push(end);
-    await surface.dispose();
+    await surface.dispose(); activeSurface = null;
   }
   return checked;
+  } catch (error) {
+    // A source check may replace its table during the gesture. Retry only a retired DOM node;
+    // attached-but-clipped tables still fail immediately (including the negative control).
+    if (activeSurface && !await activeSurface.evaluate(el => el.isConnected)) {
+      await activeSurface.dispose();
+      if (retry < 3) { await frames(frame); return checkTables(page, frame, label, retry + 1); }
+    }
+    throw error;
+  }
 }
 
 try {
@@ -214,6 +226,10 @@ try {
       }, url);
       await frame.waitForFunction(id => document.querySelector('#content-host')?.dataset.activeTab === id &&
         !document.querySelector('#content-host').inert, path.split(/[/?]/)[0], { timeout: 60000 });
+      if (path === 'public-chatter') await frame.evaluate(async () => {
+        await Promise.all([import('/js/data/chatter-live.js').then(feed => feed.load()),
+          import('/js/data/telegram-posts.js').then(feed => feed.load())]);
+      });
       if (section) await frame.locator('[data-chatter-section-tabs]').getByRole('tab', { name: section, exact: true }).click();
       for (const name of ['Date range', 'News period', 'Announcement period (IST)', 'Trade period', 'IPO filing period']) {
         const select = frame.getByRole('combobox', { name, exact: true });
