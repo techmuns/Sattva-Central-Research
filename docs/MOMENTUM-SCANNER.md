@@ -10,6 +10,12 @@ It adds no data source of its own. It reads the daily technicals feed every othe
 sub-view reads, plus the live quote feed `render()` already subscribes to, and does all of its
 work in the browser.
 
+**It is scope-independent.** The scanner is a market-wide discovery tool, so it ALWAYS scans the
+full Nifty 500 + book universe (~600 companies), regardless of the Portfolio / Watchlist scope
+selected in the header — `paint()` forces the `universe` scope for this sub-view. The other three
+Breakouts sub-views stay scoped as before. The count line states the full-market coverage so the
+behaviour is explicit rather than a scope toggle that silently does nothing here.
+
 ## Three layers, three jobs
 
 The feature is deliberately split so the accurate-but-heavy part is done once a day and only the
@@ -72,12 +78,15 @@ Each filter is an entry in `MOMENTUM_FILTERS` — `{ id, label, short, descripti
 and a stock passes when **every** condition is true and the row is evaluable. The set is built to
 grow toward ~40 filters; adding one is data, not new control flow (see below).
 
-Two ship today:
+Three ship today:
 
 - **Filter 1 · Strong Momentum** (`strong-momentum`): price above all four DMAs, with daily,
   weekly and monthly RSI each above its threshold.
 - **Filter 2 · Volume + Momentum** (`volume-momentum`): a volume surge on a rising price that is
   holding its 20 DMA, with daily RSI firm and MACD bullish.
+- **Filter 3 · MACD Crossover** (`macd-crossover`): a fresh bullish MACD crossover, holding above
+  the 20 DMA, with daily RSI firm — the desk's own breakout-entry filter (added October 2026 at
+  the client's request).
 
 A condition is `{ key, label(t), test(v, t), live(v) }`: `label(t)` is the human rule with the
 current threshold interpolated, `test(v, t)` is true only when it holds and **must be false, never
@@ -87,15 +96,15 @@ tooltip.
 ### Thresholds and the gate
 
 `THRESHOLD_DEFAULTS` holds the client's defaults (`rsiD1: 70, rsiW: 70, rsiM: 65, rsiD2: 50,
-volMult: 1.5`); `THRESHOLD_FIELDS` describes each adjustable control (which filter it belongs to,
-its min/max/step) and drives both the number inputs and the URL round-trip. `clampThresholds()`
-keeps a pasted or bookmarked value within bounds.
+volMult: 1.5, rsiD3: 55`); `THRESHOLD_FIELDS` describes each adjustable control (which filter it
+belongs to, its min/max/step) and drives both the number inputs and the URL round-trip.
+`clampThresholds()` keeps a pasted or bookmarked value within bounds.
 
-`GATES` (`strong-momentum`, `volume-momentum`, `both`) is what the **Show** toggle switches
-between; `passesGate(gate, v, thresholds)` decides membership, with `both` meaning Filter 1 ∩
-Filter 2. The gate and every threshold live in the URL (params `mgate`, and `mrd1`/`mrw`/`mrm`/
-`mrd2`/`mvm`), so a view is shareable and survives a reload; changing one re-filters instantly from
-the cached daily data — **nothing re-fetches**.
+`GATES` (`strong-momentum`, `volume-momentum`, `macd-crossover`, `both`) is what the **Show** toggle
+switches between; `passesGate(gate, v, thresholds)` decides membership, with `both` meaning
+Filter 1 ∩ Filter 2 (labelled **Strong + Volume**). The gate and every threshold live in the URL
+(params `mgate`, and `mrd1`/`mrw`/`mrm`/`mrd2`/`mvm`/`mrd3`), so a view is shareable and survives a
+reload; changing one re-filters instantly from the cached daily data — **nothing re-fetches**.
 
 ## The UI — `renderMomentumScanner()`
 
@@ -104,12 +113,13 @@ In order down the page:
 1. **Section head** — title and description.
 2. **Controls** (`momentumControls`) — the Show gate toggle and the threshold number inputs, which
    wrap cleanly on a phone. Committed on change (blur / Enter), not per keystroke.
-3. **Count line** — "N of M evaluable stocks pass <gate>" and, off the
-   universe scope, a hint to switch to Universe.
-4. **The ranked table** (`scoreTable`) — the hero. Columns: Stock · Price · Strong Momentum ·
-   Volume + Momentum · Volume vs 10D Avg · RSI Daily · RSI Weekly · RSI Monthly · MACD · 20-DMA
-   Status. Every condition pill carries the rule and the live figure in its tooltip (so the pill
-   legend needs no block of its own); sorting is on what the cell shows.
+3. **Count line** — "N of M stocks pass <gate>", the count of pending (not-yet-evaluable) names,
+   and a note that the scanner always scans the full universe (Nifty 500 + book) regardless of the
+   selected scope.
+4. **The ranked table** (`scoreTable`, `dense`) — the hero. Columns: Stock · Price · Strong Momentum ·
+   Volume + Momentum · MACD Crossover · Volume vs 10D Avg · RSI Daily · RSI Weekly · RSI Monthly ·
+   MACD · 20-DMA Status. Every condition pill carries the rule and the live figure in its tooltip (so
+   the pill legend needs no block of its own); sorting is on what the cell shows.
 5. **Scan coverage** — a muted link below the table opens the evaluable count and every excluded
    stock with its reason. Missing price/history remains distinct from a failed condition.
 
@@ -154,6 +164,11 @@ Run the engine and UI checks locally with a static server on `:8080`
 ---
 
 ## How to add the next filter
+
+> **Note (October 2026):** Filter 3 (`macd-crossover`, **MACD Crossover**) now ships. The worked
+> example below pre-dates it and is written for *the next* free slot, so read its `Filter 3`,
+> `rsiD3`, `mrd3` and `f3` as **`Filter 4`, `rsiD4`, `mrd4` and `f4`**, and keep `macd-crossover`
+> in the `GATES` array alongside the ids it lists.
 
 A new filter is **data plus wiring**, not new math — provided it tests fields `liveIndicators`
 already computes. Do **not** change `advanceWilderRsi`, `advanceMacd`, `liveIndicators` or the data

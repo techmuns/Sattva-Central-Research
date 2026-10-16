@@ -211,12 +211,68 @@ ok('null live volume leaves volRatio10d null and fails only the volume condition
 });
 
 ok('the client default thresholds and clamp bounds hold', () => {
-  assert.deepEqual(live.THRESHOLD_DEFAULTS, { rsiD1: 70, rsiW: 70, rsiM: 65, rsiD2: 50, volMult: 1.5 });
-  assert.deepEqual(live.clampThresholds({}), { rsiD1: 70, rsiW: 70, rsiM: 65, rsiD2: 50, volMult: 1.5 });
+  assert.deepEqual(live.THRESHOLD_DEFAULTS, { rsiD1: 70, rsiW: 70, rsiM: 65, rsiD2: 50, volMult: 1.5, rsiD3: 55 });
+  assert.deepEqual(live.clampThresholds({}), { rsiD1: 70, rsiW: 70, rsiM: 65, rsiD2: 50, volMult: 1.5, rsiD3: 55 });
   assert.equal(live.clampThresholds({ rsiD1: 999 }).rsiD1, 100, 'clamped to max');
   assert.equal(live.clampThresholds({ rsiD1: -5 }).rsiD1, 0, 'clamped to min');
   assert.equal(live.clampThresholds({ rsiD1: 'oops' }).rsiD1, 70, 'non-numeric ⇒ default');
   assert.equal(live.clampThresholds({ volMult: 2.5 }).volMult, 2.5, 'valid value kept');
+});
+
+console.log('\n== (c) Filter 3 · MACD Crossover (fresh cross + above 20 DMA + daily RSI) ==');
+
+// A fresh bullish cross: stored line ≤ signal, so it is below/at the signal at the last completed
+// bar, and turns bullish once advanced on the live price. (strongCompany is already-bullish, 9.5 > 0.)
+function crossCompany(price = 100) {
+  const c = strongCompany(price);
+  c.macd = { ema12: 110, ema26: 100, signal: 0, line: -2, positive_crossover: false };
+  return c;
+}
+
+ok('a fresh cross above the 20 DMA with daily RSI > 55 passes Filter 3', () => {
+  const v = live.liveIndicators(crossCompany(100), 100, 2_000_000);
+  assert.equal(v.freshCross, true, 'fresh bullish cross');
+  assert.equal(v.above20dma, true, 'price above the 20 DMA');
+  assert.ok(v.rsiDaily > 55, 'daily RSI firm');
+  const r = live.evaluateFilter('macd-crossover', v);
+  assert.equal(r.pass, true, 'Filter 3 passes');
+  assert.ok(r.conditions.every((c) => c.ok), 'all three conditions ok');
+  assert.equal(live.passesGate('macd-crossover', v), true);
+});
+
+ok('a standing (not fresh) MACD cross fails Filter 3 on the crossover condition', () => {
+  const v = live.liveIndicators(strongCompany(100), 100, 2_000_000); // stored line 9.5 > signal 0 ⇒ already bullish
+  assert.equal(v.freshCross, false);
+  const r = live.evaluateFilter('macd-crossover', v);
+  assert.equal(r.conditions.find((c) => c.key === 'cross').ok, false, 'crossover condition fails');
+  assert.equal(r.pass, false);
+  assert.equal(live.passesGate('macd-crossover', v), false);
+});
+
+ok('Filter 3 fails below the 20 DMA, and fails when daily RSI is below rsiD3', () => {
+  const belowDma = crossCompany(100); belowDma.sma20 = 120; // price 100 < 120 ⇒ below the 20 DMA
+  const vBelow = live.liveIndicators(belowDma, 100, 2_000_000);
+  assert.equal(vBelow.above20dma, false);
+  assert.equal(live.evaluateFilter('macd-crossover', vBelow).conditions.find((c) => c.key === 'above20').ok, false);
+  assert.equal(live.evaluateFilter('macd-crossover', vBelow).pass, false);
+  const weakRsi = crossCompany(100); weakRsi.rsi_multi.daily = rsiState(50, 100); // 50 < default rsiD3 = 55
+  const vWeak = live.liveIndicators(weakRsi, 100, 2_000_000);
+  assert.equal(live.evaluateFilter('macd-crossover', vWeak).conditions.find((c) => c.key === 'rsiD').ok, false);
+  assert.equal(live.evaluateFilter('macd-crossover', vWeak).pass, false);
+});
+
+ok('Filter 3 default threshold is rsiD3 = 55 and re-decides on a threshold change', () => {
+  const v = live.liveIndicators(crossCompany(100), 100, 2_000_000); // rsiDaily 80
+  assert.equal(live.evaluateFilter('macd-crossover', v, { ...live.THRESHOLD_DEFAULTS, rsiD3: 85 }).pass, false, 'raise rsiD3 to 85 ⇒ fails');
+  assert.equal(live.evaluateFilter('macd-crossover', v, { ...live.THRESHOLD_DEFAULTS, rsiD3: 50 }).pass, true, 'lower rsiD3 to 50 ⇒ passes');
+});
+
+ok('a pending row (no Step-1 fields) cannot pass Filter 3 either', () => {
+  const v = live.liveIndicators({ ticker: 'OLD', name: 'Old', cmp: 100 }, 100, 2_000_000);
+  const r = live.evaluateFilter('macd-crossover', v);
+  assert.equal(r.evaluable, false);
+  assert.equal(r.pass, false, 'macd-crossover cannot pass a pending row');
+  assert.equal(live.passesGate('macd-crossover', v), false);
 });
 
 console.log(`\n${passed} passed, ${failed} failed.`);

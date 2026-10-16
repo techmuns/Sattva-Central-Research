@@ -100,7 +100,7 @@
 .momentum-reset { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 4px 8px; color: var(--ink-600); font-size: 12px; font-weight: 600; white-space: nowrap; border-radius: 8px; }
 .momentum-reset svg { width: 14px; height: 14px; }
 .momentum-reset:hover { color: var(--accent-600); background: rgb(var(--surface-indigo-50, 238 242 255)); }
-.momentum-rule-groups { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; }
+.momentum-rule-groups { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) minmax(0, 2fr); gap: 12px; }
 .momentum-rule-group { min-width: 0; margin: 0; padding: 14px 16px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 12px; background: rgb(var(--surface-slate-50, 248 250 252) / .5); }
 .momentum-rule-group[data-applied="true"] { border-color: rgb(var(--edge-indigo-200, 199 210 254)); background: rgb(var(--surface-indigo-50, 238 242 255) / .35); }
 .momentum-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--ink-900); font-size: 13px; font-weight: 700; }
