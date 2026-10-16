@@ -234,15 +234,14 @@ try {
       await page.mouse.move(hostBox.x + hostBox.width - 24, hostBox.y + 16);
       const closeSources = frame.locator('[data-beacon-close]:visible');
       if (await closeSources.count()) await closeSources.click();
-      await frame.evaluate(async url => {
-        if (location.hash !== url) {
-          const changed = new Promise(done => addEventListener('hashchange', done, { once: true }));
-          location.hash = url; await changed;
-        }
-        for (let i = 0; i < 5; i++) await new Promise(requestAnimationFrame);
-      }, url);
-      await frame.waitForFunction(id => document.querySelector('#content-host')?.dataset.activeTab === id &&
-        !document.querySelector('#content-host').inert, path.split(/[/?]/)[0], { timeout: 60000 });
+      await frame.evaluate(url => { location.hash = url; }, url);
+      await frames(frame);
+      const id = path.split(/[/?]/)[0], subview = path.split('?')[0].split('/')[1] || TAB_META[id].subviews[0]?.id || null;
+      await frame.waitForFunction(async ({ id, subview, scope }) => {
+        const { state } = await import('/js/core/state.js');
+        return state.tab === id && state.subview === subview && state.scope === scope &&
+          document.querySelector('#content-host')?.dataset.activeTab === id && !document.querySelector('#content-host').inert;
+      }, { id, subview, scope }, { timeout: 60000 });
       if (path === 'public-chatter') await frame.evaluate(async () => {
         await Promise.all([import('/js/data/chatter-live.js').then(feed => feed.load()),
           import('/js/data/telegram-posts.js').then(feed => feed.load())]);
