@@ -30,7 +30,7 @@ export async function githubBreakouts({env=process.env,fetcher=fetch,legacyClien
  }catch(error){await local.close();throw error;}
  async function publication(target,directory,cycle,history){
   fs.mkdirSync(directory,{recursive:true});const backup=path.join(directory,'checkpoint.sqlite');fs.rmSync(backup,{force:true});
-  await local.checkpoint(backup);
+  await local.checkpoint(backup,{online:true});
   const signature=await backgroundContract(target.feature),workerEnv={GITHUB_REPOSITORY:env.GITHUB_REPOSITORY,GITHUB_RUN_ID:env.GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT:env.GITHUB_RUN_ATTEMPT,BACKGROUND_STATE_KEY:env.BACKGROUND_STATE_KEY,UPSTOX_ACCESS_TOKEN:env.UPSTOX_ACCESS_TOKEN?'configured':''};
   const prepared=await prepareBreakoutPublication({backup,out:directory,env:workerEnv,recipient,signature,feature:target.feature,at:localOptions.now?.()??Date.now(),history});
   return target.publish({cycle,...prepared,sourceSignature:signature});

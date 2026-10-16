@@ -84,6 +84,8 @@ check times still determine freshness. A cached file never becomes a fresh check
 
 Historical page construction runs in a separate Node thread, at most once per
 15-minute interval, and retains the existing static-history publication path.
+SQLite's online backup copies each quote checkpoint in small asynchronous steps,
+preserving rowids and allowing the owner to keep sampling while history is copied.
 It cannot block minute network timeouts, quote sampling or current-price delivery.
 Every minute's complete encrypted restart checkpoint retains those observations
 even if the less frequent historical-reader publication is delayed. Restart
