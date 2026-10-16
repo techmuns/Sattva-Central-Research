@@ -197,6 +197,14 @@ try {
   for (const scope of ['universe', 'portfolio', 'watchlist']) for (const route of routes) {
     const [path, section] = route.split('|'), url = `#/research/${path}${path.includes('?') ? '&' : '?'}scope=${scope}`;
     try {
+      // Begin navigation with the header in view. The previous route ends in a narrow window
+      // at the page bottom, where click's automatic reveal can land under the source launcher.
+      await page.setViewportSize(sizes[0]);
+      await frame.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+      const hostBox = await page.locator('iframe').boundingBox();
+      await page.mouse.move(hostBox.x + hostBox.width - 24, hostBox.y + 16);
+      const closeSources = frame.locator('[data-beacon-close]:visible');
+      if (await closeSources.count()) await closeSources.click();
       await frame.evaluate(async url => {
         if (location.hash !== url) {
           const changed = new Promise(done => addEventListener('hashchange', done, { once: true }));
