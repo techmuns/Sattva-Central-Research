@@ -244,3 +244,7 @@ The source advertises `rowidCursor: 2`; the runner waits for this read-only API
 before transfer and refuses an incompatible source. Exact count checks remain,
 so an interrupted or mismatched transfer cannot replace retained history.
 Transfer progress logs contain only fixed table names and aggregate row counts.
+
+Newsletter provider request deadlines start after encrypted checkpoint acknowledgement and live PDF verification. The original HTTP timeout limits and budget claims stay unchanged; explicit caller cancellation remains effective during preparation. An old timed-out delivery claim is not cleared or replayed by this change.
+
+The newsletter runner reads public company quotes from its fixed `/api/breakouts` prepared reader using a credential-free GET. It requires `github-actions` delivery and validates each observation before the existing session/freshness checks; it never calls the former capture database. Unavailable or stale quotes retain the original daily fallback and unavailable states.

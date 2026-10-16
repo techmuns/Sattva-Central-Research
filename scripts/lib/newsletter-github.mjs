@@ -1,3 +1,4 @@
+import {beginNewsletterRequest,newsletterCallerSignal} from '../../worker/newsletter-request.mjs';
 import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
 import {githubBackgroundRelease} from './github-background-release.mjs';
 import {openBackgroundState,sealBackgroundState} from './github-background-seal.mjs';
@@ -27,6 +28,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
  else if(fs.existsSync(file))throw Error('Unverified newsletter history cannot replace retained state');
  const refresh=async()=>{if(typeof inputs!=='function')throw Error('Newsletter inputs unavailable');await local.applyInputs(await inputs());};
  const guardedFetch=async(raw,options)=>{
+  newsletterCallerSignal(options)?.throwIfAborted();
   const url=String(raw);if(blocked)throw Error('Newsletter publication failed; external work stopped');
   if(metered(url)){
    await refresh();await publish();
@@ -41,7 +43,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
     if(!test&&!local.store.recipients(activeRequest?.edition).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
    }
   }
-  if(blocked)throw Error('Newsletter publication failed; external work stopped');return fetcher(raw,options);
+  if(blocked)throw Error('Newsletter publication failed; external work stopped');return fetcher(raw,beginNewsletterRequest(options));
  };
  local=localNewsletter(file,{env,...localOptions,fetcher:guardedFetch});
  local.db.exec('CREATE TABLE IF NOT EXISTS newsletter_cipher_cache(name TEXT PRIMARY KEY,fingerprint TEXT NOT NULL,payload TEXT NOT NULL)');

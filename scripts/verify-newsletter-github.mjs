@@ -1,3 +1,4 @@
+import {newsletterRequest,NEWSLETTER_DEADLINE} from '../worker/newsletter-request.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';import path from 'node:path';import {randomBytes,createHash} from 'node:crypto';
 import {localNewsletter} from './lib/newsletter-local.mjs';
@@ -10,7 +11,7 @@ import {newsletterAssets} from './collect-newsletter.mjs';
 fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/newsletter-github-'));
 const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',at=Date.parse('2026-09-15T06:30:00Z'),now=()=>at;
 const env={NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
-let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false;
+let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false,pdfWait=0,allowFixtureMail=false,cancelDuringPdf=null;
 let exists=false,sequence=1,body='',assetReads=0;const remote=new Map(),tag='newsletter-data';
 const fetcher=async(raw,options={})=>{
   const url=new URL(raw),method=options.method||'GET';
@@ -26,7 +27,7 @@ const fetcher=async(raw,options={})=>{
     if(url.pathname.endsWith('/assets'))return Response.json([...remote.values()].map(({bytes,...asset})=>asset));
     assert(url.pathname.endsWith('/releases/tags/'+tag));return exists?Response.json({id:77,tag_name:tag,body}):new Response(null,{status:404});
   }
-  if(url.hostname==='devde.muns.io'){emailCalls++;throw Error('The removed recipient must never reach a provider');}
+  if(url.hostname==='devde.muns.io'){emailCalls++;if(!allowFixtureMail)throw Error('The removed recipient must never reach a provider');assert.equal(options.signal?.aborted,false,'Only provider I/O consumes its request timeout, after checkpoint/PDF waits');assert.equal(options[NEWSLETTER_DEADLINE],undefined);return Response.json({success:true,data:{messageId:'<fixture@example.test>'}});}
   if(url.hostname==='api.openai.com'){providerCalls++;assert(published>0);assert(remote.size>0);return Response.json({status:'completed',output:[]});}
   if(/^bedrock-runtime\./.test(url.hostname)){providerCalls++;throw Error('Previews must never call a model');}
   if(url.hostname!=='github.com')return new Response(null,{status:404}); // Offline market/source unavailability.
@@ -45,7 +46,7 @@ try{
  source.db.prepare('UPDATE newsletter_documents SET rowid=0 WHERE id=?').run(pdfId);
  const oldBudget=source.schedule.content.newsBudget.reserve({job:'old-news',model:'fixture',amount:1234,now:at});assert(oldBudget.ok);
  const before=source.db.prepare('SELECT total_changes() n').get().n,keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
- const options={env,fetcher,recipient,verifyPdf:async()=>{if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
+ const options={env,fetcher,recipient,verifyPdf:async()=>{cancelDuringPdf?.abort(new DOMException('Fixture caller cancelled','AbortError'));if(pdfWait)await new Promise(done=>setTimeout(done,pdfWait));if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
  runtime=await githubNewsletter({...options,file:path.join(root,'runner.sqlite'),out:path.join(root,'publication'),legacyClient:input=>exportNewsletter(source.storage,input)});
  assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before);assert.deepEqual(runtime.store.snapshot(),source.store.snapshot());assert.deepEqual(Buffer.from(runtime.store.document(pdfId).body),pdf);assert.equal(runtime.store.delivery('old-unknown').finishedAt,null);
  assert.throws(()=>decodeNewsletterColumn({blob64:'AA==',bytes:1,hash:'wrong'},'newsletter_documents','body'),/integrity/);
@@ -68,6 +69,17 @@ try{
  const originalSend=runtime.schedule.sendNow;runtime.schedule.sendNow=async()=>{runtime.store.beginDelivery({key:'waiting-pdf',edition:'morning',day:'2026-09-15',source:'button',recipients:1});return runtime.schedule.fetcher('https://devde.muns.io/email/send/raw',{method:'POST',body:JSON.stringify({email:'fixture@example.com',html:'Synthetic'})});};
  removeDuringPdf=true;const queueKey=await readerKeys(env.BACKGROUND_STATE_KEY),removeEnvelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id:crypto.randomUUID(),at,edition:'morning',to:'all',email:null,token:null})),{kid:queueKey.kid,publicKey:encode64(queueKey.publicKey)},`${repo}:github-newsletter-request:v1`);
  await assert.rejects(runtime.processRequest(removeEnvelope),/Recipient removed/);assert.equal(emailCalls,0,'An unsubscribe during static PDF publication is rechecked before email I/O');removeDuringPdf=false;runtime.schedule.sendNow=originalSend;source.store.apply([{op:'subscribe',email:'fixture@example.com',by:'Fixture',editions:['morning','evening']}]);
+ // Real guarded fetch: a private checkpoint/PDF wait outlasts the original
+ // transport signal, then the provider receives a fresh deadline exactly once.
+ pdfWait=80;allowFixtureMail=true;
+ const deadlineRequest=async(label,signal)=>{
+  runtime.schedule.sendNow=async()=>{runtime.store.beginDelivery({key:label,edition:'morning',day:'2026-09-15',source:'button',recipients:1});return newsletterRequest(runtime.schedule.fetcher,'https://devde.muns.io/email/send/raw',{method:'POST',body:JSON.stringify({email:'fixture@example.com',html:'Synthetic'}),signal},50);};
+  const envelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id:crypto.randomUUID(),at,edition:'morning',to:'all',email:null,token:null})),{kid:queueKey.kid,publicKey:encode64(queueKey.publicKey)},`${repo}:github-newsletter-request:v1`);
+  return runtime.processRequest(envelope);
+ };
+ await deadlineRequest('deadline-pdf');assert.equal(emailCalls,1,'The ordinary request reaches the stub provider after slow publication');
+ cancelDuringPdf=new AbortController();await assert.rejects(deadlineRequest('cancelled-pdf',cancelDuringPdf.signal),error=>error.name==='AbortError');assert.equal(emailCalls,1,'Caller cancellation during PDF publication prevents provider I/O');
+ pdfWait=0;allowFixtureMail=false;cancelDuringPdf=null;runtime.schedule.sendNow=originalSend;
  const claim=runtime.schedule.content.newsBudget.reserve({job:'new-news',model:'fixture',amount:5678,now:at});assert(claim.ok);await runtime.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'});assert.equal(providerCalls,1);
  await runtime.close();runtime=null;restarted=await githubNewsletter({...options,file:path.join(root,'restarted.sqlite'),out:path.join(root,'restarted-publication'),legacyClient:async()=>{throw Error('An initialized archive cannot reset');}});assert(restarted.db.prepare('SELECT id FROM newsletter_news_ai_calls WHERE id=?').get(claim.id),'Metered I/O follows acknowledged restart storage containing its actual reservation');assert.equal(restarted.store.delivery('old-unknown').finishedAt,null);assert.deepEqual(Buffer.from(restarted.store.document(pdfId).body),pdf);
  failUpload=true;await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/archive rejected/);assert.equal(providerCalls,1);await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/stopped/);assert.equal(providerCalls,1);

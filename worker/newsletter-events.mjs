@@ -1,3 +1,4 @@
+import {newsletterRequest} from './newsletter-request.mjs';
 // A reading-only partition of published news. Never remove a source row or a delivery key.
 import { newsAiEnabled, newsModelCall, objectSchema } from './newsletter-openai.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
@@ -106,13 +107,13 @@ export async function reviewNewsEvents({ news, env, fetcher = fetch, enabled = t
   if (!bedrockConfigured(env)) return { ...base, ok: false, reason: 'not-configured' };
   try {
     const config = bedrockConfig(env);
-    const response = await fetcher(config.url, {
+    const response = await newsletterRequest(fetcher,config.url, {
       method: 'POST', redirect: 'manual',
       headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({ model: config.model, max_tokens: 4000, thinking: { type: 'disabled' },
         system: [{ type: 'text', text: EVENT_INSTRUCTIONS }], messages: [{ role: 'user', content: JSON.stringify({ REPORTS: reports }) }],
-      }), signal: AbortSignal.timeout(EVENT_TIMEOUT_MS),
-    });
+      }),
+    },EVENT_TIMEOUT_MS);
     if (!response.ok) {
       await response.body?.cancel().catch(() => {});
       return { ...base, ok: false, reason: response.status === 429 ? 'rate-limited' : 'upstream' };

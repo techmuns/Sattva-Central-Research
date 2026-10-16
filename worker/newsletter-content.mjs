@@ -1,3 +1,4 @@
+import {newsletterRequest} from './newsletter-request.mjs';
 // Source reading for the portfolio brief. Source bytes never carry credentials or instructions.
 import { isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 import { announcementDocumentIdentity } from '../public/js/data/announcements-shared.js';
@@ -188,10 +189,9 @@ export async function readDocumentFacts({ item, env, fetcher = fetch, now = Date
     if (!bedrockConfigured(env)) throw failure('no-key');
     content.push({ type: 'text', text: JSON.stringify({ ISSUER: { company: item.company, ticker: item.ticker }, PURPOSE: 'Extract source facts using the system contract.' }) });
     const config = bedrockConfig(env);
-    const response = await fetcher(config.url, { method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(CONTENT_TIMEOUT_MS),
-      headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', accept: 'application/json', 'content-type': 'application/json' },
+    const response = await newsletterRequest(fetcher,config.url, { method: 'POST', redirect: 'manual', headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', accept: 'application/json', 'content-type': 'application/json' },
       body: JSON.stringify({ model: config.model, max_tokens: 6000, thinking: { type: 'disabled' },
-        system: [{ type: 'text', text: EXTRACTION_INSTRUCTIONS }], messages: [{ role: 'user', content }] }) });
+        system: [{ type: 'text', text: EXTRACTION_INSTRUCTIONS }], messages: [{ role: 'user', content }] }) },CONTENT_TIMEOUT_MS);
     if (!response.ok) { await response.body?.cancel(); throw failure(response.status === 429 ? 'rate-limited' : [401, 403].includes(response.status) ? 'refused' : 'upstream'); }
     const reply = await boundedJson(response, 80000);
     if (reply.stop_reason !== 'end_turn') throw failure('incomplete-response');

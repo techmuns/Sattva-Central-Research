@@ -1,3 +1,4 @@
+import {newsletterQuotes} from './lib/newsletter-quotes.mjs';
 import fs from 'node:fs';import {pathToFileURL} from 'node:url';import {resolve} from 'node:path';import {createHash} from 'node:crypto';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {PRODUCTION_ORIGIN} from '../worker/newsletter-brief.mjs';
@@ -39,7 +40,7 @@ async function main(){
    }while(Date.now()<deadline);throw Error('PDF was not published; email was not sent');
   })());return verifiedPdfs.get(document.id);
  };
- const runtime=await githubNewsletter({env:{...process.env,ASSETS:newsletterAssets()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
+ const runtime=await githubNewsletter({env:{...process.env,ASSETS:newsletterAssets(),NEWSLETTER_QUOTES:newsletterQuotes()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
  try{
   await runtime.publish();let request=null,bootstrap=false;
   if(process.env.GITHUB_EVENT_PATH){const stat=fs.statSync(process.env.GITHUB_EVENT_PATH);if(stat.size>8*1024*1024)throw Error('Workflow event too large');const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));bootstrap=event.inputs?.bootstrap===true||event.inputs?.bootstrap==='true';if(event.inputs?.request){if(typeof event.inputs.request!=='string'||event.inputs.request.length>64000)throw Error('Newsletter request too large');request=JSON.parse(event.inputs.request);}}

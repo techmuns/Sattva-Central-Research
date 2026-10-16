@@ -1,3 +1,4 @@
+import {newsletterRequest} from './newsletter-request.mjs';
 // worker/newsletter-brief.mjs — the brief itself: what goes in it, where each figure comes from,
 // and the email it is rendered into. Pure apart from the injected `fetcher`, `env.ASSETS` and the
 // breakout capture's Durable Object, so `scripts/verify-newsletter.mjs` builds one offline against
@@ -600,10 +601,15 @@ export async function readSessionQuotes({ env, now = Date.now(), edition, holdin
   if (!session) return { ...out, reason: 'no-session' };
 
   const fromCapture = async () => {
-    const object = env?.CAPTURE_REGISTRY?.getByName?.(BREAKOUT_OBJECT);
-    if (!object?.breakoutRead) return { reason: 'capture-unavailable', rows: [] };
     let capture;
-    try { capture = await object.breakoutRead(); } catch { return { reason: 'capture-unavailable', rows: [] }; }
+    try {
+      if (env?.NEWSLETTER_QUOTES?.read) capture = await env.NEWSLETTER_QUOTES.read();
+      else {
+        const object = env?.CAPTURE_REGISTRY?.getByName?.(BREAKOUT_OBJECT);
+        if (!object?.breakoutRead) return { reason: 'capture-unavailable', rows: [] };
+        capture = await object.breakoutRead();
+      }
+    } catch { return { reason: 'capture-unavailable', rows: [] }; }
     const rows = [];
     for (const row of Array.isArray(capture?.rows) ? capture.rows : []) {
       const ticker = upper(row?.ticker);
@@ -1234,12 +1240,11 @@ export async function readAiNotes({ env, fetcher = fetch, now = Date.now(), comp
   if (!items.length) return mergeNews({ ...base, ok: false, reason: 'content-pending' });
   const config = bedrockConfig(env);
   try {
-    const res = await fetcher(config.url, {
+    const res = await newsletterRequest(fetcher,config.url, {
       method: 'POST', redirect: 'manual',
       headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', accept: 'application/json', 'content-type': 'application/json' },
       body: JSON.stringify(aiRequest(items, config.model)),
-      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-    });
+    },AI_TIMEOUT_MS);
     if (!res.ok) { await res.body?.cancel(); return mergeNews({ ...base, model: config.model, ok: false, reason: res.status === 401 || res.status === 403 ? 'refused' : res.status === 429 ? 'rate-limited' : 'upstream', status: res.status }); }
     const body = await boundedJson(res, 80000);
     if (body.stop_reason !== 'end_turn') return mergeNews({ ...base, model: config.model, ok: false, reason: 'incomplete-response' });
