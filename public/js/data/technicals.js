@@ -109,6 +109,7 @@ async function buildCache() {
       nse500_count: payload?.nse500_count ?? null,
       book_count: payload?.book_count ?? 0,
       partial_refresh: payload?.partial_refresh ?? null,
+      history_recovery: payload?.history_recovery ?? null,
       failures: payload?.failures ?? scored.filter((s) => s.tickerError).length,
       scored_count: scored.filter((s) => !s.tickerError).length,
     },

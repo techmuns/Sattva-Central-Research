@@ -87,7 +87,7 @@ const companies = [
 const fixture = { ...original, companies, company_count: companies.length, failures: 0 };
 // The prior release's actual renderer proves a warm module cache receives the new criteria UI.
 const previousControls = readFileSync(resolve('scripts/fixtures/momentum-controls-previous.txt'), 'utf8');
-let previousRelease = false, quoteUnavailable = false;
+let previousRelease = false, quoteUnavailable = false, quoteDelta = 0;
 
 // ---- the server ------------------------------------------------------------------------------
 const CT = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
@@ -99,7 +99,7 @@ const server = createServer((req, res) => {
   // module falls back to it. Every other /api/* answers a benign 200 so no same-origin 404 is logged.
   if (path === '/data/technicals.json') return json(fixture);
   if (path === '/api/breakouts') return json({version:1,state:'complete',targets:companies.map(c=>c.ticker),failures:[],
-    completedAt:new Date(AT).toISOString(),rows:quoteUnavailable ? [] : companies.filter(c=>Number.isFinite(c.cmp)&&c.cmp>0).map(c=>({ticker:c.ticker,price:c.cmp,volume:500,prevClose:c.cmp,
+    completedAt:new Date(AT).toISOString(),rows:quoteUnavailable ? [] : companies.filter(c=>Number.isFinite(c.cmp)&&c.cmp>0).map(c=>({ticker:c.ticker,price:c.cmp+quoteDelta,volume:500,prevClose:c.cmp,
       sessionDate:'2026-10-09',quoteAt:new Date(AT).toISOString(),checkedAt:new Date(AT).toISOString(),provider:'Upstox',exchange:'NSE',
       volumeBase:{average:1000,from:'2026-09-24',to:'2026-10-08',count:10,exchange:'NSE'}}))});
   if (path.startsWith('/api/')) return json({ ok: false });
@@ -213,7 +213,7 @@ try {
     await exceptionButton.focus();
     await page.keyboard.press('Enter');
     await page.locator('[data-momentum-exception-list]').waitFor();
-    const exceptionRows = await page.locator('[data-momentum-exception-list] tbody tr').evaluateAll(rows => rows.map(row => [...row.cells].map(cell => cell.textContent).join(' ')));
+    const exceptionRows = await page.locator('[data-momentum-exception-list] tbody tr').evaluateAll(rows => rows.map(row => [...row.cells].slice(0,2).map(cell => cell.textContent).join(' ')));
     const expectedReasons = ['Epsilon History Price history incomplete', 'Missing Code Stock code not found', 'Missing Price Price unavailable',
       'Short History Not enough price history', 'Source Failure Price history unavailable', 'Young Stock Not enough price history'];
     ok('the coverage panel lists every excluded stock with its actual short reason', JSON.stringify(exceptionRows.map(text => text.replace(/\s+/g, ' ').trim())) === JSON.stringify(expectedReasons), exceptionRows.join(' | '));
@@ -383,6 +383,30 @@ try {
     ok('recovery restores current Pass status automatically', /\bPass\b/.test(await page.locator('#content-host [data-score-table] tbody').innerText()));
     ok('saved-first scanner recovery has no application errors', errors.filter(isOurError).length === 0);
     await context.close();
+  }
+
+  // Fresh quotes remain visible during a separate history outage, including in
+  // coverage and exports. They must never turn an outdated indicator into a pass.
+  {
+    const dates=companies.map(c=>c.bar_date);companies.forEach(c=>{c.bar_date='2026-10-07';});quoteDelta=7;
+    const {context,page}=await newPage(1440,1000);
+    try {
+      await page.goto(ROUTE,{waitUntil:'domcontentloaded'});
+      await page.waitForSelector('#content-host [data-cmp="MOMOA"]');
+      const text=await page.locator('#content-host').innerText();
+      ok('outdated history keeps the actual live price visible', /107/.test(await page.locator('[data-cmp="MOMOA"]').innerText()) && /Muns API live price/.test(text));
+      ok('outdated history remains pending despite a fresh quote', /0 of 0 stocks pass/.test(text));
+      const indicatorTitles=await page.locator('#content-host [data-score-table] tbody tr').filter({hasText:'Alpha Momentum'}).locator('[title]').evaluateAll(nodes=>nodes.map(node=>node.title));
+      ok('saved indicators retain their own price basis beside the live price',indicatorTitles.some(title=>/Saved daily close 100\.00 vs 20 DMA 90\.00/.test(title)) && /Saved/.test(text));
+      await page.getByRole('button',{name:'Scan coverage and excluded stocks'}).click();
+      const row=page.locator('[data-momentum-exception-list] tbody tr').filter({hasText:'Alpha Momentum'});
+      ok('excluded stocks retain their live quote with the history reason', /Price history outdated/.test(await row.innerText()) && /107/.test(await row.innerText()) && /Muns API live price/.test(await row.innerText()));
+      await page.locator('#modal-content [data-modal-close]').click();
+      await page.evaluate(()=>{window.exported={rows:[]};window.ExcelJS={Workbook:class{constructor(){this.xlsx={writeBuffer:async()=>new Uint8Array()};}addWorksheet(){return {set columns(value){},addRow(row){window.exported.rows.push(row);},getRow(){return {};}};}}};});
+      await page.locator('#content-host [data-export]').click();await page.waitForFunction(()=>window.exported.rows.length>0);
+      const exported=await page.evaluate(()=>window.exported.rows.find(row=>row.ticker==='MOMOA'));
+      ok('pending-history exports use the live price without certifying a pass',exported.price===107 && /Muns API live price/.test(exported.quote_time) && exported.f1==='Exception' && exported.indicator_basis==='Saved daily reading · 2026-10-07');
+    } finally {await context.close();companies.forEach((c,i)=>{c.bar_date=dates[i];});quoteDelta=0;}
   }
 
   // The Momentum Scanner is universe-wide by design: the global scope does not narrow it, and a

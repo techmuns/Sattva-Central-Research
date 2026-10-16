@@ -82,9 +82,9 @@ export function dayMove(bars) {
  * non-enumerable-ish `.meta` property with Yahoo's snapshot fields, which the technicals
  * scraper reads for the bid/ask sentiment rule.
  *
- * Retries 3× with backoff, and treats 429 separately with a longer wait.
+ * Retries temporary failures up to 3× with backoff; source refusals stop immediately.
  */
-export async function fetchBars(symbol, start, end, { includeInProgress = false } = {}) {
+export async function fetchBars(symbol, start, end, { includeInProgress = false, maxAttempts = 3, fetcher = fetch, pause = sleep, now = () => new Date() } = {}) {
   const p1 = Math.floor(start.getTime() / 1000);
   const p2 = Math.floor(end.getTime() / 1000);
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${p1}&period2=${p2}&interval=1d&events=history`;
@@ -92,17 +92,17 @@ export async function fetchBars(symbol, start, end, { includeInProgress = false 
 
   let attempt = 0;
   let lastErr;
-  while (attempt < 3) {
+  while (attempt < maxAttempts) {
     try {
-      const r = await fetch(url, { headers });
-      if (r.status === 404) throw new Error('ticker not found');
-      if (r.status === 429) {
-        lastErr = new Error('rate limited');
-        attempt++;
-        await sleep(1500 * attempt);
-        continue;
+      const r = await fetcher(url, { headers, signal: AbortSignal.timeout(15000), redirect:'error' });
+      if (!r.ok) {
+        const retry = r.headers.get('retry-after');
+        await r.body?.cancel();
+        const error = new Error(r.status === 404 ? 'ticker not found' : r.status === 429 ? 'rate limited' : `HTTP ${r.status}`);
+        error.status = r.status;
+        error.retryAt = /^\d+$/.test(retry || '') ? new Date(now()).getTime() + Number(retry)*1000 : Date.parse(retry || '');
+        throw error;
       }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
       const result = j?.chart?.result?.[0];
       if (!result || !result.timestamp) throw new Error('no chart data');
@@ -128,11 +128,13 @@ export async function fetchBars(symbol, start, end, { includeInProgress = false 
       out.meta = result.meta || {};
       // Completed sessions only, by default. `includeInProgress` is for a caller that wants the
       // live partial bar and knows it is one.
-      return includeInProgress ? out : completedBars(out);
+      return includeInProgress ? out : completedBars(out, now());
     } catch (err) {
       lastErr = err;
       attempt++;
-      if (attempt < 3) await sleep(800 * attempt);
+      // A refusal is a cooldown, not a request to send the same query again.
+      if ([401,403,429].includes(err.status)) throw err;
+      if (attempt < maxAttempts) await pause(800 * attempt);
     }
   }
   throw lastErr;

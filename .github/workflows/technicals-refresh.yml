@@ -55,6 +55,7 @@ run-name: Data refresh (${{ github.event_name == 'schedule' && 'github-cron' || 
 # Only one refresh in flight at a time — concurrent runs would race on committed snapshots.
 concurrency:
   group: data-refresh
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -130,6 +131,7 @@ jobs:
             public/data/technicals.json
             public/data/atr-history.json
             public/data/price-move-checks.json
+            public/data/technical-history-recovery.json
             public/data/earnings-live.json
             public/data/mc-ticker-map.json
             public/data/result-returns.json
@@ -147,6 +149,7 @@ jobs:
           # The technicals scraper also updates its verification checkpoint. Leaving it unstaged
           # made the next fetch/rebase fail after an otherwise successful 20-minute collection.
           [ -f public/data/price-move-checks.json ] && git add public/data/price-move-checks.json || true
+          [ -f public/data/technical-history-recovery.json ] && git add public/data/technical-history-recovery.json || true
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
           for f in earnings-live mc-ticker-map result-returns earnings-calendar concall-scans super-investors; do
             [ -f "public/data/$f.json" ] && git add "public/data/$f.json" || true
@@ -169,6 +172,30 @@ jobs:
             sleep $((attempt * 2))
           done
           echo "Push still failing after 4 attempts."
+          exit 1
+
+      - name: Retain a source cooldown even if the index check stopped the daily walk
+        if: failure() && github.ref == 'refs/heads/main'
+        run: |
+          if [ ! -f public/data/technical-history-recovery.json ]; then
+            exit 0
+          fi
+          git restore --staged .
+          git add public/data/technical-history-recovery.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Retain Yahoo source cooldown'
+          # The daily job shares data-refresh ownership; no partial price file is published.
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git -c rebase.autoStash=true pull --rebase origin main || exit 1
+            sleep $((attempt * 2))
+          done
           exit 1
 
   # The existing scrape has taken 30–40 minutes; a ~27-minute directory walk must not

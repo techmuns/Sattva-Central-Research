@@ -754,34 +754,37 @@ function filterPill(result) {
   return `<span class="${mPillBase} ${cls}" title="${escapeHtml(conditionTitle(result))}">${text}</span>`;
 }
 // In-progress periods use the live price; saved completed readings retain their source basis.
-const provNote = (live) => (live ? 'Current source observation; in-progress periods remain provisional.' : 'Saved daily reading; current market data is unavailable.');
+const provNote = v => v.historyAligned ? 'Current source observation; in-progress periods remain provisional.'
+  : `Saved daily reading · ${v.indicatorDate || 'date unavailable'}.`;
 function rsiLiveCell(v, tf) {
   const val = v[tf];
   if (val == null) return '<span class="text-slate-300">—</span>';
   const tone = val >= 55 && val <= 75 ? 'pos' : val > 75 ? 'warn' : val < 40 ? 'neg' : null;
-  return `<span title="${escapeHtml(provNote(v.isLiveQuote))}">${toneSpan(num(val, 1), tone)}</span>`;
+  return `<span title="${escapeHtml(provNote(v))}">${toneSpan(num(val, 1), tone)}${v.historyAligned ? '' : ' · Saved'}</span>`;
 }
 function momentumVolCell(v, volMult) {
   if (v.volRatio10d == null) return `<span class="text-slate-300" title="No live volume yet, or no 10-day average in the daily file.">—</span>`;
   const r = v.volRatio10d;
-  const title = `Today's cumulative volume so far vs the 10-day average. Threshold ≥ ${Number(volMult).toFixed(1)}×. ${provNote(v.isLiveQuote)}`;
+  const title = `Today's cumulative volume so far vs the 10-day average. Threshold ≥ ${Number(volMult).toFixed(1)}×. ${provNote(v)}`;
   return `<span title="${escapeHtml(title)}">${toneSpan(`${num(r, 2)}×`, r >= volMult ? 'pos' : r >= 1 ? 'warn' : 'neg')}</span>`;
 }
 function macdPill(v) {
   if (v.macdBullish == null) return `<span class="${mPillBase} ${M_NA}">—</span>`;
-  const title = `MACD line ${num(v.macdLine, 2)} vs signal ${num(v.macdSignal, 2)} · ${v.macdAboveZero ? 'above' : 'below'} zero. ${provNote(v.isLiveQuote)}`;
-  if (v.freshCross) return `<span class="${mPillBase} ${M_PASS}" title="${v.isLiveQuote ? 'Fresh bullish crossover on the live candle.' : 'Bullish crossover in the saved daily reading.'} ${escapeHtml(title)}">⚡ Bullish</span>`;
-  if (v.macdBullish) return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}">Bullish</span>`;
-  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">Bearish</span>`;
+  const title = `MACD line ${num(v.macdLine, 2)} vs signal ${num(v.macdSignal, 2)} · ${v.macdAboveZero ? 'above' : 'below'} zero. ${provNote(v)}`;
+  const saved=v.historyAligned ? '' : 'Saved · ';
+  if (v.freshCross) return `<span class="${mPillBase} ${M_PASS}" title="${v.historyAligned ? 'Fresh bullish crossover on the live candle.' : 'Bullish crossover in the saved daily reading.'} ${escapeHtml(title)}">${saved}⚡ Bullish</span>`;
+  if (v.macdBullish) return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}">${saved}Bullish</span>`;
+  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">${saved}Bearish</span>`;
 }
 function dma20Pill(v) {
   if (v.above20dma == null) return `<span class="${mPillBase} ${M_NA}">—</span>`;
-  const title = `${v.isLiveQuote ? 'Live price' : 'Saved daily close'} ${v.price == null ? '—' : v.price.toFixed(2)} vs 20 DMA ${v.sma20 == null ? '—' : v.sma20.toFixed(2)}.`;
+  const title = `${v.historyAligned ? 'Live price' : 'Saved daily close'} ${v.indicatorPrice == null ? '—' : v.indicatorPrice.toFixed(2)} vs 20 DMA ${v.sma20 == null ? '—' : v.sma20.toFixed(2)}. ${provNote(v)}`;
+  const saved=v.historyAligned ? '' : 'Saved · ';
   if (v.above20dma) {
-    const crossed = v.isLiveQuote && v.priorAbove20dma === false;
-    return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}${crossed ? ' Crossed above today.' : ''}">${crossed ? 'Crossed ↑' : 'Above'}</span>`;
+    const crossed = v.historyAligned && v.priorAbove20dma === false;
+    return `<span class="${mPillBase} ${M_PASS}" title="${escapeHtml(title)}${crossed ? ' Crossed above today.' : ''}">${saved}${crossed ? 'Crossed ↑' : 'Above'}</span>`;
   }
-  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">Below</span>`;
+  return `<span class="${mPillBase} ${M_FAIL}" title="${escapeHtml(title)}">${saved}Below</span>`;
 }
 
 function momentumControls(gate, thresholds) {
@@ -894,7 +897,7 @@ function wireMomentumControls(root, ctx) {
 
 // Excluded-stock reasons remain available in the coverage panel below the table.
 function momentumExceptionReason(company, values) {
-  if (company.error === 'ticker not found') return 'Stock code not found';
+  if (company.error === 'ticker not found') return values.isLiveQuote ? 'Price history unavailable' : 'Stock code not found';
   if (/^only \d+ bars$/.test(company.error || '') ||
       (Number.isFinite(company.bars_count) && company.bars_count < 200 && !Number.isFinite(company.sma200))) return 'Not enough price history';
   if (company.error) return 'Price history unavailable';
@@ -909,10 +912,17 @@ function momentumExceptionList(exceptions, vf) {
   const ordered = [...exceptions].sort((a, b) => (a.company.name || a.company.ticker).localeCompare(b.company.name || b.company.ticker));
   return `<div class="max-h-96 overflow-y-auto" data-momentum-exception-list>
     <table class="w-full text-left text-sm">
-      <thead class="bg-slate-50"><tr><th class="p-3" scope="col">Stock</th><th class="p-3" scope="col">Reason</th></tr></thead>
-      <tbody>${ordered.map(s => `<tr class="border-b border-slate-100"><td class="p-3 font-semibold text-slate-900">${escapeHtml(s.company.name || s.company.ticker)}</td><td class="p-3">${escapeHtml(momentumExceptionReason(s.company, vf(s)))}</td></tr>`).join('')}</tbody>
+      <thead class="bg-slate-50"><tr><th class="p-3" scope="col">Stock</th><th class="p-3" scope="col">Reason</th><th class="p-3" scope="col">Price</th></tr></thead>
+      <tbody>${ordered.map(s => `<tr class="border-b border-slate-100"><td class="p-3 font-semibold text-slate-900">${escapeHtml(s.company.name || s.company.ticker)}</td><td class="p-3">${escapeHtml(momentumExceptionReason(s.company, vf(s)))}</td><td class="p-3">${momentumPriceCell(s, vf(s))}</td></tr>`).join('')}</tbody>
     </table>
   </div>`;
+}
+
+function momentumPriceCell(s, values) {
+  if (values.isLiveQuote) return cmpCell(s.company);
+  const c = s.company;
+  return `<span class="font-semibold text-slate-800">${c.cmp == null ? '—' : formatRupee(c.cmp, {decimals:2})}</span>
+    <div class="text-[10px] text-amber-700">Saved daily close · ${escapeHtml(c.price_date || c.bar_date || 'date unavailable')}</div>`;
 }
 
 function renderMomentumScanner(ctx, rows) {
@@ -943,12 +953,7 @@ function renderMomentumScanner(ctx, rows) {
     : allHistoryOutdated ? 'Saved readings are shown as exceptions while daily price history is outdated.'
       : allQuotesCurrent ? 'Current prices are available, but the history required for this filter is incomplete.'
         : `${rows.every(s => !vf(s).isLiveQuote) ? 'Saved' : 'Available'} readings are shown as exceptions; see scan coverage for the missing data.`;
-  const priceCell = s => {
-    if (vf(s).isLiveQuote) return cmpCell(s.company);
-    const c = s.company;
-    return `<span class="font-semibold text-slate-800">${c.cmp == null ? '—' : formatRupee(c.cmp, {decimals:2})}</span>
-      <div class="text-[10px] text-amber-700">Saved daily close · ${escapeHtml(c.price_date || c.bar_date || 'date unavailable')}</div>`;
-  };
+  const priceCell = s => momentumPriceCell(s, vf(s));
 
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 
@@ -1031,6 +1036,7 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Sector', key: 'sector', width: 22, get: (s) => s.company.sector || '' },
     { header: 'Price', key: 'price', width: 12, get: (s) => vf(s).price ?? null },
     { header: 'Quote source and time', key: 'quote_time', width: 40, get: (s) => vf(s).isLiveQuote ? live.priceInfo(s.company).label : `Saved daily close · ${s.company.price_date || s.company.bar_date || 'date unavailable'}` },
+    { header: 'Indicator basis and date', key: 'indicator_basis', width: 45, get:s=>vf(s).historyAligned ? `Current price with history through ${vf(s).indicatorDate}` : `Saved daily reading · ${vf(s).indicatorDate || 'date unavailable'}` },
     { header: 'Filter 1 (Strong Momentum)', key: 'f1', width: 24, get: (s) => vf(s).f1.evaluable ? yn(vf(s).f1.pass) : 'Exception' },
     { header: 'Filter 2 (Volume + Momentum)', key: 'f2', width: 26, get: (s) => vf(s).f2.evaluable ? yn(vf(s).f2.pass) : 'Exception' },
     { header: 'Filter 3 (MACD Crossover)', key: 'f3', width: 24, get: (s) => vf(s).f3.evaluable ? yn(vf(s).f3.pass) : 'Exception' },

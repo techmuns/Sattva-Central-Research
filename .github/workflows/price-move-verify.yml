@@ -23,6 +23,7 @@ run-name: Price-move verification (${{ github.event_name }})
 
 concurrency:
   group: data-refresh
+  queue: max
   cancel-in-progress: false
 
 jobs:

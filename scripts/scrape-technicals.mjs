@@ -40,7 +40,7 @@ import { verifyMoves, loadChecks, saveChecks, CHECKS_PATH } from './lib/muns-mar
 import { marketBreadth, priceDateOf } from './lib/technicals-file.mjs';
 import { researchPriceHistory, retainedPriceHistory } from './lib/research-price-history.mjs';
 import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { abdiRanaldoSpreadPct, amihudImpactPct, liquidityTier } from "./lib/liquidity-estimators.mjs";
 
 const IMPACT_COST_ORDER_SIZE_RUPEES = 5e7;   // ₹5 crore — standardized institutional position
@@ -63,7 +63,7 @@ const HISTORY_DAYS = 400;          // calendar days back; ~280 trading days — 
 // `bars_count` and all existing values stay exactly as a 400-day run produced them.
 const MOMENTUM_HISTORY_DAYS = 4050;
 const INDEX_SYMBOL = "^CRSLDX";    // Nifty 500 on Yahoo Finance
-const FETCH_DELAY_MS = 200;        // be polite — ~5 req/sec
+const FETCH_DELAY_MS = 2000;       // public Yahoo chart access: pace the full walk too
 const TECH_LIMIT = Number(process.env.TECH_LIMIT || 0) || 0;   // 0 = all companies
 
 // TECH_FILL_GAPS=1 — scrape only the companies the committed file does not already carry, and
@@ -100,14 +100,30 @@ function readExistingRows() {
   }
 }
 
-run().catch((err) => {
+const recoveryPath=resolve(__dirname, '../public/data/technical-history-recovery.json');
+function recoveryState() {
+  try {return JSON.parse(readFileSync(recoveryPath,'utf8'));}
+  catch(error){if(error.code==='ENOENT')return {};throw error;}
+}
+function saveYahooRefusal(error) {
+  if(![401,403,429].includes(error.status))return;
+  const recovery=recoveryState(),strikes=(recovery.strikes||0)+1;
+  writeFileSync(recoveryPath,JSON.stringify({...recovery,version:1,strikes,
+    holdUntil:Math.max(Date.now()+Math.min(86400000,3600000*2**Math.min(strikes-1,5)),error.retryAt||0),reason:'source-cooldown'})+'\n');
+}
+export const resetYahooStrikes = state => ({...state,strikes:0,holdUntil:0,reason:null});
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) run().catch((err) => {
   console.error("Fatal:", err.stack || err.message);
   process.exit(1);
 });
 
 // ---------- main ----------
 async function run() {
-  const previousHistory = new Map(readExistingRows().filter(row => row.closeHistory).map(row => [row.ticker, row.closeHistory]));
+  const previousRows = new Map(readExistingRows().map(row => [row.ticker, row]));
+  const previousHistory = new Map([...previousRows].filter(([,row]) => row.closeHistory).map(([ticker,row]) => [ticker,row.closeHistory]));
+  const recovery=recoveryState();
+  if (recovery.holdUntil>Date.now()) throw Error(`Yahoo cooldown until ${new Date(recovery.holdUntil).toISOString()}; saved technicals retained.`);
   const screenerRows = JSON.parse(readFileSync(COMPANIES_PATH, "utf8"));
   const bookRows = await bookCompaniesNotInScreener(screenerRows);
   const allCompanies = [...screenerRows, ...bookRows];
@@ -154,7 +170,7 @@ async function run() {
 
   // Fetch the index first — needed for relative strength and beta.
   console.log(`\nFetching ${INDEX_SYMBOL} (Nifty 500)...`);
-  const indexBars = await fetchBars(INDEX_SYMBOL, start, end);
+  const indexBars = await fetchBars(INDEX_SYMBOL, start, end).catch(error=>{saveYahooRefusal(error);throw error;});
   if (!indexBars.length) throw new Error("Could not load Nifty 500 index data — aborting.");
   console.log(`  ${indexBars.length} bars`);
   const indexReturns = dailyReturns(indexBars);
@@ -175,6 +191,7 @@ async function run() {
 
   const results = [];
   let failures = 0;
+  let yahooRefused = false;
   for (let i = 0; i < companies.length; i++) {
     const c = companies[i];
     const ticker = extractTicker(c["Screener URL"]);
@@ -203,7 +220,10 @@ async function run() {
         const alts = [`${ticker}.BO`];
         if (/-SM$/.test(ticker)) alts.unshift(`${ticker.replace(/-SM$/, "")}.NS`, `${ticker.replace(/-SM$/, "")}.BO`);
         for (const altSym of alts) {
-          const alt = await fetchBars(altSym, momentumStart, end).catch(() => []);
+          const alt = await fetchBars(altSym, momentumStart, end).catch(error => {
+            if([401,403,429].includes(error.status))throw error;
+            return [];
+          });
           if (alt.length > longBars.length) {
             process.stdout.write(`(fallback ${altSym}) `);
             longBars = alt;
@@ -214,6 +234,7 @@ async function run() {
       }
       const bars = recentWindow(longBars, start);
       if (bars.length < 60) throw new Error(`only ${bars.length} bars`);
+      if ((previousRows.get(ticker)?.bar_date || '') > bars.at(-1).date) throw new Error('Price history regressed; retained the newer saved series');
       const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose, longBars, istDay(end));
       const delivery = deliveryTrends[ticker] || null;
       results.push({
@@ -259,12 +280,34 @@ async function run() {
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
     } catch (err) {
       failures++;
-      results.push({ ticker, name: c.Company, screenerUrl: c["Screener URL"], listSource: c.listSource || "nse500", error: err.message,
-        closeHistory: retainedPriceHistory(previousHistory.get(ticker)) });
+      const previous = previousRows.get(ticker);
+      results.push(previous && !previous.error ? {...previous, history_check:{checkedAt:new Date().toISOString(),state:'failed',reason:err.message}}
+        : { ticker, name: c.Company, screenerUrl: c["Screener URL"], listSource: c.listSource || "nse500", error: err.message,
+          closeHistory: retainedPriceHistory(previousHistory.get(ticker)) });
       console.log(`FAIL ${err.message}`);
+      if ([401,403,429].includes(err.status)) {
+        yahooRefused = true;
+        saveYahooRefusal(err);
+        // A source refusal ends the walk. Keep every unattempted company and its
+        // actual last-good readings instead of issuing another 600 requests.
+        for (const rest of companies.slice(i+1)) {
+          const remainingTicker=extractTicker(rest['Screener URL']);if(!remainingTicker)continue;
+          const old=previousRows.get(remainingTicker);
+          results.push(old ? {...old,history_check:{...old.history_check,reportedAt:new Date().toISOString(),state:'not-checked',reason:'Yahoo source cooldown; not checked'}}
+            : {ticker:remainingTicker,name:rest.Company,screenerUrl:rest['Screener URL'],listSource:rest.listSource||'nse500',error:'Yahoo source cooldown; not checked'});
+          failures++;
+        }
+        break;
+      }
     }
     await sleep(FETCH_DELAY_MS);
     if ((i + 1) % 25 === 0) flush(results, indexBars, failures);   // checkpoint
+  }
+
+  if (!yahooRefused && TECH_LIMIT===0) {
+    const previous=recoveryState();
+    if(previous.strikes || previous.holdUntil || previous.reason==='source-cooldown')
+      writeFileSync(recoveryPath,JSON.stringify(resetYahooStrikes(previous))+'\n');
   }
 
   // Every move that reaches the check threshold is re-derived from the Muns market-data
@@ -283,7 +326,7 @@ async function run() {
   }
   flush(results, indexBars, failures);
 
-  // ATR Stability accumulator: append today's atr14_pct per ticker to a
+  // ATR Stability accumulator: append each observed session's atr14_pct to a
   // rolling 30-day history. Used by the Sentiment & Liquidity ATR rule
   // to detect declining-vs-rising volatility trend (client framework).
   updateATRHistory(results);
@@ -304,19 +347,26 @@ function updateATRHistory(results) {
     history = JSON.parse(readFileSync(ATR_HISTORY_PATH, "utf8"));
     if (typeof history !== "object" || Array.isArray(history)) history = {};
   } catch { /* file doesn't exist yet — start fresh */ }
-  const today = new Date().toISOString().slice(0, 10);
+  history=accumulateATRHistory(history,results);
+  writeFileSync(ATR_HISTORY_PATH, JSON.stringify(history) + "\n");
+  console.log(`ATR history updated: ${Object.keys(history).length} tickers tracked; observations use actual bar dates`);
+}
+
+export function accumulateATRHistory(previous, results) {
+  const history=structuredClone(previous);
   for (const r of results) {
-    if (r.error || r.atr14_pct == null || !r.ticker) continue;
+    if (r.error || !Number.isFinite(r.atr14_pct) || !r.ticker || !/^\d{4}-\d{2}-\d{2}$/.test(r.bar_date || '') ||
+      (r.history_check && r.history_check.state!=='current')) continue;
+    const date=r.bar_date;
     if (!history[r.ticker]) history[r.ticker] = [];
-    // Dedupe by date — replace today's entry if it exists
-    history[r.ticker] = history[r.ticker].filter((e) => e.date !== today);
-    history[r.ticker].push({ date: today, atr_pct: r.atr14_pct });
+    // Dedupe by actual bar date, retaining earlier observation history.
+    history[r.ticker] = history[r.ticker].filter((e) => e.date !== date);
+    history[r.ticker].push({ date, atr_pct: r.atr14_pct });
     // Trim to last 30 days
     history[r.ticker].sort((a, b) => a.date.localeCompare(b.date));
     if (history[r.ticker].length > 30) history[r.ticker] = history[r.ticker].slice(-30);
   }
-  writeFileSync(ATR_HISTORY_PATH, JSON.stringify(history) + "\n");
-  console.log(`ATR history updated: ${Object.keys(history).length} tickers tracked, latest snapshot for today`);
+  return history;
 }
 
 function parsePercentValue(v) {
@@ -437,10 +487,20 @@ function spreadFromMeta(meta) {
   return Math.round(pct * 1000) / 1000; // 3 decimal places
 }
 
+// Recovery advances every OHLCV-derived liquidity field with the same bars as
+// the price indicators. Recovery retains the previous exchange-delivery snapshot.
+export function computeLiquidityIndicators(bars) {
+  const adtv=adtv20Cr(bars);
+  return {adtv_20d_cr:adtv,bid_ask_spread_pct:spreadFromMeta(bars.meta),
+    bid_ask_spread_pct_est:abdiRanaldoSpreadPct(bars,30),
+    impact_cost_pct_est_5cr:amihudImpactPct(bars,30,IMPACT_COST_ORDER_SIZE_RUPEES),
+    liquidity_tier:liquidityTier(adtv)};
+}
+
 // The last HISTORY_DAYS of the long series — exactly the bars a 400-day fetch returns, so every
 // existing daily indicator computed over it is unchanged. `.meta` (Yahoo's snapshot fields, read
 // by spreadFromMeta) is carried across, as `completedBars` already carries it.
-function recentWindow(longBars, start) {
+export function recentWindow(longBars, start) {
   const cutoff = start.getTime();
   const out = longBars.filter((b) => Date.parse(`${b.date}T00:00:00Z`) >= cutoff);
   out.meta = longBars.meta;
@@ -448,7 +508,7 @@ function recentWindow(longBars, start) {
 }
 
 // ---------- indicators ----------
-function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars = bars, referenceDate = istDay(new Date())) {
+export function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars = bars, referenceDate = istDay(new Date())) {
   const close = bars.map((b) => b.close);
   const high  = bars.map((b) => b.high);
   const low   = bars.map((b) => b.low);
