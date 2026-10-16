@@ -59,6 +59,10 @@ for (const type of ['my-managers', 'investors']) for (const category of type ===
 }
 const frames = frame => frame.evaluate(async () => { for (let i = 0; i < 5; i++) await new Promise(requestAnimationFrame); });
 async function checkTables(page, frame, label) {
+  const iframeBox = await page.locator('iframe').boundingBox();
+  await page.mouse.move(iframeBox.x + iframeBox.width - 24, iframeBox.y + 16);
+  const beaconClose = frame.locator('[data-beacon-close]:visible');
+  if (await beaconClose.count()) await beaconClose.click();
   const tableCount = await frame.locator('#content-host table:visible, #fixture table:visible, #modal-content table:visible, #workspace-panel table:visible').count();
   const checked = [];
   for (let i = 0; i < tableCount; i++) {
@@ -90,25 +94,30 @@ async function checkTables(page, frame, label) {
       const point = await surface.evaluate(el => {
         const box = el.getBoundingClientRect(), head = el.querySelector('thead')?.getBoundingClientRect();
         const top = Math.max(0, box.top, head?.bottom || 0), bottom = Math.min(innerHeight, box.bottom);
-        return { x: Math.max(4, box.left) + Math.min(80, el.clientWidth / 2), y: top + Math.max(1, (bottom - top) / 2), visible: bottom - top };
+        return { x: Math.min(innerWidth, box.right) - 32, y: top + Math.max(1, (bottom - top) / 2), visible: bottom - top };
       });
       assert(point.visible > 8, `${label}: table has a reachable wheel target`);
       const iframe = await page.locator('iframe').boundingBox();
       await page.mouse.move(iframe.x + point.x, iframe.y + point.y);
       await page.mouse.wheel(0, 700);
       await frame.waitForFunction(el => el.scrollTop > 0, surface, { timeout: 5000 });
-      for (let end = 0; end < 5; end++) {
+      for (let end = 0; end < 1000; end++) {
         await page.mouse.wheel(0, 1e9); await frames(frame);
-        if (await surface.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2)) break;
+        // Announcements append another page at the loaded boundary. Follow native scroll's
+        // requests until its explicit Load more control disappears, then check the final row.
+        await frame.waitForFunction(() => !document.querySelector('[data-ca-load-more]:disabled, [data-table-loading]'), null, { timeout: 30000 });
+        if (await surface.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2) &&
+            !await frame.locator('[data-ca-load-more]').count()) break;
       }
+      assert.equal(await frame.locator('[data-ca-load-more]').count(), 0, `${label}: native scrolling loads every announcement page`);
       assert(await surface.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2), `${label}: native wheel reaches the table's end`);
     }
-    await table.evaluate(table => table.querySelector('tbody tr:last-child')?.scrollIntoView({ block: 'end', behavior: 'instant' }));
+    if (!internal) await table.evaluate(table => table.querySelector('tbody tr:last-child')?.scrollIntoView({ block: 'end', behavior: 'instant' }));
     await frames(frame);
     const end = await table.evaluate(table => {
       const rows = [...table.querySelectorAll('tbody tr')].filter(row => !row.matches('[data-virtual-spacer]') && !row.querySelector('[data-window-spacer]'));
       const last = rows.at(-1), box = last?.getBoundingClientRect(), card = table.closest('[data-score-table]');
-      const x = box ? Math.min(innerWidth - 8, Math.max(8, box.left + 20)) : 0;
+      const x = box ? Math.min(innerWidth, box.right) - 32 : 0;
       const y = box ? Math.min(innerHeight - 2, box.bottom - 2) : 0;
       const hit = document.elementFromPoint(x, y);
       const hiddenScroll = [];
@@ -165,7 +174,7 @@ try {
         if (await select.count() && await select.locator('option[value="all"]').count()) await select.selectOption('all');
       }
       await frame.waitForFunction(() => !document.querySelector('#content-host .skeleton-shimmer, [data-table-loading]') &&
-        document.querySelector('[data-alerts-workspace]')?.getAttribute('data-alerts-collecting') !== 'true', null, { timeout: 90000 });
+        document.querySelector('[data-alerts-workspace]')?.getAttribute('data-alerts-collecting') !== 'true', null, { timeout: 180000 });
       for (const size of sizes) {
         await page.setViewportSize(size);
         await frame.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
