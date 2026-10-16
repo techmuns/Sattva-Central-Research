@@ -1415,57 +1415,58 @@
       ]
     },
     "isin:INE811K01011|Prestige Estate Projects": {
-      "lastAttemptAt": "2026-10-11T08:14:31+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-09-18T06:26:21+00:00",
+      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-16T07:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE811K01011|PRESTIGE": {
-      "lastAttemptAt": "2026-10-11T08:47:28+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 110,
+      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 114,
       "targetThrough": "2026-09-18T06:26:21+00:00",
       "pending": [
         {
-          "from": "2026-09-09T06:26:21.607142+00:00",
-          "to": "2026-09-13T18:26:21.303571+00:00"
-        },
-        {
           "from": "2026-09-13T18:26:21.303571+00:00",
           "to": "2026-09-18T06:26:21+00:00"
+        },
+        {
+          "from": "2026-09-09T06:26:21.607142+00:00",
+          "to": "2026-09-11T12:26:21.455356+00:00"
+        },
+        {
+          "from": "2026-09-11T12:26:21.455356+00:00",
+          "to": "2026-09-13T18:26:21.303571+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-16T07:16:43+00:00"
     },
     "isin:INE0V9N01017|Prizor Viztech": {
-      "lastAttemptAt": "2026-10-11T09:20:10+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 33,
-      "lastSuccessAt": "2026-09-18T06:26:21+00:00",
+      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
+      "error": null,
+      "lastResultCount": 88,
+      "lastSuccessAt": "2026-10-16T07:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE004A01022|Protean eGov Technologies": {
-      "lastAttemptAt": "2026-10-11T09:51:34+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-09-18T06:26:21+00:00",
+      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
+      "error": null,
+      "lastResultCount": 33,
+      "lastSuccessAt": "2026-10-16T07:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE004A01022|PROTEAN": {
-      "lastAttemptAt": "2026-10-11T10:24:40+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 97,
-      "targetThrough": "2026-10-02T05:50:51+00:00",
-      "pending": [
-        {
-          "from": "2026-09-27T17:50:51.314665+00:00",
-          "to": "2026-10-02T05:50:51+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-05T18:39:20+00:00"
+      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
+      "error": null,
+      "lastResultCount": 50,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-16T07:16:43+00:00",
+      "lastSuccessAt": "2026-10-02T05:50:51+00:00"
     },
     "isin:INE0SII01026|Quality Power Electrical Equipments": {
       "lastAttemptAt": "2026-10-05T18:39:20+00:00",
@@ -1485,15 +1486,15 @@
       "lastSuccessAt": "2026-09-13T23:47:09+00:00"
     },
     "isin:INE855B01025|Rain Industries": {
-      "lastAttemptAt": "2026-10-11T10:56:56+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 8,
-      "lastSuccessAt": "2026-10-05T18:39:20+00:00",
+      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
+      "error": null,
+      "lastResultCount": 74,
+      "lastSuccessAt": "2026-10-16T07:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE855B01025|RAIN": {
-      "lastAttemptAt": "2026-10-11T11:30:47+00:00",
+      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
       "error": "search-unavailable",
       "lastResultCount": 114,
       "targetThrough": "2026-09-13T23:47:09+00:00",
@@ -1515,7 +1516,7 @@
           "to": "2026-09-13T23:47:09+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-05T18:39:20+00:00"
+      "lastDiscoveryAt": "2026-10-16T07:16:43+00:00"
     },
     "isin:INE399G01023|Ramkrishna Forgings": {
       "lastAttemptAt": "2026-10-11T12:03:43+00:00",
@@ -2552,8 +2553,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 10,
-    "incomplete": 240,
-    "checkedAt": "2026-10-16T06:34:32.830839+00:00"
+    "attempted": 7,
+    "incomplete": 236,
+    "checkedAt": "2026-10-16T07:16:43.862608+00:00"
   }
 }
