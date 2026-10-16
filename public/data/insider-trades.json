@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-16T01:00:45.808Z",
-  "oldestDataAt": "2026-10-16T01:00:45.808Z",
+  "capturedAt": "2026-10-16T05:08:06.108Z",
+  "oldestDataAt": "2026-10-16T05:08:06.108Z",
   "from": "2025-10-16",
   "to": "2026-10-16",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-16T01:00:45.808Z",
+      "capturedAt": "2026-10-16T05:08:06.108Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-16T01:00:45.808Z",
+      "capturedAt": "2026-10-16T05:08:06.108Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-12",
-      "oldestDate": "2026-10-01",
+      "latestDate": "2026-10-15",
+      "oldestDate": "2026-10-05",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-16T01:00:45.808Z",
+      "capturedAt": "2026-10-16T05:08:06.108Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-16T01:00:45.808Z",
+      "capturedAt": "2026-10-16T05:08:06.108Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 1953,
+  "withRows": 1954,
   "emptyCount": 0,
-  "rowCount": 21441,
+  "rowCount": 21446,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -329067,6 +329067,36 @@
     "MCL": [
       {
         "ticker": "MCL",
+        "date": "2026-10-15",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "MR. RAJESH ODHAVJIBHAI PATEL",
+          "Transaction": "Sell",
+          "Trade Shares": "1000",
+          "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MCL",
+        "date": "2026-10-15",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "Mr. Vishal Talsibhai Monpada",
+          "Transaction": "Sell",
+          "Trade Shares": "8500",
+          "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MCL",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -347624,6 +347654,21 @@
       }
     ],
     "MOS": [
+      {
+        "ticker": "MOS",
+        "date": "2026-10-15",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "MOS Utility",
+          "Insider": "Kurjibhai Premjibhai Rupareliya",
+          "Transaction": "Invocation",
+          "Trade Shares": "82026500",
+          "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MOS",
         "date": "2026-10-05",
@@ -405278,6 +405323,21 @@
     "MAXVOLT": [
       {
         "ticker": "MAXVOLT",
+        "date": "2026-10-15",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Maxvolt Energy",
+          "Insider": "Satendra Shukla",
+          "Transaction": "Acquisition",
+          "Trade Shares": "448986",
+          "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAXVOLT",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -410783,6 +410843,26 @@
           "Trade Value": "26.62 lacs",
           "Price": "75.9",
           "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "PURPLEUTED": [
+      {
+        "ticker": "PURPLEUTED",
+        "date": "2026-10-10",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Purple United",
+          "Insider": "Jatinder Dev Seth, Bhawna Seth",
+          "Category": "Promoter And Director (2)",
+          "Security Type": "Warrant",
+          "Transaction": "Allotment",
+          "Trade Shares": "166500",
+          "Trade Value": "5.99 crore",
+          "Broadcast Date": "2026-10-10",
           "Source": "Screener.in"
         }
       }
