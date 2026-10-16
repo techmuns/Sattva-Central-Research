@@ -129,7 +129,13 @@ async function checkTables(page, frame, label) {
         // Announcements append another page at the loaded boundary. Follow native scroll's
         // requests until its explicit Load more control disappears, then check the final row.
         await frame.waitForFunction(() => !document.querySelector('[data-ca-load-more]:disabled, [data-table-loading]'), null, { timeout: 30000 });
-        if (await surface.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop < 2) &&
+        await frames(frame);
+        if (await surface.evaluate(el => {
+          const card = el.closest('[data-score-table]');
+          const tail = !card?.hasAttribute('data-virtualized') ||
+            Number(card.dataset.virtualStart) + el.querySelectorAll('tr[data-row-key]').length >= Number(card.dataset.virtualTotal);
+          return tail && el.scrollHeight - el.clientHeight - el.scrollTop < 2;
+        }) &&
             !await frame.locator('[data-ca-load-more]').count()) break;
       }
       assert.equal(await frame.locator('[data-ca-load-more]').count(), 0, `${label}: native scrolling loads every announcement page`);
