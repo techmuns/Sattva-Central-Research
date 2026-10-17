@@ -2440,7 +2440,7 @@
       ]
     },
     "isin:INE255Z01027|E2E Networks": {
-      "lastAttemptAt": "2026-10-13T05:22:39+00:00",
+      "lastAttemptAt": "2026-10-17T19:25:52+00:00",
       "lastResultCount": 117,
       "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-17T18:39:54.910159+00:00"
+    "checkedAt": "2026-10-17T19:25:52.591151+00:00"
   }
 }
