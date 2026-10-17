@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -124,6 +125,14 @@ try{
     else originals.set(message.messageId,message);
    }
    assert.equal(originals.size,3);
+   for(const part of outcome.parts){
+    const request=part.request,message=originals.get(request.messageId);
+    assert(message,'Retained receipt identifies the actual submitted request');
+    assert.equal(request.subject,message.subject);
+    assert.equal(request.inReplyTo,message.inReplyTo??null);
+    assert.deepEqual(request.references,message.references??[]);
+    assert.equal(request.bodySha256,createHash('sha256').update(message.html).digest('hex'));
+   }
    for(const [i,message]of [...originals.values()].entries()){
     assert(message.html.includes(`Part ${i+1} of 3`));
     assert.equal(message.inReplyTo,i?outcome.threadMessageId:undefined);

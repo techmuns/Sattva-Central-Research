@@ -1,0 +1,80 @@
+name: Monday newsletter delivery monitor
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/newsletter-monitor.yml'
+      - 'scripts/monitor-newsletter-delivery.mjs'
+      - 'scripts/lib/newsletter-delivery-audit.mjs'
+  schedule:
+    # UTC: start watching at 08:00 IST Monday. The script's year/date gate and
+    # terminal self-disable make this a single monitoring episode.
+    - cron: '0,15,30,45 * 19,20 10 *'
+  workflow_run:
+    workflows: ['Newsletter processing', 'Deploy']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: newsletter-monitor-2026-10-19
+  cancel-in-progress: false
+permissions:
+  contents: write
+  actions: write
+jobs:
+  monitor:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Gate the single monitoring episode
+        id: gate
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const now=Date.now(),due=Date.parse('2026-10-19T02:30:00Z');
+          // A delayed first/final wake must still retain a terminal report and
+          // disable this monitor, even after the observation window has ended.
+          const run=now>=due||['push','workflow_dispatch'].includes(process.env.EVENT);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`run=${run}\n`);
+          JS
+      - uses: actions/checkout@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: '22'
+      - name: Audit both automatic editions without sending mail
+        if: steps.gate.outputs.run == 'true'
+        id: audit
+        run: node scripts/monitor-newsletter-delivery.mjs
+      - name: Retain aggregate report history in GitHub
+        if: steps.audit.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag=newsletter-monitor-2026-10-19
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --target main --title 'Monday Sattva and Glow email monitoring — 19 October 2026' --notes 'Aggregate sender acceptance and submitted thread-header evidence only. No subscriber addresses, message IDs, email bodies or inbox-delivery claims. Each report is retained; the local Codex chat reads it when online.' --prerelease
+          fi
+          report_name="report-$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          mv .cache/newsletter-monitor/report.json ".cache/newsletter-monitor/$report_name"
+          gh release upload "$tag" ".cache/newsletter-monitor/$report_name"
+      - name: Stop this monitor after completion or the 24-hour observation window
+        if: steps.audit.outputs.terminal == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow disable newsletter-monitor.yml
+      - name: Surface exceptions without stopping subsequent observations
+        if: steps.audit.outputs.actionable == 'true'
+        run: |
+          echo 'The retained report has actionable exceptions. No production sender action was taken.'
+          exit 1

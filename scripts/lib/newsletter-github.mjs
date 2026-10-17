@@ -63,7 +63,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
    for(const row of copy.db.prepare('SELECT id,payload FROM newsletter_views').iterate())records.set(row.id,JSON.parse(row.payload));
    const keys=await readerKeys(env.BACKGROUND_STATE_KEY),schedule=await copy.schedule.status();
    const retry=copy.db.prepare("SELECT COUNT(*) n,MIN(next_at) at FROM newsletter_delivery_queue WHERE payload IS NOT NULL AND source != 'test'").get();
-   schedule.deliveryRecovery={version:1,pendingEditions:retry.n,nextRetryAt:retry.at==null?null:new Date(retry.at).toISOString()};
+   schedule.deliveryRecovery={version:1,receiptVersion:1,pendingEditions:retry.n,nextRetryAt:retry.at==null?null:new Date(retry.at).toISOString()};
    const head={version:1,repo:transport.repo,feature:'newsletter',createdAt:new Date(localOptions.now?.()??Date.now()).toISOString(),snapshot:copy.store.snapshot(),schedule:{...schedule,runtime:'github-actions',armed:false,alarmAt:null},requestKey:{kid:keys.kid,publicKey:encode64(keys.publicKey)},processingEnabled:env.NEWSLETTER_PROCESSING_ENABLED==='true',inputRevision:await copy.storage.get('newsletter-source-revision')??null};
    await packBackgroundViews(privateRecordViews([...records.keys()],id=>records.get(id),head,{repo:transport.repo,feature:'newsletter',env}),recipient,views,{repo:transport.repo,feature:'newsletter',sourceSignature:signature,cache});
   }finally{await copy?.close();}
