@@ -2305,8 +2305,8 @@
       "pending": []
     },
     "isin:INE540H01012|VOLTAMP": {
-      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-17T11:40:42+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 16,
       "targetThrough": "2026-10-03T05:24:56+00:00",
       "pending": [
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 213,
-    "checkedAt": "2026-10-17T10:59:12.995308+00:00"
+    "checkedAt": "2026-10-17T11:40:42.446288+00:00"
   }
 }
