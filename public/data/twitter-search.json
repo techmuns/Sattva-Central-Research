@@ -2210,7 +2210,7 @@
       "lastDiscoveryAt": "2026-10-12T21:45:53+00:00"
     },
     "isin:INE205A01025|VEDL": {
-      "lastAttemptAt": "2026-10-12T21:45:53+00:00",
+      "lastAttemptAt": "2026-10-17T07:10:38+00:00",
       "error": "search-unavailable",
       "lastResultCount": 103,
       "targetThrough": "2026-09-20T00:19:51+00:00",
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 213,
-    "checkedAt": "2026-10-17T06:40:13.789555+00:00"
+    "checkedAt": "2026-10-17T07:10:38.569649+00:00"
   }
 }
