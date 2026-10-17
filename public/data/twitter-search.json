@@ -1940,7 +1940,7 @@
       "pending": []
     },
     "isin:INE239C01020|STYLAMIND": {
-      "lastAttemptAt": "2026-10-12T08:03:41+00:00",
+      "lastAttemptAt": "2026-10-17T00:04:02+00:00",
       "error": "search-unavailable",
       "lastResultCount": 2,
       "lastSuccessAt": "2026-10-02T12:58:36+00:00",
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-16T23:51:11.856973+00:00"
+    "checkedAt": "2026-10-17T00:04:02.554423+00:00"
   }
 }
