@@ -2392,7 +2392,7 @@
       "error": "search-unavailable"
     },
     "isin:INE120A01034|Carborundum Universal": {
-      "lastAttemptAt": "2026-10-13T02:04:10+00:00",
+      "lastAttemptAt": "2026-10-17T15:45:44+00:00",
       "error": "search-unavailable"
     },
     "isin:INE120A01034|CARBORUNIV": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-17T14:55:49.325701+00:00"
+    "checkedAt": "2026-10-17T15:45:44.150454+00:00"
   }
 }
