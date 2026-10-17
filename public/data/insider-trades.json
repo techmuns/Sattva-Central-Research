@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-17T16:25:28.682Z",
-  "oldestDataAt": "2026-10-17T16:25:28.682Z",
-  "from": "2025-10-17",
-  "to": "2026-10-17",
+  "capturedAt": "2026-10-17T18:44:49.005Z",
+  "oldestDataAt": "2026-10-17T18:44:49.005Z",
+  "from": "2025-10-18",
+  "to": "2026-10-18",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-17T16:25:28.682Z",
+      "capturedAt": "2026-10-17T18:44:49.005Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-17T16:25:28.682Z",
+      "capturedAt": "2026-10-17T18:44:49.005Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-17T16:25:28.682Z",
+      "capturedAt": "2026-10-17T18:44:49.005Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-17T16:25:28.682Z",
+      "capturedAt": "2026-10-17T18:44:49.005Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 1963,
   "emptyCount": 0,
-  "rowCount": 21640,
+  "rowCount": 21636,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -122031,28 +122031,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "CUPID",
-        "date": "2025-10-17",
-        "cells": {
-          "Company": "CUPID",
-          "Insider": "Aditya Kumar Halwasiya",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "500000",
-          "Trade %": "0.19",
-          "Trade Value": null,
-          "Post Holding Shares": "122295432",
-          "Post Holding %": "45.56",
-          "Mode": "Market",
-          "From Date": "2025-09-26",
-          "To Date": "2025-09-26",
-          "Broadcast Date": "2025-10-17",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "PREMIERENE": [
@@ -127166,28 +127144,6 @@
           "From Date": "2025-10-16",
           "To Date": "2025-10-16",
           "Broadcast Date": "2025-10-22",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-17",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "HCL Technologies Stock Options Trust",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "10598",
-          "Trade %": "0",
-          "Trade Value": "15874744",
-          "Post Holding Shares": "8133888",
-          "Post Holding %": "0.3",
-          "Mode": "ESOS",
-          "From Date": "2025-10-15",
-          "To Date": "2025-10-15",
-          "Broadcast Date": "2025-10-17",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -160442,28 +160398,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "APOLLOHOSP",
-        "date": "2025-10-17",
-        "cells": {
-          "Company": "Apollo Hospitals Enterprise Ltd",
-          "Insider": "PCR INVESTMENTS LIMITED",
-          "Category": "Promoter",
-          "Security Type": "Equity Shares",
-          "Transaction": "Revoke",
-          "Trade Shares": "2300000",
-          "Trade %": "0",
-          "Trade Value": "1807100000",
-          "Post Holding Shares": "27223124",
-          "Post Holding %": "18.93",
-          "Mode": "Pledge Released",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-17",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "SARDAEN": [
@@ -191227,28 +191161,6 @@
           "From Date": "2025-09-25",
           "To Date": "2025-09-25",
           "Broadcast Date": "2025-12-02",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "VOLTAS",
-        "date": "2025-10-17",
-        "cells": {
-          "Company": "VOLTAS",
-          "Insider": "Life Insurance Corporation of India",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "201500",
-          "Trade %": "0.06",
-          "Trade Value": null,
-          "Post Holding Shares": "16710784",
-          "Post Holding %": "5.05",
-          "Mode": "Market",
-          "From Date": "2025-09-25",
-          "To Date": "2025-09-25",
-          "Broadcast Date": "2025-10-17",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
