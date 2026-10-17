@@ -1,4 +1,5 @@
 import {gzipSync,gunzipSync} from 'node:zlib';
+import {createHash} from 'node:crypto';
 import {sendEmail} from '../../worker/newsletter-schedule.mjs';
 import {renderBriefHtml} from '../../worker/newsletter-brief.mjs';
 import {acceptedStoryKeys,emailBytes,EMAIL_HTML_BYTES} from '../../worker/newsletter-email.mjs';
@@ -65,11 +66,15 @@ export class NewsletterDeliveryQueue {
           if(!credential){part.reason='no-token';recipient.reason='no-token';break;}
           // Publish this intent before the guarded provider I/O. If acceptance is
           // uncertain, recovery uses the very same RFC Message-ID and body.
+          part.request={messageId:part.requestedMessageId,subject:part.subject,
+            inReplyTo:part.part===1?null:recipient.threadMessageId,
+            references:part.part===1?[]:[recipient.threadMessageId],
+            bodySha256:createHash('sha256').update(part.html).digest('hex')};
           part.reason='sending';part.attempts++;this.save(plan);this.progress(plan);
           const root=recipient.parts[0];
           const result=await sendEmail({fetcher:this.local.schedule.fetcher,token:credential,email:recipient.email,
-            subject:part.subject,html:part.html,messageId:part.requestedMessageId,
-            inReplyTo:part.part===1?null:recipient.threadMessageId});
+            subject:part.request.subject,html:part.html,messageId:part.request.messageId,
+            inReplyTo:part.request.inReplyTo});
           Object.assign(part,result);
           if(part===root&&result.ok)recipient.threadMessageId=result.messageId||part.requestedMessageId;
           recipient.ok=recipient.parts.every(p=>p.ok);
