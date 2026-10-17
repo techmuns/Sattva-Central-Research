@@ -1964,7 +1964,7 @@
       "pending": []
     },
     "isin:INE07RO01027|Supriya Lifescience": {
-      "lastAttemptAt": "2026-10-12T09:52:12+00:00",
+      "lastAttemptAt": "2026-10-17T02:18:04+00:00",
       "error": "search-unavailable",
       "lastResultCount": 19,
       "lastSuccessAt": "2026-10-02T12:58:36+00:00",
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-17T01:46:43.795357+00:00"
+    "checkedAt": "2026-10-17T02:18:04.091031+00:00"
   }
 }
