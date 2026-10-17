@@ -2404,7 +2404,7 @@
       "error": "search-unavailable"
     },
     "isin:INE488A01050|CHEMPLASTS": {
-      "lastAttemptAt": "2026-10-13T03:43:53+00:00",
+      "lastAttemptAt": "2026-10-17T17:38:31+00:00",
       "error": "search-unavailable"
     },
     "isin:INE007A01025|Crisil": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-17T16:55:38.288192+00:00"
+    "checkedAt": "2026-10-17T17:38:31.937485+00:00"
   }
 }
