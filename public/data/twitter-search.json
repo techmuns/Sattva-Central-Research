@@ -10,8 +10,8 @@
       "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE423A01024|ADANIENT": {
-      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-17T08:56:41+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 113,
       "targetThrough": "2026-10-12T22:32:50+00:00",
       "pending": [
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 213,
-    "checkedAt": "2026-10-17T08:52:30.440171+00:00"
+    "checkedAt": "2026-10-17T08:56:41.915930+00:00"
   }
 }
