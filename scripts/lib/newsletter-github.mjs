@@ -13,6 +13,7 @@ import {renderBriefEmails} from '../../worker/newsletter-email.mjs';
 import {renderBriefPdf,pdfFilename} from '../../worker/newsletter-pdf.mjs';
 import {istDay} from '../../public/js/data/newsletter-shared.js';
 import {localNewsletter} from './newsletter-local.mjs';
+import {NewsletterDeliveryQueue} from './newsletter-delivery-queue.mjs';
 
 export function decodeNewsletterColumn(value,table,column){
  if(table!=='newsletter_documents'||column!=='body')return value;
@@ -67,6 +68,8 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   await sealBackgroundState(backup,state,'newsletter',{env});const result=await transport.publish({cycle:++cycle,state,views,sourceSignature:signature});try{await notify(result);}catch{/* Existing scheduled deployment also catches up. */}return result;
  }
  function publish(){const work=tail.then(()=>{if(blocked)throw Error('Newsletter publication is blocked');return checkpoint();});tail=work.catch(()=>{blocked=true;});return work;}
+ local.schedule.deliveryQueue=new NewsletterDeliveryQueue(local,{publish,now:localOptions.now,
+  context:async(plan,work)=>{const previous=activeRequest;activeRequest={edition:plan.edition,to:plan.source==='test'?'me':'all',email:plan.source==='test'?plan.recipients[0]?.email:null,automatic:plan.source==='timer'};try{return await work();}finally{activeRequest=previous;}}});
  async function processRequest(envelope){
   const raw=await openForReader(envelope,env.BACKGROUND_STATE_KEY,newsletterRequestContext(transport.repo));if(raw.length>32768)throw Error('Newsletter request too large');const input=JSON.parse(new TextDecoder().decode(raw));
   if(!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(input.id||'')||!Number.isFinite(input.at)||Math.abs((localOptions.now?.()??Date.now())-input.at)>3600000||!['morning','evening'].includes(input.edition)||!['me','all'].includes(input.to))throw Error('Invalid newsletter request');
@@ -77,7 +80,10 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
  }
  async function wake(){await refresh();await publish();
   const deliver=local.schedule.deliver.bind(local.schedule);local.schedule.deliver=async input=>{activeRequest={edition:input.edition,to:'all',automatic:true};try{return await deliver(input);}finally{activeRequest=null;}};
-  try{await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');await publish();}finally{local.schedule.deliver=deliver;activeRequest=null;}
+  try{const recovered=await local.schedule.deliveryQueue.recover();await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
+   if(recovered.length&&(await local.schedule.status()).lastResult==='nothing-due')await local.schedule.record({lastResult:recovered.at(-1).reason||'sent',reason:recovered.at(-1).reason||null});
+   if(local.schedule.deliveryQueue.pending().length)await local.schedule.record({lastResult:'partial-send',reason:'delivery-retry-pending'});
+   await publish();}finally{local.schedule.deliver=deliver;activeRequest=null;}
  }
  async function preparePreviews(){
   const save=(id,value)=>local.db.prepare('INSERT INTO newsletter_views VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload').run(id,JSON.stringify(value));
