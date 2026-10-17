@@ -2496,7 +2496,7 @@
       "pending": []
     },
     "isin:INE0PA801013|Ghcl Textiles": {
-      "lastAttemptAt": "2026-10-13T08:09:52+00:00",
+      "lastAttemptAt": "2026-10-17T22:24:23+00:00",
       "lastResultCount": 3,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00",
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-17T21:50:40.191084+00:00"
+    "checkedAt": "2026-10-17T22:24:23.893870+00:00"
   }
 }
