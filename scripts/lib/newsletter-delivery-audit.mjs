@@ -43,6 +43,7 @@ export function auditNewsletter(value,{name,now=Date.now(),identities=new Set()}
     }else{add('edition-not-observed');report.state=now>=MONITOR.end?'incomplete':now>=MONITOR.due+1800000?'delayed':'pending';}
     report.issues=[...issues];return report;
   }
+  if(typeof row.subject!=='string'||!row.subject.trim()||row.subject.length>2000)add('edition-subject-invalid');
   if(row.source!=='timer'||row.edition!=='morning'||row.day!==MONITOR.day||date(row.scheduledAt)!==MONITOR.due)add('not-target-automatic-edition');
   const started=date(row.startedAt),finished=date(row.finishedAt);
   if(!Number.isFinite(started)||started<MONITOR.due||started>now+60000)add('invalid-claim-time');
@@ -76,6 +77,7 @@ export function auditNewsletter(value,{name,now=Date.now(),identities=new Set()}
       else report.extraAttempts+=part.attempts-1;
       const accepted=part.ok===true&&integer(part.status)&&part.status>=200&&part.status<300;
       if(accepted)report.acceptedParts++;else bad('part-not-accepted');
+      if(part.reason!=null)bad('part-has-failure');
       const request=part.request;
       if(!request||!id(request.messageId)||request.subject!==row.subject||
         typeof request.bodySha256!=='string'||!/^[a-f0-9]{64}$/.test(request.bodySha256))bad('submitted-receipt-invalid');
@@ -87,7 +89,7 @@ export function auditNewsletter(value,{name,now=Date.now(),identities=new Set()}
         identities.add(identity);
       }
     }
-    if(outcome.ok!==true)bad('recipient-incomplete');
+    if(outcome.ok!==true||outcome.reason!=null)bad('recipient-incomplete');
     if(valid&&!outcome.cancelled)report.verifiedRecipients++;
   }
   for(const subscriber of eligible)if(!recipients.has(subscriber.email)){

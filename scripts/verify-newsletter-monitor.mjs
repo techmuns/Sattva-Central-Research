@@ -37,6 +37,8 @@ bad((v,r)=>r.outcomes[0].parts[1].messageId=null,'provider-message-id-unavailabl
 bad((v,r)=>r.outcomes[0].parts[1].status=429,'part-not-accepted');
 bad((v,r)=>r.outcomes[0].parts[1].request.messageId=r.outcomes[1].parts[1].request.messageId,'message-identity-reused');
 bad((v,r)=>r.outcomes[0].cancelled=true,'recipient-cancelled');
+bad((v,r)=>{r.subject=null;for(const o of r.outcomes)for(const p of o.parts)p.request.subject=null;},'edition-subject-invalid');
+bad((v,r)=>r.outcomes[0].parts[1].reason='upstream','part-has-failure');
 bad((v,r)=>r.sent=1,'delivery-totals-inconsistent');
 bad((v,r)=>r.finishedAt=null,'edition-not-finished');
 bad(v=>v.subscribers.push({email:'missed@example.test',editions:['morning'],addedAt:'2026-10-01T00:00:00Z'}),'eligible-recipient-missing');
