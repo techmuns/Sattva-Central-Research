@@ -1972,7 +1972,7 @@
       "pending": []
     },
     "isin:INE07RO01027|SUPRIYA": {
-      "lastAttemptAt": "2026-10-12T10:33:37+00:00",
+      "lastAttemptAt": "2026-10-17T03:05:16+00:00",
       "error": "search-unavailable",
       "lastResultCount": 107,
       "targetThrough": "2026-10-02T12:58:36+00:00",
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-17T02:18:04.091031+00:00"
+    "checkedAt": "2026-10-17T03:05:16.489352+00:00"
   }
 }
