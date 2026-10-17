@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 import {MONITOR,auditNewsletter,monitorNewsletters,readNewsletter} from './lib/newsletter-delivery-audit.mjs';
 
 const now=MONITOR.due+60000;
@@ -80,4 +81,16 @@ const workflow=fs.readFileSync('.github/workflows/newsletter-monitor.yml','utf8'
 assert(workflow.includes('runs-on: ubuntu-latest'));assert(workflow.includes('ref: main'));
 assert(!/secrets\.|send\/raw|workflow run newsletter-refresh|paid|OPENAI_API_KEY/.test(workflow));
 assert(workflow.includes('gh workflow disable newsletter-monitor.yml'));
+// Execute the actual pre-checkout workflow gate, including a missed final cron.
+const gate=workflow.match(/node --input-type=module <<'JS'\n([\s\S]+?)\n          JS/)[1].replace(/import fs from 'node:fs';/, '');
+for(const [at,event,expected] of [
+ [MONITOR.due-1000,'push',true],[MONITOR.due-1000,'schedule',false],
+ [MONITOR.due,'schedule',true],[MONITOR.end+7200000,'workflow_run',true],
+ [MONITOR.end+86400000,'workflow_dispatch',true],
+]){
+ let output='';
+ class FixtureDate extends Date {static now(){return at;}}
+ vm.runInNewContext(gate,{Date:FixtureDate,process:{env:{EVENT:event,GITHUB_OUTPUT:'fixture'}},fs:{appendFileSync:(_file,value)=>{output+=value;}}});
+ assert.equal(output,`run=${expected}\n`,`${event} at ${new Date(at).toISOString()}`);
+}
 console.log('PASS Monday monitoring: exact edition, dynamic coverage, submitted threading, retry/cancellation exceptions, privacy, read-only requests and bounded streaming.');

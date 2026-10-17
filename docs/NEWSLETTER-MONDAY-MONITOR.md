@@ -12,8 +12,10 @@ IST (02:30 UTC)**. Every 15 minutes on 19–20 October, and after Sattva newslet
 processing/deployment completes, the monitor checks the actual edition's planned
 recipient count and part count. Glow is polled independently. Scheduled Actions
 can be delayed or dropped; these checks do not promise an exact execution time.
-Push activation also saves a readiness report before Monday. Outside the dated
-episode, scheduled/workflow completion triggers do no work.
+Push activation also saves a readiness report before Monday. Before the dated
+episode, scheduled/workflow completion triggers do no work. A late wake after
+the observation window still saves its final result and disables the monitor;
+it does not silently skip the final report because a boundary schedule was delayed.
 
 The monitor verifies all planned outcomes, successful provider acknowledgements,
 part sequence and sizes, stable unique message IDs, identical edition subjects,
