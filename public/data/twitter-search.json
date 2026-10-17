@@ -1996,7 +1996,7 @@
       "pending": []
     },
     "isin:INE665A01038|SWANCORP": {
-      "lastAttemptAt": "2026-10-12T11:45:24+00:00",
+      "lastAttemptAt": "2026-10-17T04:32:32+00:00",
       "error": "search-unavailable"
     },
     "isin:INE976I01016|Tata Capital": {
@@ -2582,6 +2582,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-17T04:01:21.396997+00:00"
+    "checkedAt": "2026-10-17T04:32:32.929856+00:00"
   }
 }
