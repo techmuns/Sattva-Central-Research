@@ -282,9 +282,11 @@ export class NewsletterStore {
 
   pruneDeliveries() {
     const keep = 200;
-    const total = this.rows('SELECT COUNT(*) AS count FROM newsletter_deliveries')[0].count;
+    // Unfinished editions may still have saved parts waiting for automatic
+    // recovery. Keep their outcomes independently of the bounded finished log.
+    const total = this.rows('SELECT COUNT(*) AS count FROM newsletter_deliveries WHERE finished_at IS NOT NULL')[0].count;
     if (total <= keep) return;
-    this.rows('DELETE FROM newsletter_deliveries WHERE key IN (SELECT key FROM newsletter_deliveries ORDER BY started_at ASC LIMIT ?)', total - keep);
+    this.rows('DELETE FROM newsletter_deliveries WHERE key IN (SELECT key FROM newsletter_deliveries WHERE finished_at IS NOT NULL ORDER BY started_at ASC LIMIT ?)', total - keep);
   }
 
   delivery(key) {

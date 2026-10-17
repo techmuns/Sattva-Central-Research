@@ -60,11 +60,13 @@ const validMessageId = value => typeof value === 'string' && value.length <= 998
  * One email through the Muns raw-send endpoint. Exactly one of `text` / `html` is sent, as the
  * endpoint requires. The answer is a small named outcome and never the upstream's own words.
  */
-export async function sendEmail({ fetcher = fetch, token, email, subject, html = null, text = null, inReplyTo = null, signal, base = EMAIL_SEND_URL }) {
+export async function sendEmail({ fetcher = fetch, token, email, subject, html = null, text = null, messageId = null, inReplyTo = null, signal, base = EMAIL_SEND_URL }) {
   if ((html == null) === (text == null)) throw new Error('sendEmail takes exactly one of html or text');
   if (inReplyTo != null && !validMessageId(inReplyTo)) throw new Error('sendEmail takes a valid reply Message-ID');
+  if (messageId != null && !validMessageId(messageId)) throw new Error('sendEmail takes a valid Message-ID');
   if (emailBytes(html ?? text) > EMAIL_HTML_BYTES) return { ok: false, status: null, reason: 'email-too-large' };
   const body = html != null ? { email, subject, html } : { email, subject, text };
+  if (messageId) body.messageId = messageId;
   if (inReplyTo) Object.assign(body, { inReplyTo, references: [inReplyTo] });
   let res;
   try {
@@ -280,6 +282,9 @@ export class NewsletterSchedule {
     }
     const subject = briefSubject(brief, this.renderOptions());
     const summary = { ...briefSummary(brief), emailParts: messages.length, htmlBytes: messages.map(m => m.bytes) };
+    // GitHub owns resumable delivery. The retired object path keeps its original
+    // claims; no historical/uncertain edition is implicitly enrolled for replay.
+    if (this.deliveryQueue) return this.deliveryQueue.deliver({ key, edition, source, brief, list, messages, pdfUrl, documentId, credential, subject, summary });
     const acceptedParts = new Set();
     const deliveredStories = () => {
       const keys = source !== 'test' ? acceptedStoryKeys(messages, acceptedParts) : [];

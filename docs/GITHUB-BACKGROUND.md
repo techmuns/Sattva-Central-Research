@@ -247,4 +247,33 @@ Transfer progress logs contain only fixed table names and aggregate row counts.
 
 Newsletter provider request deadlines start after encrypted checkpoint acknowledgement and live PDF verification. The original HTTP timeout limits and budget claims stay unchanged; explicit caller cancellation remains effective during preparation. An old timed-out delivery claim is not cleared or replayed by this change.
 
+### Automatic multipart recovery (17 October 2026)
+
+New GitHub deliveries retain an encrypted outbox with the exact personalised HTML,
+subject, PDF link and a unique RFC Message-ID for every recipient and part. The
+sender's `/email/send/raw` contract supports `messageId`, `inReplyTo` and
+`references`; every reply uses that recipient's acknowledged root ID. A root must
+be acknowledged before its replies are submitted. Outcomes and reported story
+identities are checkpointed after each attempt; acknowledged parts are skipped on
+recovery. Missing parts resume on ordinary scheduled runs, after five minutes,
+then fifteen, then forty-five, with backoff capped at six hours. Recovery uses the
+original saved edition, without rebuilding research or spending another AI budget.
+
+The queue stays on free standard GitHub Actions runners, inside the encrypted
+master database; recipient HTML and addresses are never public artifacts. Finished
+queues retain receipts and release the temporary HTML payload; immutable PDFs and
+the existing delivery ledger remain. Unsubscribed recipients are cancelled, and
+disabled automatic editions wait until enabled. Interactive test copies do not
+create an automatic recurring send. Old claims without an outbox are never
+enrolled, including the 16 October editions repaired separately.
+
+This is at-least-once recovery: a lost SMTP acknowledgement or runner interruption
+can repeat a message with the same ID. The sender does not document an idempotency
+key or a reconciliation API, so exactly-once acceptance and third-party inbox
+placement cannot be guaranteed. An incomplete queue remains a visible
+`partial-send`/`delivery-retry-pending` state until acknowledged or cancelled.
+Offline regressions cover slow PDF publication, three parts for three recipients,
+lost root responses, rejected replies, checkpoint interruption, restart,
+unsubscription, disabled/re-enabled editions and unchanged bodies/thread headers.
+
 The newsletter runner reads public company quotes from its fixed `/api/breakouts` prepared reader using a credential-free GET. It requires `github-actions` delivery and validates each observation before the existing session/freshness checks; it never calls the former capture database. Unavailable or stale quotes retain the original daily fallback and unavailable states.

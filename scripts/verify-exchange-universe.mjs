@@ -75,7 +75,9 @@ await listed.load({ read: async path => ({ value: path.includes('nse-identities'
 assert.deepEqual(listed.all(), buildExchangeUniverse(changedBse, nse).companies, 'a changed source replaces the entire derived result with exact current data');
 assert.equal(builds, firstBuilds + 2, 'only the changed source and combined directory are rebuilt');
 assert.equal(listed.meta().sources.find(s => s.label === 'BSE').checkedAt, changedBse.capturedAt);
-assert.deepEqual(listed.meta().errors, [], 'fresh successful checks clear previous failures');
+const sourceWarnings = ['equity', 'sme'].filter(kind => nse.directories[kind].error)
+  .map(kind => `NSE ${kind === 'sme' ? 'SME' : 'main board'} directory has not been fully checked.`);
+assert.deepEqual(listed.meta().errors, sourceWarnings, 'successful revalidation clears request failures while preserving captured source warnings');
 const changedRows = listed.all();
 await listed.load({ read: async path => ({ value: path.includes('nse-identities') ? nse : changedBse, stale: true }), build: trackedBuild });
 assert.equal(listed.all(), changedRows);
