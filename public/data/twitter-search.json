@@ -2380,7 +2380,7 @@
       "error": "search-unavailable"
     },
     "isin:INE852O01025|APTUS": {
-      "lastAttemptAt": "2026-10-13T00:16:36+00:00",
+      "lastAttemptAt": "2026-10-17T13:15:41+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0UIZ01018|BlackBuck": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-17T12:37:37.106204+00:00"
+    "checkedAt": "2026-10-17T13:15:41.311957+00:00"
   }
 }
