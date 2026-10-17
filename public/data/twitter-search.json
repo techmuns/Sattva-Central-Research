@@ -2112,57 +2112,61 @@
       "lastDiscoveryAt": "2026-09-29T01:13:29+00:00"
     },
     "isin:INE0CAZ01013|Urban Company": {
-      "lastAttemptAt": "2026-10-12T19:00:05+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 106,
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
+      "error": null,
+      "lastResultCount": 44,
       "targetThrough": "2026-09-24T08:08:20+00:00",
       "pending": [
-        {
-          "from": "2026-09-15T08:08:20.544103+00:00",
-          "to": "2026-09-19T20:08:20.272051+00:00"
-        },
         {
           "from": "2026-09-19T20:08:20.272051+00:00",
           "to": "2026-09-24T08:08:20+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-09-29T01:13:29+00:00"
+      "lastDiscoveryAt": "2026-10-17T05:23:01+00:00"
     },
     "isin:INE0CAZ01013|URBANCO": {
-      "lastAttemptAt": "2026-10-12T19:51:25+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
+      "error": null,
+      "lastResultCount": 87,
+      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE879I01012|Valor Estate": {
-      "lastAttemptAt": "2026-10-12T21:13:07+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
+      "error": null,
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-10-12T21:45:53+00:00",
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
       "error": null,
-      "lastResultCount": 7,
-      "lastSuccessAt": "2026-10-12T21:45:53+00:00",
+      "lastResultCount": 5,
+      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-10-12T21:45:53+00:00",
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
       "error": null,
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-12T21:45:53+00:00",
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
-      "lastAttemptAt": "2026-10-12T21:45:53+00:00",
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
       "error": null,
-      "lastResultCount": 13,
-      "lastSuccessAt": "2026-10-12T21:45:53+00:00",
+      "lastResultCount": 12,
+      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|VAML": {
-      "lastAttemptAt": "2026-10-12T21:45:53+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 39,
       "lastSuccessAt": "2026-10-12T21:45:53+00:00",
       "targetThrough": null,
@@ -2268,15 +2272,11 @@
       "pending": []
     },
     "isin:INE18UN01038|GAJA": {
-      "lastAttemptAt": "2026-10-12T21:45:53+00:00",
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
       "error": "result-cap-incomplete",
-      "lastResultCount": 116,
+      "lastResultCount": 123,
       "targetThrough": "2026-09-20T00:19:51+00:00",
       "pending": [
-        {
-          "from": "2026-09-15T12:19:51.488863+00:00",
-          "to": "2026-09-20T00:19:51+00:00"
-        },
         {
           "from": "2026-09-11T00:19:51.977725+00:00",
           "to": "2026-09-13T06:19:51.733294+00:00"
@@ -2284,9 +2284,17 @@
         {
           "from": "2026-09-13T06:19:51.733294+00:00",
           "to": "2026-09-15T12:19:51.488863+00:00"
+        },
+        {
+          "from": "2026-09-15T12:19:51.488863+00:00",
+          "to": "2026-09-17T18:19:51.244431+00:00"
+        },
+        {
+          "from": "2026-09-17T18:19:51.244431+00:00",
+          "to": "2026-09-20T00:19:51+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-12T21:45:53+00:00"
+      "lastDiscoveryAt": "2026-10-17T05:23:01+00:00"
     },
     "isin:INE540H01012|Voltamp Transformers": {
       "lastAttemptAt": "2026-10-12T22:32:50+00:00",
@@ -2352,8 +2360,12 @@
       "pending": []
     },
     "isin:INE685T01010|HORIZONIND": {
-      "lastAttemptAt": "2026-10-12T20:22:48+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE0LRU01027|Aarti Pharmalabs": {
       "lastAttemptAt": "2026-10-12T22:32:50+00:00",
@@ -2610,8 +2622,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 10,
-    "incomplete": 219,
-    "checkedAt": "2026-10-17T04:45:35.048951+00:00"
+    "attempted": 9,
+    "incomplete": 213,
+    "checkedAt": "2026-10-17T05:23:01.806032+00:00"
   }
 }
