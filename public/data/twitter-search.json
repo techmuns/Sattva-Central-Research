@@ -1,8 +1,8 @@
 {
   "queries": {
     "isin:INE423A01024|Adani Enterprises": {
-      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-17T08:52:30+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 98,
       "targetThrough": null,
       "pending": [],
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 213,
-    "checkedAt": "2026-10-17T08:10:38.950289+00:00"
+    "checkedAt": "2026-10-17T08:52:30.440171+00:00"
   }
 }
