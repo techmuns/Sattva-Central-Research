@@ -2588,8 +2588,8 @@
       "error": "search-unavailable"
     },
     "isin:INE0JA001018|VENUSPIPES": {
-      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-18T10:25:25+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 42,
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
       "targetThrough": null,
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 231,
-    "checkedAt": "2026-10-18T09:41:37.285760+00:00"
+    "checkedAt": "2026-10-18T10:25:25.330728+00:00"
   }
 }
