@@ -2604,8 +2604,8 @@
       "pending": []
     },
     "isin:INE625G01013|WELENT": {
-      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-18T12:40:48+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 21,
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
       "targetThrough": null,
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 231,
-    "checkedAt": "2026-10-18T11:59:37.596385+00:00"
+    "checkedAt": "2026-10-18T12:40:48.570567+00:00"
   }
 }
