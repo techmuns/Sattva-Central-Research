@@ -2576,7 +2576,7 @@
       "error": "search-unavailable"
     },
     "isin:INE011K01018|Tega Industries": {
-      "lastAttemptAt": "2026-10-13T18:35:25+00:00",
+      "lastAttemptAt": "2026-10-18T08:40:33+00:00",
       "error": "search-unavailable"
     },
     "isin:INE011K01018|TEGA": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 231,
-    "checkedAt": "2026-10-18T08:10:33.276225+00:00"
+    "checkedAt": "2026-10-18T08:40:33.818445+00:00"
   }
 }
