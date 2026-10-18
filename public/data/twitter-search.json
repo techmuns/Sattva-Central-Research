@@ -2524,7 +2524,7 @@
       "error": "search-unavailable"
     },
     "isin:INE391J01032|JTLIND": {
-      "lastAttemptAt": "2026-10-13T11:15:53+00:00",
+      "lastAttemptAt": "2026-10-18T01:08:47+00:00",
       "error": "search-unavailable"
     },
     "isin:INE04I401011|Kpit Technologies": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-18T00:27:24.832821+00:00"
+    "checkedAt": "2026-10-18T01:08:47.665227+00:00"
   }
 }
