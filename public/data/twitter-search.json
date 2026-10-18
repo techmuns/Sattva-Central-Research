@@ -2564,7 +2564,7 @@
       "error": "search-unavailable"
     },
     "isin:INE658D01029|SIMPLEXCAS": {
-      "lastAttemptAt": "2026-10-13T16:58:13+00:00",
+      "lastAttemptAt": "2026-10-18T06:41:17+00:00",
       "error": "search-unavailable"
     },
     "isin:INE092A01019|Tata Chemicals": {
@@ -2623,7 +2623,7 @@
   "coverage": {
     "planned": 254,
     "attempted": 1,
-    "incomplete": 223,
-    "checkedAt": "2026-10-18T06:11:06.194844+00:00"
+    "incomplete": 227,
+    "checkedAt": "2026-10-18T06:41:17.960194+00:00"
   }
 }
