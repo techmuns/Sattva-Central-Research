@@ -2540,7 +2540,7 @@
       "error": "search-unavailable"
     },
     "isin:INE00GO01025|LEAPIND": {
-      "lastAttemptAt": "2026-10-13T13:32:33+00:00",
+      "lastAttemptAt": "2026-10-18T03:10:44+00:00",
       "error": "search-unavailable"
     },
     "isin:INE185Q01025|Lumino Industries": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-18T02:40:37.345951+00:00"
+    "checkedAt": "2026-10-18T03:10:44.256060+00:00"
   }
 }
