@@ -2331,8 +2331,8 @@
       "lastDiscoveryAt": "2026-10-13T20:29:00+00:00"
     },
     "isin:INE377N01017|WAAREEENER": {
-      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-18T11:31:08+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 24,
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
       "targetThrough": null,
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 231,
-    "checkedAt": "2026-10-18T11:13:35.457607+00:00"
+    "checkedAt": "2026-10-18T11:31:08.439519+00:00"
   }
 }
