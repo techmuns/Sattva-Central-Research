@@ -2520,7 +2520,7 @@
       "error": "search-unavailable"
     },
     "isin:INE391J01032|Jtl Industries": {
-      "lastAttemptAt": "2026-10-13T10:27:35+00:00",
+      "lastAttemptAt": "2026-10-18T00:27:24+00:00",
       "error": "search-unavailable"
     },
     "isin:INE391J01032|JTLIND": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-17T23:55:31.546355+00:00"
+    "checkedAt": "2026-10-18T00:27:24.832821+00:00"
   }
 }
