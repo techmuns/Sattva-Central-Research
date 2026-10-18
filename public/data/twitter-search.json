@@ -2612,8 +2612,8 @@
       "pending": []
     },
     "isin:INE274C01019|Wendt (India)": {
-      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-18T13:11:50+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 8,
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
       "targetThrough": null,
@@ -2623,7 +2623,7 @@
   "coverage": {
     "planned": 254,
     "attempted": 1,
-    "incomplete": 231,
-    "checkedAt": "2026-10-18T12:40:48.570567+00:00"
+    "incomplete": 236,
+    "checkedAt": "2026-10-18T13:11:50.530317+00:00"
   }
 }
