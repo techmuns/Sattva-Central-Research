@@ -107,7 +107,7 @@
       "pending": []
     },
     "isin:INE1YPB01014|Allcargo Global": {
-      "lastAttemptAt": "2026-10-14T00:45:23+00:00",
+      "lastAttemptAt": "2026-10-18T18:12:15+00:00",
       "error": "search-unavailable",
       "lastResultCount": 16,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-10-18T17:41:11.651331+00:00"
+    "checkedAt": "2026-10-18T18:12:15.899644+00:00"
   }
 }
