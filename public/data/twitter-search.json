@@ -2352,7 +2352,7 @@
       "lastDiscoveryAt": "2026-10-13T20:29:00+00:00"
     },
     "isin:INE049B01025|WOCKPHARMA": {
-      "lastAttemptAt": "2026-10-13T20:29:00+00:00",
+      "lastAttemptAt": "2026-10-18T14:27:47+00:00",
       "error": "search-unavailable",
       "lastResultCount": 40,
       "lastSuccessAt": "2026-10-03T05:24:56+00:00",
@@ -2623,7 +2623,7 @@
   "coverage": {
     "planned": 254,
     "attempted": 1,
-    "incomplete": 236,
-    "checkedAt": "2026-10-18T13:55:30.397340+00:00"
+    "incomplete": 243,
+    "checkedAt": "2026-10-18T14:27:47.129414+00:00"
   }
 }
