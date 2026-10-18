@@ -147,8 +147,8 @@
       "error": "search-unavailable"
     },
     "isin:INE555B01013|Axiscades Technologies": {
-      "lastAttemptAt": "2026-10-14T05:17:36+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-18T22:35:04+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 21,
       "lastSuccessAt": "2026-10-14T05:17:36+00:00",
       "targetThrough": null,
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-10-18T22:04:13.085127+00:00"
+    "checkedAt": "2026-10-18T22:35:04.096162+00:00"
   }
 }
