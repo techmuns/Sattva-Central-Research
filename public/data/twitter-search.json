@@ -62,7 +62,7 @@
       "pending": []
     },
     "isin:INE0ALI01010|Advait Energy Transitions": {
-      "lastAttemptAt": "2026-10-13T21:55:10+00:00",
+      "lastAttemptAt": "2026-10-18T16:11:34+00:00",
       "error": "search-unavailable",
       "lastResultCount": 31,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-10-18T15:40:00.030024+00:00"
+    "checkedAt": "2026-10-18T16:11:34.052145+00:00"
   }
 }
