@@ -2544,7 +2544,7 @@
       "error": "search-unavailable"
     },
     "isin:INE185Q01025|Lumino Industries": {
-      "lastAttemptAt": "2026-10-13T14:03:01+00:00",
+      "lastAttemptAt": "2026-10-18T04:10:15+00:00",
       "error": "search-unavailable"
     },
     "isin:INE185Q01025|LUMINO": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-18T03:10:44.256060+00:00"
+    "checkedAt": "2026-10-18T04:10:15.350680+00:00"
   }
 }
