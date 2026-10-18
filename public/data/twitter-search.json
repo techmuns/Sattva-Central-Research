@@ -2532,7 +2532,7 @@
       "error": "search-unavailable"
     },
     "isin:INE04I401011|KPITTECH": {
-      "lastAttemptAt": "2026-10-13T12:22:10+00:00",
+      "lastAttemptAt": "2026-10-18T01:55:23+00:00",
       "error": "search-unavailable"
     },
     "isin:INE00GO01025|Leap India": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-18T01:18:02.757810+00:00"
+    "checkedAt": "2026-10-18T01:55:23.788429+00:00"
   }
 }
