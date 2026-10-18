@@ -2580,7 +2580,7 @@
       "error": "search-unavailable"
     },
     "isin:INE011K01018|TEGA": {
-      "lastAttemptAt": "2026-10-13T19:05:55+00:00",
+      "lastAttemptAt": "2026-10-18T09:10:59+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0JA001018|Venus Pipes & Tubes": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 231,
-    "checkedAt": "2026-10-18T08:40:33.818445+00:00"
+    "checkedAt": "2026-10-18T09:10:59.399762+00:00"
   }
 }
