@@ -139,7 +139,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|Atlanta Electricals": {
-      "lastAttemptAt": "2026-10-14T04:06:31+00:00",
+      "lastAttemptAt": "2026-10-18T21:38:00+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|ATLANTAELE": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-10-18T21:05:06.234176+00:00"
+    "checkedAt": "2026-10-18T21:38:00.961051+00:00"
   }
 }
