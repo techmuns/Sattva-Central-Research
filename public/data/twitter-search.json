@@ -2536,7 +2536,7 @@
       "error": "search-unavailable"
     },
     "isin:INE00GO01025|Leap India": {
-      "lastAttemptAt": "2026-10-13T12:55:17+00:00",
+      "lastAttemptAt": "2026-10-18T02:40:37+00:00",
       "error": "search-unavailable"
     },
     "isin:INE00GO01025|LEAPIND": {
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-10-18T01:55:23.788429+00:00"
+    "checkedAt": "2026-10-18T02:40:37.345951+00:00"
   }
 }
