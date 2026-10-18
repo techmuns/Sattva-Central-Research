@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-18T18:05:36.876Z",
-  "oldestDataAt": "2026-10-18T18:05:36.876Z",
-  "from": "2025-10-18",
-  "to": "2026-10-18",
+  "capturedAt": "2026-10-18T18:50:22.832Z",
+  "oldestDataAt": "2026-10-18T18:50:22.832Z",
+  "from": "2025-10-19",
+  "to": "2026-10-19",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-18T18:05:36.876Z",
+      "capturedAt": "2026-10-18T18:50:22.832Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-18T18:05:36.876Z",
+      "capturedAt": "2026-10-18T18:50:22.832Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-18T18:05:36.876Z",
+      "capturedAt": "2026-10-18T18:50:22.832Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-18T18:05:36.876Z",
+      "capturedAt": "2026-10-18T18:50:22.832Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 1963,
   "emptyCount": 0,
-  "rowCount": 21636,
+  "rowCount": 21633,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -191071,72 +191071,6 @@
           "From Date": "2025-10-20",
           "To Date": "2025-10-20",
           "Broadcast Date": "2025-10-24",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-18",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Rohit Bhatnagar",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Pledge",
-          "Trade Shares": "9610",
-          "Trade %": "0",
-          "Trade Value": "7578446",
-          "Post Holding Shares": "9610",
-          "Post Holding %": "0",
-          "Mode": "Creation Of Pledge",
-          "From Date": "2025-09-22",
-          "To Date": "2025-09-22",
-          "Broadcast Date": "2025-10-18",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-18",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Rohit Bhatnagar",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Revoke",
-          "Trade Shares": "2500",
-          "Trade %": "0",
-          "Trade Value": "1905305",
-          "Post Holding Shares": "6610",
-          "Post Holding %": "0",
-          "Mode": "Revocation Of Pledge",
-          "From Date": "2025-09-23",
-          "To Date": "2025-09-29",
-          "Broadcast Date": "2025-10-18",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-18",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Rohit Bhatnagar",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Revoke",
-          "Trade Shares": "3000",
-          "Trade %": "0",
-          "Trade Value": "2355000",
-          "Post Holding Shares": "9610",
-          "Post Holding %": "0",
-          "Mode": "Revocation Of Pledge",
-          "From Date": "2025-09-22",
-          "To Date": "2025-09-22",
-          "Broadcast Date": "2025-10-18",
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
