@@ -535,7 +535,7 @@
       "lastDiscoveryAt": "2026-10-04T00:14:44+00:00"
     },
     "isin:INE758T01015|ETERNAL": {
-      "lastAttemptAt": "2026-10-14T18:33:31+00:00",
+      "lastAttemptAt": "2026-10-19T16:10:37+00:00",
       "error": "search-unavailable",
       "lastResultCount": 113,
       "targetThrough": "2026-09-12T07:47:49+00:00",
@@ -2611,6 +2611,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 251,
-    "checkedAt": "2026-10-19T15:01:51.156428+00:00"
+    "checkedAt": "2026-10-19T16:10:37.259659+00:00"
   }
 }
