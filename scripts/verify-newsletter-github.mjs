@@ -8,6 +8,7 @@ import {installPreparedBackground} from './lib/github-background-deployment.mjs'
 import {readerKeys,encode64,openForReader,sealForReader} from '../worker/mutual-funds-seal.mjs';
 import {handleGithubNewsletter} from '../worker/newsletter-github.mjs';
 import {newsletterAssets} from './collect-newsletter.mjs';
+import {newsletterWakePlan} from './lib/newsletter-wake-plan.mjs';
 fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/newsletter-github-'));
 let at=Date.parse('2026-09-15T06:30:00Z');
 const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',now=()=>at;
@@ -58,7 +59,12 @@ try{
  const cipherFiles=new Map(fs.readdirSync(path.join(site,'generated-views/newsletter')).map(name=>[name,fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8')]));
  const again=await runtime.publish();await installPreparedBackground([again],{env,fetcher,publicRoot:site,scratch:path.join(root,'install-again')});for(const [name,value]of cipherFiles)assert.equal(fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8'),value,'Unchanged private readers reuse ciphertext instead of reuploading PDF history');
  const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,ASSETS:{fetch:async request=>{assetReads++;const file=path.join(site,new URL(request.url).pathname);return fs.existsSync(file)?new Response(fs.readFileSync(file)):new Response(null,{status:404});}}};
- const common={object:{newsletterPdf(){throw Error('Prepared saved PDFs cannot touch Cloudflare SQL');}},now,pdfHeaders:filename=>({'content-type':'application/pdf','cache-control':'private, no-store'}),guardWrite:async()=>null};
+ const common={object:{newsletterPdf(){throw Error('Prepared saved PDFs cannot touch Cloudflare SQL');},newsletterSnapshot:async()=>source.store.snapshot()},now,pdfHeaders:filename=>({'content-type':'application/pdf','cache-control':'private, no-store'}),guardWrite:async()=>null};
+ const statusResponse=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter'),worker,common),publicStatus=await statusResponse.json();
+ assert.equal(statusResponse.status,200);assert.equal(publicStatus.inputRevision,undefined);assert.equal(typeof publicStatus.revision,'number');
+ publicStatus.schedule={...publicStatus.schedule,lastWakeAt:new Date(at).toISOString(),lastCheckedAt:new Date(at).toISOString(),reason:null};
+ assert.equal(newsletterWakePlan(publicStatus,{now:at+1}).due,false,'The actual public response coalesces a recent check without a checkpoint revision field');
+ publicStatus.schedule.reason='waiting-for-inputs';assert.equal(newsletterWakePlan(publicStatus,{now:at+1}).reason,'inputs-changed');
  let response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/pdf/'+pdfId),worker,common);assert.equal(response.status,200);assert.deepEqual(Buffer.from(await response.arrayBuffer()),pdf);
  response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/preview?edition=morning'),worker,common);assert.equal(response.status,200);assert.equal(response.headers.get('x-newsletter-part'),'1');assert.equal(await response.text(),preview.body,'The default preview URL serves the actual prepared HTML through encrypted static delivery');
  response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/preview?edition=morning&part=2'),worker,common);assert.equal(response.status,503);assert.equal((await response.json()).reason,'preview-unavailable','A bookmark to a removed part cannot serve an older edition');

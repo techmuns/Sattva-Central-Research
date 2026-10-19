@@ -22,6 +22,11 @@ check, a newly due weekday edition, a due saved retry or changed subscriber inpu
 Unavailable status fails this preflight visibly; original scheduled, code-push,
 manual and read-only bootstrap triggers do not depend on that prepared reader.
 
+The public input-change signal is `schedule.reason=waiting-for-inputs`; absence
+of a private checkpoint revision does not count as a change. Retry metadata keeps
+per-edition/source counts and deadlines, so current disabled-edition settings apply
+in both gates. Older aggregate-only readers keep the five-minute check cadence.
+
 The processing job retains the `newsletter-account` mutex and full request queue.
 It restores the acknowledged encrypted GitHub checkpoint, refreshes the desk's
 current inputs and rechecks the same clock under that mutex. Redundant completion

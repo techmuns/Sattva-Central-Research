@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {DEFAULT_SETTINGS,istInstant} from '../public/js/data/newsletter-shared.js';
-import {newsletterWakePlan,NEWSLETTER_WAKE_MS} from './lib/newsletter-wake-plan.mjs';
+import {newsletterWakePlan,newsletterRetryState,NEWSLETTER_WAKE_MS} from './lib/newsletter-wake-plan.mjs';
 import {newsletterWakeGate} from './newsletter-wake-gate.mjs';
 import {breakoutCollectorIdentity} from '../worker/breakout-auth.mjs';
 import {BREAKOUT_ENDPOINT,BREAKOUT_WORKFLOW} from '../public/js/data/breakout-live-shared.js';
@@ -30,9 +30,20 @@ for(const day of ['2026-10-17','2026-10-18']){
 const custom=fixture();custom.settings.morning.time='08:30';custom.schedule.lastWakeAt=custom.schedule.lastCheckedAt=due+29*60000;
 assert.equal(plan(custom,due+30*60000).reason,'edition-due','Use edited send times rather than hard-coded 08:00');
 const disabled=fixture();disabled.settings.morning.enabled=false;assert.equal(plan(disabled,due).due,false);
-const retry=structuredClone(checked);retry.schedule.deliveryRecovery={pendingEditions:1,nextRetryAt:new Date(due+1000).toISOString()};
+const retry=structuredClone(checked);retry.schedule.deliveryRecovery=newsletterRetryState([{edition:'morning',source:'timer',next_at:due+1000}]);
 assert.equal(plan(retry,due+999).due,false);assert.equal(plan(retry,due+1000).reason,'delivery-retry-due');
+retry.settings.morning.enabled=false;
+assert.equal(plan(retry,due+1000).due,false,'A disabled morning retry cannot make every collector completion start a job');
+retry.schedule.deliveryRecovery=newsletterRetryState([{edition:'morning',source:'timer',next_at:due},{edition:'morning',source:'button',next_at:due+1000},{edition:'morning',source:'test',next_at:due}]);
+assert.equal(retry.schedule.deliveryRecovery.pendingEditions,2);assert.equal(retry.schedule.deliveryRecovery.pending.length,2);
+assert.equal(plan(retry,due+1000).reason,'delivery-retry-due','Explicit subscriber sends retain their independent recovery');
+const aggregate=structuredClone(checked);aggregate.schedule.deliveryRecovery={pendingEditions:1,nextRetryAt:new Date(due).toISOString()};
+assert.equal(plan(aggregate,due+1).due,false,'Older aggregate readers use the five-minute cadence instead of a stale retry deadline');
+assert.equal(plan(aggregate,due+NEWSLETTER_WAKE_MS).reason,'check-overdue');
 const changed=structuredClone(checked);changed.revision++;assert.equal(plan(changed,due+1).reason,'inputs-changed');
+const publicShape=structuredClone(checked);delete publicShape.inputRevision;
+assert.equal(plan(publicShape,due+1).due,false,'The public response has revision but omits inputRevision');
+publicShape.schedule.reason='waiting-for-inputs';assert.equal(plan(publicShape,due+1).reason,'inputs-changed');
 const unknown=fixture();delete unknown.schedule.lastWakeAt;assert.equal(plan(unknown,due).reason,'wake-unverified');
 
 const repo='techmuns/Sattva-Central-Research';
