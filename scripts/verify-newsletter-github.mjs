@@ -9,7 +9,8 @@ import {readerKeys,encode64,openForReader,sealForReader} from '../worker/mutual-
 import {handleGithubNewsletter} from '../worker/newsletter-github.mjs';
 import {newsletterAssets} from './collect-newsletter.mjs';
 fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/newsletter-github-'));
-const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',at=Date.parse('2026-09-15T06:30:00Z'),now=()=>at;
+let at=Date.parse('2026-09-15T06:30:00Z');
+const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',now=()=>at;
 const env={NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
 let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false,pdfWait=0,allowFixtureMail=false,cancelDuringPdf=null;
 let exists=false,sequence=1,body='',assetReads=0;const remote=new Map(),tag='newsletter-data';
@@ -82,6 +83,19 @@ try{
  pdfWait=0;allowFixtureMail=false;cancelDuringPdf=null;runtime.schedule.sendNow=originalSend;
  const claim=runtime.schedule.content.newsBudget.reserve({job:'new-news',model:'fixture',amount:5678,now:at});assert(claim.ok);await runtime.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'});assert.equal(providerCalls,1);
  await runtime.close();runtime=null;restarted=await githubNewsletter({...options,file:path.join(root,'restarted.sqlite'),out:path.join(root,'restarted-publication'),legacyClient:async()=>{throw Error('An initialized archive cannot reset');}});assert(restarted.db.prepare('SELECT id FROM newsletter_news_ai_calls WHERE id=?').get(claim.id),'Metered I/O follows acknowledged restart storage containing its actual reservation');assert.equal(restarted.store.delivery('old-unknown').finishedAt,null);assert.deepEqual(Buffer.from(restarted.store.document(pdfId).body),pdf);
+ // A stale public reader may admit multiple completion jobs. Recheck the actual
+ // restored state under the shared sender mutex, without publication or paid I/O.
+ await restarted.schedule.record({lastWakeAt:at,lastCheckedAt:at});
+ let beforeWake=published;
+ for(let i=0;i<20;i++)assert.equal((await restarted.wake({onlyIfDue:true})).processed,false);
+ assert.equal(published,beforeWake);assert.equal(providerCalls,1);assert.equal(emailCalls,1);
+ at=Date.parse('2026-09-15T10:30:00Z');
+ await restarted.schedule.record({lastWakeAt:at-1000,lastCheckedAt:at-1000});
+ assert.equal((await restarted.wake({onlyIfDue:true})).processed,true);
+ assert.equal(restarted.store.delivery('2026-09-15:evening').reason,'no-token','The actual timer claims the due edition; fixture has no sender credential');
+ beforeWake=published;assert.equal((await restarted.wake({onlyIfDue:true})).processed,false);assert.equal(published,beforeWake);
+ assert.equal(restarted.store.delivery('old-unknown').finishedAt,null);assert.deepEqual(Buffer.from(restarted.store.document(pdfId).body),pdf);
+ assert(restarted.db.prepare('SELECT id FROM newsletter_news_ai_calls WHERE id=?').get(claim.id));
  failUpload=true;await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/archive rejected/);assert.equal(providerCalls,1);await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/stopped/);assert.equal(providerCalls,1);
  console.log('PASS newsletter GitHub migration: 1.5 MB PDF exact bytes/hash, unknown deliveries and paid budgets retained, encrypted master restart, static PDF reader, cached ciphertext, private queued request and replay safety, acknowledged reservation before stubbed model I/O, publication failure stops further provider work');
 }finally{await restarted?.close();await runtime?.close();await source?.close();fs.rmSync(root,{recursive:true,force:true});}

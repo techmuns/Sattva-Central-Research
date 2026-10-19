@@ -42,10 +42,11 @@ async function main(){
  };
  const runtime=await githubNewsletter({env:{...process.env,ASSETS:newsletterAssets(),NEWSLETTER_QUOTES:newsletterQuotes()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
  try{
-  await runtime.publish();let request=null,bootstrap=false;
+  const completionWake=process.env.GITHUB_EVENT_NAME==='workflow_run';
+  if(!completionWake)await runtime.publish();let request=null,bootstrap=false;
   if(process.env.GITHUB_EVENT_PATH){const stat=fs.statSync(process.env.GITHUB_EVENT_PATH);if(stat.size>8*1024*1024)throw Error('Workflow event too large');const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));bootstrap=event.inputs?.bootstrap===true||event.inputs?.bootstrap==='true';if(event.inputs?.request){if(typeof event.inputs.request!=='string'||event.inputs.request.length>64000)throw Error('Newsletter request too large');request=JSON.parse(event.inputs.request);}}
   if(bootstrap||process.env.NEWSLETTER_PROCESSING_ENABLED!=='true'){console.log('Read-only newsletter transfer: no model or email work.');}
-  else if(request){const result=await runtime.processRequest(request);if(result?.ok===false)process.exitCode=1;}else{await runtime.wake();const status=await runtime.schedule.status();if(['failed','missed','no-token','build-failed','book-unavailable','partial-send','unauthorised','upstream','timeout'].includes(status.lastResult)||['discovery-failed','partial-source-read'].includes(status.content?.reason))process.exitCode=1;}
+  else if(request){const result=await runtime.processRequest(request);if(result?.ok===false)process.exitCode=1;}else{const wake=await runtime.wake({onlyIfDue:completionWake});if(wake?.processed===false){console.log('Newsletter completion wake coalesced with a recent retained check.');return;}const status=await runtime.schedule.status();if(['failed','missed','no-token','build-failed','book-unavailable','partial-send','unauthorised','upstream','timeout'].includes(status.lastResult)||['discovery-failed','partial-source-read'].includes(status.content?.reason))process.exitCode=1;}
   await runtime.preparePreviews();await runtime.publish();console.log('Newsletter history, delivery claims and prepared files acknowledged on GitHub.');
  }finally{await runtime.close();}
 }

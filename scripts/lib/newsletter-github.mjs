@@ -14,6 +14,7 @@ import {renderBriefPdf,pdfFilename} from '../../worker/newsletter-pdf.mjs';
 import {istDay} from '../../public/js/data/newsletter-shared.js';
 import {localNewsletter} from './newsletter-local.mjs';
 import {NewsletterDeliveryQueue} from './newsletter-delivery-queue.mjs';
+import {newsletterWakePlan} from './newsletter-wake-plan.mjs';
 
 export function decodeNewsletterColumn(value,table,column){
  if(table!=='newsletter_documents'||column!=='body')return value;
@@ -80,12 +81,21 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   activeRequest=input;
   try{const result=await local.schedule.sendNow({edition:input.edition,to:input.to,email:input.email},input.token||null);local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run('completed',JSON.stringify(result),input.id);await publish();return result;}finally{activeRequest=null;}
  }
- async function wake(){await refresh();await publish();
+ async function wake({onlyIfDue=false}={}){
+  const prior=await local.storage.get('newsletter-source-revision');await refresh();
+  if(onlyIfDue){
+   const settings=local.store.settings(),state=await local.storage.get('newsletter-timer')||{};
+   const pending=local.schedule.deliveryQueue.pending().filter(row=>row.source!=='timer'||settings[row.edition]?.enabled);
+   const plan=newsletterWakePlan({settings,inputRevision:prior,revision:await local.storage.get('newsletter-source-revision'),
+    schedule:{...state,deliveryRecovery:{pendingEditions:pending.length,nextRetryAt:pending[0]?.next_at}}},{now:localOptions.now?.()??Date.now()});
+   if(!plan.due)return {processed:false,reason:plan.reason};
+  }
+  await publish();
   const deliver=local.schedule.deliver.bind(local.schedule);local.schedule.deliver=async input=>{activeRequest={edition:input.edition,to:'all',automatic:true};try{return await deliver(input);}finally{activeRequest=null;}};
   try{const recovered=await local.schedule.deliveryQueue.recover();await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
    if(recovered.length&&(await local.schedule.status()).lastResult==='nothing-due')await local.schedule.record({lastResult:recovered.at(-1).reason||'sent',reason:recovered.at(-1).reason||null});
    if(local.schedule.deliveryQueue.pending().length)await local.schedule.record({lastResult:'partial-send',reason:'delivery-retry-pending'});
-   await publish();}finally{local.schedule.deliver=deliver;activeRequest=null;}
+   await publish();return {processed:true};}finally{local.schedule.deliver=deliver;activeRequest=null;}
  }
  async function preparePreviews(){
   const save=(id,value)=>local.db.prepare('INSERT INTO newsletter_views VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload').run(id,JSON.stringify(value));
