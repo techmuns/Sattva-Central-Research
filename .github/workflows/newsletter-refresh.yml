@@ -5,10 +5,17 @@ on:
     paths:
       - '.github/workflows/newsletter-refresh.yml'
       - 'scripts/collect-newsletter.mjs'
+      - 'scripts/newsletter-wake-gate.mjs'
       - 'scripts/lib/newsletter-*.mjs'
       - 'worker/newsletter*.mjs'
   schedule:
     - cron: '1,6,11,16,21,26,31,36,41,46,51,56 * * * *'
+  # A dense cron alone dropped the 19 October morning sends. Independent main-branch
+  # collector completions also wake the runner; the two gates coalesce their frequency.
+  workflow_run:
+    workflows: [Alert pool refresh, Announcement index refresh, Corporate announcements refresh, Market news refresh, RSS news refresh, TradingView portfolio news, Family book sync, Data refresh]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
     inputs:
       bootstrap:
@@ -19,17 +26,40 @@ on:
         description: Encrypted one-time newsletter request
         type: string
         required: false
-concurrency:
-  group: newsletter-account
-  cancel-in-progress: false
-  queue: max
 permissions:
   contents: write
   actions: write
   id-token: write
 jobs:
+  gate:
+    if: github.ref == 'refs/heads/main' && (vars.NEWSLETTER_GITHUB_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.bootstrap)) && (github.event_name != 'workflow_run' || (github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      run: ${{ steps.plan.outputs.run }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts
+            public/js/data
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Check the actual newsletter clock without mail or model credentials
+        id: plan
+        run: node scripts/newsletter-wake-gate.mjs
   process:
-    if: github.ref == 'refs/heads/main' && (vars.NEWSLETTER_GITHUB_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.bootstrap))
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    concurrency:
+      group: newsletter-account
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
