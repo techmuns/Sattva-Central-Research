@@ -187,8 +187,8 @@
       "pending": []
     },
     "isin:INE0HOQ01053|Billionbrains Garage Ventures": {
-      "lastAttemptAt": "2026-10-14T05:17:36+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-19T00:53:46+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 39,
       "lastSuccessAt": "2026-10-14T05:17:36+00:00",
       "targetThrough": null,
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-10-19T00:18:28.555876+00:00"
+    "checkedAt": "2026-10-19T00:53:46.402482+00:00"
   }
 }
