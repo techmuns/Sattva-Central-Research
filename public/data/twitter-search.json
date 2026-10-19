@@ -392,7 +392,7 @@
       "lastDiscoveryAt": "2026-09-20T20:53:41+00:00"
     },
     "isin:INE591G01025|COFORGE": {
-      "lastAttemptAt": "2026-10-14T11:24:49+00:00",
+      "lastAttemptAt": "2026-10-19T06:51:49+00:00",
       "lastResultCount": 106,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -2611,6 +2611,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 251,
-    "checkedAt": "2026-10-19T06:05:16.420998+00:00"
+    "checkedAt": "2026-10-19T06:51:49.533941+00:00"
   }
 }
