@@ -195,8 +195,8 @@
       "pending": []
     },
     "isin:INE0HOQ01053|GROWW": {
-      "lastAttemptAt": "2026-10-14T05:17:36+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-19T01:25:32+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 104,
       "targetThrough": "2026-10-14T05:17:36+00:00",
       "pending": [
@@ -2624,6 +2624,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-10-19T00:53:46.402482+00:00"
+    "checkedAt": "2026-10-19T01:25:32.550584+00:00"
   }
 }
