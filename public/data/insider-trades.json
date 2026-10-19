@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-19T00:31:12.261Z",
-  "oldestDataAt": "2026-10-19T00:31:12.261Z",
+  "capturedAt": "2026-10-19T05:10:02.407Z",
+  "oldestDataAt": "2026-10-19T05:10:02.407Z",
   "from": "2025-10-19",
   "to": "2026-10-19",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-19T00:31:12.261Z",
+      "capturedAt": "2026-10-19T05:10:02.407Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-19T00:31:12.261Z",
+      "capturedAt": "2026-10-19T05:10:02.407Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-19T00:31:12.261Z",
+      "capturedAt": "2026-10-19T05:10:02.407Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -62,12 +62,12 @@
       "label": "Insider trade",
       "url": "https://www.screener.in/trades/insiders/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-16",
-      "oldestDate": "2026-10-08",
+      "latestDate": "2026-10-17",
+      "oldestDate": "2026-10-09",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-19T00:31:12.261Z",
+      "capturedAt": "2026-10-19T05:10:02.407Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 1963,
   "emptyCount": 0,
-  "rowCount": 21633,
+  "rowCount": 21635,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -14698,6 +14698,42 @@
       }
     ],
     "526614": [
+      {
+        "ticker": "526614",
+        "date": "2026-10-17",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Expo Engineering",
+          "Insider": "Hasanain Shaukatali Mewawala, Murtuza Shaukatali Mewawala",
+          "Category": "Promoter And Director (2)",
+          "Security Type": "Equity",
+          "Transaction": "Conversion of security",
+          "Trade Shares": "1474285",
+          "Trade Value": "10.32 crore",
+          "Broadcast Date": "2026-10-17",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "526614",
+        "date": "2026-10-17",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Expo Engineering",
+          "Insider": "Mumtaz Nathani",
+          "Category": "Directors Immediate Relative",
+          "Security Type": "Equity",
+          "Transaction": "Conversion of security",
+          "Trade Shares": "85715",
+          "Trade Value": "60.0 lacs",
+          "Broadcast Date": "2026-10-17",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "526614",
         "date": "2026-09-07",
