@@ -283,70 +283,57 @@
       "pending": []
     },
     "isin:INE736A01011|Central Depository Services": {
-      "lastAttemptAt": "2026-10-14T06:51:17+00:00",
-      "lastResultCount": 10,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-10-03T21:01:00+00:00",
+      "lastAttemptAt": "2026-10-19T05:32:20+00:00",
+      "lastResultCount": 40,
+      "error": null,
+      "lastSuccessAt": "2026-10-19T05:32:20+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE736A01011|CDSL": {
-      "lastAttemptAt": "2026-10-14T07:29:57+00:00",
-      "lastResultCount": 100,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-19T05:32:20+00:00",
+      "lastResultCount": 51,
+      "error": null,
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
-        {
-          "from": "2026-09-02T10:10:33.233647+00:00",
-          "to": "2026-09-04T16:10:33.116823+00:00"
-        },
         {
           "from": "2026-09-04T16:10:33.116823+00:00",
           "to": "2026-09-06T22:10:33+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
+      "lastDiscoveryAt": "2026-10-19T05:32:20+00:00"
     },
     "isin:INE067A01029|Cg Power and Ind Sol": {
-      "lastAttemptAt": "2026-10-14T08:09:18+00:00",
+      "lastAttemptAt": "2026-10-19T05:32:20+00:00",
       "lastResultCount": 0,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-10-03T21:01:00+00:00",
+      "error": null,
+      "lastSuccessAt": "2026-10-19T05:32:20+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE067A01029|CG Power & Ind": {
-      "lastAttemptAt": "2026-10-14T08:40:55+00:00",
-      "lastResultCount": 0,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-10-03T21:01:00+00:00",
+      "lastAttemptAt": "2026-10-19T05:32:20+00:00",
+      "lastResultCount": 2,
+      "error": null,
+      "lastSuccessAt": "2026-10-19T05:32:20+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE067A01029|CGPOWER": {
-      "lastAttemptAt": "2026-10-14T09:12:32+00:00",
-      "lastResultCount": 57,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-09-06T22:10:33+00:00",
-      "targetThrough": "2026-09-20T20:53:41+00:00",
-      "pending": [
-        {
-          "from": "2026-09-12T21:32:07+00:00",
-          "to": "2026-09-20T20:53:41+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
+      "lastAttemptAt": "2026-10-19T05:32:20+00:00",
+      "lastResultCount": 47,
+      "error": null,
+      "lastSuccessAt": "2026-09-20T20:53:41+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-19T05:32:20+00:00"
     },
     "isin:INE522F01014|Coal India": {
-      "lastAttemptAt": "2026-10-14T09:44:15+00:00",
-      "lastResultCount": 104,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-19T05:32:20+00:00",
+      "lastResultCount": 45,
+      "error": null,
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
-        {
-          "from": "2026-08-28T22:10:33.467294+00:00",
-          "to": "2026-08-31T04:10:33.350470+00:00"
-        },
         {
           "from": "2026-08-31T04:10:33.350470+00:00",
           "to": "2026-09-02T10:10:33.233647+00:00"
@@ -360,10 +347,10 @@
           "to": "2026-09-06T22:10:33+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
+      "lastDiscoveryAt": "2026-10-19T05:32:20+00:00"
     },
     "isin:INE522F01014|COALINDIA": {
-      "lastAttemptAt": "2026-10-14T10:30:30+00:00",
+      "lastAttemptAt": "2026-10-19T05:32:20+00:00",
       "lastResultCount": 108,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -2622,8 +2609,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 248,
-    "checkedAt": "2026-10-19T04:59:59.236715+00:00"
+    "attempted": 7,
+    "incomplete": 251,
+    "checkedAt": "2026-10-19T05:32:20.184607+00:00"
   }
 }
