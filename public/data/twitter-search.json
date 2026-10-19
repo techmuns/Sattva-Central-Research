@@ -436,7 +436,7 @@
       "pending": []
     },
     "isin:INE532F01054|EAAA": {
-      "lastAttemptAt": "2026-10-14T15:27:43+00:00",
+      "lastAttemptAt": "2026-10-19T10:34:26+00:00",
       "error": "search-unavailable",
       "lastResultCount": 111,
       "targetThrough": "2026-10-04T00:14:44+00:00",
@@ -2611,6 +2611,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 251,
-    "checkedAt": "2026-10-19T10:24:22.362345+00:00"
+    "checkedAt": "2026-10-19T10:34:26.422175+00:00"
   }
 }
