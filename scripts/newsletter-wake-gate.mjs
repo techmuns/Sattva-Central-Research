@@ -2,17 +2,16 @@ import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {newsletterWakePlan} from './lib/newsletter-wake-plan.mjs';
+import {BREAKOUT_ENDPOINT} from '../public/js/data/breakout-live-shared.js';
 
-const origins={
- 'techmuns/Sattva-Central-Research':'https://sattva-central-research.tech-441.workers.dev',
- 'techmuns/Glow-Central-Research':'https://glow-central-research.tech-441.workers.dev',
-};
+const repository='techmuns/Sattva-Central-Research';
+const endpoint=new URL('/api/newsletter',BREAKOUT_ENDPOINT).href;
 export async function newsletterWakeGate({event=process.env.GITHUB_EVENT_NAME,repo=process.env.GITHUB_REPOSITORY,fetcher=fetch,now=Date.now()}={}){
  if(event!=='workflow_run')return {due:true,reason:'primary-trigger'};
- const origin=origins[repo];if(!origin)throw Error('Newsletter repository unavailable');
+ if(repo!==repository)throw Error('Newsletter repository unavailable');
  // Credential-free prepared-state read only. The processing job checks its
  // encrypted checkpoint again under the account mutex before any paid work.
- const response=await fetcher(origin+'/api/newsletter',{method:'GET',redirect:'error',signal:AbortSignal.timeout(20000),headers:{accept:'application/json','cache-control':'no-cache'}});
+ const response=await fetcher(endpoint,{method:'GET',redirect:'error',signal:AbortSignal.timeout(20000),headers:{accept:'application/json','cache-control':'no-cache'}});
  const value=await boundedJson(response,8*1024*1024);
  if(value?.ok!==true||value.runtime!=='github-actions')throw Error('Newsletter prepared reader unavailable');
  return newsletterWakePlan(value,{now});

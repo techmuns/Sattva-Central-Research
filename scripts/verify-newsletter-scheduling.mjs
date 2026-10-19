@@ -35,21 +35,20 @@ assert.equal(plan(retry,due+999).due,false);assert.equal(plan(retry,due+1000).re
 const changed=structuredClone(checked);changed.revision++;assert.equal(plan(changed,due+1).reason,'inputs-changed');
 const unknown=fixture();delete unknown.schedule.lastWakeAt;assert.equal(plan(unknown,due).reason,'wake-unverified');
 
+const repo='techmuns/Sattva-Central-Research';
 let reads=0;
-for(const [repo,host]of [['Sattva-Central-Research','sattva'],['Glow-Central-Research','glow']]){
- const gate=await newsletterWakeGate({event:'workflow_run',repo:'techmuns/'+repo,now:due,fetcher:async(url,options)=>{
-  reads++;assert.equal(url,`https://${host}-central-research.tech-441.workers.dev/api/newsletter`);
-  assert.equal(options.method,'GET');assert.equal(options.redirect,'error');assert(!options.headers.authorization);assert(!options.body);
-  return Response.json({...fixture(),subscribers:[{email:'private@example.test'}]});
- }});
- assert.equal(gate.reason,'edition-due');assert(!JSON.stringify(gate).includes('private'));
-}
+const gate=await newsletterWakeGate({event:'workflow_run',repo,now:due,fetcher:async(url,options)=>{
+ reads++;assert.equal(url,new URL('/api/newsletter',BREAKOUT_ENDPOINT).href);
+ assert.equal(options.method,'GET');assert.equal(options.redirect,'error');assert(!options.headers.authorization);assert(!options.body);
+ return Response.json({...fixture(),subscribers:[{email:'private@example.test'}]});
+}});
+assert.equal(gate.reason,'edition-due');assert(!JSON.stringify(gate).includes('private'));
 for(const event of ['schedule','push','workflow_dispatch']){
  assert((await newsletterWakeGate({event,fetcher:()=>{throw Error('Primary triggers do not depend on the deployed reader');}})).due);
 }
-assert.equal(reads,2);
+assert.equal(reads,1);
 await assert.rejects(newsletterWakeGate({event:'workflow_run',repo:'untrusted/other'}),/repository/);
-const options={event:'workflow_run',repo:'techmuns/Sattva-Central-Research',now:due};
+const options={event:'workflow_run',repo,now:due};
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>new Response(null,{status:503})}));
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>Response.json({ok:false})}),/reader/);
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>new Response('x'.repeat(8*1024*1024+1))}),/size/);
@@ -63,11 +62,10 @@ assert(workflow.slice(workflow.indexOf('  process:')).includes('group: newslette
 assert(workflow.includes('queue: max'),'Distinct manual requests retain their queue');
 // Exercise real signed OIDC claims: adding workflow_run to YAML alone is not
 // enough if the read-only input/export endpoint refuses that identity.
-const glow=BREAKOUT_ENDPOINT.includes('glow-central-research'),repo=`techmuns/${glow?'Glow':'Sattva'}-Central-Research`;
 const endpoint=new URL('/api/newsletter/collector',BREAKOUT_ENDPOINT).href;
 const key=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
 const jwk={...await crypto.subtle.exportKey('jwk',key.publicKey),kid:'fixture',use:'sig',alg:'RS256'};
-const claims={iss:'https://token.actions.githubusercontent.com',aud:endpoint,repository:repo,repository_id:glow?'1339395437':'1329567087',repository_owner_id:'278697674',ref:'refs/heads/main',workflow_ref:`${repo}/.github/workflows/newsletter-refresh.yml@refs/heads/main`,event_name:'workflow_run',exp:due/1000+300,iat:due/1000,nbf:due/1000,run_id:'123',run_attempt:'1'};
+const claims={iss:'https://token.actions.githubusercontent.com',aud:endpoint,repository:repo,repository_id:'1329567087',repository_owner_id:'278697674',ref:'refs/heads/main',workflow_ref:`${repo}/.github/workflows/newsletter-refresh.yml@refs/heads/main`,event_name:'workflow_run',exp:due/1000+300,iat:due/1000,nbf:due/1000,run_id:'123',run_attempt:'1'};
 async function identity(patch={},overrides={}){
  const encode=value=>Buffer.from(JSON.stringify(value)).toString('base64url');
  const body=encode({alg:'RS256',kid:'fixture'})+'.'+encode({...claims,...patch});
