@@ -210,7 +210,7 @@ remain. GitHub scheduling, runner queues and static delivery are best effort: th
 five-minute schedule can delay an edition or preview; actual check/build times and
 missed deliveries remain visible. Original captured source history is retained.
 
-Automatic processing also wakes after trusted main-branch deployment and collector
+Automatic processing also wakes after trusted main-branch collector
 completions. A credential-free prepared-reader gate and a second check against the
 encrypted checkpoint coalesce these wakes to the existing five-minute cadence,
 with earlier checks only when an edition/retry becomes due or subscriber inputs

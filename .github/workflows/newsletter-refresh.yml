@@ -10,10 +10,10 @@ on:
       - 'worker/newsletter*.mjs'
   schedule:
     - cron: '1,6,11,16,21,26,31,36,41,46,51,56 * * * *'
-  # A dense cron alone dropped the 19 October morning sends. Actual main-branch
-  # completions also wake the runner; the two gates coalesce their frequency.
+  # A dense cron alone dropped the 19 October morning sends. Independent main-branch
+  # collector completions also wake the runner; the two gates coalesce their frequency.
   workflow_run:
-    workflows: [Deploy, RSS news refresh, TradingView portfolio news, Family book sync]
+    workflows: [Alert pool refresh, Announcement index refresh, Corporate announcements refresh, Market news refresh, RSS news refresh, TradingView portfolio news, Family book sync, Data refresh]
     branches: [main]
     types: [completed]
   workflow_dispatch:

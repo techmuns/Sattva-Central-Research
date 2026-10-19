@@ -1,7 +1,7 @@
 import {newsletterSettings,scheduledEditions} from '../../public/js/data/newsletter-shared.js';
 
 // Match the existing five-minute runner cadence. An edition/retry becoming due
-// can cross that boundary early; deployment frequency cannot increase model work.
+// can cross that boundary early; completion frequency cannot increase model work.
 export const NEWSLETTER_WAKE_MS=5*60000;
 const instant=value=>typeof value==='number'?value:Date.parse(value||'');
 export function newsletterWakePlan(value,{now=Date.now()}={}){

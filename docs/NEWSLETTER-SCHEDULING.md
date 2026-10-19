@@ -14,7 +14,8 @@ The five-minute cron was the only recurring automatic trigger after the GitHub c
 Changing cron minutes alone cannot establish timely delivery.
 
 The ordinary five-minute schedule remains. Successful, same-repository main-branch
-Deploy, RSS, TradingView and Family book workflow completions also wake processing,
+independent alert/index, announcements, market news, RSS, TradingView, Family book
+and Data refresh workflow completions also wake processing,
 without a browser or a separate paid scheduler. A credential-free preflight job
 reads only the fixed desk's prepared status. It admits an overdue five-minute
 check, a newly due weekday edition, a due saved retry or changed subscriber inputs.
@@ -42,6 +43,6 @@ the recipient's mailbox separately.
 
 Offline validation: `verify-newsletter-scheduling.mjs` covers the actual missed
 Monday clock, weekday/weekend and edited/disabled schedules, due retries, event
-storms, bounded credential-free reads and signed OIDC rejection boundaries.
+storms, reciprocal deployment loops, bounded credential-free reads and signed OIDC rejection boundaries.
 `verify-newsletter-github.mjs` checks the restored checkpoint gate and real timer
 claim while preserving unknown claims, PDFs and model reservations.

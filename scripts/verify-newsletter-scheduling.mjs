@@ -14,7 +14,7 @@ assert.equal(plan(fixture(),due-1).due,false);
 assert.equal(plan(fixture(),due).reason,'edition-due','The send boundary wakes even one second after a prior check');
 assert.equal(plan(fixture(),due+2*3600000).reason,'edition-due','Reproduce the missed Monday 08:00 GitHub cron');
 const checked=fixture();checked.schedule.lastWakeAt=checked.schedule.lastCheckedAt=new Date(due).toISOString();
-for(let i=1;i<100;i++)assert.equal(plan(checked,due+i*1000).due,false,'Deployment storms cannot multiply checks');
+for(let i=1;i<100;i++)assert.equal(plan(checked,due+i*1000).due,false,'Completion storms cannot multiply checks');
 assert.equal(plan(checked,due+NEWSLETTER_WAKE_MS-1).due,false);
 assert.equal(plan(checked,due+NEWSLETTER_WAKE_MS).reason,'check-overdue');
 const evening=fixture();evening.schedule.lastWakeAt=evening.schedule.lastCheckedAt=istInstant('2026-10-19','15:59');
@@ -53,13 +53,34 @@ await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>new Respons
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>Response.json({ok:false})}),/reader/);
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>new Response('x'.repeat(8*1024*1024+1))}),/size/);
 const workflow=fs.readFileSync('.github/workflows/newsletter-refresh.yml','utf8');
-assert(workflow.includes('workflows: [Deploy, RSS news refresh, TradingView portfolio news, Family book sync]'));
+assert(workflow.includes('workflows: [Alert pool refresh, Announcement index refresh, Corporate announcements refresh, Market news refresh, RSS news refresh, TradingView portfolio news, Family book sync, Data refresh]'));
 assert(workflow.includes("head_repository.full_name == github.repository"));assert(workflow.includes("head_branch == 'main'"));
 assert(workflow.includes("conclusion == 'success'"));assert(workflow.includes("if: needs.gate.outputs.run == 'true'"));
 const gateJob=workflow.slice(workflow.indexOf('  gate:'),workflow.indexOf('  process:'));
 assert(!/secrets\.|contents: write|actions: write|id-token: write/.test(gateJob),'The preflight job cannot send or decrypt');
 assert(workflow.slice(workflow.indexOf('  process:')).includes('group: newsletter-account'));
 assert(workflow.includes('queue: max'),'Distinct manual requests retain their queue');
+
+// Detect the actual workflow_run dependency cycle, including through Deploy.
+const graph=new Map();
+for(const file of fs.readdirSync('.github/workflows').filter(name=>name.endsWith('.yml'))){
+ const source=fs.readFileSync('.github/workflows/'+file,'utf8');
+ const name=source.match(/^name:\s*(.+)$/m)?.[1]?.replace(/^["']|["']$/g,'');
+ const block=source.match(/^  workflow_run:\s*\n((?: {4}.*\n|[ \t]*\n)*)/m)?.[1]||'';
+ const inline=block.match(/^ {4}workflows:\s*\[([^\]]+)\]/m)?.[1];
+ const entries=inline?inline.split(','):Array.from((block.match(/^ {4}workflows:\s*\n((?: {6}- .*\n)*)/m)?.[1]||'').matchAll(/^ {6}- (.*)$/gm),m=>m[1]);
+ for(const entry of entries){const parent=entry.trim().replace(/^["']|["']$/g,'');if(!graph.has(parent))graph.set(parent,new Set());graph.get(parent).add(name);}
+}
+function newsletterCycle(edges){
+ const pending=[...(edges.get('Newsletter processing')||[])],seen=new Set();
+ while(pending.length){const name=pending.shift();if(name==='Newsletter processing')return true;if(seen.has(name))continue;seen.add(name);pending.push(...(edges.get(name)||[]));}
+ return false;
+}
+assert(graph.get('Newsletter processing')?.has('Deploy'),'The regression must include the existing deployment trigger');
+assert(!newsletterCycle(graph),'Newsletter completion must not trigger its own recovery workflow indirectly');
+const reciprocal=new Map([...graph].map(([key,values])=>[key,new Set(values)]));if(!reciprocal.has('Deploy'))reciprocal.set('Deploy',new Set());reciprocal.get('Deploy').add('Newsletter processing');
+assert(newsletterCycle(reciprocal),'Reproduce the reciprocal Deploy trigger found by automated review');
+
 // Exercise real signed OIDC claims: adding workflow_run to YAML alone is not
 // enough if the read-only input/export endpoint refuses that identity.
 const endpoint=new URL('/api/newsletter/collector',BREAKOUT_ENDPOINT).href;
