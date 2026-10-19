@@ -89,10 +89,27 @@ try {
   const cdp=await context.newCDPSession(page);
   const memory=async()=>{await cdp.send('HeapProfiler.collectGarbage');return {
     heapBytes:(await cdp.send('Runtime.getHeapUsage')).usedSize,...await cdp.send('Memory.getDOMCounters')};};
+  // The first visible row precedes the measured window's animation-frame work.
+  // Compare steady states, including the first update's reusable DOM/cache,
+  // rather than counting one-time initialization as 100-generation growth.
+  const settleTable=()=>page.evaluate(async()=>{
+    let previous='',stable=0;
+    for(let i=0;i<120;i++){
+      await new Promise(requestAnimationFrame);
+      const host=document.querySelector('[data-score-table]'),rows=[...(host?.querySelectorAll('tr[data-row-key]')||[])];
+      const state=rows.map(row=>`${row.dataset.rowKey}:${Math.round(row.getBoundingClientRect().height*100)}`).join('|');
+      stable=state===previous?stable+1:0;previous=state;
+      if(rows.length&&Number(host.dataset.rowsPending||0)===0&&stable>=3)return;
+    }
+    throw Error('Owned table did not settle before the memory measurement');
+  });
+  const initial=await memory();
+  await page.evaluate(()=>repaint());await settleTable();
   const before=await memory();
   await page.evaluate(async()=>{for(let i=0;i<100;i++){repaint();await new Promise(requestAnimationFrame)}});
+  await settleTable();
   const after=await memory(),lifetime=await page.evaluate(()=>({...lifetimes,active:lifetimes.made-lifetimes.disposed}));
-  console.log(JSON.stringify({experiment:'100 Earnings updates',baseline:baseline||null,lifetime,before,after}));
+  console.log(JSON.stringify({experiment:'100 Earnings updates',baseline:baseline||null,lifetime,initial,before,after}));
   if(!baseline){assert.equal(lifetime.active,1);assert.equal(lifetime.made,1);assert(after.nodes<before.nodes+1000,'no accumulating detached table generations');}
   await page.evaluate(()=>tab.destroy());
   assert.equal(await page.evaluate(()=>lifetimes.made-lifetimes.disposed),0,'exit disposes every owned table');
@@ -100,9 +117,10 @@ try {
   await page.evaluate(()=>{ctx.params={view:'calendar',date:'2026-09-16'};tab.render(ctx)});
   await page.waitForFunction(()=>document.querySelector('tbody')?.textContent.includes('Calendar company'));
   await page.waitForFunction(()=>Number(document.querySelector('[data-score-table]')?.dataset.rowsPending||0)===0);
-  await page.evaluate(async()=>{await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame)});
+  await page.evaluate(()=>repaint());await settleTable();
   const calendarBefore=await memory();
   await page.evaluate(async()=>{for(let i=0;i<100;i++){repaint();await new Promise(requestAnimationFrame)}});
+  await settleTable();
   const calendarAfter=await memory(),calendarActive=await page.evaluate(()=>lifetimes.made-lifetimes.disposed);
   console.log(JSON.stringify({experiment:'100 Calendar updates',baseline:baseline||null,active:calendarActive,before:calendarBefore,after:calendarAfter}));
   if(!baseline){assert.equal(calendarActive,1);assert(calendarAfter.nodes<calendarBefore.nodes+1000);}
