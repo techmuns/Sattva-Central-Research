@@ -9942,9 +9942,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-10-20T19:30:23.057Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-10-20T20:49:11.099Z",
     "lastSuccessAt": null
   }
 }
