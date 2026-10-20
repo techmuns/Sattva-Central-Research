@@ -934,8 +934,8 @@
       "pending": []
     },
     "isin:INE303R01014|Kalyan Jewellers India": {
-      "lastAttemptAt": "2026-10-15T11:51:42+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-20T15:21:42+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 15,
       "lastSuccessAt": "2026-10-15T11:51:42+00:00",
       "targetThrough": null,
@@ -2614,6 +2614,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-20T14:32:30.422905+00:00"
+    "checkedAt": "2026-10-20T15:21:42.277529+00:00"
   }
 }
