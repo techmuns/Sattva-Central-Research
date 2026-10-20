@@ -918,8 +918,8 @@
       "pending": []
     },
     "isin:INE700A01033|Jubilant Pharmova LT": {
-      "lastAttemptAt": "2026-10-15T11:51:42+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-20T13:42:45+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-15T11:51:42+00:00",
       "targetThrough": null,
@@ -2614,6 +2614,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-20T12:29:03.766252+00:00"
+    "checkedAt": "2026-10-20T13:42:45.112640+00:00"
   }
 }
