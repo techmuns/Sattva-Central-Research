@@ -942,53 +942,68 @@
       "pending": []
     },
     "isin:INE303R01014|KALYANKJIL": {
-      "lastAttemptAt": "2026-10-15T11:51:42+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 103,
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
+      "error": null,
+      "lastResultCount": 70,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
       "targetThrough": "2026-10-15T11:51:42+00:00",
       "pending": [
         {
-          "from": "2026-09-29T08:11:22+00:00",
-          "to": "2026-10-07T10:01:32+00:00"
-        },
-        {
           "from": "2026-10-07T10:01:32+00:00",
           "to": "2026-10-15T11:51:42+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-20T15:29:19+00:00"
     },
     "isin:INE415I01015|Kiri Industries": {
-      "lastAttemptAt": "2026-10-15T11:51:42+00:00",
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
       "error": null,
-      "lastResultCount": 14,
-      "lastSuccessAt": "2026-10-15T11:51:42+00:00",
+      "lastResultCount": 6,
+      "lastSuccessAt": "2026-10-20T15:29:19+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE415I01015|KIRIINDUS": {
-      "lastAttemptAt": "2026-10-15T11:51:42+00:00",
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
       "error": null,
-      "lastResultCount": 14,
-      "lastSuccessAt": "2026-10-15T11:51:42+00:00",
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-10-20T15:29:19+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE082A01010|Kopran": {
-      "lastAttemptAt": "2026-10-15T11:51:42+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 92,
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-10-20T15:29:19+00:00",
+      "pending": [
+        {
+          "from": "2026-09-29T08:11:22+00:00",
+          "to": "2026-10-09T23:50:20.500000+00:00"
+        },
+        {
+          "from": "2026-10-09T23:50:20.500000+00:00",
+          "to": "2026-10-20T15:29:19+00:00"
+        }
+      ]
     },
     "isin:INE082A01010|KOPRAN": {
-      "lastAttemptAt": "2026-10-15T12:45:00+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 92,
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-10-20T15:29:19+00:00",
+      "pending": [
+        {
+          "from": "2026-09-29T08:11:22+00:00",
+          "to": "2026-10-09T23:50:20.500000+00:00"
+        },
+        {
+          "from": "2026-10-09T23:50:20.500000+00:00",
+          "to": "2026-10-20T15:29:19+00:00"
+        }
+      ]
     },
     "isin:INE237A01036|Kotak Mahindra Bank": {
       "lastAttemptAt": "2026-10-04T22:06:17+00:00",
@@ -1023,19 +1038,47 @@
       ]
     },
     "isin:INE0O6601022|Kross": {
-      "lastAttemptAt": "2026-10-15T13:18:20+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 121,
+      "targetThrough": "2026-10-20T15:29:19+00:00",
+      "pending": [
+        {
+          "from": "2026-10-11T15:29:19.233705+00:00",
+          "to": "2026-10-16T03:29:19.116853+00:00"
+        },
+        {
+          "from": "2026-10-16T03:29:19.116853+00:00",
+          "to": "2026-10-20T15:29:19+00:00"
+        }
+      ]
     },
     "isin:INE0O6601022|KROSS": {
-      "lastAttemptAt": "2026-10-15T13:51:21+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 121,
+      "targetThrough": "2026-10-20T15:29:19+00:00",
+      "pending": [
+        {
+          "from": "2026-10-11T15:29:19.233705+00:00",
+          "to": "2026-10-16T03:29:19.116853+00:00"
+        },
+        {
+          "from": "2026-10-16T03:29:19.116853+00:00",
+          "to": "2026-10-20T15:29:19+00:00"
+        }
+      ]
     },
     "isin:INE818H01020|LT Foods": {
-      "lastAttemptAt": "2026-10-15T14:26:07+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
+      "error": null,
+      "lastResultCount": 20,
+      "lastSuccessAt": "2026-10-20T15:29:19+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE818H01020|LTFOODS": {
-      "lastAttemptAt": "2026-10-15T14:57:56+00:00",
+      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
       "error": "search-unavailable"
     },
     "isin:INE101A01026|Mahindra & Mahindra": {
@@ -2612,8 +2655,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 245,
-    "checkedAt": "2026-10-20T15:21:42.277529+00:00"
+    "attempted": 9,
+    "incomplete": 242,
+    "checkedAt": "2026-10-20T15:29:19.233705+00:00"
   }
 }
