@@ -886,8 +886,8 @@
       "pending": []
     },
     "isin:INE854B01010|Neco Defence Munitions": {
-      "lastAttemptAt": "2026-10-15T11:51:42+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-20T10:23:11+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-15T11:51:42+00:00",
       "targetThrough": null,
@@ -2614,6 +2614,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-20T09:17:04.917313+00:00"
+    "checkedAt": "2026-10-20T10:23:11.879994+00:00"
   }
 }
