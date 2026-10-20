@@ -763,74 +763,77 @@
       "pending": []
     },
     "isin:INE622H01018|INDOFARM": {
-      "lastAttemptAt": "2026-10-15T05:51:49+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 8,
-      "lastSuccessAt": "2026-09-12T14:15:30+00:00",
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
+      "lastResultCount": 16,
+      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE084101034|Indo-Mim": {
-      "lastAttemptAt": "2026-10-15T06:05:01+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 110,
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
+      "lastResultCount": 39,
       "targetThrough": "2026-09-12T14:15:30+00:00",
       "pending": [
-        {
-          "from": "2026-09-03T14:15:30.994441+00:00",
-          "to": "2026-09-08T02:15:30.497221+00:00"
-        },
         {
           "from": "2026-09-08T02:15:30.497221+00:00",
           "to": "2026-09-12T14:15:30+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-20T07:46:04+00:00"
     },
     "isin:INE084101034|INDOMIM": {
-      "lastAttemptAt": "2026-10-15T06:49:33+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 131,
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
+      "lastResultCount": 12,
       "targetThrough": "2026-09-21T14:54:36+00:00",
       "pending": [
-        {
-          "from": "2026-09-12T14:54:36.911441+00:00",
-          "to": "2026-09-17T02:54:36.455721+00:00"
-        },
         {
           "from": "2026-09-17T02:54:36.455721+00:00",
           "to": "2026-09-21T14:54:36+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-20T07:46:04+00:00"
     },
     "isin:INE00M901018|Interarch Building Products": {
-      "lastAttemptAt": "2026-10-15T07:22:52+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
+      "lastResultCount": 8,
+      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE00M901018|INTERARCH": {
-      "lastAttemptAt": "2026-10-15T07:55:51+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 23,
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 102,
       "lastSuccessAt": "2026-09-21T14:54:36+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-10-20T07:46:04+00:00",
+      "pending": [
+        {
+          "from": "2026-09-19T14:54:36+00:00",
+          "to": "2026-10-04T23:20:20+00:00"
+        },
+        {
+          "from": "2026-10-04T23:20:20+00:00",
+          "to": "2026-10-20T07:46:04+00:00"
+        }
+      ]
     },
     "isin:INE858B01029|ISGEC Heavy Engineering": {
-      "lastAttemptAt": "2026-10-15T08:28:48+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 24,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
+      "lastResultCount": 25,
+      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE858B01029|ISGEC": {
-      "lastAttemptAt": "2026-10-15T09:01:18+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 36,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
+      "lastResultCount": 49,
+      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -851,23 +854,23 @@
       "pending": []
     },
     "isin:INE0SMY01017|Jay Bee Laminations": {
-      "lastAttemptAt": "2026-10-15T09:59:13+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0SMY01017|JAYBEE-SM": {
-      "lastAttemptAt": "2026-10-15T10:33:38+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
+      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE854B01010|Jayaswal Neco Industries": {
-      "lastAttemptAt": "2026-10-15T11:16:35+00:00",
+      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
       "error": "search-unavailable",
       "lastResultCount": 13,
       "lastSuccessAt": "2026-10-04T19:16:43+00:00",
@@ -2609,8 +2612,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 251,
-    "checkedAt": "2026-10-20T06:57:58.332426+00:00"
+    "attempted": 10,
+    "incomplete": 245,
+    "checkedAt": "2026-10-20T07:46:04.679115+00:00"
   }
 }
