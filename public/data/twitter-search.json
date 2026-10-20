@@ -1098,7 +1098,7 @@
       "pending": []
     },
     "isin:INE774D01024|M&MFIN": {
-      "lastAttemptAt": "2026-10-15T16:36:43+00:00",
+      "lastAttemptAt": "2026-10-20T18:34:15+00:00",
       "error": "search-unavailable",
       "lastResultCount": 6,
       "lastSuccessAt": "2026-09-27T08:32:05+00:00",
@@ -2657,6 +2657,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 242,
-    "checkedAt": "2026-10-20T17:52:51.399585+00:00"
+    "checkedAt": "2026-10-20T18:34:15.219285+00:00"
   }
 }
