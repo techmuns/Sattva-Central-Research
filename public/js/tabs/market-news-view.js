@@ -484,7 +484,7 @@ function fillRest(root, rows, wantScroll) {
   section.removeAttribute('data-rows-pending');
   host.tabIndex = 0; host.setAttribute('role', 'region'); host.setAttribute('aria-label', 'Market news stories');
   const windowed = mountWindowedList({ scroller: host, content: host, items: rows,
-    key: r => String(r.id || r.url), rowSelector: '[data-news-key]', estimateHeight: 34,
+    key: r => String(r.id || r.url), rowSelector: '[data-news-key]', estimateHeight: 30,
     initialKey: wantScroll?.key || null,
     renderRows: (list, from, to) => list.slice(from, to).map(cardHtml).join(''),
     spacerHtml: (height, edge) => `<div data-window-spacer="${edge}" aria-hidden="true" style="height:${height}px;border:0;padding:0"></div>`,

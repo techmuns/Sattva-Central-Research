@@ -50,7 +50,7 @@ try{
  await page.waitForFunction(()=>!document.querySelector('[data-table-loading]'));
  const search=page.getByRole('textbox',{name:'Search company, ticker or headline'});
  assert(!requests.includes('/data/announcement-identities.json'),'full directory stays off initial News load');
- for(const [width,height] of [[1345,647],[1280,800],[1024,768],[390,800]]){
+ for(const [width,height] of [[1345,647],[1280,600],[1280,800],[1024,768],[390,800]]){
   await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
   await page.waitForFunction(()=>{const s=document.querySelector('[data-news-scroll]');return Math.abs(s.getBoundingClientRect().bottom-(innerHeight-44))<2});
   const geometry=await page.evaluate(()=>({search:document.querySelector('[data-news-search]').getBoundingClientRect().width,
@@ -65,6 +65,7 @@ try{
   assert.equal(await firstCard.getByRole('button',{name:'Important',exact:true}).isVisible(),false,'feedback stays out of the scan');
   assert.equal(await firstCard.locator('.news-story-summary').isVisible(),false,'summaries expand on demand');
   if(width>=1024){
+   await page.waitForFunction(()=>{const s=document.querySelector('[data-news-scroll]').getBoundingClientRect();return [...document.querySelectorAll('[data-news-key]')].filter(r=>{const b=r.getBoundingClientRect();return b.top>=s.top&&b.bottom<=Math.min(s.bottom,innerHeight)}).length>=10});
    const visible=await page.evaluate(()=>{const s=document.querySelector('[data-news-scroll]').getBoundingClientRect();return [...document.querySelectorAll('[data-news-key]')].filter(r=>{const b=r.getBoundingClientRect();return b.top>=s.top && b.bottom<=Math.min(s.bottom,innerHeight)}).length});
    console.log(`Market News ${width}x${height}: ${visible} complete rows`);
    assert(visible>=10,'at least 10 complete stories at normal zoom');
@@ -129,9 +130,10 @@ try{
  const illustrated=page.locator('[data-news-key]').filter({hasText:'portfolio update illustrated'});
  const broken=page.locator('[data-news-key]').filter({hasText:'portfolio update broken'});
  await illustrated.waitFor();
- for(const [width,height] of [[1345,647],[1280,800],[1024,768]]){
+ for(const [width,height] of [[1345,647],[1280,600],[1280,800],[1024,768]]){
   await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
   await page.waitForFunction(()=>{const s=document.querySelector('[data-table-scroll]');return Math.abs(s.getBoundingClientRect().bottom-(innerHeight-44))<2});
+  await page.waitForFunction(()=>{const s=document.querySelector('[data-table-scroll]').getBoundingClientRect();return [...document.querySelectorAll('[data-news-key]')].filter(r=>{const b=r.getBoundingClientRect();return b.top>=s.top&&b.bottom<=Math.min(s.bottom,innerHeight)}).length>=10});
   const visible=await page.evaluate(()=>{const s=document.querySelector('[data-table-scroll]').getBoundingClientRect();return [...document.querySelectorAll('[data-news-key]')].filter(r=>{const b=r.getBoundingClientRect();return b.top>=s.top && b.bottom<=Math.min(s.bottom,innerHeight)}).length});
   console.log(`Portfolio News ${width}x${height}: ${visible} complete rows`);assert(visible>=10,'at least 10 scoped stories at normal zoom');
  }
