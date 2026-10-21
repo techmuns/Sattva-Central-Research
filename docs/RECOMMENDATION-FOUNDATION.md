@@ -1,5 +1,9 @@
 # Public financial history and event-date evidence
 
+The archive now also supports the separate [catalyst scoring and forward outcome ledger](RECOMMENDATION-MODELS.md).
+That pipeline publishes prepared research candidates for AI Recommendations. The evidence and date
+rules below remain authoritative; an original source fact does not itself establish a recommendation.
+
 This is background groundwork for future AI Recommendations. It changes no reader, tab,
 alert ranking, source row or service-worker asset. It produces no recommendations, price targets,
 return probabilities or AI summaries. No application request can start collection.

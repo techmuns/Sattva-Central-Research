@@ -97,9 +97,11 @@ keyboard access and explicit retries. Refreshes preserve the reader's visible me
 
 Recommendation evidence foundation (21 October 2026): financial-history capture and event-date
 verification run only in `recommendation-foundation.yml` on standard public GitHub Actions runners.
-The retained public SQLite generations live on GitHub Releases. No UI, paid providers/model calls,
-Cloudflare processing/storage, Actions artifacts/caches or private portfolio inputs are part of this
-path. Read `docs/RECOMMENDATION-FOUNDATION.md` before changing its sources, persistence or date rules.
+The retained public SQLite generations live on GitHub Releases. The three fixed catalyst models and
+forward outcome ledger also run there; only hash-checked prepared public JSON reaches the simple
+AI Recommendations reader. No paid providers/model calls, Cloudflare background processing/storage,
+Actions artifacts/caches or private portfolio inputs are part of this path. Read
+`docs/RECOMMENDATION-FOUNDATION.md` and `docs/RECOMMENDATION-MODELS.md` before changing these rules.
 
 | Concern | Choice |
 | --- | --- |

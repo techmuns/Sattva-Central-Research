@@ -1,0 +1,7 @@
+{
+  "note": "Original public source excerpts for offline contracts only; never production seeds.",
+  "session": "2026-10-19",
+  "prices": "https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20261019_F_0000.csv.zip",
+  "benchmark": "https://nsearchives.nseindia.com/content/indices/ind_close_all_19102026.csv",
+  "actions": "https://www.nseindia.com/api/corporates-corporateActions?index=equities&from_date=01-10-2026&to_date=21-10-2026"
+}

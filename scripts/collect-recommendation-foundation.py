@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -26,8 +27,19 @@ def main():
         print("Retained history restored" if restored else "First capture: no previous retained history")
         return
     if args.action == "publish":
-        asset = GithubState().publish(args.state)
+        github = GithubState()
+        asset = github.publish(args.state)
         print("Retained public evidence acknowledged: " + str(asset["id"]))
+        models = Path(args.state).parent / "ai-recommendations.json"
+        if models.exists():
+            with sqlite3.connect('file:' + str(Path(args.state).resolve()) + '?mode=ro', uri=True) as db:
+                row = db.execute("SELECT value FROM meta WHERE key='recommendationLatest'").fetchone()
+            saved = json.loads(row[0]) if row else None
+            value = json.loads(models.read_text())
+            if value != saved:
+                raise ValueError("Recommendation file does not match the retained decision ledger")
+            reader = github.publish_recommendations(models, asset)
+            print("Public recommendation reader acknowledged: " + str(reader["id"]))
         return
     store = Store(args.state)
     try:

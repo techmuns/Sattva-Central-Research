@@ -1,5 +1,30 @@
 # Data Contracts
 
+## AI Recommendations — prepared public research
+
+`data/ai-recommendations.json` is prepared on GitHub Actions, retained as a hash-named public Release
+asset and installed into static delivery by the existing automatic deployment. There is no browser
+scoring, on-demand model request or paid data dependency. The tab loads it lazily, outside startup,
+on opening/return and every five minutes while visible. IndexedDB `ai-recommendations:v1` retains
+the last valid publication through failed reads/reloads. Empty verified publications can withdraw
+all names; a failure or older publication cannot replace the last good list.
+
+Envelope: `{version:1,modelVersion,repository,sourceRun,sourceSha,foundationAsset:{id,name},generatedAt,
+status:"partial",stage:"research-candidates",rowCount,rows,policy,models,coverage,backtest}`.
+Each row: `{id,isin,ticker,company,model,modelName,score,catalyst,price,priceAsOf,priceCheckedAt,
+issuedAt,sourceUrl,evidenceDate,details}`. One row per company, with the strongest qualifying case;
+the permanent ledger retains every model and assessment. Prices are INR official end-of-day closes,
+not streaming quotes. Statement basis, source versions, literal annexure quotes/pages and policy
+are retained in `details`. All source URLs are original NSE/BSE HTTPS documents.
+
+This finance-audit path intentionally preserves prices, financial values, ratios and measured
+return percentages as exact decimal strings rather than binary floating-point values. `score` is
+an integer evidence-point total, not a calibrated probability or expected return. `coverage`
+separates actual source check times/errors, unread/failed documents and unfinished history.
+`backtest` reports actual first-observed signals, measured sample sizes and unresolved outcome
+statuses separately; initial historical performance is unavailable. See
+[model rules and limitations](RECOMMENDATION-MODELS.md). No private portfolio membership is published.
+
 ## Personal bookmarked notebook
 
 `js/core/bookmarks.js` owns IndexedDB `sattva-notebook` v1 / object store `bookmarks`,

@@ -50,8 +50,11 @@ class PublicReader:
     def read(self, url, limit=4 * 1024 * 1024, redirects=0):
         u = urlsplit(url)
         index = u.hostname == "www.nseindia.com" and u.path in {
-            "/api/integrated-filing-results", "/api/corporates-financial-results"}
-        if not index and not document_url(url):
+            "/api/integrated-filing-results", "/api/corporates-financial-results",
+            "/api/corporates-corporateActions", "/api/holiday-master"}
+        market = u.hostname == "nsearchives.nseindia.com" and bool(re.fullmatch(
+            r"/content/(?:cm/BhavCopy_NSE_CM_0_0_0_\d{8}_F_0000\.csv\.zip|indices/ind_close_all_\d{8}\.csv)", u.path))
+        if not index and not market and not document_url(url):
             raise SourceFailure("Source is not an allowed free exchange endpoint")
         if u.scheme != "https" or u.username or u.password or u.port:
             raise SourceFailure("Invalid source destination")
