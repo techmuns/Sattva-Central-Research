@@ -1887,7 +1887,7 @@
       "pending": []
     },
     "isin:INE728Z01015|SOFTTECH": {
-      "lastAttemptAt": "2026-10-16T16:02:00+00:00",
+      "lastAttemptAt": "2026-10-21T23:49:02+00:00",
       "error": "search-unavailable",
       "lastResultCount": 72,
       "lastSuccessAt": "2026-10-02T10:43:50+00:00",
@@ -2675,6 +2675,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 234,
-    "checkedAt": "2026-10-21T23:25:28.159983+00:00"
+    "checkedAt": "2026-10-21T23:49:02.064629+00:00"
   }
 }
