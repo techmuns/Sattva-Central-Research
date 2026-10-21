@@ -121,6 +121,7 @@ try{
  await companyStory.locator('summary').click();
  for(const name of ['Important','Not important','Why?'])assert(await companyStory.getByRole('button',{name,exact:true}).isVisible(),'visible company-news feedback '+name);
  assert.equal(await companyStory.locator('a [data-news-feedback]').count(),0,'company feedback is outside the article link');
+ await companyStory.locator('summary').click();
  await page.getByRole('textbox',{name:'Search company, ticker or headline'}).fill('');
  await page.waitForFunction(()=>Number(document.querySelector('[data-score-table]')?.dataset.virtualTotal)>240);
  assert(await page.locator('tbody tr[data-row-key]').count()<100,'Portfolio bounds mounted cards, with every article still eligible');
