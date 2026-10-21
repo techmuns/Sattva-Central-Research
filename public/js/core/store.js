@@ -403,25 +403,19 @@ export function clearAll() {
  */
 const conditionalInFlight = new Map();
 export function conditionalJson(path, options = {}) {
+  // Check before creating work: a disposed caller otherwise rejects its wrapper
+  // while leaving a second, unobserved rejection in conditionalInFlight.
+  if (options.signal?.aborted) return Promise.reject(options.signal.reason);
   // Custom validation and authenticated reads belong to their caller.
-  // Ordinary public poll, capture, and header reads share one bounded revalidation.
-  if (options.validate || authHeaders(path).authorization) return readConditionalJson(path, options);
+  // Cancellable reads belong to their view too; its signal must not become the
+  // cancellation owner of a different live reader. Ordinary public poll,
+  // capture, and header reads still share one bounded revalidation.
+  if (options.signal || options.validate || authHeaders(path).authorization) return readConditionalJson(path, options);
   const requestKey = JSON.stringify([path, options.key, !!options.optional, !!options.rawManifest]);
   let pending = conditionalInFlight.get(requestKey);
   if (!pending) {
     pending = readConditionalJson(path, options).finally(() => conditionalInFlight.delete(requestKey));
     conditionalInFlight.set(requestKey, pending);
-  }
-  if (options.signal) {
-    if (options.signal.aborted) return Promise.reject(options.signal.reason);
-    return new Promise((resolve, reject) => {
-      const onAbort = () => reject(options.signal.reason);
-      options.signal.addEventListener('abort', onAbort, { once: true });
-      pending.then(
-        (val) => { options.signal.removeEventListener('abort', onAbort); resolve(val); },
-        (err) => { options.signal.removeEventListener('abort', onAbort); reject(err); }
-      );
-    });
   }
   return pending;
 }
@@ -430,7 +424,9 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   if (rawManifest && (!key?.startsWith('news-query:manifest:') || !path.startsWith('data/'))) throw Error('Invalid raw manifest reader');
   const callerSignal = signal;
   signal = signal || AbortSignal.timeout(20000);
+  signal.throwIfAborted();
   const stored = key ? await readEntry(key) : null;
+  signal.throwIfAborted();
 
   let res;
   try {

@@ -7,13 +7,16 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
-let revision = 1, unavailable = false, held = null, reads = 0;
+let revision = 1, unavailable = false, held = null, reads = 0, upgraded = false;
+const previousStoreMarker = '// fixture: previous conditional-read release';
 const html = `<!doctype html><html><head><link rel="stylesheet" href="/css/tailwind.css"></head><body>
 <div id="status"></div><input id="search" aria-label="Company search" value="Jayaswal"><div id="rows"></div>
 <script type="module">
 import { statusControl } from '/js/ui/components.js';
 import * as registry from '/js/core/refresh.js';
 import { conditionalJson } from '/js/core/store.js';
+import { watchWorkerChanges } from '/js/core/app-updates.js';
+watchWorkerChanges(navigator.serviceWorker, () => location.reload());
 let context='news', changed=null, unregister=null;
 window.calls=0;
 const control=statusControl({getTimestamp:()=>null,getRefreshKey:()=>context,subscribeContext:fn=>{changed=fn;return()=>{};},
@@ -31,11 +34,15 @@ window.attach=(name)=>{
 };
 window.attach('news');
 window.read=()=>registry.refreshOne(context);
+window.cancelledRead=()=>conditionalJson('/data/refresh-fixture.json',{signal:AbortSignal.abort()}).catch(error=>error.name);
 window.ready=true;
 </script></body></html>`;
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (url.pathname === '/refresh-test') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  // The real worker serves its cached /index.html for every controlled navigation.
+  // Keep that cached shell on the fixture too, including after the upgrade reload.
+  if (['/', '/index.html', '/refresh-test'].includes(url.pathname)) { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  if (url.pathname === '/sdk-fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end('/* isolated SDK */'); return; }
   if (url.pathname === '/data/refresh-fixture.json') {
     reads++;
     if (held) await held;
@@ -46,7 +53,12 @@ const server = createServer(async (req, res) => {
   const file = resolve(root, `.${url.pathname === '/' ? '/index.html' : url.pathname}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404); res.end(); return; }
   try {
-    const content = readFileSync(file);
+    let content = readFileSync(file);
+    if (url.pathname === '/sw.js') {
+      content = content.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
+      if (!upgraded) content = content.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-conditional-read-release`;');
+    }
+    if (url.pathname === '/js/core/store.js' && !upgraded) content = `${content}\n${previousStoreMarker}\n`;
     res.setHeader('content-type', { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' }[extname(file)] || 'text/plain');
     res.setHeader('cache-control', 'public, max-age=0, must-revalidate'); res.end(content);
   } catch { res.writeHead(404); res.end(); }
@@ -66,6 +78,24 @@ try {
     if (!navigator.serviceWorker.controller) await new Promise(done => navigator.serviceWorker.addEventListener('controllerchange', done, { once: true }));
     await window.read();
   });
+  // Prove replacement of a module already held by the real immutable cache.
+  await page.reload(); await page.waitForFunction(() => window.ready);
+  assert((await page.evaluate(async () => (await fetch('/js/core/store.js')).text())).includes(previousStoreMarker));
+  await page.evaluate(() => localStorage.setItem('refresh-upgrade-reader-state', 'retained'));
+  upgraded = true;
+  const upgradedNavigation = page.waitForEvent('framenavigated', { predicate: frame => frame === page.mainFrame() });
+  await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
+  await upgradedNavigation;
+  await page.waitForFunction(async () => !(await caches.keys()).some(key => key.includes('previous-conditional-read-release')));
+  await page.waitForFunction(() => window.ready && navigator.serviceWorker.controller);
+  assert.equal(await page.evaluate(async () => (await fetch('/js/core/store.js')).text()),
+    readFileSync(resolve(root, 'js/core/store.js'), 'utf8'), 'returning sessions replace the warm conditional-read module');
+  assert.equal(await page.evaluate(() => localStorage.getItem('refresh-upgrade-reader-state')), 'retained');
+  const beforeCancelled = reads;
+  assert.equal(await page.evaluate(() => window.cancelledRead()), 'AbortError');
+  await page.waitForTimeout(50);
+  assert.equal(reads, beforeCancelled, 'a disposed browser view starts no source request');
+  await page.evaluate(() => window.read());
   assert.equal(await page.getByRole('button', { name: 'Refresh', exact: true }).count(), 1, 'Refresh keeps a stable accessible name while its status changes');
   assert.equal(await page.locator('#rows').textContent(), 'Jayaswal source revision 1');
   revision = 2;
@@ -93,5 +123,5 @@ try {
   await page.locator('[data-header-refresh]').click();
   await page.waitForFunction(() => document.querySelector('#rows').textContent === 'Jayaswal source revision 3');
   assert.deepEqual(errors, []);
-  console.log('PASS actual service-worker freshness, outage retention, search preservation, duplicate clicks, pending feedback and navigation isolation');
+  console.log('PASS warm service-worker upgrade, cancelled reads, freshness, outage retention, search preservation, duplicate clicks, pending feedback and navigation isolation');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

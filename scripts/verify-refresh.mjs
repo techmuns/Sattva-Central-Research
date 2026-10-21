@@ -111,4 +111,39 @@ const one = conditionalJson('/fixture', { optional: true });
 const two = conditionalJson('/fixture', { optional: true });
 network.resolve(); await Promise.all([one, two]);
 assert.equal(requests, 1, 'poll and header conditional reads share their network request');
+
+// A disposed view can enter the reader with an already-aborted signal. It must
+// not create an orphaned shared request whose rejection escapes the caller.
+const unhandled = [];
+const onUnhandled = error => unhandled.push(error);
+process.on('unhandledRejection', onUnhandled);
+try {
+  let cancelledRequests = 0;
+  globalThis.fetch = async (_path, { signal }) => {
+    cancelledRequests++;
+    signal.throwIfAborted();
+    return Response.json({ rows: [2] });
+  };
+  await assert.rejects(conditionalJson('/cancelled-view', { signal: AbortSignal.abort() }), { name: 'AbortError' });
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(cancelledRequests, 0, 'a disposed view starts no network request');
+  assert.deepEqual(unhandled, [], 'cancellation leaves no unobserved background rejection');
+
+  const release = gate(), controller = new AbortController();
+  globalThis.fetch = async (_path, { signal }) => {
+    await Promise.race([release.promise, new Promise((_, reject) => {
+      signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+      if (signal.aborted) reject(signal.reason);
+    })]);
+    return Response.json({ rows: [3] });
+  };
+  const departing = conditionalJson('/reader-ownership', { signal: controller.signal });
+  const remaining = conditionalJson('/reader-ownership');
+  const cancelledResult = assert.rejects(departing, { name: 'AbortError' });
+  controller.abort(); release.resolve();
+  await cancelledResult;
+  assert.deepEqual((await remaining).value.rows, [3], 'one view cancellation cannot fail a current background reader');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.deepEqual(unhandled, []);
+} finally { process.off('unhandledRejection', onUnhandled); }
 console.log('PASS refresh ownership, shared requests, failure propagation, truthful labels and tab-specific job targeting');
