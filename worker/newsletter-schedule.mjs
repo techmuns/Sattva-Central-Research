@@ -38,7 +38,7 @@ import { EDITIONS, editionKey, istDay, nextScheduled, normaliseEmail, scheduledE
 export const NEWSLETTER_TIMER_KEY = 'newsletter-timer';
 export const EMAIL_SEND_URL = 'https://devde.muns.io/email/send/raw';
 export const SEND_POOL = 3;
-export const SEND_TIMEOUT_MS = 15000;
+export const SEND_TIMEOUT_MS = 60000;
 // An edition the timer could not deliver within this long of its time is recorded as missed, not
 // sent late: a morning brief that arrives at lunch is a different product, and stating the miss
 // beats pretending the schedule held.
@@ -239,7 +239,7 @@ export class NewsletterSchedule {
    * Build one edition and email it. `recipients` defaults to the list; `token` to the Worker's own.
    * Returns a small record of what happened; the same record is written to the delivery log.
    */
-  async deliver({ edition, day, at, key, source, now = this.now(), recipients = null, token = null, to = null, includeAi = true }) {
+  async deliver({ edition, day, at, key, source, now = this.now(), recipients = null, token = null, to = null, includeAi = true, testRequest = null }) {
     const list = recipients ?? this.store.recipients(edition);
     if (!this.store.beginDelivery({ key, edition, day, scheduledAt: at, source, recipients: list.length })) {
       return { ok: true, key, reason: 'already-sent', sent: 0, failed: 0, outcomes: [] };
@@ -297,7 +297,7 @@ export class NewsletterSchedule {
     const summary = { ...briefSummary(brief), emailParts: messages.length, htmlBytes: messages.map(m => m.bytes) };
     // GitHub owns resumable delivery. The retired object path keeps its original
     // claims; no historical/uncertain edition is implicitly enrolled for replay.
-    if (this.deliveryQueue) return this.deliveryQueue.deliver({ key, edition, source, brief, list, messages, pdfUrl, documentId, credential, subject, summary });
+    if (this.deliveryQueue) return this.deliveryQueue.deliver({ key, edition, source, brief, list, messages, pdfUrl, documentId, credential, subject, summary, testRequest: source === 'test' && !includeAi ? testRequest : null });
     const acceptedParts = new Set();
     const deliveredStories = () => {
       const keys = source !== 'test' ? acceptedStoryKeys(messages, acceptedParts) : [];
@@ -346,7 +346,7 @@ export class NewsletterSchedule {
   }
 
   /** A send somebody pressed: a test copy to one address, or the edition to everyone, built now. */
-  async sendNow({ edition, to, email = null, sourceOnly = false }, token = null) {
+  async sendNow({ edition, to, email = null, sourceOnly = false, testRequest = null }, token = null) {
     if (!EDITIONS[edition]) return { ok: false, reason: 'invalid-edition' };
     const now = this.now();
     const day = istDay(now);
@@ -365,7 +365,7 @@ export class NewsletterSchedule {
     const budget = this.store.claimManualDelivery(now);
     if (!budget.ok) return { ok: false, reason: 'manual-send-budget', retryAt: budget.retryAt };
     const key = `manual:${edition}:${day}:${now}:${to}`;
-    return this.deliver({ edition, day, at: now, key, source: to === 'me' ? 'test' : 'button', now, recipients, token, to: now, includeAi: !(to === 'me' && sourceOnly === true) });
+    return this.deliver({ edition, day, at: now, key, source: to === 'me' ? 'test' : 'button', now, recipients, token, to: now, includeAi: !(to === 'me' && sourceOnly === true), testRequest: to === 'me' && sourceOnly === true ? testRequest : null });
   }
 
   /** The edition as it would be sent now, rendered but not sent. */

@@ -7,10 +7,10 @@ const instant=value=>typeof value==='number'?value:Date.parse(value||'');
 export function newsletterRetryState(rows){
  const groups=new Map();
  for(const row of rows){
-  if(row.source==='test')continue;
+  if(row.source==='test'&&row.requestedTest!==true)continue;
   const key=row.edition+':'+row.source,at=instant(row.next_at);
   if(!Number.isFinite(at))throw Error('Newsletter retry time unavailable');
-  const group=groups.get(key)||{edition:row.edition,source:row.source,pendingEditions:0,at};
+  const group=groups.get(key)||{edition:row.edition,source:row.source,...(row.source==='test'?{requestedTest:true}:{}),pendingEditions:0,at};
   group.pendingEditions++;group.at=Math.min(group.at,at);groups.set(key,group);
  }
  const pending=[...groups.values()].map(({at,...group})=>({...group,nextRetryAt:new Date(at).toISOString()}));
@@ -31,6 +31,6 @@ export function newsletterWakePlan(value,{now=Date.now()}={}){
  // retain the ordinary five-minute check rather than admitting every event.
  const pending=schedule.deliveryRecovery?.pending;
  if(Array.isArray(pending)&&pending.some(row=>row.pendingEditions>0&&
-   (row.source==='button'||row.source==='timer'&&settings[row.edition]?.enabled)&&instant(row.nextRetryAt)<=now))return {due:true,reason:'delivery-retry-due'};
+   (row.source==='button'||row.source==='timer'&&settings[row.edition]?.enabled||row.source==='test'&&row.requestedTest===true)&&instant(row.nextRetryAt)<=now))return {due:true,reason:'delivery-retry-due'};
  return now-wake>=NEWSLETTER_WAKE_MS?{due:true,reason:'check-overdue'}:{due:false,reason:'recent-check'};
 }

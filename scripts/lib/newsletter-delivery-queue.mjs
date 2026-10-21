@@ -3,6 +3,26 @@ import {createHash} from 'node:crypto';
 import {sendEmail} from '../../worker/newsletter-schedule.mjs';
 import {renderBriefHtml,briefStats} from '../../worker/newsletter-brief.mjs';
 import {acceptedStoryKeys,emailBytes,EMAIL_HTML_BYTES} from '../../worker/newsletter-email.mjs';
+import {normaliseEmail} from '../../public/js/data/newsletter-shared.js';
+
+function requestedTest(plan){
+  const request=plan.testRequest;if(!request)return null;
+  if(plan.source!=='test'||!Number.isSafeInteger(plan.createdAt)||plan.createdAt<=0||!Number.isSafeInteger(request.expiresAt)||request.expiresAt<=0||request.expiresAt>plan.createdAt+24*3600000||
+    !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(request.id||'')||plan.recipients?.length!==1||
+    !normaliseEmail(request.email)||request.email!==plan.recipients[0].email)throw Error('Requested test recovery scope invalid');
+  return request;
+}
+export function newsletterPendingDeliveries(db){
+  return db.prepare('SELECT key,edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL ORDER BY next_at,key').all().flatMap(row=>{
+    if(row.source!=='test')return [row];
+    const {payload}=db.prepare('SELECT payload FROM newsletter_delivery_queue WHERE key=?').get(row.key);
+    const plan=JSON.parse(gunzipSync(payload,{maxOutputLength:128*1024*1024}));
+    if(plan.key!==row.key||plan.source!==row.source||plan.edition!==row.edition)throw Error('Requested test queue identity invalid');
+    const request=requestedTest(plan);
+    // Legacy tests never acquire automatic recovery merely by upgrading code.
+    return request?[{...row,requestedTest:true,expiresAt:request.expiresAt}]:[];
+  });
+}
 
 // Only this encrypted GitHub database holds recipient bodies and retry state.
 // Existing edition claims without a queue are deliberately never replayed.
@@ -16,20 +36,20 @@ export class NewsletterDeliveryQueue {
       delivery TEXT NOT NULL,email TEXT NOT NULL,part INTEGER NOT NULL,html TEXT NOT NULL,PRIMARY KEY(delivery,email,part))`);
   }
 
-  pending() { return this.local.db.prepare("SELECT key,edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL AND source != 'test' ORDER BY next_at,key").all(); }
+  pending() { return newsletterPendingDeliveries(this.local.db); }
 
   save(plan) {
     this.local.db.prepare('UPDATE newsletter_delivery_queue SET next_at=?,payload=? WHERE key=?')
       .run(plan.nextAt,gzipSync(JSON.stringify(plan)),plan.key);
   }
 
-  async deliver({key,edition,source,brief,list,messages,pdfUrl,documentId,credential,subject,summary}) {
+  async deliver({key,edition,source,brief,list,messages,pdfUrl,documentId,credential,subject,summary,testRequest=null}) {
     const host=new URL(this.local.schedule.dashboardUrl()).hostname;
     const stats=briefStats(brief);
     let plan;this.local.db.exec('BEGIN');
     try {
     const saveBody=this.local.db.prepare('INSERT INTO newsletter_delivery_bodies(delivery,email,part,html) VALUES(?,?,?,?)');
-    plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),
+    plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),createdAt:this.now(),...(testRequest?{testRequest}:{}),
       messages:messages.map(m=>({keys:m.keys})),reported:brief.reported,windowFrom:brief.window.from,
       recipients:list.map(recipient=>({email:recipient.email,ok:false,status:null,reason:'not-attempted',
         parts:messages.map((message,i)=>{
@@ -39,6 +59,7 @@ export class NewsletterDeliveryQueue {
           return {part:i+1,total:messages.length,bytes:emailBytes(html),subject:message.subject,
             requestedMessageId:`<newsletter.${crypto.randomUUID()}@${host}>`,ok:false,status:null,reason:'not-attempted',attempts:0};
         })}))};
+    requestedTest(plan);
     this.local.db.prepare('INSERT INTO newsletter_delivery_queue(key,edition,source,next_at,payload) VALUES(?,?,?,?,?)')
       .run(key,edition,source,plan.nextAt,gzipSync(JSON.stringify(plan)));
     this.local.db.exec('COMMIT');
@@ -46,21 +67,32 @@ export class NewsletterDeliveryQueue {
     return this.run(plan,credential);
   }
 
-  progress(plan,{finished=false}={}) {
+  progress(plan,{finished=false,terminalReason=null}={}) {
     const outcomes=plan.recipients.map(({parts,...recipient})=>({...recipient,parts:parts.map(({html,subject,requestedMessageId,...part})=>part)}));
     const sent=outcomes.filter(o=>o.ok).length,failed=outcomes.length-sent;
     const reason=failed ? outcomes.some(o=>o.parts.some(p=>p.ok))?'partial-send':outcomes.find(o=>!o.ok)?.reason||'failed' : null;
     const accepted=new Set();for(const o of outcomes)for(const [i,p]of o.parts.entries())if(p.ok)accepted.add(i);
     const published=new Map(plan.reported.map(item=>[item.key,item.publishedAt]));
     const reported=plan.source==='test'?[]:acceptedStoryKeys(plan.messages,accepted).map(key=>({key,publishedAt:published.get(key)}));
-    const values={sent,failed,reason,outcomes,subject:plan.subject,summary:plan.summary,reported,windowFrom:plan.windowFrom};
+    const values={sent,failed,reason:terminalReason||reason,outcomes,subject:plan.subject,summary:plan.summary,reported,windowFrom:plan.windowFrom};
     if(finished)this.local.store.finishDelivery(plan.key,values);
     else this.local.store.recordDeliveryProgress(plan.key,values);
-    return {ok:!failed,key:plan.key,...values};
+    const result={ok:!failed,key:plan.key,...values},request=requestedTest(plan);
+    if(request)this.local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run(finished?'completed':'pending',JSON.stringify(result),request.id);
+    return result;
   }
 
   async run(plan,credential=this.local.schedule.env.MUNS_TOKEN) {
     return this.context(plan,async()=>{
+      const request=requestedTest(plan),expired=()=>!!request&&this.now()>=request.expiresAt;
+      if(request){
+        const claim=this.local.db.prepare('SELECT state,result FROM newsletter_requests WHERE id=?').get(request.id);
+        if(!claim||!claim.result&&claim.state!=='claimed')throw Error('Requested test claim unavailable');
+        if(claim.result){const prior=JSON.parse(claim.result);
+          if(prior.key!==plan.key||prior.outcomes?.length!==1||prior.outcomes[0].email!==request.email)throw Error('Requested test claim scope changed');
+          if(prior.ok&&!plan.recipients.every(r=>r.ok))throw Error('Completed requested test cannot replay');
+        }
+      }
       // Process recipients sequentially so acknowledgements reach retained state
       // before another external send. Every part keeps its original bytes and ID.
       for(const recipient of plan.recipients) {
@@ -72,6 +104,7 @@ export class NewsletterDeliveryQueue {
         }
         for(const part of recipient.parts) {
           if(part.ok)continue;
+          if(expired()){part.reason='request-expired';recipient.reason='request-expired';continue;}
           if(!credential){part.reason='no-token';recipient.reason='no-token';break;}
           // Publish this intent before the guarded provider I/O. If acceptance is
           // uncertain, recovery uses the very same RFC Message-ID and body.
@@ -102,8 +135,10 @@ export class NewsletterDeliveryQueue {
       const complete=plan.recipients.every(r=>r.ok||r.cancelled);
       const attempts=Math.max(1,...plan.recipients.flatMap(r=>r.parts.map(p=>p.attempts)));
       plan.nextAt=this.now()+Math.min(6*3600000,300000*3**Math.min(attempts-1,5));
-      const result=this.progress(plan,{finished:complete||plan.source==='test'});
-      if(complete||plan.source==='test') {
+      if(request)plan.nextAt=Math.min(plan.nextAt,request.expiresAt);
+      const finished=complete||plan.source==='test'&&!request||expired();
+      const result=this.progress(plan,{finished,terminalReason:expired()&&!complete?'request-expired':null});
+      if(finished) {
         this.local.store.finishDocument(plan.documentId,plan.recipients.flatMap(r=>r.parts));
         this.local.db.prepare('UPDATE newsletter_delivery_queue SET payload=NULL,receipt=? WHERE key=?').run(JSON.stringify(result),plan.key);
         this.local.db.prepare('DELETE FROM newsletter_delivery_bodies WHERE delivery=?').run(plan.key);
