@@ -65,13 +65,15 @@ at+=30*60000;code=200;await job.wake();assert.equal(senderCalls,3);assert.equal(
 at=monday+WEEK;code=401;await job.wake();assert.equal(senderCalls,4);at+=3600000;await job.wake();assert.equal(senderCalls,4,'Known-invalid credentials cannot probe the rest of the list');
 await local.close();
 // Unknown acceptance quarantines the same evidence across later editions and restarts.
-at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'uncertain.sqlite'),{env,now:()=>at});local.store.apply([{op:'subscribe',email:'fixture@example.test',by:'Fixture'}]);
+for(const unknownOutcome of ['throw','503','invalid-response']){
+at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'uncertain-'+unknownOutcome+'.sqlite'),{env,now:()=>at});local.store.apply([{op:'subscribe',email:'fixture@example.test',by:'Fixture'}]);
 const uncertainCapture=structuredClone(capture);let unknown=true;const uncertainBodies=[];
-const uncertainOptions=()=>({readSources:async()=>({capture:uncertainCapture,roster}),publish:async()=>{},refreshInputs:async()=>{},fetcher:async(url,options)=>{uncertainBodies.push(JSON.parse(options.body).html);if(unknown)throw Error('Acceptance unknown');return Response.json({success:true,data:{messageId:'<accepted@example.test>'}});},now:()=>at,sleep:async()=>{}});
+const uncertainOptions=()=>({readSources:async()=>({capture:uncertainCapture,roster}),publish:async()=>{},refreshInputs:async()=>{},fetcher:async(url,options)=>{uncertainBodies.push(JSON.parse(options.body).html);if(unknown){if(unknownOutcome==='throw')throw Error('Acceptance unknown');if(unknownOutcome==='503')return new Response('',{status:503});return Response.json({unexpected:true});}return Response.json({success:true,data:{messageId:'<accepted@example.test>'}});},now:()=>at,sleep:async()=>{}});
 job=new PrivateMarketsJob(local,uncertainOptions());await job.prepare();at=monday-3600000;uncertainCapture.deals[0].amount='$4 Mn';await job.prepare({force:true});assert.equal(job.pending().length,1);
 at=monday;await job.wake();assert.equal(local.db.prepare('SELECT COUNT(*) n FROM private_markets_quarantine').get().n,1);assert.equal(job.pending().length,0);
-await local.close();local=localNewsletter(path.join(root,'uncertain.sqlite'),{env,now:()=>at});job=new PrivateMarketsJob(local,uncertainOptions());await job.wake();assert.equal(uncertainBodies.length,1);
+await local.close();local=localNewsletter(path.join(root,'uncertain-'+unknownOutcome+'.sqlite'),{env,now:()=>at});job=new PrivateMarketsJob(local,uncertainOptions());await job.wake();assert.equal(uncertainBodies.length,1);
 at=monday+WEEK;unknown=false;await job.wake();assert.equal(uncertainBodies.length,2);assert(!uncertainBodies[1].includes('Fixture New Company'),'A later weekly edition never re-emails evidence with unknown acceptance');await local.close();
+}
 // Universe delivery during a directory outage retains separate fund matching work.
 at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'roster-recovery.sqlite'),{env,now:()=>at});local.store.apply([{op:'subscribe',email:'fixture@example.test',by:'Fixture'}]);let rosterUp=false;const recoveryBodies=[];
 job=new PrivateMarketsJob(local,{readSources:async()=>({capture:structuredClone(capture),roster:rosterUp?roster:{ok:false}}),publish:async()=>{},refreshInputs:async()=>{},fetcher:async(url,options)=>{recoveryBodies.push(JSON.parse(options.body).html);return Response.json({success:true,data:{messageId:'<accepted@example.test>'}});},now:()=>at,sleep:async()=>{}});

@@ -98,7 +98,7 @@ export class PrivateMarketsJob {
     await this.refreshInputs();
     if(!this.local.store.subscriberRows().some(r=>r.email===recipient.email)){part.state='removed';this.savePlan(plan,'pending');await this.publish();break;}
     const result=await sendEmail({fetcher:this.fetcher,token:this.local.schedule.env.MUNS_TOKEN,email:recipient.email,subject:message.subject,html:message.html,messageId:part.messageId,inReplyTo:part.part===1?null:root.acceptedMessageId||root.messageId});
-    part.reason=result.reason;part.status=result.status;part.state=result.ok?'accepted':result.reason==='rate-limited'&&part.attempts<3?'pending':result.status!==null?'refused':'uncertain';
+    part.reason=result.reason;part.status=result.status;part.state=result.ok?'accepted':result.reason==='rate-limited'&&part.attempts<3?'pending':result.status>=400&&result.status<500?'refused':'uncertain';
     part.nextAt=this.now()+30*60000*part.attempts;
     if(part.state==='uncertain')this.quarantine(plan,part);
     if(result.reason==='rate-limited')this.setMeta({...this.meta(),mailCooldownUntil:iso(part.nextAt),lastResult:'sender-cooldown'});
