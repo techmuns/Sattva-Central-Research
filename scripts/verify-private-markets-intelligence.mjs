@@ -1,6 +1,7 @@
+import {fundMatches} from '../public/js/data/private-market-funds.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';import path from 'node:path';
-import {privateMarketsSlot,fundMatches,WEEK} from '../public/js/data/private-markets-shared.js';
+import {privateMarketsSlot,WEEK} from '../public/js/data/private-markets-shared.js';
 import {emptyCapture,parseArticle,mergeArticle} from './lib/private-market-news.mjs';
 import {buildIntelligence,intelligenceEmails} from './lib/private-markets-intelligence.mjs';
 import {PrivateMarketsJob} from './lib/private-markets-job.mjs';
@@ -17,6 +18,9 @@ assert.equal(fundMatches({investors:'Fireside Ventures, Other Fund'},roster).len
 assert.equal(fundMatches({investors:'NotFireside Ventures, Other Fundraiser'},roster).length,0);
 assert.equal(fundMatches({investors:'Fireside Ventures'},roster)[0].basis,'manager-match');
 assert.equal(fundMatches({investors:'Fireside Ventures'},null).length,0);
+assert.equal(fundMatches({investors:'Z47'},{ok:true,funds:[{name:'Matrix Partners India IV AIF'}]})[0].basis,'manager-match','Use the existing curated manager identity rather than missing a renamed house');
+assert.equal(fundMatches({investors:'Shastra VC'},{ok:true,funds:[{name:'Shastra Winners Fund'}]}).length,1);
+assert.equal(fundMatches({investors:'Fireside Ventures'},{ok:true,funds:[{name:'Fireside Ventures'},{name:'Fireside Ventures'}]}).length,1,'Repeated investments do not duplicate the same fund label');
 const article={url:'https://inc42.com/buzz/fixture-funding-this-week/',title:'Fixture funding'};
 const capture=emptyCapture();capture.articles=[{...article,status:'pending'}];
 const html=(company='Fixture New Company',amount='$2 Mn')=>`<meta property="article:published_time" content="2026-10-24T09:00:00+05:30"><table><tr><td>Date</td><td>Name</td><td>Amount</td><td>Investors</td></tr><tr><td>23 Oct 2026</td><td>${company}</td><td>${amount}</td><td>Fireside Ventures</td></tr><tr><td colspan="4">Source: Inc42<br>*Mix of equity and debt</td></tr></table>`;
