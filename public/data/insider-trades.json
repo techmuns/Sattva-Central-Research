@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-21T17:14:05.177Z",
-  "oldestDataAt": "2026-10-21T17:14:05.177Z",
-  "from": "2025-10-21",
-  "to": "2026-10-21",
+  "capturedAt": "2026-10-21T18:56:30.547Z",
+  "oldestDataAt": "2026-10-21T18:56:30.547Z",
+  "from": "2025-10-22",
+  "to": "2026-10-22",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 8,
+      "pagesRead": 2,
       "latestDate": "2026-10-21",
-      "oldestDate": "2026-10-19",
+      "oldestDate": "2026-10-21",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 200,
-      "capturedAt": "2026-10-21T17:14:05.177Z",
+      "rowCount": 50,
+      "capturedAt": "2026-10-21T18:56:30.547Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-21T17:14:05.177Z",
+      "capturedAt": "2026-10-21T18:56:30.547Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-21T17:14:05.177Z",
+      "capturedAt": "2026-10-21T18:56:30.547Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-21T17:14:05.177Z",
+      "capturedAt": "2026-10-21T18:56:30.547Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 1986,
   "emptyCount": 0,
-  "rowCount": 22028,
+  "rowCount": 22024,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -122673,50 +122673,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-10-21",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1126",
-          "Trade %": "0",
-          "Trade Value": "919931",
-          "Post Holding Shares": "716585",
-          "Post Holding %": "1.5",
-          "Mode": "Off Market",
-          "From Date": "2025-10-15",
-          "To Date": "2025-10-15",
-          "Broadcast Date": "2025-10-21",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-10-21",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "500",
-          "Trade %": "0",
-          "Trade Value": "137675",
-          "Post Holding Shares": "717711",
-          "Post Holding %": "1.5",
-          "Mode": "Off Market",
-          "From Date": "2025-10-15",
-          "To Date": "2025-10-15",
-          "Broadcast Date": "2025-10-21",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "AJANTPHARM": [
@@ -167799,50 +167755,6 @@
           "From Date": "2025-10-23",
           "To Date": "2025-10-23",
           "Broadcast Date": "2025-10-27",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "DMART",
-        "date": "2025-10-21",
-        "cells": {
-          "Company": "DMART",
-          "Insider": "Mahesh Ramji Nagda",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "300",
-          "Trade %": "0",
-          "Trade Value": "1290100",
-          "Post Holding Shares": "6848",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-17",
-          "To Date": "2025-10-17",
-          "Broadcast Date": "2025-10-21",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "DMART",
-        "date": "2025-10-21",
-        "cells": {
-          "Company": "DMART",
-          "Insider": "Parag B Lokhande",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "200",
-          "Trade %": "0",
-          "Trade Value": "855000",
-          "Post Holding Shares": "110400",
-          "Post Holding %": "0.02",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-20",
-          "To Date": "2025-10-20",
-          "Broadcast Date": "2025-10-21",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
