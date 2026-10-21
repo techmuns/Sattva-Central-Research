@@ -1,7 +1,8 @@
 import {newsletterRequest} from './newsletter-request.mjs';
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
 import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys } from './newsletter-email.mjs';
-import { buildBrief, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { buildBrief, briefStats, briefStories, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { newsletterNewsReadComplete } from './newsletter-sources.mjs';
 import { contentIdentity, contentItems } from './newsletter-content.mjs';
 import { NewsletterContentStore, CONTENT_SCAN_MS } from './newsletter-content-store.mjs';
 import { openaiConfigured } from './newsletter-openai.mjs';
@@ -127,9 +128,9 @@ export class NewsletterSchedule {
           const jobs = await Promise.all(contentItems(sources).map(async ({ row, ...item }) => ({ ...item, id: await contentIdentity(item) })));
           this.content.enqueue(jobs, now);
           const a = sources.announcements, n = sources.news;
-          const ok = a.nseHistory.ok && a.bse.ok && n.source.ok && n.tradingview.ok;
+          const ok = a.nseHistory.ok && a.bse.ok && newsletterNewsReadComplete(n);
           complete &&= ok;
-          sourceChecks.push({ ...window, nse: a.nse, nseHistory: a.nseHistory, bse: a.bse, news: n.source, tradingview: n.tradingview });
+          sourceChecks.push({ ...window, nse: a.nse, nseHistory: a.nseHistory, bse: a.bse, news: n.source, companyNews: n.company, tradingview: n.tradingview });
         }
         this.content.setMeta({ ...this.content.meta(), scannedTo: complete ? to : meta.scannedTo || start,
           sources: sourceChecks, reason: complete ? 'captured-sources-read' : 'partial-source-read',
@@ -238,7 +239,7 @@ export class NewsletterSchedule {
    * Build one edition and email it. `recipients` defaults to the list; `token` to the Worker's own.
    * Returns a small record of what happened; the same record is written to the delivery log.
    */
-  async deliver({ edition, day, at, key, source, now = this.now(), recipients = null, token = null, to = null }) {
+  async deliver({ edition, day, at, key, source, now = this.now(), recipients = null, token = null, to = null, includeAi = true }) {
     const list = recipients ?? this.store.recipients(edition);
     if (!this.store.beginDelivery({ key, edition, day, scheduledAt: at, source, recipients: list.length })) {
       return { ok: true, key, reason: 'already-sent', sent: 0, failed: 0, outcomes: [] };
@@ -253,7 +254,7 @@ export class NewsletterSchedule {
 
     let brief;
     try {
-      brief = await buildBrief({ edition, day, settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to, reported: this.store.reportedLookup(), contentService: this.content });
+      brief = await buildBrief({ edition, day, settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to, includeAi, reported: this.store.reportedLookup(), contentService: this.content });
     } catch (error) {
       const reason = error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map((r) => ({ email: r.email, ok: false, reason })) });
@@ -269,10 +270,22 @@ export class NewsletterSchedule {
     let messages;
     try {
       messages = renderBriefEmails(brief, { ...this.renderOptions(footerRecipient), pdfUrl: placeholder });
+      const plannedKeys = new Set(messages.flatMap(message => message.keys));
+      if (briefStories(brief).some(item => !item.keys?.length || item.keys.some(key => !plannedKeys.has(key)))) {
+        throw Error('Eligible alert missing from email plan');
+      }
+      if (messages.some(message => message.part)) {
+        const sections={calendar:brief.calendar?.rows,actions:brief.actions?.rows,performance:brief.performance?.rows,india:brief.markets.rows.filter(r=>r.group==='india'),markets:brief.markets.rows.filter(r=>r.group!=='india')};
+        for (const [name,rows] of Object.entries(sections)) {
+          const carried=new Set(messages.flatMap(message=>message.part?.sections?.[name] || []));
+          if (rows?.some(row=>!carried.has(row))) throw Error('Eligible supplemental row missing from email plan');
+        }
+      }
     } catch (error) {
       const reason = error?.code === 'email-too-large' ? 'email-too-large' : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map(r => ({ email: r.email, ok: false, reason })) });
     }
+    const renderStats = briefStats(brief);
     let pdfUrl, documentId;
     try {
       documentId = this.store.saveDocument(renderBriefPdf(brief, this.renderOptions()), pdfFilename(brief), key);
@@ -303,7 +316,7 @@ export class NewsletterSchedule {
       // unthreaded parts. Edition claims still prevent retries of uncertain sends.
       for (let i = 0; i < messages.length; i++) {
         const message = messages[i], part = outcome.parts[i];
-        const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), pdfUrl, part: message.part });
+        const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), stats: renderStats, pdfUrl, part: message.part });
         part.reason = 'sending';
         part.bytes = emailBytes(html);
         progress();
@@ -333,7 +346,7 @@ export class NewsletterSchedule {
   }
 
   /** A send somebody pressed: a test copy to one address, or the edition to everyone, built now. */
-  async sendNow({ edition, to, email = null }, token = null) {
+  async sendNow({ edition, to, email = null, sourceOnly = false }, token = null) {
     if (!EDITIONS[edition]) return { ok: false, reason: 'invalid-edition' };
     const now = this.now();
     const day = istDay(now);
@@ -352,7 +365,7 @@ export class NewsletterSchedule {
     const budget = this.store.claimManualDelivery(now);
     if (!budget.ok) return { ok: false, reason: 'manual-send-budget', retryAt: budget.retryAt };
     const key = `manual:${edition}:${day}:${now}:${to}`;
-    return this.deliver({ edition, day, at: now, key, source: to === 'me' ? 'test' : 'button', now, recipients, token, to: now });
+    return this.deliver({ edition, day, at: now, key, source: to === 'me' ? 'test' : 'button', now, recipients, token, to: now, includeAi: !(to === 'me' && sourceOnly === true) });
   }
 
   /** The edition as it would be sent now, rendered but not sent. */

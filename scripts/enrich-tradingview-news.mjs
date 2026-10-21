@@ -74,7 +74,10 @@ export async function enrichTradingViewNews({ dataDir = DATA, portfolio = null, 
       // exposed, not a claim that a private/history endpoint has been exhausted. A missed overlap
       // remains a gap even on later successful polls; only explicit recovery can clear it.
       const previous = Date.parse(entry.lastSuccessAt || '');
-      const overlapFrom = (Number.isFinite(previous) ? previous : observedMs) - 48 * 3600000;
+      // Continuity requires overlap with the previous successful poll, not another
+      // full 48-hour window on every fifteen-minute read. Enrollment still discloses
+      // a bounded initial history; existing historical gap evidence is never cleared.
+      const overlapFrom = Number.isFinite(previous) ? previous : observedMs - 48 * 3600000;
       const missedOverlap = result.limited && (!result.oldestReturnedAt || Date.parse(result.oldestReturnedAt) > overlapFrom);
       if (missedOverlap) entry.possibleGapSince ||= entry.lastSuccessAt || entry.registeredAt;
       Object.assign(entry, { lastReadAt: observedAt, lastResultCount: result.returned,

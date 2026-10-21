@@ -141,7 +141,7 @@ const fetcher = async (url, init) => {
   throw Error('Fixture source unavailable');
 };
 let full;
-await test('a relevant source beyond the email company cap still reaches the price assessment', async () => {
+await test('all relevant company reports reach both the email and the price assessment', async () => {
   const original = captures['/data/market-news.json'];
   const jobs = new Map();
   captures['/data/market-news.json'] = { articles: [...original.articles, ...Array.from({ length: 10 }, (_, i) => ({
@@ -151,8 +151,8 @@ await test('a relevant source beyond the email company cap still reaches the pri
     const b = await buildBrief({ edition: 'evening', day, now, settings: DEFAULT_SETTINGS, env: { ...env, ASSETS: assets }, fetcher,
       contentService: { enqueue(list) { for (const j of list) jobs.set(j.id, j); }, async process() {},
         get(id) { return jobs.get(id)?.url === link ? reading() : { state: 'pending', reason: 'queued' }; } } });
-    assert.equal(b.news.groups[0].items.length, 8);
-    assert.ok(!b.news.groups[0].items.some(r => r.url === link), 'the older report is outside the displayed eight stories');
+    assert.equal(b.news.groups[0].items.length, 11);
+    assert.ok(b.news.groups[0].items.some(r => r.url === link), 'the older eligible report is retained alongside every newer company report');
     assert.equal(move(b).why.state, 'reported'); assert.equal(move(b).why.source.url, link);
     assert.equal(move(b).why.coverage.candidates, 11); assert.equal(move(b).why.coverage.pending, 10);
   } finally { captures['/data/market-news.json'] = original; priceRequests = 0; }

@@ -31,9 +31,13 @@ export function tradingViewTargets(entities, directory = [], { nseEntries = null
     // fallback is allowed only when no merged identity exists, never for known BSE-only rows.
     const nse = filingTicker(nseIdentities ? nseIdentities.find(identity)?.ticker || historical || (!hit ? entity.ticker : null)
       : hit ? hit.ticker : entity.ticker);
-    const bse = upper(bseAliases[hit?.isin] || hit?.bseSymbol);
+    // TradingView's public Bajaj Auto pages use BAJAJ_AUTO, not NSE's BAJAJ-AUTO.
+    // Exact ISIN, reviewed at https://www.tradingview.com/symbols/NSE-BAJAJ_AUTO/.
+    const providerAlias = identity.isin === 'INE917I01010' ? 'BAJAJ_AUTO' : null;
+    const nseSymbol = providerAlias && nse ? providerAlias : nse;
+    const bse = upper(providerAlias && hit?.bseSymbol ? providerAlias : bseAliases[hit?.isin] || hit?.bseSymbol);
     const symbols = [...new Set([
-      token(nse) && !/^\d+$/.test(nse) ? `NSE:${nse}` : null,
+      token(nseSymbol) && !/^\d+$/.test(nseSymbol) ? `NSE:${nseSymbol}` : null,
       token(bse) ? `BSE:${bse}` : null,
     ].filter(Boolean))];
     return { entity, symbols, reason: symbols.length ? null : 'no-verified-exchange-symbol' };

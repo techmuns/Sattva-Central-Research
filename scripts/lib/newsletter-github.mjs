@@ -1,3 +1,4 @@
+import {NEWSLETTER_PDF_CHUNK_BYTES} from '../../worker/newsletter-document.mjs';
 import {beginNewsletterRequest,newsletterCallerSignal} from '../../worker/newsletter-request.mjs';
 import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
 import {githubBackgroundRelease} from './github-background-release.mjs';
@@ -59,9 +60,14 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   const backup=path.join(out,'checkpoint.sqlite'),state=path.join(out,'state.bin'),views=path.join(out,'views.gz');fs.rmSync(backup,{force:true});await local.checkpoint(backup);let copy;
   try{
    copy=localNewsletter(backup,{env,...localOptions});const records=new Map();
-   for(const row of copy.db.prepare('SELECT id,filename,body FROM newsletter_documents').iterate())records.set('pdf-'+row.id,{filename:row.filename,body:Buffer.from(row.body).toString('base64')});
+   const savePdf=(id,value,bytes)=>{
+    if(bytes.length<=1500000){records.set(id,{...value,body:bytes.toString('base64')});return;}
+    const parts=[];for(let offset=0;offset<bytes.length;offset+=NEWSLETTER_PDF_CHUNK_BYTES){const body=bytes.subarray(offset,offset+NEWSLETTER_PDF_CHUNK_BYTES),partId=id+'-chunk-'+parts.length;records.set(partId,{body:body.toString('base64')});parts.push({id:partId,bytes:body.length,sha256:createHash('sha256').update(body).digest('hex')});}
+    const {body,...metadata}=value;records.set(id,{...metadata,format:'chunked-pdf-v1',bytes:bytes.length,parts});
+   };
+   for(const row of copy.db.prepare('SELECT id,filename,body FROM newsletter_documents').iterate())savePdf('pdf-'+row.id,{filename:row.filename},Buffer.from(row.body));
    for(const row of copy.db.prepare('SELECT id,state,result,at FROM newsletter_requests').iterate())records.set('request-'+row.id,{state:row.state,result:row.result?JSON.parse(row.result):null,at:row.at});
-   for(const row of copy.db.prepare('SELECT id,payload FROM newsletter_views').iterate())records.set(row.id,JSON.parse(row.payload));
+   for(const row of copy.db.prepare('SELECT id,payload FROM newsletter_views').iterate()){const value=JSON.parse(row.payload);if(value.binary&&value.body)savePdf(row.id,value,Buffer.from(value.body,'base64'));else records.set(row.id,value);}
    const keys=await readerKeys(env.BACKGROUND_STATE_KEY),schedule=await copy.schedule.status();
    schedule.deliveryRecovery=newsletterRetryState(copy.db.prepare("SELECT edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL AND source != 'test'").all());
    const head={version:1,repo:transport.repo,feature:'newsletter',createdAt:new Date(localOptions.now?.()??Date.now()).toISOString(),snapshot:copy.store.snapshot(),schedule:{...schedule,runtime:'github-actions',armed:false,alarmAt:null},requestKey:{kid:keys.kid,publicKey:encode64(keys.publicKey)},processingEnabled:env.NEWSLETTER_PROCESSING_ENABLED==='true',inputRevision:await copy.storage.get('newsletter-source-revision')??null};
@@ -78,7 +84,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   const previous=local.db.prepare('SELECT state,result FROM newsletter_requests WHERE id=?').get(input.id);if(previous)return previous.result?JSON.parse(previous.result):{ok:false,reason:'delivery-uncertain'};
   await refresh();local.db.prepare('INSERT INTO newsletter_requests VALUES(?,?,NULL,?)').run(input.id,'claimed',input.at);await publish();
   activeRequest=input;
-  try{const result=await local.schedule.sendNow({edition:input.edition,to:input.to,email:input.email},input.token||null);local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run('completed',JSON.stringify(result),input.id);await publish();return result;}finally{activeRequest=null;}
+  try{const result=await local.schedule.sendNow({edition:input.edition,to:input.to,email:input.email,sourceOnly:input.sourceOnly===true},input.token||null);local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run('completed',JSON.stringify(result),input.id);await publish();return result;}finally{activeRequest=null;}
  }
  async function wake({onlyIfDue=false}={}){
   const prior=await local.storage.get('newsletter-source-revision');await refresh();

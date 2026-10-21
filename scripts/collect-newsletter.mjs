@@ -40,7 +40,7 @@ async function main(){
    }while(Date.now()<deadline);throw Error('PDF was not published; email was not sent');
   })());return verifiedPdfs.get(document.id);
  };
- const runtime=await githubNewsletter({env:{...process.env,ASSETS:newsletterAssets(),NEWSLETTER_QUOTES:newsletterQuotes()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
+ const runtime=await githubNewsletter({env:{...process.env,NEWSLETTER_GITHUB_ARCHIVES:true,ASSETS:newsletterAssets(),NEWSLETTER_QUOTES:newsletterQuotes()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
  try{
   const completionWake=process.env.GITHUB_EVENT_NAME==='workflow_run';
   if(!completionWake)await runtime.publish();let request=null,bootstrap=false;
