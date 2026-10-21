@@ -319,10 +319,20 @@ class Store:
         key = document_key(url)
         identity = company["isin"] if company else None
         old = self.db.execute("SELECT company FROM documents WHERE id=?", (key,)).fetchone()
+        conflicts = set(self.get("identityConflict:" + key, []))
         if old and old[0] and identity and old[0] != identity:
-            raise ValueError("Document identity assigned to conflicting issuers")
+            conflicts.update([old[0], identity])
         if company:
             self.db.execute("INSERT OR REPLACE INTO companies VALUES(?,?)", (identity, canonical(company)))
+        if conflicts:
+            if identity:
+                conflicts.add(identity)
+            self.set("identityConflict:" + key, sorted(conflicts))
+            # One filing may be shared by several securities. Retain every observation without
+            # assigning ambiguous facts to one security or stopping the rest of the source walk.
+            identity = None
+            self.db.execute("UPDATE documents SET company=NULL,status='identity-conflict' WHERE id=?", (key,))
+            self.db.execute("UPDATE facts SET eligible=0 WHERE version IN (SELECT id FROM versions WHERE document=?)", (key,))
         self.db.execute("""INSERT INTO documents(id,url,company,kind,first_seen,last_seen) VALUES(?,?,?,?,?,?)
             ON CONFLICT(id) DO UPDATE SET last_seen=excluded.last_seen,company=coalesce(documents.company,excluded.company),
             kind=CASE WHEN excluded.kind='financial' THEN 'financial'
@@ -333,7 +343,7 @@ class Store:
         oid = digest(canonical([key, source, raw, published_at]))
         inserted = self.db.execute("INSERT OR IGNORE INTO observations VALUES(?,?,?,?,?,?,?)",
             (oid, key, at, source, day(raw.get("date")), published_at, canonical(raw)))
-        if inserted.rowcount:
+        if inserted.rowcount or conflicts:
             self.refresh_date(key)
         return key
 
@@ -369,6 +379,15 @@ class Store:
             issues.append("reported-date-differs-from-document-date")
         if len(dates) > 1:
             issues.append("document-date-changed")
+        for row in versions:
+            parsed = json.loads(row[0])
+            if not day(parsed.get("documentDate")):
+                status = parsed.get("dateEvidence", {}).get("status")
+                issues.append("document-date-ambiguous" if status == "ambiguous" else "document-date-unavailable")
+        if not dates:
+            issues.append("document-date-unverified")
+        if self.get("identityConflict:" + doc_id):
+            issues.append("document-issuer-conflict")
         indian_days = {dt.datetime.fromisoformat(p.replace("Z", "+00:00")).astimezone(
             dt.timezone(dt.timedelta(minutes=330))).date().isoformat() for p in publications}
         if len(indian_days) > 1:
@@ -378,7 +397,7 @@ class Store:
         if not verified_issuer:
             issues.append("document-issuer-unverified")
         return {"reportedDates": reported, "documentDates": dates, "exchangePublicationTimes": publications,
-            "issues": issues, "eligibleForNewCatalyst": not issues,
+            "issues": sorted(set(issues)), "eligibleForNewCatalyst": not issues,
             "firstObservedAt": min((r["observed_at"] for r in observations), default=None)}
 
     def check(self, key, at, error=None, detail=None, cooldown=None):

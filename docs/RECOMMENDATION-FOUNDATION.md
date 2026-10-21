@@ -44,6 +44,10 @@ Recent overlapping windows resume missed intervals. Historical seven-day windows
 independently per family, followed by rotating historical reconciliation. Pagination checkpoints
 and documents commit together. A partial window never advances its historical watermark.
 Capture progresses over multiple runs; a completed job does not mean the universe is complete.
+Recent, backfill and reconciliation checks retain separate outcomes. A successful historical
+subset cannot clear a failed current window. Expired host refusals clear only after an actual
+successful response. Failed document reads retry after their saved one-day delay; successful
+reads keep their separate weekly recheck cadence.
 
 ## Durable store
 
@@ -64,6 +68,9 @@ per-document date assessments, source checks, cooldowns and backfill state. Dupl
 do not receive a new first-observed time. A changed document adds a version. Financial history
 can be queried by actual observation cutoff; later corrections cannot leak into earlier tests.
 All evidenced versions are returned: consumers must explicitly reconcile restatements/conflicts.
+Shared attachments assigned to different securities retain every observation but quarantine the
+document identity and its financial facts. A conflict never stops unrelated ingestion. The BSE
+date-index adapter validates and flattens its actual `byTicker` groups against `rowCount`.
 
 The job summary reports counts. Detailed coverage can be regenerated without network access:
 
@@ -93,6 +100,7 @@ Original row dates, actual first observation, original document dates, exchange-
 clocks and corrections are different facts. No filename supplies a verified event date. PDF dates
 require an unambiguous first-page date/header and original issuer evidence. Unreadable scans remain
 unavailable; no paid OCR is used. A board/letter date is never treated as publication time.
+Missing or ambiguous document dates remain ineligible even with a verified exchange clock.
 
 The same document reported under multiple dates is quarantined for future catalyst selection.
 Date discrepancies, changed document dates and unverified publication remain explicit. Raw source

@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts/lib"))
 from recommendation_foundation import Store, day, document_date, document_key, document_url, parse_financial_xml
-from recommendation_sources import BudgetExceeded, FAMILIES, PublicReader, SourceFailure, capture_window, collect, index_page, index_url, read_document
+from recommendation_sources import BudgetExceeded, FAMILIES, PublicReader, SourceFailure, capture_window, collect, index_page, index_url, ingest_captured_events, read_document
 from recommendation_github import GithubState
 
 FIXTURES = ROOT / "scripts/fixtures/recommendation-foundation"
@@ -242,7 +242,7 @@ class EvidenceTests(unittest.TestCase):
         captured.write_text(json.dumps({"rows": rows}))
         (directory / "nse-announcements.json").write_text(json.dumps({"rows": [{"url": URL,
             "ticker": "ALPEXSOLAR", "publishedAt": "2026-01-14T08:45:00Z"}]}))
-        (directory / "corp-announcements.json").write_text('{"rows":[]}')
+        (directory / "corp-announcements.json").write_text('{"byTicker":{},"rowCount":0}')
         original = captured.read_bytes()
         fixture = (FIXTURES / "precision-wires-2026.xml").read_bytes()
         financial_url = "https://nsearchives.nseindia.com/corporate/xbrl/financial.xml"
@@ -343,6 +343,101 @@ class EvidenceTests(unittest.TestCase):
         name = "8e7253fb-1150-42d8-9764-bd3c39db7c33.pdf"
         self.assertEqual(document_key("https://www.bseindia.com/xml-data/corpfiling/AttachLive/" + name),
             document_key("https://www.bseindia.com/xml-data/corpfiling/AttachHis/" + name))
+
+    def test_shared_attachment_quarantines_conflicting_securities_without_aborting(self):
+        url = "https://www.bseindia.com/xml-data/corpfiling/AttachLive/b48ddb33-5314-4f00-9053-fcb808e7cefd.pdf"
+        equity = {"isin": "INE572J01011", "symbols": ["SPANDANA"], "bseCodes": ["542759"]}
+        preference = {"isin": "IN9572J01019", "symbols": ["SPANDANA-PREF"], "bseCodes": []}
+        key = self.store.observe(url, equity, "financial", "captured", {"isin": equity["isin"]}, AT)
+        doc = self.store.db.execute("SELECT * FROM documents WHERE id=?", (key,)).fetchone()
+        parsed = parse_financial_xml((FIXTURES / "precision-wires-2026.xml").read_bytes(), PRECISION)
+        self.store.save_version(doc, b"prior-shared-financial-evidence", "xbrl", parsed, AT)
+        self.assertTrue(self.store.financial_history(equity["isin"], "9999"))
+        self.store.observe(url, preference, "financial", "captured", {"isin": preference["isin"]}, AT)
+        self.store.observe(url, equity, "financial", "captured", {"isin": equity["isin"]}, AT)
+        self.assertIsNone(self.store.db.execute("SELECT company FROM documents WHERE id=?", (key,)).fetchone()[0])
+        self.assertEqual(self.store.db.execute("SELECT count(*) FROM observations").fetchone()[0], 2)
+        self.assertEqual(self.store.financial_history(equity["isin"], "9999"), [])
+        self.assertEqual(self.store.financial_history(preference["isin"], "9999"), [])
+        self.assertIn("document-issuer-conflict", self.store.date_assessment(key)["issues"])
+        self.assertFalse(self.store.date_assessment(key)["eligibleForNewCatalyst"])
+        self.assertIsNotNone(self.store.observe(URL, ALPEX, "event", "captured", {}, AT))
+
+    def test_bse_grouped_input_retains_all_publication_clocks_and_rejects_shortfall(self):
+        directory = Path(self.tmp.name) / "bse-data"
+        directory.mkdir()
+        path = directory / "corp-announcements.json"
+        row = {"scripCode": "523539", "date": "2026-10-20", "time": "23:45:00", "url": URL}
+        payload = {"byTicker": {"PRECWIRE": [row]}, "rowCount": 1, "capturedAt": AT}
+        path.write_text(json.dumps(payload))
+        ingest_captured_events(self.store, directory, {"523539": PRECISION}, AT)
+        observation = self.store.db.execute("SELECT * FROM observations").fetchone()
+        self.assertEqual(observation["published_at"], "2026-10-20T18:15:00+00:00")
+        self.assertEqual(json.loads(observation["raw"])["ticker"], "PRECWIRE")
+        check = self.store.db.execute("SELECT detail FROM checks WHERE key='input:bse-date-index'").fetchone()
+        self.assertEqual(json.loads(check[0])["rows"], 1)
+        payload["rowCount"] = 2
+        path.write_text(json.dumps(payload))
+        with self.assertRaises(SourceFailure): ingest_captured_events(self.store, directory, {}, AT)
+
+    def test_recent_failure_is_not_overwritten_by_successful_backfill(self):
+        class Failed:
+            def read(self, url): raise SourceFailure("changing current page")
+        class Complete:
+            def read(self, url): return b'{"data":[],"totalCount":0,"size":100,"page":0}'
+        family = FAMILIES[0]
+        self.assertFalse(capture_window(self.store, Failed(), family, "2026-10-15", "2026-10-21", {}))
+        self.assertTrue(capture_window(self.store, Complete(), family, "2026-10-08", "2026-10-14", {}, phase="backfill"))
+        recent = self.store.db.execute("SELECT * FROM checks WHERE key='source:integrated-equity:recent'").fetchone()
+        backfill = self.store.db.execute("SELECT * FROM checks WHERE key='source:integrated-equity:backfill'").fetchone()
+        self.assertEqual(recent["error"], "changing current page")
+        self.assertEqual(json.loads(recent["detail"])["to"], "2026-10-21")
+        self.assertIsNone(backfill["error"])
+
+    def test_recovered_host_clears_its_expired_refusal(self):
+        self.store.check("host:nsearchives.nseindia.com", "2026-10-19T08:00:00+00:00", "access-refused",
+            cooldown="2026-10-20T08:00:00+00:00")
+        response = io.BytesIO(b"original-source-evidence")
+        response.headers = {}
+        opener = mock.Mock()
+        opener.open.return_value = response
+        reader = PublicReader(self.store, opener=opener, sleep=lambda _: None)
+        self.assertEqual(reader.read(URL), b"original-source-evidence")
+        check = self.store.db.execute("SELECT * FROM checks WHERE key='host:nsearchives.nseindia.com'").fetchone()
+        self.assertIsNone(check["error"])
+        self.assertIsNone(check["cooldown_until"])
+        self.assertGreater(check["success_at"], "2026-10-20T08:00:00+00:00")
+
+    def test_document_failure_retries_after_one_day_without_waiting_a_week(self):
+        now = dt.datetime.now(dt.timezone.utc)
+        at = now.isoformat(timespec="seconds")
+        tomorrow = (now + dt.timedelta(days=1)).isoformat(timespec="seconds")
+        expired = (now - dt.timedelta(minutes=1)).isoformat(timespec="seconds")
+        keys = [self.store.observe(URL.replace(".pdf", "-" + str(i) + ".pdf"), ALPEX, "event", "fixture", {}, at)
+            for i in range(3)]
+        self.store.db.execute("UPDATE documents SET checked_at=?,status='failed',next_retry=? WHERE id=?", (at, expired, keys[0]))
+        self.store.db.execute("UPDATE documents SET checked_at=?,status='failed',next_retry=? WHERE id=?", (at, tomorrow, keys[1]))
+        self.store.db.execute("UPDATE documents SET checked_at=?,status='read' WHERE id=?", (at, keys[2]))
+        class Reader:
+            used = 0
+            def read(self, url):
+                return b'{"data":[],"totalCount":0,"size":100,"page":0}' if "integrated-filing" in url else b'[]'
+        with mock.patch("recommendation_sources.read_document") as read:
+            collect(self.store, Path(self.tmp.name) / "absent-inputs", Reader(), {}, self.tmp.name)
+        self.assertEqual([call.args[2]["id"] for call in read.call_args_list], [keys[0]])
+
+    def test_missing_or_ambiguous_document_date_never_qualifies_as_a_catalyst(self):
+        for i, text in enumerate(["Symbol: ALPEXSOLAR", "Date: January 14, 2026\nDate: October 20, 2026"]):
+            key = self.store.observe(URL.replace(".pdf", "-" + str(i) + ".pdf"), ALPEX, "event", "nse-rss", {}, AT,
+                "2026-01-14T08:45:00+00:00")
+            doc = self.store.db.execute("SELECT * FROM documents WHERE id=?", (key,)).fetchone()
+            evidence = document_date(text)
+            self.store.save_version(doc, text.encode(), "pdf", {"issuerMatches": True,
+                "documentDate": evidence["date"], "dateEvidence": evidence}, AT)
+            assessment = self.store.date_assessment(key)
+            self.assertFalse(assessment["eligibleForNewCatalyst"])
+            self.assertIn("document-date-unverified", assessment["issues"])
+            self.assertIn("document-date-" + evidence["status"], assessment["issues"])
 
     def test_no_runtime_ui_or_paid_storage(self):
         workflow = (ROOT / ".github/workflows/recommendation-foundation.yml").read_text()

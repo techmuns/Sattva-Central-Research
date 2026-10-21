@@ -76,6 +76,7 @@ class PublicReader:
                     raise SourceFailure("Source exceeds document byte budget")
                 if re.search(br"Access Denied|errors\.edgesuite\.net|Too Many Requests", body[:3000], re.I):
                     raise urllib.error.HTTPError(url, 403, "Source refusal", {}, None)
+                self.store.check(key, iso_now(), detail={"httpStatus": getattr(response, "status", 200)})
                 return body
         except urllib.error.HTTPError as error:
             if error.code in (301, 302, 303, 307, 308) and redirects < 3:
@@ -128,8 +129,9 @@ def index_page(body, family, page):
     return rows, total
 
 
-def capture_window(store, reader, family, start, end, lookup):
+def capture_window(store, reader, family, start, end, lookup, phase="recent"):
     key = "index:" + family[0] + ":" + start + ":" + end
+    check_key = "source:" + family[0] + ":" + phase
     progress = store.get(key, {"nextPage": 1, "seen": [], "total": None})
     # A completed recent interval is re-read. An interrupted interval resumes without discarding pages.
     if progress.get("complete"):
@@ -172,13 +174,16 @@ def capture_window(store, reader, family, start, end, lookup):
             store.set(key, progress)
             store.db.commit()  # An interrupted page walk retains both its documents and cursor.
             if progress["complete"]:
-                store.check("source:" + family[0], at, detail={"from": start, "to": end, "records": total})
+                store.check(check_key, at, detail={"from": start, "to": end, "records": total})
                 return True
             if page >= 100:
                 raise SourceFailure("Index window exceeds pagination budget; no complete-coverage claim")
         except SourceFailure as error:
-            store.check("source:" + family[0], at, str(error), {"from": start, "to": end})
+            store.check(check_key, at, str(error), {"from": start, "to": end})
             return False
+        except BudgetExceeded:
+            store.check(check_key, at, "Source walk interrupted; window remains incomplete", {"from": start, "to": end})
+            raise
 
 
 def ingest_captured_events(store, data_dir, lookup, at):
@@ -192,7 +197,18 @@ def ingest_captured_events(store, data_dir, lookup, at):
             store.check("input:" + source, at, "input-unavailable")
             continue
         data = json.loads(path.read_text())
-        rows = data.get("rows", [])
+        if not isinstance(data, dict):
+            raise SourceFailure("Captured event input is malformed")
+        if source == "bse-date-index":
+            groups = data.get("byTicker")
+            if not isinstance(groups, dict) or any(not isinstance(group, list) for group in groups.values()):
+                raise SourceFailure("BSE captured byTicker input is malformed")
+            rows = [{**row, "ticker": ticker} for ticker, group in groups.items() for row in group if isinstance(row, dict)]
+            if (len(rows) != sum(map(len, groups.values())) or type(data.get("rowCount")) is not int or
+                    data["rowCount"] != len(rows)):
+                raise SourceFailure("BSE captured row count is incomplete or malformed")
+        else:
+            rows = data.get("rows")
         if not isinstance(rows, list):
             raise SourceFailure("Captured event input is malformed")
         for row in rows:
@@ -297,15 +313,17 @@ def collect(store, data_dir, reader, lookup, scratch):
                 store.db.commit()
         for family in FAMILIES:
             key = "backfill:" + family[0]
+            phase = "backfill"
             end = store.get(key) or (today - dt.timedelta(days=7)).isoformat()
             if end < start:
                 # Finished history remains stored. Reconcile older windows on a separate rotating cursor.
                 key = "reconcile:" + family[0]
+                phase = "reconcile"
                 end = store.get(key) or (today - dt.timedelta(days=7)).isoformat()
                 if end < start:
                     end = (today - dt.timedelta(days=7)).isoformat()
             beginning = max(start, (dt.date.fromisoformat(end) - dt.timedelta(days=6)).isoformat())
-            if capture_window(store, reader, family, beginning, end, lookup):
+            if capture_window(store, reader, family, beginning, end, lookup, phase=phase):
                 store.set(key, (dt.date.fromisoformat(beginning) - dt.timedelta(days=1)).isoformat())
                 store.db.commit()
     except BudgetExceeded:
@@ -319,7 +337,7 @@ def collect(store, data_dir, reader, lookup, scratch):
             docs.extend(store.db.execute("""SELECT * FROM documents WHERE company IS NOT NULL AND
             (kind=? OR (?='event' AND kind='catalyst')) AND
             (next_retry IS NULL OR next_retry<=?) AND
-            (checked_at IS NULL OR checked_at<?) ORDER BY kind='catalyst' DESC,
+            (status='failed' OR checked_at IS NULL OR checked_at<?) ORDER BY kind='catalyst' DESC,
             checked_at IS NOT NULL, checked_at,first_seen,id LIMIT ?""",
             (kind, kind, at, (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat(timespec="seconds"), maximum)).fetchall())
         for doc in docs:
