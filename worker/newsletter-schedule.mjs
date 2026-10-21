@@ -28,7 +28,8 @@ import { EDITIONS, editionKey, istDay, nextScheduled, normaliseEmail, scheduledE
 // `env.MUNS_TOKEN`; a reader's own session token may stand in for a send they press themselves,
 // exactly as `withCallerToken` lets it elsewhere. Without either, the delivery is recorded as
 // `no-token` against every recipient and the panel says which secret an operator installs.
-// Nothing here ever logs, stores or returns upstream error text or a token.
+// No token or upstream error text is logged or returned. Requested GitHub tests
+// retain caller authorization only inside the encrypted recovery checkpoint.
 //
 // A SEND THAT REACHED SOMEBODY IS WRITTEN TO THE LEDGER. Every item the brief carried is recorded
 // under its own identity once at least one recipient got it, for the timer's sends and a send to
@@ -79,6 +80,7 @@ export async function sendEmail({ fetcher = fetch, token, email, subject, html =
       redirect: 'manual',
     },SEND_TIMEOUT_MS);
   } catch (error) {
+    if(error?.code==='newsletter-request-expired')return {ok:false,status:null,reason:'request-expired',providerAttempted:false};
     return { ok: false, status: null, reason: /abort|timeout/i.test(String(error?.name || '')) ? 'timeout' : 'unreachable' };
   }
   let parsed = null;

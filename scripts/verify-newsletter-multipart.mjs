@@ -33,6 +33,7 @@ payloads['/data/market-news.json']={articles};
 const env={NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-only',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789',MUNS_TOKEN:'fixture-mail-only',ASSETS:{fetch:async request=>{
  const value=payloads[new URL(request.url).pathname];return value?Response.json(value):new Response(null,{status:404});
 }}};
+if(mode==='requested-test-caller-token')delete env.MUNS_TOKEN;
 if(requested)Object.assign(env,{OPENAI_API_KEY:'fixture-must-never-be-used',NEWSLETTER_NEWS_AI_PROVIDER:'openai'});
 const remote=new Map(),mail=[],guards=[];let release=false,sequence=1,body='',notifications=0,failedOnce=false,failUpload=false,modelCalls=0;
 const fetcher=async(raw,options={})=>{
@@ -51,12 +52,13 @@ const fetcher=async(raw,options={})=>{
   assert(url.pathname.endsWith('/releases/tags/newsletter-data'));return release?Response.json({id:77,tag_name:'newsletter-data',body}):new Response(null,{status:404});
  }
  if(String(raw)===EMAIL_SEND_URL){
+  assert.equal(options.headers.authorization,'Bearer fixture-mail-only');
   options.signal.throwIfAborted();assert.equal(options[NEWSLETTER_DEADLINE],undefined);assert(notifications>0);
   if(mode==='requested-test-slow-provider'){await delay(30);options.signal.throwIfAborted();}
   mail.push(JSON.parse(options.body));
   const message=mail.at(-1),target=message.email==='first@example.test';
   const root=!message.inReplyTo;
-  const rootTimeout=['root-timeout','requested-test-root-timeout'].includes(mode),healthy=['healthy','requested-test-slow-provider','requested-test-expiry-during-pdf'].includes(mode);
+  const rootTimeout=['root-timeout','requested-test-root-timeout','requested-test-expired-root','requested-test-expiry-during-retry-pdf'].includes(mode),healthy=['healthy','requested-test-slow-provider','requested-test-expiry-during-pdf','requested-test-outbox-crash'].includes(mode);
   if(target&&!failedOnce&&((rootTimeout&&root)||(!healthy&&!rootTimeout&&!root))){
    failedOnce=true;
    if(rootTimeout)throw new DOMException('Fixture response lost','TimeoutError');
@@ -82,12 +84,12 @@ try{
  source.store.apply(addresses.map(email=>({op:'subscribe',email,by:'Synthetic fixture',editions:['morning','evening']})));
  if(testCase)source.store.setSettings({...source.store.settings(),morning:{...source.store.settings().morning,enabled:false},evening:{...source.store.settings().evening,enabled:false}});
  const keys=await readerKeys('fixture-reader-secret-only-123456789');
- const options={env,fetcher,recipient:{kid:keys.kid,publicKey:encode64(keys.publicKey)},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{notifications++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA},verifyPdf:async document=>{guards.push(document.id);await delay(80);if(mode==='requested-test-expiry-during-pdf')at=Date.parse('2026-09-18T02:30:00.001Z');}};
+ const options={env,fetcher,recipient:{kid:keys.kid,publicKey:encode64(keys.publicKey)},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{notifications++;if(mode==='requested-test-outbox-crash'&&notifications===1)failUpload=true;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA},verifyPdf:async document=>{guards.push(document.id);await delay(80);if(mode==='requested-test-expiry-during-pdf'||mode==='requested-test-expiry-during-retry-pdf'&&mail.length)at=Date.parse('2026-09-18T02:30:00.001Z');}};
  runtime=await githubNewsletter({...options,file:path.join(dir,'runner.sqlite'),out:path.join(dir,'publication'),legacyClient:input=>exportNewsletter(source.storage,input)});
  if(testCase){
   const issuedAt=at,id=crypto.randomUUID(),requestKeys=await readerKeys(env.BACKGROUND_STATE_KEY);
-  const envelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id,at,edition:'morning',to:'me',email:addresses[0],sourceOnly:requested})),{kid:requestKeys.kid,publicKey:encode64(requestKeys.publicKey)},`${repo}:github-newsletter-request:v1`);
-  const crashed=mode==='requested-test-checkpoint-crash';let initial;
+  const envelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id,at:at+(mode==='requested-test-clock-skew'?1000:0),edition:'morning',to:'me',email:addresses[0],sourceOnly:requested,...(mode==='requested-test-caller-token'?{token:'fixture-mail-only'}:{})})),{kid:requestKeys.kid,publicKey:encode64(requestKeys.publicKey)},`${repo}:github-newsletter-request:v1`);
+  const crashed=['requested-test-checkpoint-crash','requested-test-outbox-crash'].includes(mode);let initial;
   if(crashed){await assert.rejects(runtime.processRequest(envelope),/stopped|blocked|interrupted/);const row=runtime.db.prepare("SELECT key FROM newsletter_delivery_queue WHERE source='test' AND payload IS NOT NULL").get();initial=runtime.store.delivery(row.key);}
   else initial=await runtime.processRequest(envelope);
   const count=initial.summary.emailParts;
@@ -103,10 +105,10 @@ try{
   if(!crashed)assert.equal((await preparedRequest(runtime,'first-reader')).state,needsRecovery?'pending':'completed','The actual encrypted static API reports pending recovery instead of completing a partial test');
   const firstRun=structuredClone(mail),manualAttempts=runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n;
   assert.equal(manualAttempts,1);await runtime.close();runtime=null;
-  at=issuedAt+(mode==='requested-test-expired'||mode==='requested-test-expiry-during-pdf'?24*3600000+1:300001);
-  payloads['/data/market-news.json']={articles:[]};
+  at=issuedAt+(mode==='requested-test-expired'||mode==='requested-test-expired-root'||mode==='requested-test-expiry-during-pdf'?24*3600000+1:300001);
+  if(mode!=='requested-test-outbox-crash')payloads['/data/market-news.json']={articles:[]};
   failUpload=false;restarted=await githubNewsletter({...options,file:path.join(dir,'restarted.sqlite'),out:path.join(dir,'restarted-publication'),legacyClient:()=>{throw Error('Requested tests must restore their encrypted frozen parts');}});
-  if(crashed)assert.equal((await preparedRequest(restarted,'pending-reader')).state,'pending','A failed acknowledgement cannot complete the retained request');
+  if(crashed)assert.equal((await preparedRequest(restarted,'pending-reader')).state,mode==='requested-test-outbox-crash'?'queued':'pending','A failed acknowledgement cannot complete the retained request');
   if(mode==='requested-test-retarget-rejected'){
    const row=restarted.db.prepare('SELECT payload FROM newsletter_delivery_queue WHERE key=?').get(initial.key),plan=JSON.parse(gunzipSync(row.payload));
    plan.testRequest.email=plan.recipients[0].email='unrequested@example.test';restarted.schedule.deliveryQueue.save(plan);
@@ -115,6 +117,8 @@ try{
   }
   await restarted.wake();
   const status=await preparedRequest(restarted,'recovered-reader'),result=status.result;
+  assert(!JSON.stringify(status).includes('fixture-mail-only'),'Prepared request views never expose caller authorization');
+  assert.equal(restarted.db.prepare('SELECT COUNT(*) n FROM newsletter_request_intents').get().n,0);
   assert.equal(status.state,'completed');assert.equal(restarted.schedule.deliveryQueue.pending().length,0);
   assert.equal(restarted.db.prepare('SELECT COUNT(*) n FROM newsletter_delivery_bodies').get().n,0);
   assert(restarted.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n<=manualAttempts,'Recovery cannot reserve another manual attempt');
@@ -130,6 +134,8 @@ try{
    for(const [i,p]of result.outcomes[0].parts.entries()){const m=originals.get(p.request.messageId);assert.equal(p.request.bodySha256,createHash('sha256').update(m.html).digest('hex'));assert.equal(m.inReplyTo,i?root:undefined);}
    const before=mail.length;await restarted.processRequest(envelope);assert.equal(mail.length,before,'Replaying a completed request cannot send another copy');
   }
+  if(mode==='requested-test-expiry-during-pdf')assert.equal(restarted.db.prepare('SELECT COUNT(*) n FROM newsletter_documents').get().n,0,'Zero provider I/O cannot retain an immutable PDF');
+  if(mode==='requested-test-expired-root'||mode==='requested-test-expiry-during-retry-pdf'){assert.equal(result.outcomes[0].parts[0].reason,'timeout');assert.equal(result.outcomes[0].parts[0].status,null);assert.equal(restarted.db.prepare('SELECT COUNT(*) n FROM newsletter_documents').get().n,1,'Uncertain provider acceptance retains its PDF');}
   console.log('PASS '+JSON.stringify({scenario:mode,recipientCount:1,parts:count,attempts:mail.length,modelCalls,subscriberLedgerItems:restarted.store.sentStoryKeys().size,productionRequests:0}));return;
  }
  if(mode==='checkpoint-crash')await assert.rejects(runtime.wake(),/stopped|blocked/);else await runtime.wake();
@@ -206,6 +212,6 @@ try{
 }finally{AbortSignal.timeout=originalTimeout;await restarted?.close();await runtime?.close();await source?.close();fs.rmSync(dir,{recursive:true,force:true});}
 
 }
-const modes=['healthy','root-timeout','reply-rate-limit','checkpoint-crash','unsubscribe','disabled','requested-test-root-timeout','requested-test-reply','requested-test-checkpoint-crash','requested-test-retarget-rejected','requested-test-expired','requested-test-expiry-during-pdf','requested-test-slow-provider','legacy-test-reply'];
+const modes=['healthy','root-timeout','reply-rate-limit','checkpoint-crash','unsubscribe','disabled','requested-test-root-timeout','requested-test-reply','requested-test-checkpoint-crash','requested-test-retarget-rejected','requested-test-expired','requested-test-expiry-during-pdf','requested-test-slow-provider','legacy-test-reply','requested-test-caller-token','requested-test-clock-skew','requested-test-outbox-crash','requested-test-expired-root','requested-test-expiry-during-retry-pdf'];
 const selected=process.argv.slice(2);assert(selected.every(mode=>modes.includes(mode)),'Unknown local fixture scenario');
 for(const mode of selected.length?selected:modes)await scenario(mode);

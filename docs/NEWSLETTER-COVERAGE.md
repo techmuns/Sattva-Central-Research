@@ -78,3 +78,11 @@ inventory cannot certify an idle sender. Explicit encrypted send requests and re
 bootstrap requests retain their own queue. The sender checks its retained clock again
 for every automatic trigger after obtaining the account mutex. Existing timers, source
 cadences, retry state and delivery claims are preserved.
+
+Requested source-only tests retain their sealed input in a private encrypted intent row until
+the complete frozen outbox is acknowledged. A runner lost during preparation therefore resumes
+from the intent; a runner lost after preparation resumes the identical parts. Caller-only mail
+authorization stays inside encrypted state and is removed with the completed outbox, never placed
+in prepared request views. The original 24-hour issuance deadline includes the accepted one-hour
+future clock skew. Expiry preserves earlier provider outcomes; PDFs with no possible provider
+submission are deleted, while genuinely uncertain links remain usable.

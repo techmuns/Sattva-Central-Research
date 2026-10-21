@@ -43,14 +43,14 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   if(metered(url)){
    await refresh();await publish();
    if(url==='https://devde.muns.io/email/send/raw'){
-    if(activeRequest?.testExpiresAt&&(localOptions.now?.()??Date.now())>=activeRequest.testExpiresAt)throw Error('Requested test expired before provider I/O');
+    if(activeRequest?.testExpiresAt&&(localOptions.now?.()??Date.now())>=activeRequest.testExpiresAt)throw Object.assign(Error('Requested test expired before provider I/O'),{code:'newsletter-request-expired'});
     const body=JSON.parse(options.body),test=activeRequest?.to==='me'&&activeRequest.email===body.email;
     if(activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
     if(!test&&!local.store.recipients(activeRequest?.edition).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
     const documents=local.db.prepare("SELECT id,filename,body FROM newsletter_documents WHERE delivery_state='pending' ORDER BY created_at DESC").all();
     for(const document of documents)await verifyPdf(document,env);
     await refresh();
-    if(activeRequest?.testExpiresAt&&(localOptions.now?.()??Date.now())>=activeRequest.testExpiresAt)throw Error('Requested test expired before provider I/O');
+    if(activeRequest?.testExpiresAt&&(localOptions.now?.()??Date.now())>=activeRequest.testExpiresAt)throw Object.assign(Error('Requested test expired before provider I/O'),{code:'newsletter-request-expired'});
     if(activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
     if(!test&&!local.store.recipients(activeRequest?.edition).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
    }
@@ -93,13 +93,29 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   const raw=await openForReader(envelope,env.BACKGROUND_STATE_KEY,newsletterRequestContext(transport.repo));if(raw.length>32768)throw Error('Newsletter request too large');const input=JSON.parse(new TextDecoder().decode(raw));
   if(!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(input.id||'')||!newsletterRequestIsFresh(input,localOptions.now?.()??Date.now())||!['morning','evening'].includes(input.edition)||!['me','all'].includes(input.to))throw Error('Invalid newsletter request');
   const previous=local.db.prepare('SELECT state,result FROM newsletter_requests WHERE id=?').get(input.id);if(previous)return previous.result?JSON.parse(previous.result):{ok:false,reason:'delivery-uncertain'};
-  await refresh();local.db.prepare('INSERT INTO newsletter_requests VALUES(?,?,NULL,?)').run(input.id,'claimed',input.at);await publish();
+  await refresh();
+  const recoverable=input.to==='me'&&input.sourceOnly===true;
+  local.db.exec('BEGIN');try{
+   local.db.prepare('INSERT INTO newsletter_requests VALUES(?,?,NULL,?)').run(input.id,recoverable?'queued':'claimed',input.at);
+   if(recoverable)local.db.prepare('INSERT INTO newsletter_request_intents VALUES(?,?)').run(input.id,JSON.stringify(input));
+   local.db.exec('COMMIT');
+  }catch(error){local.db.exec('ROLLBACK');throw error;}
+  await publish();return executeRequest(input);
+ }
+ async function executeRequest(input){
+  if(input.to==='me'&&input.sourceOnly===true&&(localOptions.now?.()??Date.now())>=input.at+24*3600000){
+   const result={ok:false,reason:'request-expired',sent:0,failed:1,outcomes:[]};
+   local.db.prepare("UPDATE newsletter_requests SET state='completed',result=? WHERE id=?").run(JSON.stringify(result),input.id);
+   local.db.prepare('DELETE FROM newsletter_request_intents WHERE id=?').run(input.id);await publish();return result;
+  }
   activeRequest=input;
   try{const result=await local.schedule.sendNow({edition:input.edition,to:input.to,email:input.email,sourceOnly:input.sourceOnly===true,
    testRequest:input.to==='me'&&input.sourceOnly===true?{id:input.id,email:input.email,expiresAt:input.at+24*3600000}:null},input.token||null);
    const pending=local.schedule.deliveryQueue.pending().some(row=>row.key===result.key&&row.requestedTest);
-   local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run(pending?'pending':'completed',JSON.stringify(result),input.id);await publish();return result;}finally{activeRequest=null;}
+   local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run(pending?'pending':'completed',JSON.stringify(result),input.id);
+   local.db.prepare('DELETE FROM newsletter_request_intents WHERE id=?').run(input.id);await publish();return result;}finally{activeRequest=null;}
  }
+
  async function wake({onlyIfDue=false}={}){
   const prior=await local.storage.get('newsletter-source-revision');await refresh();
   if(onlyIfDue){
@@ -110,7 +126,9 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   }
   await publish();
   const deliver=local.schedule.deliver.bind(local.schedule);local.schedule.deliver=async input=>{activeRequest={edition:input.edition,to:'all',automatic:true};try{return await deliver(input);}finally{activeRequest=null;}};
-  try{const recovered=await local.schedule.deliveryQueue.recover();await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
+  try{const recovered=await local.schedule.deliveryQueue.recover();
+   for(const row of local.db.prepare("SELECT i.payload FROM newsletter_request_intents i JOIN newsletter_requests r ON r.id=i.id WHERE r.state='queued' AND r.result IS NULL").all())recovered.push(await executeRequest(JSON.parse(row.payload)));
+   await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
    if(recovered.length&&(await local.schedule.status()).lastResult==='nothing-due')await local.schedule.record({lastResult:recovered.at(-1).reason||'sent',reason:recovered.at(-1).reason||null});
    if(local.schedule.deliveryQueue.pending().length)await local.schedule.record({lastResult:'partial-send',reason:'delivery-retry-pending'});
    await publish();return {processed:true};}finally{local.schedule.deliver=deliver;activeRequest=null;}

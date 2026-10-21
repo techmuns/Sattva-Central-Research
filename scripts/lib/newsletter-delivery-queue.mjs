@@ -7,13 +7,15 @@ import {normaliseEmail} from '../../public/js/data/newsletter-shared.js';
 
 function requestedTest(plan){
   const request=plan.testRequest;if(!request)return null;
-  if(plan.source!=='test'||!Number.isSafeInteger(plan.createdAt)||plan.createdAt<=0||!Number.isSafeInteger(request.expiresAt)||request.expiresAt<=0||request.expiresAt>plan.createdAt+24*3600000||
+  // The sealed request lives 24 hours from issuance; its accepted future-clock
+  // skew can put that deadline up to 25 hours beyond the runner plan clock.
+  if(plan.source!=='test'||!Number.isSafeInteger(plan.createdAt)||plan.createdAt<=0||!Number.isSafeInteger(request.expiresAt)||request.expiresAt<=0||request.expiresAt>plan.createdAt+25*3600000||
     !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(request.id||'')||plan.recipients?.length!==1||
     !normaliseEmail(request.email)||request.email!==plan.recipients[0].email)throw Error('Requested test recovery scope invalid');
   return request;
 }
 export function newsletterPendingDeliveries(db){
-  return db.prepare('SELECT key,edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL ORDER BY next_at,key').all().flatMap(row=>{
+  const pending=db.prepare('SELECT key,edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL ORDER BY next_at,key').all().flatMap(row=>{
     if(row.source!=='test')return [row];
     const {payload}=db.prepare('SELECT payload FROM newsletter_delivery_queue WHERE key=?').get(row.key);
     const plan=JSON.parse(gunzipSync(payload,{maxOutputLength:128*1024*1024}));
@@ -22,6 +24,12 @@ export function newsletterPendingDeliveries(db){
     // Legacy tests never acquire automatic recovery merely by upgrading code.
     return request?[{...row,requestedTest:true,expiresAt:request.expiresAt}]:[];
   });
+  for(const row of db.prepare("SELECT i.id,i.payload FROM newsletter_request_intents i JOIN newsletter_requests r ON r.id=i.id WHERE r.state='queued' AND r.result IS NULL").all()){
+    const input=JSON.parse(row.payload);
+    if(input.id!==row.id||input.to!=='me'||input.sourceOnly!==true||!normaliseEmail(input.email)||!['morning','evening'].includes(input.edition)||!Number.isSafeInteger(input.at))throw Error('Requested test intent invalid');
+    pending.push({key:'request-'+row.id,edition:input.edition,source:'test',requestedTest:true,next_at:input.at,expiresAt:input.at+24*3600000});
+  }
+  return pending;
 }
 
 // Only this encrypted GitHub database holds recipient bodies and retry state.
@@ -49,7 +57,7 @@ export class NewsletterDeliveryQueue {
     let plan;this.local.db.exec('BEGIN');
     try {
     const saveBody=this.local.db.prepare('INSERT INTO newsletter_delivery_bodies(delivery,email,part,html) VALUES(?,?,?,?)');
-    plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),createdAt:this.now(),...(testRequest?{testRequest}:{}),
+    plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),createdAt:this.now(),...(testRequest?{testRequest,credential}:{}),
       messages:messages.map(m=>({keys:m.keys})),reported:brief.reported,windowFrom:brief.window.from,
       recipients:list.map(recipient=>({email:recipient.email,ok:false,status:null,reason:'not-attempted',
         parts:messages.map((message,i)=>{
@@ -64,6 +72,10 @@ export class NewsletterDeliveryQueue {
       .run(key,edition,source,plan.nextAt,gzipSync(JSON.stringify(plan)));
     this.local.db.exec('COMMIT');
     }catch(error){this.local.db.exec('ROLLBACK');throw error;}
+    // Acknowledged outbox precedes even the first SMTP guard. An interrupted
+    // preparation restores its sealed intent; an interrupted send restores this plan.
+    if(testRequest){this.progress(plan);this.local.db.prepare('DELETE FROM newsletter_request_intents WHERE id=?').run(testRequest.id);}
+    await this.publish();
     return this.run(plan,credential);
   }
 
@@ -82,7 +94,7 @@ export class NewsletterDeliveryQueue {
     return result;
   }
 
-  async run(plan,credential=this.local.schedule.env.MUNS_TOKEN) {
+  async run(plan,credential=plan.credential||this.local.schedule.env.MUNS_TOKEN) {
     return this.context(plan,async()=>{
       const request=requestedTest(plan),expired=()=>!!request&&this.now()>=request.expiresAt;
       if(request){
@@ -104,7 +116,7 @@ export class NewsletterDeliveryQueue {
         }
         for(const part of recipient.parts) {
           if(part.ok)continue;
-          if(expired()){part.reason='request-expired';recipient.reason='request-expired';continue;}
+          if(expired()){if(!part.attempts)part.reason='request-expired';recipient.reason='request-expired';continue;}
           if(!credential){part.reason='no-token';recipient.reason='no-token';break;}
           // Publish this intent before the guarded provider I/O. If acceptance is
           // uncertain, recovery uses the very same RFC Message-ID and body.
@@ -116,12 +128,14 @@ export class NewsletterDeliveryQueue {
             inReplyTo:part.part===1?null:recipient.threadMessageId,
             references:part.part===1?[]:[recipient.threadMessageId],
             bodySha256:createHash('sha256').update(html).digest('hex')};
+          const priorOutcome={reason:part.reason,status:part.status},priorAttempts=part.attempts;
           part.reason='sending';part.attempts++;this.save(plan);this.progress(plan);
           const root=recipient.parts[0];
           const result=await sendEmail({fetcher:this.local.schedule.fetcher,token:credential,email:recipient.email,
             subject:part.request.subject,html,messageId:part.request.messageId,
             inReplyTo:part.request.inReplyTo});
-          Object.assign(part,result);
+          if(result.providerAttempted===false&&priorAttempts){part.reason=priorOutcome.reason;part.status=priorOutcome.status;}
+          else Object.assign(part,result);
           if(part===root&&result.ok)recipient.threadMessageId=result.messageId||part.requestedMessageId;
           recipient.ok=recipient.parts.every(p=>p.ok);
           const unfinished=recipient.parts.find(p=>!p.ok);
@@ -139,7 +153,9 @@ export class NewsletterDeliveryQueue {
       const finished=complete||plan.source==='test'&&!request||expired();
       const result=this.progress(plan,{finished,terminalReason:expired()&&!complete?'request-expired':null});
       if(finished) {
-        this.local.store.finishDocument(plan.documentId,plan.recipients.flatMap(r=>r.parts));
+        const submitted=plan.recipients.flatMap(r=>r.parts).filter(p=>p.attempts>0&&p.providerAttempted!==false);
+        if(submitted.length)this.local.store.finishDocument(plan.documentId,submitted);
+        else this.local.db.prepare('DELETE FROM newsletter_documents WHERE id=?').run(plan.documentId);
         this.local.db.prepare('UPDATE newsletter_delivery_queue SET payload=NULL,receipt=? WHERE key=?').run(JSON.stringify(result),plan.key);
         this.local.db.prepare('DELETE FROM newsletter_delivery_bodies WHERE delivery=?').run(plan.key);
       } else this.save(plan);
@@ -150,6 +166,7 @@ export class NewsletterDeliveryQueue {
   async recover() {
     const results=[];
     for(const row of this.pending()) {
+      if(row.key.startsWith('request-'))continue;
       if(row.next_at>this.now())continue;
       const {payload}=this.local.db.prepare('SELECT payload FROM newsletter_delivery_queue WHERE key=?').get(row.key);
       const plan=JSON.parse(gunzipSync(payload,{maxOutputLength:128*1024*1024}));
