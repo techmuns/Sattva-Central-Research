@@ -41,6 +41,12 @@ and acknowledged before each external request, and recipient membership is check
 again immediately before sending. Confirmed 429 responses wait 30/60 minutes
 and have at most three attempts; uncertain acceptance/interruption never resends
 automatically. Later parts require acknowledgement of the root and share its thread.
+Uncertain observations are quarantined by identity and content hash across future
+editions, with the frozen claim retained for reconciliation. A roster outage keeps
+separate matching work after the universe section is delivered; recovered matches
+appear in a later fund section with a recovery label. Provider holds also pause
+the public newsletter timer/retry paths sharing that sender; checks and retained
+history continue. Future source clocks over ten minutes ahead are flagged stale.
 The sender's existing credential/provider is reused; no additional paid search,
 model service, runner or Cloudflare background work is introduced.
 

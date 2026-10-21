@@ -44,6 +44,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   if(metered(url)){
    await refresh();await publish();
    if(url==='https://devde.muns.io/email/send/raw'){
+    if(privateMarketsJob?.senderHeld())throw Error('Newsletter sender is held after a provider refusal');
     const body=JSON.parse(options.body),privateMarkets=activeRequest?.edition==='private-markets',test=activeRequest?.to==='me'&&activeRequest.email===body.email;
     if(!privateMarkets&&activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
     if(!test&&!(privateMarkets?local.store.subscriberRows():local.store.recipients(activeRequest?.edition)).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
@@ -108,7 +109,9 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   }
   await publish();
   const deliver=local.schedule.deliver.bind(local.schedule);local.schedule.deliver=async input=>{activeRequest={edition:input.edition,to:'all',automatic:true};try{return await deliver(input);}finally{activeRequest=null;}};
-  try{if(privateMarketsJob)await privateMarketsWork(async()=>{await privateMarketsJob.prepare();await privateMarketsJob.wake();});const recovered=await local.schedule.deliveryQueue.recover();await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
+  try{if(privateMarketsJob)await privateMarketsWork(async()=>{await privateMarketsJob.prepare();await privateMarketsJob.wake();});
+   if(privateMarketsJob?.senderHeld()){const at=localOptions.now?.()??Date.now(),reason=privateMarketsJob.senderHoldReason();await local.schedule.record({lastWakeAt:at,lastCheckedAt:at,lastResult:reason,reason:reason==='sender-unavailable'?'unauthorised':'rate-limited'});await publish();return {processed:true,reason};}
+   const recovered=await local.schedule.deliveryQueue.recover();await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
    if(recovered.length&&(await local.schedule.status()).lastResult==='nothing-due')await local.schedule.record({lastResult:recovered.at(-1).reason||'sent',reason:recovered.at(-1).reason||null});
    if(local.schedule.deliveryQueue.pending().length)await local.schedule.record({lastResult:'partial-send',reason:'delivery-retry-pending'});
    await publish();return {processed:true};}finally{local.schedule.deliver=deliver;activeRequest=null;}

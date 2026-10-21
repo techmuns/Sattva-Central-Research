@@ -12,22 +12,26 @@ export function validRoster(value) {
  if(value?.ok!==true||value.version!==1||!Array.isArray(value.funds)||value.funds.length>1000||!value.funds.every(f=>typeof f.name==='string'&&f.name.trim()&&f.name.length<=300)||!Number.isFinite(Date.parse(value.checkedAt))) throw Error('Invested fund roster unavailable');
  return value;
 }
-export function buildIntelligence({capture,roster,at=Date.now(),slot=privateMarketsSlot(at),pending=[]}={}) {
+export function buildIntelligence({capture,roster,at=Date.now(),slot=privateMarketsSlot(at),pending=[],pendingMatches=[],quarantined=[]}={}) {
  validateCapture(capture);
  const from=slot.at-WEEK,through=Math.min(at,slot.at),startDay=new Date(from+19800000).toISOString().slice(0,10),endDay=new Date(through+19800000).toISOString().slice(0,10);
- const queued=new Map(pending.map(r=>[r.id,r]));
- const rows=capture.deals.filter(r=>{
+ const queued=new Map(pending.map(r=>[r.id,r])),matchQueue=new Map(pendingMatches.map(r=>[r.id,r.hash])),held=new Map(quarantined.map(r=>[r.id,r.hash]));
+ const rows=capture.deals.flatMap(r=>{
+  const hash=fingerprint(r,capture.articles.find(a=>a.url===r.sourceUrl)?.notes||[]);
+  if(held.get(r.id)===hash)return [];
   const published=Date.parse(r.publishedAt),date=r.dateISO;
-  return published>=from&&published<through || date&&date>=startDay&&date<endDay || queued.has(r.id);
- }).map(r=>({...r,change:queued.get(r.id)?.change||null,matches:fundMatches(r,roster)})).sort((a,b)=>String(b.dateISO||b.publishedAt||'').localeCompare(String(a.dateISO||a.publishedAt||''))||a.company.localeCompare(b.company));
+  const universe=!!(published>=from&&published<through || date&&date>=startDay&&date<endDay || queued.has(r.id)),matches=fundMatches(r,roster);
+  if(!universe&&!(matchQueue.get(r.id)===hash&&matches.length))return [];
+  return [{...r,universe,change:queued.get(r.id)?.change||(!universe?'Fund-directory recovery':null),matches}];
+ }).sort((a,b)=>String(b.dateISO||b.publishedAt||'').localeCompare(String(a.dateISO||a.publishedAt||''))||a.company.localeCompare(b.company));
  const seen=new Map(),groups=[];
  // Combine only identical complete source facts, retaining every linked observation.
- for(const row of rows){const notes=capture.articles.find(a=>a.url===row.sourceUrl)?.notes||[];const key=JSON.stringify([FIELDS.map(k=>row[k]),!!row.sourceMissing,notes]);const candidates=seen.get(key)||[];let group=candidates.find(g=>!g.observations.some(o=>o.url===row.sourceUrl));if(!group){group={...row,observations:[]};candidates.push(group);seen.set(key,candidates);groups.push(group);}group.observations.push({id:row.id,hash:fingerprint(row,notes),url:sourceUrl(row.sourceUrl),title:row.sourceTitle});}
+ for(const row of rows){const notes=capture.articles.find(a=>a.url===row.sourceUrl)?.notes||[];const key=JSON.stringify([FIELDS.map(k=>row[k]),!!row.sourceMissing,notes]);const candidates=seen.get(key)||[];let group=candidates.find(g=>!g.observations.some(o=>o.url===row.sourceUrl));if(!group){group={...row,observations:[]};candidates.push(group);seen.set(key,candidates);groups.push(group);}group.universe ||= row.universe;group.observations.push({id:row.id,hash:fingerprint(row,notes),url:sourceUrl(row.sourceUrl),title:row.sourceTitle});}
  const unavailable=capture.articles.filter(a=>a.status!=='ok').length;
  const sourceAge=at-Date.parse(capture.sourceCheckedAt||'');
- return {title:TITLE,day:slot.day,key:slot.key,from:new Date(from).toISOString(),through:new Date(through).toISOString(),builtAt:new Date(at).toISOString(),rows:groups,
+ return {title:TITLE,day:slot.day,key:slot.key,from:new Date(from).toISOString(),through:new Date(through).toISOString(),builtAt:new Date(at).toISOString(),rows:groups.filter(r=>r.universe),
   matched:groups.filter(r=>r.matches.length),roster:roster?.ok===true?roster:{ok:false,reason:'Fund roster unavailable; matches cannot be verified.'},
-  coverage:{sourceCheckedAt:capture.sourceCheckedAt,attemptedAt:capture.attemptedAt,capturedAt:capture.generatedAt,error:capture.error||null,cooldownUntil:capture.cooldownUntil||null,stale:!Number.isFinite(sourceAge)||sourceAge>12*3600000,unavailable,roundups:capture.articles.length,observations:rows.length},
+  coverage:{sourceCheckedAt:capture.sourceCheckedAt,attemptedAt:capture.attemptedAt,capturedAt:capture.generatedAt,error:capture.error||null,cooldownUntil:capture.cooldownUntil||null,stale:!Number.isFinite(sourceAge)||sourceAge < -10*60000 || sourceAge>12*3600000,unavailable,roundups:capture.articles.length,observations:rows.filter(r=>r.universe).length},
   notes:capture.articles.filter(a=>groups.some(r=>r.observations.some(o=>o.url===a.url))).flatMap(a=>(a.notes||[]).map(note=>({url:a.url,note})))};
 }
 const rowHtml = (row, showMatches=false) => `<tr><td style="padding:14px 0;border-bottom:1px solid #ddd;overflow-wrap:anywhere"><strong>${esc(row.company)}</strong> · ${esc(row.amount||'Amount undisclosed')} · ${esc(row.round||'Round not stated')}<br><span style="color:#475569">${esc([row.date||'Funding date not stated',row.sector,row.subsector,row.businessModel].filter(Boolean).join(' · '))}</span><br>Investors: ${esc(row.investors||'Not stated')}<br>Lead investor: ${esc(row.leadInvestor||'Not stated')}${showMatches&&row.matches.length?`<br>Our fund directory: ${row.matches.map(m=>esc(m.fund)+(m.closed?' (closed fund in workbook)':'')+(m.basis==='manager-match'?' (manager name match; specific vehicle unconfirmed)':' (reported name match; vehicle identity unverified)')).join('; ')}`:''}${row.change?`<br><em>${esc(row.change)}</em>`:''}${row.sourceMissing?'<br><em>Retained observation: absent from the latest source table.</em>':''}<br>${row.observations.map(o=>`<a href="${esc(o.url)}" style="color:#5146c6">Inc42 source ↗</a>`).join(' · ')}</td></tr>`;

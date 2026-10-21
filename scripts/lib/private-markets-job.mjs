@@ -3,6 +3,7 @@ import {gzipSync,gunzipSync} from 'node:zlib';
 import {privateMarketsSlot,WEEK} from '../../public/js/data/private-markets-shared.js';
 import {buildIntelligence,fingerprint,intelligenceEmails,validRoster} from './private-markets-intelligence.mjs';
 import {sendEmail} from '../../worker/newsletter-schedule.mjs';
+import {fundMatches} from '../../public/js/data/private-market-funds.js';
 const iso=at=>new Date(at).toISOString();
 // Retained inside the existing encrypted newsletter checkpoint/account mutex.
 // No daily-brief setting, delivery claim, reported item or PDF is touched.
@@ -11,7 +12,9 @@ export class PrivateMarketsJob {
   Object.assign(this,{local,readSources,publish,refreshInputs,fetcher,now,sleep});
   local.db.exec(`CREATE TABLE IF NOT EXISTS private_markets_seen(id TEXT PRIMARY KEY,hash TEXT NOT NULL,row TEXT NOT NULL,pending INTEGER NOT NULL,change TEXT);
    CREATE TABLE IF NOT EXISTS private_markets_editions(key TEXT PRIMARY KEY,at INTEGER NOT NULL,state TEXT NOT NULL,plan BLOB NOT NULL);
-   CREATE TABLE IF NOT EXISTS private_markets_meta(key TEXT PRIMARY KEY,payload TEXT NOT NULL)`);
+   CREATE TABLE IF NOT EXISTS private_markets_meta(key TEXT PRIMARY KEY,payload TEXT NOT NULL);
+   CREATE TABLE IF NOT EXISTS private_markets_match_pending(id TEXT PRIMARY KEY,hash TEXT NOT NULL);
+   CREATE TABLE IF NOT EXISTS private_markets_quarantine(id TEXT PRIMARY KEY,hash TEXT NOT NULL,edition TEXT NOT NULL,part INTEGER NOT NULL)`);
   if(!this.meta().activatedAt)this.setMeta({...this.meta(),activatedAt:iso(this.now())});
  }
  meta(){const row=this.local.db.prepare("SELECT payload FROM private_markets_meta WHERE key='state'").get();return row?JSON.parse(row.payload):{};}
@@ -35,17 +38,24 @@ export class PrivateMarketsJob {
     // Initial historical import is the baseline, not thousands of new emails.
     const recent=model.rows.some(r=>r.observations.some(o=>o.id===row.id));
     save.run(row.id,hash,JSON.stringify(row),old?.pending||initialized||recent?1:0,change);
+    this.local.db.prepare('UPDATE private_markets_match_pending SET hash=? WHERE id=?').run(hash,row.id);
    }
   });
   this.capture=capture;this.roster=roster;
+  if(roster.ok)for(const entry of this.pendingMatches()){const row=capture.deals.find(r=>r.id===entry.id);if(row&&!fundMatches(row,roster).length)this.local.db.prepare('DELETE FROM private_markets_match_pending WHERE id=?').run(entry.id);}
   this.setMeta({...meta,initializedAt:meta.initializedAt||iso(now),lastCheckedAt:iso(now),sourceCheckedAt:capture.sourceCheckedAt,rosterCheckedAt:roster.checkedAt||null,rosterAvailable:roster.ok===true,sourceState:roster.ok?'ready':'fund-roster-unavailable',lastResult:!meta.lastResult||['build-failed','funding-source-unavailable'].includes(meta.lastResult)?'ready':meta.lastResult});
   this.preparePreview();this.saveView('private-markets-status',this.status());
  }
  fail(){this.runResult='build-failed';this.setMeta({...this.meta(),lastCheckedAt:iso(this.now()),sourceState:'build-failed',lastResult:'build-failed'});this.saveView('preview-private-markets-html-1',{ok:false,reason:'build-failed'});}
  pending(){return this.local.db.prepare('SELECT id,change FROM private_markets_seen WHERE pending=1').all();}
+ pendingMatches(){return this.local.db.prepare('SELECT id,hash FROM private_markets_match_pending').all();}
+ model(slot){return buildIntelligence({capture:this.capture,roster:this.roster,at:this.now(),slot,pending:this.pending(),pendingMatches:this.pendingMatches(),quarantined:this.local.db.prepare('SELECT id,hash FROM private_markets_quarantine').all()});}
+ senderHoldReason(){const token=this.local.schedule.env.MUNS_TOKEN,hash=token?createHash('sha256').update(token).digest('hex'):null;return hash&&this.meta().blockedCredential===hash?'sender-unavailable':Date.parse(this.meta().mailCooldownUntil||'')>this.now()?'sender-cooldown':null;}
+ senderHeld(){return !!this.senderHoldReason();}
+ quarantine(plan,part){for(const o of plan.messages[part.part-1].observations){this.local.db.prepare('INSERT OR REPLACE INTO private_markets_quarantine VALUES(?,?,?,?)').run(o.id,o.hash,plan.key,part.part);this.local.db.prepare('UPDATE private_markets_seen SET pending=0 WHERE id=? AND hash=?').run(o.id,o.hash);this.local.db.prepare('DELETE FROM private_markets_match_pending WHERE id=? AND hash=?').run(o.id,o.hash);}}
  preparePreview(){
   if(!this.capture)return;
-  const model=buildIntelligence({capture:this.capture,roster:this.roster,at:this.now(),slot:privateMarketsSlot(this.now(),{next:true}),pending:this.pending()});
+  const model=this.model(privateMarketsSlot(this.now(),{next:true}));
   const messages=intelligenceEmails(model,{dashboardUrl:this.local.schedule.dashboardUrl()});
   this.local.db.prepare("DELETE FROM newsletter_views WHERE id LIKE 'preview-private-markets-%'").run();
   for(const message of messages)this.saveView(`preview-private-markets-html-${message.part}`,{ok:true,...message,builtAt:model.builtAt});
@@ -61,17 +71,19 @@ export class PrivateMarketsJob {
   if(now-slot.at>3*3600000){this.runResult='missed';this.savePlan({...slot,recipients:[]},'missed');this.setMeta({...this.meta(),lastResult:'missed'});return;}
   await this.prepare({force:true});if(!this.capture){this.runResult='funding-source-unavailable';this.setMeta({...this.meta(),lastResult:'funding-source-unavailable'});return;}
   // A failed protected source does not become a false zero-investments section.
-  const model=buildIntelligence({capture:this.capture,roster:this.roster,at:now,slot,pending:this.pending()});
+  const model=this.model(slot);
+  // An unavailable directory never consumes the chance to report fund matches.
+  if(!model.roster.ok)for(const row of model.rows)for(const o of row.observations)this.local.db.prepare('INSERT OR REPLACE INTO private_markets_match_pending VALUES(?,?)').run(o.id,o.hash);
   const messages=intelligenceEmails(model,{dashboardUrl:this.local.schedule.dashboardUrl()});
   await this.refreshInputs();
   const recipients=this.local.store.subscriberRows().map(r=>({email:r.email,parts:messages.map(m=>({part:m.part,messageId:`<private-markets.${crypto.randomUUID()}@${new URL(this.local.schedule.dashboardUrl()).hostname}>`,state:'pending',attempts:0,nextAt:now}))}));
-  const plan={...slot,recipients,messages,parts:messages.length};this.savePlan(plan,'pending');await this.publish();await this.run(plan);
+  const plan={...slot,recipients,messages,parts:messages.length,rosterVerified:model.roster.ok===true};this.savePlan(plan,'pending');await this.publish();await this.run(plan);
  }
  async run(plan) {
   const token=this.local.schedule.env.MUNS_TOKEN, credentialHash=token?createHash('sha256').update(token).digest('hex'):null;
   if(Date.parse(this.meta().mailCooldownUntil||'')>this.now()||credentialHash&&this.meta().blockedCredential===credentialHash)return;
   for(const recipient of plan.recipients){
-   for(const part of recipient.parts)if(part.state==='sending')part.state='uncertain';
+   for(const part of recipient.parts)if(part.state==='sending'){part.state='uncertain';this.quarantine(plan,part);}
    await this.refreshInputs();
    if(!this.local.store.subscriberRows().some(r=>r.email===recipient.email)){for(const part of recipient.parts)if(part.state==='pending')part.state='removed';continue;}
    for(const part of recipient.parts){
@@ -88,8 +100,9 @@ export class PrivateMarketsJob {
     const result=await sendEmail({fetcher:this.fetcher,token:this.local.schedule.env.MUNS_TOKEN,email:recipient.email,subject:message.subject,html:message.html,messageId:part.messageId,inReplyTo:part.part===1?null:root.acceptedMessageId||root.messageId});
     part.reason=result.reason;part.status=result.status;part.state=result.ok?'accepted':result.reason==='rate-limited'&&part.attempts<3?'pending':result.status!==null?'refused':'uncertain';
     part.nextAt=this.now()+30*60000*part.attempts;
+    if(part.state==='uncertain')this.quarantine(plan,part);
     if(result.reason==='rate-limited')this.setMeta({...this.meta(),mailCooldownUntil:iso(part.nextAt),lastResult:'sender-cooldown'});
-    if(result.ok){part.acceptedMessageId=result.messageId;for(const o of message.observations)this.local.db.prepare('UPDATE private_markets_seen SET pending=0 WHERE id=? AND hash=?').run(o.id,o.hash);}
+    if(result.ok){part.acceptedMessageId=result.messageId;for(const o of message.observations){this.local.db.prepare('UPDATE private_markets_seen SET pending=0 WHERE id=? AND hash=?').run(o.id,o.hash);if(plan.rosterVerified)this.local.db.prepare('DELETE FROM private_markets_match_pending WHERE id=? AND hash=?').run(o.id,o.hash);}}
     this.savePlan(plan,'pending');await this.publish();await this.sleep(1000);
     if(!result.ok){
      this.runResult=result.reason==='unauthorised'?'sender-unavailable':part.state==='uncertain'?'delivery-uncertain':result.reason==='rate-limited'?'sender-cooldown':'delivery-failed';
