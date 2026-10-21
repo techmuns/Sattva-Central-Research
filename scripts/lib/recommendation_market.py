@@ -109,18 +109,18 @@ def collect_market(store, reader, today=None, days_per_walk=42):
     last = today if (local_now.hour, local_now.minute) >= (19, 30) else today - dt.timedelta(days=1)
     start = store.get("marketHistoryStart") or (today - dt.timedelta(days=100)).isoformat()
     store.set("marketHistoryStart", start)
-    cursor = store.get("marketDiscoveryCursor") or last.isoformat()
     pending = [(last - dt.timedelta(days=i)).isoformat() for i in range(7)]
     retries = store.db.execute("SELECT key FROM checks WHERE (key LIKE 'market:prices:%' OR key LIKE 'market:indices:%') AND error IS NOT NULL AND (cooldown_until IS NULL OR cooldown_until<=?) ORDER BY attempted_at LIMIT 4", (iso_now(),)).fetchall()
     pending.extend(r[0].split(":")[-1] for r in retries if r[0].split(":")[-1] not in pending)
-    discovered = []
-    while len(pending) < days_per_walk:
-        if cursor < start:
-            break
-        if cursor not in pending:
-            pending.append(cursor)
-            discovered.append(cursor)
-        cursor = (dt.date.fromisoformat(cursor) - dt.timedelta(days=1)).isoformat()
+    # The retained per-file checks ARE the discovery ledger. A completed initial backfill cursor
+    # must not strand unattempted dates after an outage longer than the recent overlap.
+    attempted = {r[0] for r in store.db.execute("SELECT key FROM checks WHERE key LIKE 'market:prices:%' OR key LIKE 'market:indices:%'")}
+    date = last
+    while len(pending) < days_per_walk and date.isoformat() >= start:
+        session = date.isoformat()
+        if session not in pending and any('market:' + kind + ':' + session not in attempted for kind in ['prices','indices']):
+            pending.append(session)
+        date -= dt.timedelta(days=1)
     try:
         # A successful empty list is not a history guarantee outside this exact requested interval.
         action_from = min((today - dt.timedelta(days=550)).isoformat(), store.get("recommendationCaptureStart", start)[:10])
@@ -174,9 +174,6 @@ def collect_market(store, reader, today=None, days_per_walk=42):
                     retry = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=24)).isoformat(timespec="seconds")
                     store.check(key, iso_now(), str(error)[:250], cooldown=retry)
             store.db.commit()
-            if session in discovered:
-                store.set("marketDiscoveryCursor", (dt.date.fromisoformat(session) - dt.timedelta(days=1)).isoformat())
-                store.db.commit()
     except BudgetExceeded:
         pass
     store.db.commit()

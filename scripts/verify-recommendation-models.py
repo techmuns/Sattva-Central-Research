@@ -272,6 +272,20 @@ class ModelTests(unittest.TestCase):
         self.assertTrue(self.store.db.execute("SELECT success_at FROM checks WHERE key='market:indices:2026-10-19'").fetchone()[0])
         self.assertEqual(self.store.db.execute('SELECT count(*) FROM market_holidays').fetchone()[0],1)
 
+    def test_long_outage_recovers_unattempted_days_beyond_recent_overlap(self):
+        self.store.set('marketHistoryStart','2026-09-01')
+        self.store.set('marketDiscoveryCursor','2026-08-31')  # An earlier historical walk had finished.
+        requested=[]
+        class Reader:
+            def read(inner,url):
+                requested.append(url)
+                if 'corporates-corporateActions' in url:return b'[]'
+                if 'holiday-master' in url:return b'{"CM":[{"tradingDate":"20-Oct-2026","description":"Fixture holiday"}]}'
+                raise SourceFailure('Original source unavailable')
+        collect_market(self.store,Reader(),dt.date(2026,10,21),days_per_walk=12)
+        self.assertTrue(any('20261013_F' in url for url in requested),'An unattempted date outside the recent seven days must stay discoverable')
+        self.assertTrue(self.store.db.execute("SELECT error FROM checks WHERE key='market:prices:2026-10-13'").fetchone()[0])
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

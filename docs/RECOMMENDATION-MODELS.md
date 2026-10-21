@@ -125,7 +125,9 @@ Original free reports: [NSE reports](https://www.nseindia.com/all-reports), the 
 bhavcopy, daily `ind_close_all` Nifty 500 reports, and NSE corporate-action/trading-holiday endpoints.
 Actual 19 October 2026 source excerpts are offline contract fixtures only, never production seeds.
 All raw report hashes and revisions are retained. Recent files reconcile, older dates backfill and
-failed dates retry independently. The initial market boundary is 100 days before activation; financial
+failed dates retry independently. The initial market boundary is 100 days before activation; market
+date discovery uses the permanent per-file check inventory, so an outage longer than the recent
+overlap cannot strand unattempted dates behind an already completed backfill cursor. Financial
 history keeps its earlier fixed boundary. BSE-only prices and unsupported sources remain gaps.
 
 AI Recommendations sits between AI Alerts and All Alerts. It has Company, Current market price and
