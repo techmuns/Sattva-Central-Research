@@ -1,0 +1,84 @@
+import {fundMatches} from '../public/js/data/private-market-funds.js';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';import path from 'node:path';
+import {privateMarketsSlot,WEEK} from '../public/js/data/private-markets-shared.js';
+import {emptyCapture,parseArticle,mergeArticle} from './lib/private-market-news.mjs';
+import {buildIntelligence,intelligenceEmails} from './lib/private-markets-intelligence.mjs';
+import {PrivateMarketsJob} from './lib/private-markets-job.mjs';
+import {localNewsletter} from './lib/newsletter-local.mjs';
+import {newsletterWakePlan} from './lib/newsletter-wake-plan.mjs';
+assert.match(fs.readFileSync('.github/workflows/newsletter-refresh.yml','utf8'),/cron: '30 3 \* \* 1'/,'The primary weekly wake targets Monday 09:00 IST');
+fs.mkdirSync('.cache/private-markets-intelligence',{recursive:true});
+const root=fs.mkdtempSync(path.resolve('.cache/private-markets-intelligence/test-'));
+let at=Date.parse('2026-10-21T14:00:00Z');const monday=Date.parse('2026-10-26T03:30:00Z');
+assert.equal(privateMarketsSlot(monday).at,monday);assert.equal(privateMarketsSlot(monday-1,{next:true}).at,monday);assert.equal(privateMarketsSlot(monday,{next:true}).at,monday+WEEK);
+assert.equal(privateMarketsSlot(monday-1).at,monday-WEEK);assert.equal(privateMarketsSlot(monday).day,'2026-10-26');
+assert.equal(privateMarketsSlot(Date.parse('2027-03-15T03:30:00Z')).day,'2027-03-15','IST clock is independent of US daylight saving');
+const roster={ok:true,version:1,funds:[{name:'Fireside Ventures Fund II'},{name:'Other Fund'}],source:'Fixture workbook',checkedAt:new Date(at).toISOString()};
+assert.equal(fundMatches({investors:'Fireside Ventures, Other Fund'},roster).length,2);
+assert.equal(fundMatches({investors:'NotFireside Ventures, Other Fundraiser'},roster).length,0);
+assert.equal(fundMatches({investors:'Fireside Ventures'},roster)[0].basis,'manager-match');
+assert.equal(fundMatches({investors:'Fireside Ventures'},null).length,0);
+assert.equal(fundMatches({investors:'Z47'},{ok:true,funds:[{name:'Matrix Partners India IV AIF'}]})[0].basis,'manager-match','Use the existing curated manager identity rather than missing a renamed house');
+assert.equal(fundMatches({investors:'Shastra VC'},{ok:true,funds:[{name:'Shastra Winners Fund'}]}).length,1);
+assert.equal(fundMatches({investors:'Fireside Ventures'},{ok:true,funds:[{name:'Fireside Ventures'},{name:'Fireside Ventures'}]}).length,1,'Repeated investments do not duplicate the same fund label');
+const article={url:'https://inc42.com/buzz/fixture-funding-this-week/',title:'Fixture funding'};
+const capture=emptyCapture();capture.articles=[{...article,status:'pending'}];
+const html=(company='Fixture New Company',amount='$2 Mn')=>`<meta property="article:published_time" content="2026-10-24T09:00:00+05:30"><table><tr><td>Date</td><td>Name</td><td>Amount</td><td>Investors</td></tr><tr><td>23 Oct 2026</td><td>${company}</td><td>${amount}</td><td>Fireside Ventures</td></tr><tr><td colspan="4">Source: Inc42<br>*Mix of equity and debt</td></tr></table>`;
+mergeArticle(capture,capture.articles[0],parseArticle(html(),article),new Date(at).toISOString());capture.sourceCheckedAt=capture.generatedAt=new Date(at).toISOString();
+const model=buildIntelligence({capture,roster,at:monday,slot:privateMarketsSlot(monday)});
+assert.equal(model.rows.length,1);assert.equal(model.matched.length,1);const emails=intelligenceEmails(model,{dashboardUrl:'https://fixture.test'});
+assert.match(emails[0].html,/Whole universe/);assert.match(emails[0].html,/Investments by funds/);assert.match(emails[0].html,/specific vehicle unconfirmed/);assert.match(emails[0].html,/Mix of equity and debt/);assert.match(emails[0].html,/Source checks are overdue/);
+assert.match(emails[0].subject,/Private Markets Intelligence/);assert.match(emails[0].html,/<meta charset="utf-8">/);assert(!emails[0].html.includes('undefined'));
+const noRoster=buildIntelligence({capture,at:monday,slot:privateMarketsSlot(monday)});assert.match(intelligenceEmails(noRoster,{dashboardUrl:'https://fixture.test'})[0].html,/section is unavailable/);
+assert(buildIntelligence({capture:{...capture,sourceCheckedAt:new Date(monday+11*60000).toISOString()},roster,at:monday}).coverage.stale,'An invalid future source clock cannot appear fresh');
+const duplicate=structuredClone(capture);duplicate.deals.push({...duplicate.deals[0],id:'f'.repeat(24),sourceUrl:'https://inc42.com/buzz/second-fixture-funding/'});duplicate.articles.push({...duplicate.articles[0],url:'https://inc42.com/buzz/second-fixture-funding/'});const grouped=buildIntelligence({capture:duplicate,roster,at:monday});assert.equal(grouped.rows.length,1);assert.equal(grouped.rows[0].observations.length,2);duplicate.deals[1].sourceUrl=duplicate.deals[0].sourceUrl;assert.equal(buildIntelligence({capture:duplicate,roster,at:monday}).rows.length,2,'Repeated identical rows in one table remain distinct');
+const huge=structuredClone(model);huge.rows=Array.from({length:500},(_,i)=>({...model.rows[0],company:'Fixture '+i}));huge.matched=[];const packed=intelligenceEmails(huge,{dashboardUrl:'https://fixture.test'});assert(packed.length>1);assert(packed.every(p=>Buffer.byteLength(p.html)<90000));assert.equal(packed.map(p=>p.html).join('').match(/<strong>Fixture \d+<\/strong>/g).length,500);
+const matchingParts=intelligenceEmails({...huge,matched:huge.rows.slice(0,10)},{dashboardUrl:'https://fixture.test'});assert(matchingParts.length>1);assert.match(matchingParts[0].html,/No matching reported investments in this part/);assert(!matchingParts[0].html.includes('No matching reported investments in this edition'),'An empty part cannot claim the whole edition has no matches');
+assert.match(intelligenceEmails(noRoster,{dashboardUrl:'https://fixture.test'})[0].html,/Matches will be reconciled/);
+const env={MUNS_TOKEN:'fixture-only',DASHBOARD_ORIGIN:'https://fixture.test'};
+let local=localNewsletter(path.join(root,'state.sqlite'),{env,now:()=>at}),calls=0,publications=0,result='ok',remove=false;
+local.store.apply([{op:'subscribe',email:'fixture@example.test',by:'Fixture'}]);const oldDaily=JSON.stringify(local.store.snapshot());
+const readSources=async()=>({capture:structuredClone(capture),roster});
+const publish=async()=>{publications++;if(remove)local.store.apply([{op:'unsubscribe',email:'fixture@example.test',by:'Fixture'}]);};
+const fetcher=async(url,options)=>{calls++;assert.equal(url,'https://devde.muns.io/email/send/raw');assert(publications>0);const body=JSON.parse(options.body);assert.match(body.subject,/Private Markets Intelligence/);const row=local.db.prepare("SELECT plan FROM private_markets_editions WHERE state='pending'").get();assert(row,'A retained claim precedes mail');if(result==='throw')throw Error('Unknown acceptance');if(result==='429')return new Response('',{status:429});return Response.json({success:true,data:{messageId:'<fixture@example.test>'}});};
+const options=()=>({readSources,publish,refreshInputs:async()=>{},fetcher,now:()=>at,sleep:async()=>{}});
+let job=new PrivateMarketsJob(local,options());await job.prepare();await job.wake();assert.equal(calls,0,'No retrospective Monday send on midweek launch');
+assert.equal(JSON.stringify(local.store.snapshot()),oldDaily,'Existing newsletter claims/settings/recipients remain unchanged');
+// A genuinely old imported row is a baseline, not a future newsletter item.
+assert.equal(job.pending().length,0);
+at=monday;await job.wake();assert.equal(calls,1);assert.equal(job.status().lastResult,'sent');await job.wake();assert.equal(calls,1,'The edition claim prevents duplicates');assert.equal(job.pending().length,0);
+await local.close();local=localNewsletter(path.join(root,'state.sqlite'),{env,now:()=>at});job=new PrivateMarketsJob(local,options());await job.wake();assert.equal(calls,1,'Restart retains accepted delivery');
+// A correction survives beyond the source publication window.
+at+=3600000;capture.deals[0].amount='$3 Mn';capture.deals[0].sourceFields.Amount='$3 Mn';await job.prepare({force:true});assert.equal(job.pending()[0].change,'Source correction');
+at=monday+WEEK;result='429';await job.wake();assert.equal(calls,2);await job.wake();assert.equal(calls,2,'429 pauses requests for 30 minutes');at+=30*60000;result='ok';await job.wake();assert.equal(calls,3);assert.equal(job.pending().length,0);
+at=monday+2*WEEK;result='throw';await job.wake();assert.equal(calls,4);await job.wake();assert.equal(calls,4,'Unknown provider acceptance is never automatically retried');
+at=monday+3*WEEK;result='ok';remove=true;await job.wake();assert.equal(calls,4,'Unsubscription before external I/O cancels the recipient');
+const settings=local.store.settings();const wake=newsletterWakePlan({settings,schedule:{lastWakeAt:monday-1000,lastCheckedAt:monday-1000,privateMarkets:{enabled:true}}},{now:monday});assert.equal(wake.reason,'private-markets-due');
+await local.close();
+// A source refusal is shared across recipients and survives the next runner.
+at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'sender.sqlite'),{env,now:()=>at});
+for(const email of ['first@example.test','second@example.test'])local.store.apply([{op:'subscribe',email,by:'Fixture'}]);
+let senderCalls=0,code=429;const sender=async()=>{senderCalls++;return code===200?Response.json({success:true,data:{messageId:'<accepted@example.test>'}}):new Response('',{status:code});};
+const senderOptions=()=>({readSources,publish:async()=>{},refreshInputs:async()=>{},fetcher:sender,now:()=>at,sleep:async()=>{}});
+job=new PrivateMarketsJob(local,senderOptions());await job.prepare();at=monday;await job.wake();assert.equal(senderCalls,1,'A 429 stops before the second recipient');
+await local.close();local=localNewsletter(path.join(root,'sender.sqlite'),{env,now:()=>at});job=new PrivateMarketsJob(local,senderOptions());await job.wake();assert.equal(senderCalls,1,'The shared sender cooldown survives restart');
+at+=30*60000;code=200;await job.wake();assert.equal(senderCalls,3);assert.equal(job.status().lastResult,'sent');
+at=monday+WEEK;code=401;await job.wake();assert.equal(senderCalls,4);at+=3600000;await job.wake();assert.equal(senderCalls,4,'Known-invalid credentials cannot probe the rest of the list');
+await local.close();
+// Unknown acceptance quarantines the same evidence across later editions and restarts.
+for(const unknownOutcome of ['throw','503','invalid-response']){
+at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'uncertain-'+unknownOutcome+'.sqlite'),{env,now:()=>at});local.store.apply([{op:'subscribe',email:'fixture@example.test',by:'Fixture'}]);
+const uncertainCapture=structuredClone(capture);let unknown=true;const uncertainBodies=[];
+const uncertainOptions=()=>({readSources:async()=>({capture:uncertainCapture,roster}),publish:async()=>{},refreshInputs:async()=>{},fetcher:async(url,options)=>{uncertainBodies.push(JSON.parse(options.body).html);if(unknown){if(unknownOutcome==='throw')throw Error('Acceptance unknown');if(unknownOutcome==='503')return new Response('',{status:503});return Response.json({unexpected:true});}return Response.json({success:true,data:{messageId:'<accepted@example.test>'}});},now:()=>at,sleep:async()=>{}});
+job=new PrivateMarketsJob(local,uncertainOptions());await job.prepare();at=monday-3600000;uncertainCapture.deals[0].amount='$4 Mn';await job.prepare({force:true});assert.equal(job.pending().length,1);
+at=monday;await job.wake();assert.equal(local.db.prepare('SELECT COUNT(*) n FROM private_markets_quarantine').get().n,1);assert.equal(job.pending().length,0);
+await local.close();local=localNewsletter(path.join(root,'uncertain-'+unknownOutcome+'.sqlite'),{env,now:()=>at});job=new PrivateMarketsJob(local,uncertainOptions());await job.wake();assert.equal(uncertainBodies.length,1);
+at=monday+WEEK;unknown=false;await job.wake();assert.equal(uncertainBodies.length,2);assert(!uncertainBodies[1].includes('Fixture New Company'),'A later weekly edition never re-emails evidence with unknown acceptance');await local.close();
+}
+// Universe delivery during a directory outage retains separate fund matching work.
+at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'roster-recovery.sqlite'),{env,now:()=>at});local.store.apply([{op:'subscribe',email:'fixture@example.test',by:'Fixture'}]);let rosterUp=false;const recoveryBodies=[];
+job=new PrivateMarketsJob(local,{readSources:async()=>({capture:structuredClone(capture),roster:rosterUp?roster:{ok:false}}),publish:async()=>{},refreshInputs:async()=>{},fetcher:async(url,options)=>{recoveryBodies.push(JSON.parse(options.body).html);return Response.json({success:true,data:{messageId:'<accepted@example.test>'}});},now:()=>at,sleep:async()=>{}});
+await job.prepare();at=monday;await job.wake();assert.equal(job.pending().length,0);assert.equal(job.pendingMatches().length,1);assert.match(recoveryBodies[0],/section is unavailable/);
+at=monday+WEEK;rosterUp=true;await job.wake();assert.match(recoveryBodies[1],/Fund-directory recovery/);assert.match(recoveryBodies[1],/0 reported funding entries in the whole-universe section/);assert.match(recoveryBodies[1],/1 matched entries in the invested-funds section/);assert.equal(recoveryBodies[1].match(/<strong>Fixture New Company<\/strong>/g).length,1,'Recovered old matches appear only in the invested-funds section');assert.equal(job.pendingMatches().length,0);await local.close();
+console.log('PASS private weekly clock, source evidence, exact fund/manager matching, lossless multipart, isolated history, durable claims, restart, cooldown and unsubscribe.');

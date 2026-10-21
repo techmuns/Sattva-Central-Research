@@ -8,7 +8,12 @@ on:
       - 'scripts/newsletter-wake-gate.mjs'
       - 'scripts/lib/newsletter-*.mjs'
       - 'worker/newsletter*.mjs'
+      - 'scripts/lib/private-markets-*.mjs'
+      - 'public/js/data/private-markets-shared.js'
+      - 'public/js/data/private-market-funds.js'
+      - 'public/js/investors/manager-images.js'
   schedule:
+    - cron: '30 3 * * 1' # Private Markets Intelligence: Monday 09:00 IST
     - cron: '1,6,11,16,21,26,31,36,41,46,51,56 * * * *'
   # A dense cron alone dropped the 19 October morning sends. Independent main-branch
   # collector completions also wake the runner; the two gates coalesce their frequency.
@@ -67,6 +72,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
+      PRIVATE_MARKETS_INTELLIGENCE_ENABLED: 'true'
+      FAMILY_HOLDINGS_TOKEN: ${{ secrets.FAMILY_HOLDINGS_TOKEN }}
       NEWSLETTER_PROCESSING_ENABLED: ${{ vars.NEWSLETTER_GITHUB_ENABLED == 'true' }}
       GITHUB_TOKEN: ${{ github.token }}
       GH_DISPATCH_TOKEN: ${{ github.token }}

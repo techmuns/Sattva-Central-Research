@@ -4743,3 +4743,11 @@ durable writes stay ordered while yielding, so a newer capture cannot lose or re
 Verify with `verify-json-preparation.mjs`, `verify-json-preparation-ui.mjs`,
 `verify-alert-pool-projection.mjs`, the existing pool/cache suites and returning-reader
 performance/startup checks. Complete source fixtures, IDs and fields are the parity oracle.
+
+
+Private Markets Intelligence (21 October 2026): News subtabs are Public Market and
+Private Market. The separate weekly bulletin sends Monday 09:00 IST through the
+existing GitHub newsletter account mutex and active recipient list. Preserve the
+regular daily briefs, private encryption/authentication, source gates, retained
+claims/history and publication/source-time distinction. Read
+`docs/PRIVATE-MARKETS-INTELLIGENCE.md` before changing its clock, matching or delivery.
