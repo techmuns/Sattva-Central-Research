@@ -137,6 +137,7 @@ try{
  await page.setViewportSize({width:1280,height:800});
  await illustrated.locator('summary').click();
  await broken.locator('summary').click();
+ await illustrated.locator('.news-story-thumbnail img').evaluate(img=>img.decode());
  assert.equal(await illustrated.locator('.news-story-thumbnail img').evaluate(img=>img.complete&&img.naturalWidth>0),true,'publisher image reaches Portfolio');
  await page.waitForFunction(()=>[...document.querySelectorAll('.news-story-thumbnail img')].some(img=>img.src.endsWith('broken-image.svg')&&img.hidden));
  assert(await broken.locator('.news-story-placeholder').isVisible(),'broken images show a clean placeholder');
