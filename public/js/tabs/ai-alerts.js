@@ -28,7 +28,7 @@ import { getHostContext } from '../core/host-context.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
-import { KPI_CHIP_LIMIT, kpiLine, status as kpiStatus } from '../data/kpi-impact.js';
+import { kpiLine, status as kpiStatus } from '../data/kpi-impact.js';
 import { chatterTopic } from '../data/chatter-sentiment.js';
 import { driversFromEvent, QUESTIONS } from '../data/alert-drivers.js';
 import * as screenerInsights from '../data/screener-insights.js';
@@ -475,15 +475,13 @@ function paint(ctx) {
 }
 
 /**
- * A FAILED READ OF THE SECTOR FILE IS SAID ON THE PAGE. With no line on any card, "nothing here
- * names a KPI" and "the KPI file could not be read" look identical, and only the second is a fault;
- * the source registry carries the same state with its time. Nothing is printed while it loads or
- * once it has — the line is for the one state a reader would otherwise misread.
+ * A failed sector-file read still affects KPI search and bookmark details. The source registry
+ * carries the same state with its time, even though cards no longer render a KPI row.
  */
 function kpiStatusMarkup() {
   const state = kpiStatus();
   if (state.state !== 'failed') return '';
-  return `<p data-ai-kpi-status role="status" class="mb-4 text-xs text-slate-500" title="${escapeHtml(`${state.error || 'The sector file could not be read.'} Checked ${state.checkedAt || 'just now'}.`)}">KPIs in play unavailable · the sector file could not be read, so no card names its KPIs until it loads.</p>`;
+  return `<p data-ai-kpi-status role="status" class="mb-4 text-xs text-slate-500" title="${escapeHtml(`${state.error || 'The sector file could not be read.'} Checked ${state.checkedAt || 'just now'}.`)}">Sector KPI data unavailable · KPI search and bookmark details may be incomplete.</p>`;
 }
 
 function positionStatus() {
@@ -705,46 +703,6 @@ function cardSection(kicker, bodyHtml, attrs = '') {
 }
 
 /**
- * KPIs IN PLAY — which lines of THIS company's sector model the card's evidence names.
- *
- * One section directly under "What happened", drawn exactly as that section is (the same dot, the
- * same kicker), so the card still reads as one sentence, one line of names and one list. It is
- * absent where the company's sector is not resolved or nothing on the card names a KPI — see
- * data/kpi-impact.js: no sector, no line.
- *
- * THE CHIPS ARE NAMES, NOT FIGURES. A filed result's change is already the sentence's subject
- * and its row's own claim ("Result filed (YOY) · revenue +13.0%"), so printing it a third time
- * here would be the repetition this card was rebuilt to remove. The figure is in the chip's title,
- * with the mechanism and the sector, and the chip opens the record it came off — through the same
- * `evidenceDestination` the rows use. No colour: a KPI being in play is not a direction.
- */
-function kpiMarkup(card, scope) {
-  const impact = card.kpis;
-  if (!impact?.items?.length) return '';
-  const eventsById = new Map((card.events || []).map((event) => [String(event.id), event]));
-  const sectorPath = [impact.sector, impact.industry].filter(Boolean).join(' › ');
-  const chipClass = 'inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200';
-  // The model keeps every KPI (search, bookmarks and exports read them all); the card draws four.
-  const overflow = Math.max(0, impact.items.length - KPI_CHIP_LIMIT);
-  const chips = impact.items.slice(0, KPI_CHIP_LIMIT).map((item) => {
-    const title = `${item.triggerLabel} → ${item.name}. ${item.why} ${impact.groupLabel}${sectorPath ? ` (${sectorPath})` : ''}. Source: ${item.source}${item.day ? ` · ${fmtDay(item.day)}` : ''}.`;
-    const event = item.eventId != null ? eventsById.get(String(item.eventId)) : null;
-    if (!event) return `<span data-ai-kpi="${escapeHtml(item.key)}" title="${escapeHtml(title)}" class="${chipClass}">${escapeHtml(item.name)}</span>`;
-    const destination = evidenceDestination(event, scope);
-    return `<a data-ai-kpi="${escapeHtml(item.key)}" data-kpi-trigger="${escapeHtml(item.trigger)}" href="${escapeHtml(destination.href)}"
-      ${destination.external ? 'target="_blank" rel="noopener noreferrer"' : ''}
-      aria-label="${escapeHtml(`${item.name} — ${destination.ariaLabel}`)}" title="${escapeHtml(title)}"
-      class="${chipClass} transition hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">${escapeHtml(item.name)}</a>`;
-  });
-  if (overflow > 0) {
-    const rest = impact.items.slice(KPI_CHIP_LIMIT).map((item) => item.name).join(', ');
-    chips.push(`<span data-ai-kpi-more class="text-xs font-semibold text-slate-500" title="${escapeHtml(`Also named by this card's evidence: ${rest}.`)}">+${escapeHtml(formatNumber(overflow))}</span>`);
-  }
-  const attrs = `data-ai-kpis data-kpi-group="${escapeHtml(impact.group)}" title="${escapeHtml(`KPIs ${impact.groupLabel} companies report that this card's evidence names. Read from the sector → KPI ontology; not a forecast and not a direction.`)}"`;
-  return cardSection(`KPIs in play · ${impact.groupLabel}`, `<div class="mt-1 flex flex-wrap items-center gap-1.5">${chips.join('')}</div>`, attrs);
-}
-
-/**
  * WHAT A ROW COULD CHANGE — the reading, on the row that holds its record.
  *
  * This was a paragraph of its own under an "Earnings assumption, valuation or thesis?" kicker: up
@@ -882,7 +840,6 @@ function cardMarkup(card, scope, day, archived = false) {
 
         ${cardSection(lead?.storyId && lead.storyChange !== 'new' ? 'Updated · What changed' : 'Headline', whatHappenedMarkup(card, scope) + confluenceMarkup(card))}
         ${lead ? alertReadingHtml(lead) : ""}
-        ${kpiMarkup(card, scope)}
 
         ${listHeadMarkup(card)}
         <div data-ai-timeline-frame class="ai-timeline-frame">
