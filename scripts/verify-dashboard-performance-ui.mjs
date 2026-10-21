@@ -381,7 +381,7 @@ try {
   await page.locator('#subview-mount [data-tab-id="news"][aria-selected="true"]').waitFor();
   assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
     tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-    [['news', 'Market News'], ['public-chatter', 'Public Chatter']], 'the returning session receives Market News by default and Public Chatter beside it');
+    [['news', 'Market News'], ['private-market-news', 'Private Market News'], ['public-chatter', 'Public Chatter']], 'the returning session receives Market News by default and Public Chatter beside it');
   await page.locator('#subview-mount [data-tab-id="public-chatter"]').click();
   await page.locator('#subview-mount [data-tab-id="public-chatter"][aria-selected="true"]').waitFor();
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="news-section"]').getAttribute('aria-selected'), 'true');

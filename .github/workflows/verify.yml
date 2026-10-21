@@ -26,7 +26,7 @@ jobs:
           # v1.7.12 predates GitHub's queue:max syntax (May 2026). The MF
           # capture test validates that exact queue/cancellation configuration.
           # Suppress only this known parser error; retain all other diagnostics.
-          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= -ignore '^unexpected key "queue" for "concurrency" section' .github/workflows/deploy.yml .github/workflows/newsletter-refresh.yml .github/workflows/newsletter-monitor.yml .github/workflows/breakouts-refresh.yml .github/workflows/screener-summaries-refresh.yml .github/workflows/mutual-funds-scanner.yml .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/announcements-refresh.yml .github/workflows/corporate-actions-refresh.yml .github/workflows/bse-access-check.yml .github/workflows/announcement-index-refresh.yml .github/workflows/technical-history-recovery.yml .github/workflows/technicals-refresh.yml .github/workflows/price-move-verify.yml .github/workflows/recommendation-foundation.yml
+          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= -ignore '^unexpected key "queue" for "concurrency" section' .github/workflows/deploy.yml .github/workflows/newsletter-refresh.yml .github/workflows/newsletter-monitor.yml .github/workflows/breakouts-refresh.yml .github/workflows/screener-summaries-refresh.yml .github/workflows/mutual-funds-scanner.yml .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/private-market-news.yml .github/workflows/announcements-refresh.yml .github/workflows/corporate-actions-refresh.yml .github/workflows/bse-access-check.yml .github/workflows/announcement-index-refresh.yml .github/workflows/technical-history-recovery.yml .github/workflows/technicals-refresh.yml .github/workflows/price-move-verify.yml .github/workflows/recommendation-foundation.yml
   contracts:
     runs-on: ubuntu-latest
     # Full-history alert checks now cover over 400,000 source records. Keep every
@@ -43,6 +43,8 @@ jobs:
         run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && node scripts/verify-telegram-scheduler.mjs && node scripts/verify-telegram-health.mjs && python3 scripts/verify-telegram-api.py
       - name: Verify investor quarterly evidence and aggregation
         run: node scripts/verify-super-investors.mjs && node scripts/verify-holdings-integrity.mjs && node scripts/verify-investor-changes.mjs && node scripts/verify-managers.mjs && node scripts/verify-manager-reader.mjs && node scripts/verify-public-holdings.mjs && node scripts/verify-investor-publishing.mjs && node scripts/verify-super-investor-capture.mjs
+      - name: Verify private funding tables, budgets, history and publication
+        run: node scripts/verify-private-market-news.mjs
       - name: Verify refresh ownership and source targeting
         run: node scripts/verify-refresh.mjs
       - name: Verify evidence-based public chatter summaries
@@ -365,7 +367,7 @@ jobs:
         if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-dashboard-performance-ui.mjs
+        run: node scripts/verify-dashboard-performance-ui.mjs && node scripts/verify-private-market-news-ui.mjs
       - name: Verify deferred tab interfaces and delayed navigation without user data
         if: ${{ matrix.part == 1 }}
         env:

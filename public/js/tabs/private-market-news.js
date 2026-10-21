@@ -1,0 +1,72 @@
+import { TAB_META } from './catalog.js';
+import * as feed from '../data/private-market-news.js';
+import { sectionHead, scoreTable, openDrill, openModal } from '../ui/screener.js';
+import { escapeHtml as esc } from '../core/dom.js';
+import { exportRows } from '../ui/export.js';
+import * as refreshRegistry from '../core/refresh.js';
+
+export const meta = TAB_META['private-market-news'];
+let ctxRef = null, table = null, view = null, offTable = null, disposers = [];
+const fields = [['date','Funding date'],['company','Company'],['sector','Sector'],['subsector','Subsector'],['businessModel','Business model'],['amount','Round size'],['round','Round type'],['investors','Investors'],['leadInvestor','Lead investor']];
+const time = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-IN', { timeZone:'Asia/Kolkata', dateStyle:'medium', timeStyle:'short' }) + ' IST' : 'Not yet confirmed';
+const safeUrl = value => { try { const u = new URL(value); return u.origin === 'https://inc42.com' ? u.href : 'https://inc42.com/tag/funding-galore/'; } catch { return 'https://inc42.com/tag/funding-galore/'; } };
+const link = row => `<a data-norow href="${esc(safeUrl(row.sourceUrl || row.url))}" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline">Inc42 ↗</a>`;
+const cell = value => `<div style="max-width:260px;white-space:normal;overflow-wrap:anywhere">${esc(value || '—')}</div>`;
+function details(row) {
+  const article = feed.meta().articles?.find(a => a.url === row.sourceUrl);
+  openDrill({ name: row.company, sub: 'Funding reported by Inc42', beforeGroupsHtml: `${fields.map(([key,label]) => `<p class="mt-3 text-sm"><strong>${label}</strong><br>${esc(row[key] || 'Not provided')}</p>`).join('')}
+    <p class="mt-4 text-xs text-slate-500">${esc(article?.notes?.join('\n') || '')}</p>
+    <p class="mt-3 text-xs text-slate-500">Roundup published: ${esc(time(row.publishedAt))}. First captured: ${esc(time(row.firstSeenAt))}.</p>
+    ${row.sourceMissing ? '<p class="mt-3 text-sm">Retained observation: this row is absent from the latest successful read of its article.</p>' : ''}
+    ${row.revisions?.length ? `<p class="mt-3 text-xs">${row.revisions.length} earlier source revision(s) retained in the capture.</p>` : ''}<p class="mt-4">${link(row)} · ${esc(row.sourceTitle)}</p>` });
+}
+function coverage() {
+  const m = feed.meta(), h = feed.health();
+  openModal(`<h2 class="font-display text-lg font-bold text-slate-900">Private Market News coverage</h2>
+    <p class="mt-3 text-sm">Inc42 Funding Galore covers Indian startup funding reported in weekly roundups. It is a discovery source, not an exhaustive record of every VC or PE transaction. Rounds may include debt or undisclosed amounts; source wording and footnotes are retained.</p>
+    <p class="mt-3 text-sm">Source listing checked: ${esc(time(m.sourceCheckedAt))}. Collection attempt: ${esc(time(m.attemptedAt))}. Capture prepared: ${esc(time(m.generatedAt))}. Browser checked publication: ${esc(time(m.browserCheckedAt))}.</p>
+    <p class="mt-3 text-sm">${m.deals?.length || 0} retained rows across ${m.articles?.length || 0} discovered roundups. ${h.pending} awaiting capture; ${h.unavailable} failed or without a supported public table. Archive listing ${m.archive?.complete ? 'traversal complete' : `backfill in progress (next page ${m.archive?.nextPage || 2})`}. Previously captured rows are retained without an age cutoff.</p>
+    <p class="mt-3 text-sm">GitHub checks every six hours, with sequential requests at least three seconds apart and at most 32 requests per run. Access refusals pause collection for at least 24 hours. Scheduled runs reconcile recent roundups and resume older work. This browser checks published captures every five minutes while visible and on return.</p>
+    ${m.cooldownUntil ? `<p class="mt-3 text-sm">Source cooldown until ${esc(time(m.cooldownUntil))}.</p>` : ''}
+    ${m.error || m.readError ? `<p class="mt-3 text-sm">Latest problem: ${esc(m.error || m.readError)}. Saved rows remain readable.</p>` : ''}
+    <p class="mt-3 text-xs text-slate-500">${esc((m.articles || []).find(a => a.notes?.length)?.notes.join('\n') || '')}</p>
+    <details class="mt-4"><summary>Roundup capture history</summary><div style="max-height:340px;overflow:auto">${(m.articles || []).map(a => `<p class="mt-2 text-xs">${link(a)} · ${esc(a.title)} · ${esc(a.status)}${a.rows != null ? ` · ${a.rows} rows` : ''}${a.error ? ` · ${esc(a.error)}` : ''}</p>`).join('')}</div></details>`, { size:'wide' });
+}
+function paint() {
+  if (!ctxRef) return;
+  const root = ctxRef.root, m = feed.meta(), rows = feed.rows(), h = feed.health();
+  const focused = root.contains(document.activeElement) ? document.activeElement : null;
+  const input = focused?.matches('input') ? { value:focused.value, start:focused.selectionStart, end:focused.selectionEnd } : null;
+  view = table?.view || view;
+  const scroll = root.querySelector('[data-table-scroll]');
+  const position = scroll ? { top:scroll.scrollTop, left:scroll.scrollLeft } : null;
+  offTable?.(); offTable = null;
+  const latest = [...(m.articles || [])].filter(a => a.status === 'ok').sort((a,b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))[0]?.url;
+  const options = (key, label) => ({ label, options:[{ value:'all', label:`All ${label.toLowerCase()}` }, ...[...new Set(rows.map(r => r[key]).filter(v => v && !/^[-–—_]$/.test(v)))].sort().map(value => ({ value,label:value }))], match:(r,v) => v === 'all' || !v || r[key] === v });
+  table = scoreTable({ rows, key:r => r.id, name:r => r.company, watchKey:() => null, showWatchFilter:false,
+    showRank:false, showAvatar:false, nameWrap:true, nameMaxPx:210, dense:true, wrapHeads:true, nameAfter:1,
+    sub:r => r.sourceMissing ? 'Retained · removed from source' : '',
+    searchPlaceholder:'Search company, investor, sector or round...', searchable:r => fields.map(([key]) => r[key]).join(' '),
+    columns: fields.filter(([key]) => key !== 'company').map(([key,label]) => ({ label, get:r => cell(r[key]), html:true, sortValue:r => key === 'date' ? r.dateISO || '' : r[key] })).concat([{ label:'Source', get:link, html:true, sortable:false }]),
+    initialSort:{ key:'Funding date', dir:'desc' }, initialView:view,
+    filters:[{ label:'Funding period', value:'latest', options:[{ value:'latest',label:'Latest captured week' }, { value:'all',label:'All captured history' }, ...[...new Set(rows.map(r => r.dateISO?.slice(0,4)).filter(Boolean))].sort().reverse().map(value => ({ value,label:value }))], match:(r,v) => v === 'all' || !v ? true : v === 'latest' ? r.sourceUrl === latest : r.dateISO?.startsWith(v) }, options('sector','Sectors'), options('round','Round types'), options('businessModel','Business models')],
+    loading:!m.generatedAt && !m.readError,
+    emptyMessage:rows.length ? 'No funding deals match these filters.' : 'Funding collection has not published readable rows yet. Coverage shows the latest attempt.',
+    countNoun:'deals', fillMode:'windowed', stickyHead:'max(320px, calc(100vh - 340px))', onRowClick:details,
+    bookmarkDate:r => r.dateISO, bookmarkSource:() => 'Inc42 Funding Galore', link:r => safeUrl(r.sourceUrl), exportName:'sattva-private-market-news',
+    onExport:visible => exportRows({ filename:'sattva-private-market-news', sheetName:'Private market funding', rows:visible,
+      columns:[...fields.map(([key,header]) => ({ key,header,get:r => r[key],width:key === 'investors' ? 70 : 24 })), ...['sourceUrl','sourceTitle','publishedAt','firstSeenAt','updatedAt','sourceMissing'].map(key => ({ key,header:key,get:r => String(r[key] ?? '') })),
+        { key:'notes',header:'Source footnotes',get:r => (m.articles || []).find(a => a.url === r.sourceUrl)?.notes?.join('\n') || '' }, { key:'sourceFields',header:'All original source fields',get:r => JSON.stringify(r.sourceFields) }] }),
+  });
+  root.innerHTML = `${sectionHead({ title:'Private Market News', description:'Indian startup funding reported by Inc42 · Across the source universe, independent of listed-company scopes.', meta:`<span class="text-xs text-slate-500">${esc(h.label)}</span>` })}
+    ${table.html}<p class="mt-3 text-xs text-slate-500">Source listing checked ${esc(time(m.sourceCheckedAt))} · Weekly roundups · <button type="button" data-private-market-coverage class="text-brand-600 hover:underline">Coverage & source notes</button></p>`;
+  offTable = table.wire(root); root.querySelector('[data-private-market-coverage]').onclick = coverage;
+  const next = root.querySelector('[data-table-scroll]'); if (position && next) { next.scrollTop = position.top; next.scrollLeft = position.left; }
+  if (input) { const field = root.querySelector('input'); if (field && field.value === input.value) { field.focus({ preventScroll:true }); field.setSelectionRange(input.start, input.end); } }
+}
+export function render(ctx) {
+  ctxRef = ctx;
+  if (!disposers.length) disposers = [feed.onChange(paint), feed.bindLifecycle(), refreshRegistry.register('private-market-news', { label:'Private Market News', refresh:feed.refresh })];
+  paint(); void feed.load();
+}
+export function destroy() { ctxRef = null; view = table?.view || view; offTable?.(); offTable = null; table = null; disposers.forEach(fn => fn()); disposers = []; }

@@ -16,6 +16,7 @@ export const researchTabs = [
   lazyTab(TAB_META['mutual-funds'], () => import('./mutual-funds.js')),
   lazyTab(TAB_META.concall, () => import('./concall.js')),
   lazyTab(TAB_META.news, () => import('./news.js')),
+  lazyTab(TAB_META['private-market-news'], () => import('./private-market-news.js')),
   lazyTab(TAB_META['public-chatter'], () => import('./public-chatter.js')),
   lazyTab(TAB_META['super-investors'], () => import('./super-investors.js')),
   bookmarks,
