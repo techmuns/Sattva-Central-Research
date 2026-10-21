@@ -221,6 +221,12 @@ try {
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#subview-mount [aria-selected="true"]').getAttribute('data-tab-id'), 'news');
     await page.keyboard.press('Enter');
+    await page.locator('[data-active-tab="private-market-news"]').waitFor();
+    assert(await page.evaluate(() => window.newsSubtabs === document.querySelector('#subview-mount [data-tab-list]')));
+    assert(await page.locator('#subview-mount [data-tab-id="private-market-news"]').evaluate(tab => document.activeElement === tab));
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#subview-mount [aria-selected="true"]').getAttribute('data-tab-id'), 'private-market-news');
+    await page.keyboard.press('Enter');
     await page.locator('[data-active-tab="public-chatter"]').waitFor();
     assert(await page.evaluate(() => window.newsSubtabs === document.querySelector('#subview-mount [data-tab-list]')));
     assert(await page.locator('#subview-mount [data-tab-id="public-chatter"]').evaluate(tab => document.activeElement === tab));
