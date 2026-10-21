@@ -79,6 +79,16 @@ class ModelTests(unittest.TestCase):
         self.assertFalse(r['qualified'])
         self.assertNotIn('Commercial production has commenced', r['reasons'])
 
+    def test_negations_proposals_and_unlinked_projects_never_qualify(self):
+        f=fin_fixture();f['baselineRevenue']=D(4000000000)
+        order='We received a purchase order.\nOrder value INR 60 crore.\nExecution 6 months.'
+        for text in [order.replace('received','have not received'),order.replace('received','expect we will receive'),order.replace('\nOrder value','\fOrder value'),order+'\nTwo new contracts.']:
+            self.assertFalse(score_models(f,extract_catalyst(text))['orders']['qualified'],text)
+        capacity='Successfully commissioned.\nExisting capacity utilisation 85%.\nCapacity addition 25%.\nFully funded.\nSigned offtake agreement.'
+        self.assertTrue(score_models(f,extract_catalyst(capacity))['capacity']['qualified'])
+        for text in [capacity.replace('Successfully','Will be successfully'),capacity.replace('Fully funded','Not fully funded'),capacity.replace('Signed offtake','No signed offtake'),capacity.replace('\nFully funded','\fFully funded'),capacity+'\nSeveral new projects.']:
+            self.assertFalse(score_models(f,extract_catalyst(text))['capacity']['qualified'],text)
+
     def test_sign_changes_missing_cash_conflicts_and_one_offs(self):
         f = fin_fixture()
         self.assertTrue(score_models(f)['earnings']['qualified'])

@@ -153,27 +153,32 @@ def extract_catalyst(text):
     """
     pages = text.split("\f")
     fields = {}
-    def capture(key, pattern, transform=lambda m: m[0]):
-        found = []
+    def capture(key, pattern, transform=lambda m: m[0], asserted=False):
+        found, contradicted = [], False
         for page, value in enumerate(pages, 1):
             for match in re.finditer(pattern, value, re.I | re.S):
-                found.append({"value": transform(match), "page": page, "quote": match[0][:650]})
+                prefix = re.split(r"[.!?\n]", value[max(0,match.start()-90):match.start()])[-1]
+                if asserted and re.search(r"\b(?:not|no|never|nor|will|would|may|might|proposed?|planned?|expects?|expected|pending|conditional)\b|subject\s+to", prefix, re.I):
+                    contradicted = True
+                    continue
+                found.append({"value": transform(match), "page": page, "offset": match.start(), "quote": match[0][:650]})
         unique = {canonical(x["value"]) for x in found}
-        if len(unique) == 1:
+        if len(unique) == 1 and not contradicted:
             fields[key] = found[0]
     amount = r"(?:Rs\.?|INR|₹)\s*([\d,]+(?:\.\d+)?)\s*(crores?|cr\.?|lakhs?|lacs?|millions?)\b"
     scale = lambda m: str(D(m[1].replace(",", "")) * (10000000 if m[2].lower().startswith("cr") else 100000 if m[2].lower().startswith(("lac", "lak")) else 1000000))
     capture("orderValue", r"(?:order|contract)\s*(?:value|size|amount|worth)[^\n]{0,90}?" + amount, scale)
     capture("executionMonths", r"(?:execut(?:ed|ion)|deliver(?:y|ed)|complet(?:ed|ion))[^\n]{0,100}?\b(\d{1,2})\s*months?", lambda m: int(m[1]))
-    capture("firmOrder", r"\b(?:received|secured|awarded|signed)\b[^\n]{0,90}\b(?:firm\s+order|purchase\s+order|contract)\b", lambda m: True)
+    capture("firmOrder", r"\b(?:received|secured|awarded|signed)\b[^\n]{0,90}\b(?:firm\s+order|purchase\s+order|contract)\b", lambda m: True, asserted=True)
     capture("notFirm", r"\b(?:letter\s+of\s+intent|memorandum\s+of\s+understanding|framework\s+agreement|lowest\s+bidder|L1\s+bidder)\b", lambda m: True)
     capture("cancelled", r"\b(?:cancelled|terminated|withdrawn|revoked|delayed|postponed)\b", lambda m: True)
     capture("adverse", r"\b(?:auditor[^\n]{0,50}resign(?:ed|ation)|defaulted\s+on\s+(?:loan|debt|payment)|admitted\s+(?:to|into)\s+(?:insolvency|CIRP)|fraudulent\s+transactions?)\b", lambda m: True)
     capture("attributionUnclear", r"\b(?:consortium|joint\s+venture|JV\s+share|including\s+GST|inclusive\s+of\s+(?:tax|GST))\b", lambda m: True)
-    capture("commissioned", r"\b(?:commenced\s+commercial\s+production|commercial\s+production\s+(?:has\s+)?commenced|successfully\s+commissioned)\b", lambda m: True)
+    capture("commissioned", r"\b(?:commenced\s+commercial\s+production|commercial\s+production\s+(?:has\s+)?commenced|successfully\s+commissioned)\b", lambda m: True, asserted=True)
     capture("existingUtilisation", r"(?:existing|current)\s+(?:capacity\s+)?utili[sz]ation[^\n]{0,50}?(\d{1,3}(?:\.\d+)?)\s*%", lambda m: str(D(m[1])))
-    capture("funded", r"\b(?:fully\s+funded|funded\s+(?:entirely\s+)?(?:through|by|from)\s+internal\s+accruals)\b", lambda m: True)
-    capture("demand", r"\b(?:firm\s+(?:customer\s+)?(?:orders|offtake)|signed\s+offtake\s+agreement|binding\s+offtake\s+agreement)\b", lambda m: True)
+    capture("funded", r"\b(?:fully\s+funded|funded\s+(?:entirely\s+)?(?:through|by|from)\s+internal\s+accruals)\b", lambda m: True, asserted=True)
+    capture("demand", r"\b(?:firm\s+(?:customer\s+)?(?:orders|offtake)|signed\s+offtake\s+agreement|binding\s+offtake\s+agreement)\b", lambda m: True, asserted=True)
+    capture("multipleProjects", r"\b(?:multiple|two|three|four|several)\s+(?:new\s+)?(?:projects|plants|facilities|units|contracts|orders)\b", lambda m: True)
     capture("capacityAdditionPct", r"(?:capacity\s+(?:addition|increase|expansion))[^\n]{0,65}?(\d{1,3}(?:\.\d+)?)\s*%", lambda m: str(D(m[1])))
     return fields
 
@@ -242,6 +247,11 @@ def score_models(fin, fields=None):
             r["missing"].append("Source mentions cancellation, delay or termination")
         if get_field("attributionUnclear"):
             r["missing"].append("Attributable share or tax-exclusive amount requires review")
+        keys = ["firmOrder","orderValue","executionMonths"] if model == "orders" else ["commissioned","funded","demand","existingUtilisation","capacityAdditionPct"]
+        linked = [fields.get(k) for k in keys]
+        if get_field("multipleProjects") or all(linked) and (len({f["page"] for f in linked}) != 1 or
+                any("offset" not in f for f in linked) or max(f["offset"] for f in linked)-min(f["offset"] for f in linked)>2000):
+            r["missing"].append("Linked terms for one contract/project require verification")
     r = results["orders"]
     value, months = get_field("orderValue"), get_field("executionMonths")
     if get_field("firmOrder") and not get_field("notFirm"):

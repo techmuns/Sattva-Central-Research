@@ -77,6 +77,10 @@ does not substitute for underlying PBT or reported profit growth.
 The initial English PDF adapter reads at most twelve pages of already-retained original PDFs
 using free local Poppler. Each accepted field retains a page and literal quote. Multiple conflicting
 values remain ambiguous. It deliberately supports a narrow set of explicit annexure wording;
+negated, conditional and future claims cannot establish firm orders, production, funding or demand.
+Required contract/project terms must share a page and a bounded text span; explicit multiple-project
+or contract documents require a separate verified linking adapter. Cross-page relationships are
+not guessed, even when this leaves a real catalyst unqualified.
 unrecognised tables, units or compound projects require a verified adapter. Extraction is not proof
 that every page, amendment, payment term, margin or project milestone was reviewed. No unreported
 profit contribution, attributable share, commissioning date or contract margin is inferred.
