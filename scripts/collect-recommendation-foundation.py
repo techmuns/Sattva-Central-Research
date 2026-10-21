@@ -52,6 +52,7 @@ def main():
             store.db.commit()
             collect(store, args.data_dir, PublicReader(store, maximum=200, seconds=600), lookup, Path(args.state).parent)
         report = store.summary(iso_now())
+        report["financialGaps"] = store.get("financialGapSummary")
         output = Path(args.report)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, indent=2) + "\n")
@@ -61,6 +62,8 @@ def main():
             + "\n".join("- " + k + ": " + str(v) for k, v in report["counts"].items())
             + "\n\nSource failures, unfinished windows and missing financial fields remain recorded. "
             "This job makes no UI changes, model calls or paid-provider calls.\n")
+        if report["financialGaps"]:
+            message += "\n### Financial history gaps\n\n```json\n" + json.dumps(report["financialGaps"], indent=2) + "\n```\n"
         if summary:
             with open(summary, "a") as file:
                 file.write(message)

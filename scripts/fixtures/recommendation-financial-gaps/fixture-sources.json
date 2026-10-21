@@ -1,0 +1,24 @@
+[
+  {
+    "file": "ltts-30-sep-2025.xml",
+    "url": "https://nsearchives.nseindia.com/corporate/xbrl/INTEGRATED_FILING_INDAS_1552501_17102025062437_WEB.xml",
+    "sha256": "504ceba9a03401d9787614901729a252c9caa5005179d8952a04a63b5b9de3b2",
+    "periodEnd": "30-SEP-2025",
+    "issuerMatches": true,
+    "facts": 41
+  },
+  {
+    "file": "ltts-31-mar-2026.xml",
+    "url": "https://nsearchives.nseindia.com/corporate/xbrl/INTEGRATED_FILING_INDAS_1663804_05052026071412_WEB.xml",
+    "sha256": "5b86e5ad9e34812695b8dc90039e8255b54c661f800d87d0171ca458e95e4b6b",
+    "periodEnd": "31-MAR-2026",
+    "issuerMatches": true,
+    "facts": 41
+  },
+  {
+    "file": "ltts-30-sep-2026.xml",
+    "url": "https://nsearchives.nseindia.com/corporate/xbrl/INTEGRATED_FILING_INDAS_1741576_19102026043350_WEB.xml",
+    "sha256": "f6810cfd7a30663384fdd3e129b2340cba63fe6febc3d4bc3ee0af61c235a7a8",
+    "archiveAsset": 663321376
+  }
+]

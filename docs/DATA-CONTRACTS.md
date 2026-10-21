@@ -21,6 +21,11 @@ This finance-audit path intentionally preserves prices, financial values, ratios
 return percentages as exact decimal strings rather than binary floating-point values. `score` is
 an integer evidence-point total, not a calibrated probability or expected return. `coverage`
 separates actual source check times/errors, unread/failed documents and unfinished history.
+Optional `coverage.financialHistory` contains the prepared, partial financial-gap audit summary:
+`{version,at,universe,currentQuarterCompanies,unsupportedBSEOnly,ambiguousSymbols,targetedCollection,modelRulesChanged:false,status,details}`.
+Counts distinguish absent values, reported nonpositive cash flow and conflicting sources. Exact
+per-company metric/period/value/source-version rows remain in archived `financial_gap_state`;
+they are not downloaded into the tab. This additive coverage field changes no UI or model policy.
 `backtest` reports actual first-observed signals, measured sample sizes and unresolved outcome
 statuses separately; initial historical performance is unavailable. See
 [model rules and limitations](RECOMMENDATION-MODELS.md). No private portfolio membership is published.

@@ -40,7 +40,7 @@ jobs:
       - name: Verify free financial history and event-date evidence offline
         run: python3 scripts/verify-recommendation-foundation.py
       - name: Verify catalyst scoring, point-in-time outcomes and prepared public delivery
-        run: python3 scripts/verify-recommendation-models.py && node scripts/verify-recommendation-reader.mjs
+        run: python3 scripts/verify-recommendation-models.py && python3 scripts/verify-recommendation-financial-gaps.py && node scripts/verify-recommendation-reader.mjs
       - name: Verify Telegram parsing, retention and resumable collection
         run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && node scripts/verify-telegram-scheduler.mjs && node scripts/verify-telegram-health.mjs && python3 scripts/verify-telegram-api.py
       - name: Verify investor quarterly evidence and aggregation
