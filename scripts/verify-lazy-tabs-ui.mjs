@@ -216,7 +216,7 @@ try {
     await page.locator('[data-active-tab="news"]').waitFor();
     assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
       tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-      [['news', 'Market News'], ['private-market-news', 'Private Market News'], ['public-chatter', 'Public Chatter']]);
+      [['news', 'Public Market'], ['private-market-news', 'Private Market'], ['public-chatter', 'Public Chatter']]);
     await page.evaluate(() => { window.newsSubtabs = document.querySelector('#subview-mount [data-tab-list]'); });
     await page.locator('#subview-mount [data-tab-id="news"]').focus();
     await page.keyboard.press('ArrowRight');

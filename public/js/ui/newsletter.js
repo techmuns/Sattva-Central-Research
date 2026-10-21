@@ -228,6 +228,30 @@ function onClick(event) {
   const action = target.dataset.briefAction;
   if (action === 'close') { close(true); return; }
   if (action === 'retry') { read(); return; }
+  if (action === 'private-preview') {
+    const preview = window.open('about:blank', '_blank');
+    if (preview) preview.opener = null;
+    act('private-preview', async () => {
+      try {
+      if (!preview) throw Error('Please allow this preview to open in a new tab.');
+      const path = `${ROUTE}/private-markets/preview`;
+      const response = await fetch(path, { cache:'no-store', headers:{ ...authHeaders(path) }, signal:AbortSignal.timeout(20000) });
+      if (!response.ok) { const value=await response.json().catch(()=>null); throw Error(value?.reason || 'The weekly preview is unavailable.'); }
+      let html=await response.text(); const parts=Number(response.headers.get('x-newsletter-parts'))||1;
+      if (!Number.isSafeInteger(parts) || parts<1 || parts>1000) throw Error('The preview part inventory could not be verified.');
+      for (let part=2; part<=parts; part++) {
+        const next=await fetch(`${path}?part=${part}`, {cache:'no-store',headers:{...authHeaders(path)},signal:AbortSignal.timeout(20000)});
+        if (!next.ok || Number(next.headers.get('x-newsletter-parts'))!==parts) throw Error('A preview part is unavailable. Please try again.');
+        html+='\n<hr>\n'+await next.text();
+        if (html.length>24*1024*1024) throw Error('The complete preview exceeds the browser reading budget.');
+      }
+      const blob=URL.createObjectURL(new Blob([html], { type:'text/html' }));
+      preview.location.href=blob; setTimeout(()=>URL.revokeObjectURL(blob),60000);
+      note={tone:'ok',text:parts>1?`Complete weekly preview opened (${parts} email parts).`:'Weekly preview opened.'};
+      } catch (error) { preview?.close(); throw error; }
+    });
+    return;
+  }
   if (action === 'preview') {
     const which = EDITIONS[target.dataset.edition] ? target.dataset.edition : 'morning';
     window.open(`${ROUTE}/preview?edition=${encodeURIComponent(which)}`, '_blank', 'noopener');
@@ -388,7 +412,7 @@ function readyBody() {
       </form>
     </div>`;
 
-  const tokenNote = snapshot.schedule?.tokenConfigured === false ? '<p class="brief-soft brief-token">Emails won’t send until the MUNS_TOKEN secret is added on the Worker.</p>' : '';
+  const tokenNote = snapshot.schedule?.tokenConfigured === false ? '<p class="brief-soft brief-token">Email delivery is not configured. An administrator needs to restore the newsletter sender.</p>' : '';
   const noteBlock = note ? `<p class="brief-note" data-tone="${note.tone}" role="status">${escapeHtml(note.text)}</p>` : '';
   return `<div class="brief-body">
       <p class="brief-lede">Your portfolio companies by email at ${escapeHtml(times)} IST, weekdays.</p>
@@ -396,6 +420,7 @@ function readyBody() {
       <div class="brief-section">${youBlock}</div>
       <div class="brief-section">${teamBlock}</div>
       ${tokenNote}
+      <div class="brief-section"><strong>Private Markets Intelligence</strong><p class="brief-soft">A separate funding bulletin, Mondays at 9 am IST, to this same recipient list. Includes the source universe and investments reported by our funds or their managers.</p><button type="button" class="brief-link" data-brief-action="private-preview" ${disabled}>Preview weekly bulletin</button></div>
     </div>
     <div class="brief-foot">Preview <button type="button" class="brief-link" data-brief-action="preview" data-edition="morning">Morning</button><span aria-hidden="true">·</span><button type="button" class="brief-link" data-brief-action="preview" data-edition="evening">Evening</button></div>`;
 }

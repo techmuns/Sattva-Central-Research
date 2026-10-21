@@ -60,7 +60,7 @@ export const TAB_META = Object.freeze({
     subviews: [],
   },
   'private-market-news': {
-    id: 'private-market-news', title: 'Private Market News', navigationGroup: 'news-section',
+    id: 'private-market-news', title: 'Private Market', navigationGroup: 'news-section',
     subtitle: 'Indian startup funding from Inc42 Funding Galore.', subviews: [],
     allowEmptyScope: true, scopeIndependent: true, savedViewAvailable: false,
   },
@@ -100,7 +100,7 @@ export const TAB_META = Object.freeze({
   'news': {
     id: 'news',
     title: 'News',
-    navigationTitle: 'Market News',
+    navigationTitle: 'Public Market',
     navigationGroup: 'news-section',
     subtitle:
       'Company news, updated automatically. Opens on Today (IST); choose another period up to 30 days or This month. ' +

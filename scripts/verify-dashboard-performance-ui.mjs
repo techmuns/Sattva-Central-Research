@@ -86,7 +86,7 @@ function fetchAndCache(...args) {
       const source = readFileSync(path, 'utf8');
       res.end(previousRelease ? source.replace("navigationTitle: 'Results',", '').replace("navigationTitle: 'Concall',", '')
         .replace("navigationTitle: 'Corporate Announcements',", '')
-        .replace("navigationTitle: 'Market News',", '')
+        .replace("navigationTitle: 'Public Market',", '')
         .replaceAll(/navigationGroup: '(?:alerts|announcements|earnings|news-section)',/g, '')
         .replace(/(title: 'NSE Filings',\s*\/\/[^\n]*\s*)hideFromNavigation: true,/, '$1') : source);
     } else if (pathname === '/js/tabs/registry.js') {
@@ -383,7 +383,7 @@ try {
   await page.locator('#subview-mount [data-tab-id="news"][aria-selected="true"]').waitFor();
   assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
     tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-    [['news', 'Market News'], ['private-market-news', 'Private Market News'], ['public-chatter', 'Public Chatter']], 'the returning session receives Market News by default and Public Chatter beside it');
+    [['news', 'Public Market'], ['private-market-news', 'Private Market'], ['public-chatter', 'Public Chatter']], 'the returning session receives Public Market by default and Public Chatter beside it');
   await page.locator('#subview-mount [data-tab-id="public-chatter"]').click();
   await page.locator('#subview-mount [data-tab-id="public-chatter"][aria-selected="true"]').waitFor();
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="news-section"]').getAttribute('aria-selected'), 'true');
