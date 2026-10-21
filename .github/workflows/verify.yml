@@ -26,7 +26,7 @@ jobs:
           # v1.7.12 predates GitHub's queue:max syntax (May 2026). The MF
           # capture test validates that exact queue/cancellation configuration.
           # Suppress only this known parser error; retain all other diagnostics.
-          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= -ignore '^unexpected key "queue" for "concurrency" section' .github/workflows/deploy.yml .github/workflows/newsletter-refresh.yml .github/workflows/newsletter-monitor.yml .github/workflows/breakouts-refresh.yml .github/workflows/screener-summaries-refresh.yml .github/workflows/mutual-funds-scanner.yml .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/announcements-refresh.yml .github/workflows/corporate-actions-refresh.yml .github/workflows/bse-access-check.yml .github/workflows/announcement-index-refresh.yml .github/workflows/technical-history-recovery.yml .github/workflows/technicals-refresh.yml .github/workflows/price-move-verify.yml
+          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= -ignore '^unexpected key "queue" for "concurrency" section' .github/workflows/deploy.yml .github/workflows/newsletter-refresh.yml .github/workflows/newsletter-monitor.yml .github/workflows/breakouts-refresh.yml .github/workflows/screener-summaries-refresh.yml .github/workflows/mutual-funds-scanner.yml .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/announcements-refresh.yml .github/workflows/corporate-actions-refresh.yml .github/workflows/bse-access-check.yml .github/workflows/announcement-index-refresh.yml .github/workflows/technical-history-recovery.yml .github/workflows/technicals-refresh.yml .github/workflows/price-move-verify.yml .github/workflows/recommendation-foundation.yml
   contracts:
     runs-on: ubuntu-latest
     # Full-history alert checks now cover over 400,000 source records. Keep every
@@ -37,6 +37,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
+      - name: Verify free financial history and event-date evidence offline
+        run: python3 scripts/verify-recommendation-foundation.py
       - name: Verify Telegram parsing, retention and resumable collection
         run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && node scripts/verify-telegram-scheduler.mjs && node scripts/verify-telegram-health.mjs && python3 scripts/verify-telegram-api.py
       - name: Verify investor quarterly evidence and aggregation
