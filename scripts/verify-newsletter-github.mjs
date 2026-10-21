@@ -61,7 +61,7 @@ try{
  const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,ASSETS:{fetch:async request=>{assetReads++;const file=path.join(site,new URL(request.url).pathname);return fs.existsSync(file)?new Response(fs.readFileSync(file)):new Response(null,{status:404});}}};
  const common={object:{newsletterPdf(){throw Error('Prepared saved PDFs cannot touch Cloudflare SQL');},newsletterSnapshot:async()=>source.store.snapshot()},now,pdfHeaders:filename=>({'content-type':'application/pdf','cache-control':'private, no-store'}),guardWrite:async()=>null};
  const statusResponse=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter'),worker,common),publicStatus=await statusResponse.json();
- assert.equal(statusResponse.status,200);assert.equal(publicStatus.inputRevision,undefined);assert.equal(typeof publicStatus.revision,'number');
+ assert.equal(statusResponse.status,200);assert.equal(publicStatus.sourceOnlyTests,true);assert.equal(publicStatus.inputRevision,undefined);assert.equal(typeof publicStatus.revision,'number');
  publicStatus.schedule={...publicStatus.schedule,lastWakeAt:new Date(at).toISOString(),lastCheckedAt:new Date(at).toISOString(),reason:null};
  assert.equal(newsletterWakePlan(publicStatus,{now:at+1}).due,false,'The actual public response coalesces a recent check without a checkpoint revision field');
  publicStatus.schedule.reason='waiting-for-inputs';assert.equal(newsletterWakePlan(publicStatus,{now:at+1}).reason,'inputs-changed');

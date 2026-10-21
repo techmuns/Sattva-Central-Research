@@ -51,5 +51,5 @@ export async function handleGithubNewsletter(request,env,{object,guardWrite,pdfH
  if(!['GET','POST'].includes(request.method))return json({ok:false,reason:'method'},405);
  let out=posted||{},source=posted?posted.snapshot:await object.newsletterSnapshot();
  const next=nextScheduled(source.settings,now());const schedule=head?{...head.schedule,next:next?{edition:next.edition,day:next.day,at:new Date(next.at).toISOString(),key:next.key}:null,...(head.inputRevision!==source.revision?{reason:'waiting-for-inputs'}:{})}:{runtime:'github-actions',armed:false,reason:'preparing'};
- return json({ok:true,...source,...(head?{deliveries:head.snapshot.deliveries}:{}),outcomes:out.outcomes||[],settingsChanged:out.settingsChanged||false,schedule,runtime:'github-actions',delivery:head?'static-assets':'initial-transfer',preparedAt:head?.createdAt||null,dashboardUrl:env.DASHBOARD_ORIGIN||url.origin});
+ return json({ok:true,sourceOnlyTests:true,...source,...(head?{deliveries:head.snapshot.deliveries}:{}),outcomes:out.outcomes||[],settingsChanged:out.settingsChanged||false,schedule,runtime:'github-actions',delivery:head?'static-assets':'initial-transfer',preparedAt:head?.createdAt||null,dashboardUrl:env.DASHBOARD_ORIGIN||url.origin});
 }
