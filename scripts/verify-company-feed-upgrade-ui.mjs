@@ -54,7 +54,7 @@ try {
   await page.evaluate(() => localStorage.setItem('collector-upgrade-reader-state', 'retained'));
   upgraded = true;
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-  await page.waitForFunction(() => JSON.parse(document.querySelector('#coverage').textContent).partial === 1);
+  await page.waitForFunction(() => { const text = document.querySelector('#coverage')?.textContent; return text?.trim() && JSON.parse(text).partial === 1; });
   assert.deepEqual(JSON.parse(await page.locator('#coverage').innerText()), { failed: 0, partial: 1, private: 1 });
   assert(!(await page.evaluate(() => caches.keys())).some(key => key.includes('previous-company-feed-release')));
   assert.equal(await page.evaluate(async () => (await fetch('/js/data/daily-alerts.js')).text()),
