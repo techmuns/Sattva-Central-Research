@@ -39,7 +39,10 @@ window.ready=true;
 </script></body></html>`;
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (url.pathname === '/refresh-test') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  // The real worker serves its cached /index.html for every controlled navigation.
+  // Keep that cached shell on the fixture too, including after the upgrade reload.
+  if (['/', '/index.html', '/refresh-test'].includes(url.pathname)) { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  if (url.pathname === '/sdk-fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end('/* isolated SDK */'); return; }
   if (url.pathname === '/data/refresh-fixture.json') {
     reads++;
     if (held) await held;
