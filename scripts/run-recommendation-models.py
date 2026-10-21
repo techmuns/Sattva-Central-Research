@@ -15,6 +15,27 @@ from recommendation_models import MODEL_VERSION, MODEL_NAMES, POLICY, assess, ex
 from recommendation_backtest import backtest
 
 
+def reader_source_checks(checks):
+    public = [c for c in checks if not c["key"].startswith("gap-source:")]
+    archived = [c for c in checks if c["key"].startswith("gap-source:")]
+    inventory = {"total": len(checks), "included": len(public), "archivedCompanyChecks": len(archived),
+        "summaryRows": int(bool(archived)), "fullDetails": "referenced foundationAsset: checks table"}
+    if archived:
+        failed = sum(bool(c["error"]) for c in archived)
+        earliest, latest = min(c["attempted_at"] for c in archived), max(c["attempted_at"] for c in archived)
+        never_succeeded = sum(not c["success_at"] for c in archived)
+        # The existing coverage view renders key, success_at and error. Keep failures and
+        # actual check times visible there without copying every company into the reader.
+        public.append({"key": f"Archived company financial-index checks: {len(archived)} checked; {failed} failed; "
+                f"{never_succeeded} without a successful read; attempts {earliest} to {latest}",
+            "attempted_at": latest,
+            "success_at": min(c["success_at"] for c in archived) if not failed and not never_succeeded else None,
+            "error": f"{failed} of {len(archived)} company financial-index checks failed; full errors and timestamps remain in the referenced foundation archive." if failed else None,
+            "detail": {"summary": True, "archivedChecks": len(archived), "failedChecks": failed,
+                "neverSuccessfulChecks": never_succeeded, "earliestAttempt": earliest, "latestAttempt": latest}})
+    return public, inventory
+
+
 def analyze(store, scratch, at=None, extract=True):
     schema(store)
     if extract:
@@ -24,6 +45,7 @@ def analyze(store, scratch, at=None, extract=True):
     scored = assess(store, at)
     tested = backtest(store, at)
     coverage = store.summary(at)
+    public_checks, check_inventory = reader_source_checks(coverage["sourceChecks"])
     failed_docs = store.db.execute("SELECT count(*) FROM documents WHERE status='failed'").fetchone()[0]
     pending_docs = store.db.execute("SELECT count(*) FROM documents WHERE status='pending'").fetchone()[0]
     report = {"version": 1, "modelVersion": MODEL_VERSION, "generatedAt": at, "repository": os.environ.get("GITHUB_REPOSITORY"),
@@ -31,7 +53,7 @@ def analyze(store, scratch, at=None, extract=True):
         "policy": POLICY, "models": MODEL_NAMES, "backtest": tested,
         "coverage": {"captureStartedAt": store.get("recommendationCaptureStart"), "financialCompanies": len({r['company'] for r in coverage['financialCoverage']}),
             "assessments": scored["assessments"], "missingRequirements": scored["missing"], "pendingDocuments": pending_docs, "failedDocuments": failed_docs,
-            "sourceChecks": coverage["sourceChecks"], "history": coverage["lastWalk"],
+            "sourceChecks": public_checks, "sourceCheckInventory": check_inventory, "history": coverage["lastWalk"],
             "financialHistory": store.get("financialGapSummary"),
             "limitations": ["Research evidence scores have not established an investment edge.", "Historical financial, contract and capacity coverage is incomplete.",
                 "PDF annexure adapter reads up to twelve pages and cannot certify a complete contract or project history.", "Quotes are official end-of-day closes, with their actual session dates."]}}

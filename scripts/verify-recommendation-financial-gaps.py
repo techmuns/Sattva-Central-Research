@@ -3,6 +3,7 @@
 import copy
 import datetime as dt
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import sys
@@ -166,6 +167,35 @@ class GapTests(unittest.TestCase):
         self.assertFalse(audit['summary']['modelRulesChanged']);self.assertEqual(audit['summary']['status'],'partial')
         self.assertEqual(self.store.db.execute('SELECT count(*) FROM financial_gap_state').fetchone()[0],2)
         self.assertEqual(self.store.db.execute('SELECT count(*) FROM financial_gap_audits').fetchone()[0],1)
+    def test_public_delivery_keeps_global_checks_and_explicit_archived_company_counts(self):
+        spec=importlib.util.spec_from_file_location('gap_reader_runner',ROOT/'scripts/run-recommendation-models.py')
+        runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+        for i in range(500):self.store.check('gap-source:company-'+str(i)+':integrated-equity',AT,'source-unavailable',{'company':i})
+        self.store.check('host:www.nseindia.com',AT,detail={'httpStatus':200})
+        self.store.check('source:integrated-equity:recent',AT,detail={'records':20})
+        audit_financial_gaps(self.store,AT)
+        report=runner.analyze(self.store,Path(self.tmp.name),at=AT,extract=False)
+        inventory=report['coverage']['sourceCheckInventory']
+        self.assertEqual(inventory['total'],502);self.assertEqual(inventory['included'],2)
+        self.assertEqual(inventory['archivedCompanyChecks'],500)
+        self.assertEqual(inventory['summaryRows'],1)
+        self.assertTrue(all(not c['key'].startswith('gap-source:') for c in report['coverage']['sourceChecks']))
+        self.assertEqual(len(report['coverage']['sourceChecks']),3)
+        summary=report['coverage']['sourceChecks'][-1]
+        self.assertIn('500 failed',summary['key']);self.assertIn(AT,summary['key'])
+        self.assertIn('500 of 500',summary['error']);self.assertIsNone(summary['success_at'])
+        self.assertEqual(self.store.db.execute("SELECT count(*) FROM checks WHERE key LIKE 'gap-source:%'").fetchone()[0],500)
+        self.assertEqual(report['coverage']['financialHistory']['targetedCollection']['failedSourceChecks'],500)
+        self.assertEqual(report['policy'],POLICY)
+        def check(at,success,error=None):
+            return {'key':'gap-source:company:integrated-equity','attempted_at':at,'success_at':success,'error':error}
+        earlier='2026-10-20T12:00:00+00:00'
+        checks,inventory=runner.reader_source_checks([check(earlier,earlier),check(AT,AT)])
+        self.assertEqual(checks[0]['success_at'],earlier);self.assertIsNone(checks[0]['error'])
+        checks,_=runner.reader_source_checks([check(AT,earlier,'source-unavailable')])
+        self.assertIsNone(checks[0]['success_at']);self.assertIn('1 of 1',checks[0]['error'])
+        checks,inventory=runner.reader_source_checks([])
+        self.assertEqual(checks,[]);self.assertEqual(inventory['summaryRows'],0)
 
 
 if __name__=='__main__':unittest.main(verbosity=2)
