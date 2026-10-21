@@ -38,8 +38,10 @@ function coverage() {
 function paint() {
   if (!ctxRef) return;
   const root = ctxRef.root, m = feed.meta(), rows = feed.rows(), h = feed.health();
+  const searchText = root.querySelector('input')?.value;
   const focused = root.contains(document.activeElement) ? document.activeElement : null;
   const input = focused?.matches('input') ? { value:focused.value, start:focused.selectionStart, end:focused.selectionEnd } : null;
+  const selected = focused?.matches('select') ? focused.getAttribute('aria-label') : null;
   view = table?.view || view;
   const scroll = root.querySelector('[data-table-scroll]');
   const position = scroll ? { top:scroll.scrollTop, left:scroll.scrollLeft } : null;
@@ -66,7 +68,9 @@ function paint() {
     ${table.html}<p class="mt-3 text-xs text-slate-500">Latest roundup published ${esc(time(latestArticle?.publishedAt))} · Source listing checked ${esc(time(m.sourceCheckedAt))} · <button type="button" data-private-market-coverage class="text-brand-600 hover:underline">Coverage & source notes</button></p>`;
   offTable = table.wire(root); root.querySelector('[data-private-market-coverage]').onclick = coverage;
   const next = root.querySelector('[data-table-scroll]'); if (position && next) { next.scrollTop = position.top; next.scrollLeft = position.left; }
+  const search = root.querySelector('input'); if (search && searchText != null) search.value = searchText;
   if (input) { const field = root.querySelector('input'); if (field && field.value === input.value) { field.focus({ preventScroll:true }); field.setSelectionRange(input.start, input.end); } }
+  if (selected) [...root.querySelectorAll('select')].find(s => s.getAttribute('aria-label') === selected)?.focus({ preventScroll:true });
 }
 export function render(ctx) {
   ctxRef = ctx;
