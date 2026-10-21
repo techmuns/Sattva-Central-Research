@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
-import {readerKeys,encode64} from '../worker/mutual-funds-seal.mjs';
+import {readerKeys,encode64,decode64} from '../worker/mutual-funds-seal.mjs';
 import {sealBackgroundView} from './lib/github-background-views.mjs';
 import {readBackgroundView} from '../worker/github-background-views.mjs';
 const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-key-secret-1234567890',keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
+for(const length of [0,1,2,3,255,256,8193,1024*1024]){
+ const bytes=Uint8Array.from({length},(_,i)=>i%256),base64=Buffer.from(bytes).toString('base64');
+ assert.equal(encode64(bytes),base64);assert.deepEqual(decode64(base64),bytes,'Native and fallback codecs retain every binary byte, padding and large payload');
+}
 const value={rows:[{ticker:'FIXTURE',price:123.45}],privateHistory:'PRIVATE HISTORICAL SOURCE RECEIPT',checkedAt:'2026-10-15T09:00:00Z'};
 const built=await sealBackgroundView(value,recipient,{repo,feature:'breakouts',name:'head.json'});assert(!built.bytes.includes(Buffer.from(value.privateHistory)));
 let missing=false,calls=0;
