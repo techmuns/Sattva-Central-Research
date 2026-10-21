@@ -56,3 +56,11 @@ An explicitly requested test can use `sourceOnly: true` with `to: "me"`. The enc
 preserves that flag and disables model processing for the test, while exercising the same
 source selection, prices, multipart planning, PDF, queue, transport and threading. Automatic
 subscriber editions keep their configured enrichment and budgets.
+
+Automatic wake admission coalesces against GitHub's actual queued/running processing
+jobs, instead of relying on a deployed status that can lag publication. The
+check uses a read-only Actions token and bounded metadata reads; an incomplete queue
+inventory cannot certify an idle sender. Explicit encrypted send requests and read-only
+bootstrap requests retain their own queue. The sender checks its retained clock again
+for every automatic trigger after obtaining the account mutex. Existing timers, source
+cadences, retry state and delivery claims are preserved.

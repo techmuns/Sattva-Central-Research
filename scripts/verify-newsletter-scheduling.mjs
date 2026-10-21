@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import {DEFAULT_SETTINGS,istInstant} from '../public/js/data/newsletter-shared.js';
 import {newsletterWakePlan,newsletterRetryState,NEWSLETTER_WAKE_MS} from './lib/newsletter-wake-plan.mjs';
 import {newsletterWakeGate} from './newsletter-wake-gate.mjs';
+import {newsletterQueueAdmission} from './lib/newsletter-queue-admission.mjs';
 import {breakoutCollectorIdentity} from '../worker/breakout-auth.mjs';
 import {BREAKOUT_ENDPOINT,BREAKOUT_WORKFLOW} from '../public/js/data/breakout-live-shared.js';
 
@@ -63,12 +64,59 @@ const options={event:'workflow_run',repo,now:due};
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>new Response(null,{status:503})}));
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>Response.json({ok:false})}),/reader/);
 await assert.rejects(newsletterWakeGate({...options,fetcher:async()=>new Response('x'.repeat(8*1024*1024+1))}),/size/);
+
+// A stale deployed snapshot cannot enqueue one new processor per completion/cron
+// while the actual GitHub processor waits for a runner or publishes its PDF.
+const queueOptions={repo,runId:'20',token:'fixture-read-token'};
+function queueFetcher({status='pending',runs=[{id:19,head_branch:'main'}],listStatus='pending',gateOnly=false,total=null,fail=false}={}){
+ const calls=[];
+ const fetcher=async(url,request)=>{
+  const parsed=new URL(url);calls.push(parsed.pathname);
+  assert.equal(request.method,'GET');assert.equal(request.redirect,'error');assert(!request.body);
+  if(parsed.origin!=='https://api.github.com'){
+   assert.equal(url,new URL('/api/newsletter',BREAKOUT_ENDPOINT).href);assert(!request.headers.authorization);return Response.json(fixture());
+  }
+  assert.equal(request.headers.authorization,'Bearer fixture-read-token');
+  if(fail)return new Response(null,{status:503});
+  if(parsed.pathname.endsWith('/runs')){
+   const selected=parsed.searchParams.get('status')===listStatus?runs:[];
+   return Response.json({total_count:total??selected.length,workflow_runs:selected});
+  }
+  const jobs=[{name:'gate',status:'completed'},...(gateOnly?[]:[{name:'process',status}])];
+  return Response.json({total_count:jobs.length,jobs});
+ };
+ return {fetcher,calls};
+}
+for(const status of ['pending','queued','in_progress','waiting']){
+ const mock=queueFetcher({status});const admission=await newsletterQueueAdmission({...queueOptions,...mock});
+ assert.equal(admission.busy,true);assert.equal(admission.runId,19);
+ for(const event of ['schedule','push','workflow_run','workflow_dispatch']){
+  const result=await newsletterWakeGate({...queueOptions,coalesce:true,event,now:due,fetcher:mock.fetcher});
+  assert.equal(result.due,false);assert.equal(result.reason,'processor-already-admitted');
+  assert(!JSON.stringify(result).includes(queueOptions.token));
+ }
+}
+for(let i=0;i<20;i++)assert.equal((await newsletterWakeGate({...queueOptions,coalesce:true,event:'workflow_run',now:due+i*1000,fetcher:queueFetcher().fetcher})).due,false,'A stale reader completion storm must not grow the processing queue');
+for(const config of [{status:'completed'},{gateOnly:true},{runs:[{id:20,head_branch:'main'}]},{runs:[{id:19,head_branch:'codex/fixture'}]},{runs:[]}]){
+ const mock=queueFetcher(config);assert.equal((await newsletterQueueAdmission({...queueOptions,...mock})).busy,false,'Completed, gate-only, current and other-branch jobs do not block a due edition');
+ assert.equal((await newsletterWakeGate({...queueOptions,coalesce:true,event:'schedule',now:due,fetcher:mock.fetcher})).due,true);
+}
+for(const inputs of [{request:'sealed-request'},{bootstrap:true},{bootstrap:'true'}]){
+ const result=await newsletterWakeGate({...queueOptions,coalesce:true,event:'workflow_dispatch',inputs,fetcher:()=>{throw Error('Explicit requests retain their durable queue without a queue read');}});
+ assert.equal(result.due,true);
+}
+assert.equal((await newsletterQueueAdmission({...queueOptions,...queueFetcher({total:101})})).reason,'queue-inventory-incomplete');
+assert.equal((await newsletterQueueAdmission({...queueOptions,...queueFetcher({gateOnly:true,runs:Array.from({length:9},(_,i)=>({id:i+1,head_branch:'main'}))})})).reason,'queue-admission-unverified');
+await assert.rejects(newsletterQueueAdmission({...queueOptions,...queueFetcher({fail:true})}),/inventory/);
+await assert.rejects(newsletterQueueAdmission({...queueOptions,token:''}),/configuration/);
+await assert.rejects(newsletterQueueAdmission({...queueOptions,repo:'untrusted/other'}),/configuration/);
 const workflow=fs.readFileSync('.github/workflows/newsletter-refresh.yml','utf8');
 assert(workflow.includes('workflows: [Alert pool refresh, Announcement index refresh, Corporate announcements refresh, Market news refresh, RSS news refresh, TradingView portfolio news, Family book sync, Data refresh]'));
 assert(workflow.includes("head_repository.full_name == github.repository"));assert(workflow.includes("head_branch == 'main'"));
 assert(workflow.includes("conclusion == 'success'"));assert(workflow.includes("if: needs.gate.outputs.run == 'true'"));
 const gateJob=workflow.slice(workflow.indexOf('  gate:'),workflow.indexOf('  process:'));
 assert(!/secrets\.|contents: write|actions: write|id-token: write/.test(gateJob),'The preflight job cannot send or decrypt');
+assert(gateJob.includes('actions: read')&&gateJob.includes("NEWSLETTER_QUEUE_COALESCE: 'true'"),'Queue admission uses only the read-only job token');
 assert(workflow.slice(workflow.indexOf('  process:')).includes('group: newsletter-account'));
 assert(workflow.includes('queue: max'),'Distinct manual requests retain their queue');
 
@@ -107,4 +155,4 @@ async function identity(patch={},overrides={}){
 assert.equal(await identity(),'123:1');
 for(const patch of [{event_name:'pull_request'},{repository:'untrusted/fork'},{repository_id:'1'},{repository_owner_id:'1'},{ref:'refs/heads/feature'},{aud:'https://example.test'},{workflow_ref:claims.workflow_ref.replace('newsletter-refresh','other')},{exp:due/1000-1}])await assert.rejects(identity(patch));
 await assert.rejects(identity({aud:BREAKOUT_ENDPOINT,workflow_ref:`${repo}/.github/workflows/${BREAKOUT_WORKFLOW}@refs/heads/main`},{endpoint:BREAKOUT_ENDPOINT,workflow:BREAKOUT_WORKFLOW}),'Other collectors retain their event restrictions');
-console.log('PASS newsletter scheduling: missed cron, exact IST boundaries, edited/disabled/weekend schedules, retries, five-minute coalescing, credential-free bounded gate and trusted GitHub completion events.');
+console.log('PASS newsletter scheduling: missed cron, exact IST boundaries, edited/disabled/weekend schedules, retries, five-minute and GitHub-queue coalescing, bounded read-only admission, explicit requests and trusted GitHub completion events.');
