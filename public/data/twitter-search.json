@@ -2665,12 +2665,16 @@
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
       "targetThrough": null,
       "pending": []
+    },
+    "isin:INE758T01015|Zomato": {
+      "lastAttemptAt": "2026-10-21T20:48:04+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
-    "planned": 254,
+    "planned": 255,
     "attempted": 1,
-    "incomplete": 233,
-    "checkedAt": "2026-10-21T20:40:00.585852+00:00"
+    "incomplete": 234,
+    "checkedAt": "2026-10-21T20:48:04.839376+00:00"
   }
 }
