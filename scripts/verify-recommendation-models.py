@@ -251,6 +251,17 @@ class ModelTests(unittest.TestCase):
         self.store.db.execute("DELETE FROM market_prices WHERE session='2026-10-20'")
         self.assertFalse(market_snapshot(self.store,ISSUER['isin'],AT)['liquid'])
 
+    def test_ttm_eps_rejects_capital_actions_between_its_quarters(self):
+        self.test_qualifying_case_requotes_reprints_and_withdrawal_preserve_first_decision()
+        f=fin_fixture();f['valuationPeriod']='TTM';f['valuationAnchor']='2025-12-31'
+        self.store.db.execute('INSERT INTO market_actions VALUES(?,?,?,?,?,?)',('between-quarters',ISSUER['isin'],'2026-02-15','Bonus 1:1',AT,'{}'))
+        with mock.patch('recommendation_models.financials',return_value=f):
+            report=assess(self.store,'2026-10-24T16:00:00+00:00')
+        self.assertEqual(report['rows'],[],'A capital action before the latest quarter end can still invalidate a TTM sum of raw EPS')
+        payload=json.loads(self.store.db.execute('SELECT payload FROM recommendation_assessments ORDER BY at DESC LIMIT 1').fetchone()[0])
+        self.assertIn('Capital action requires a verified EPS adjustment',payload['missing'])
+        self.assertEqual(payload['valuation']['shareBasisCheckedFrom'],'2025-12-31')
+
     def test_failed_market_intervals_remain_a_separate_retry_queue(self):
         folder=ROOT/'scripts/fixtures/recommendation-models'
         with io.BytesIO() as data:

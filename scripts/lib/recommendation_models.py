@@ -96,6 +96,7 @@ def financials(store, company, at):
     return {"facts": facts, "conflicts": conflicts, "basis": basis, "quarter": (start, end, basis), "prior": prior,
         "get": get, "baselineRevenue": baseline, "baselinePeriod": "TTM" if ttm else annual[-1][1] if annual else None,
         "valuationEPS": eps_ttm if eps_ttm is not None else annual_eps, "valuationPeriod": "TTM" if eps_ttm is not None else "annual",
+        "valuationAnchor": four[0][1] if eps_ttm is not None else annual[-1][1] if annual else None,
         "annual": annual[-1] if annual else None, "quarters": same}
 
 
@@ -363,7 +364,7 @@ def assess(store, at):
                     gates.append("Positive verified TTM/annual diluted EPS and P/E no greater than 40")
                 action_check = store.db.execute("SELECT * FROM checks WHERE key='market:actions'").fetchone()
                 coverage = json.loads(action_check["detail"]) if action_check else {}
-                eps_period = fin["quarter"][1] if fin.get("valuationPeriod") == "TTM" else fin["annual"][1] if fin.get("annual") else at[:10]
+                eps_period = fin.get("valuationAnchor") or (fin["annual"][1] if fin.get("annual") else at[:10])
                 if not action_check or action_check["error"] or coverage.get("from", "9999") > eps_period or coverage.get("to", "") < (price["session"] if price else at[:10]):
                     gates.append("Corporate-action coverage for the valuation period")
                 elif store.db.execute("SELECT 1 FROM market_actions WHERE isin=? AND ex_date>? AND ex_date<=? AND (lower(subject) LIKE '%split%' OR lower(subject) LIKE '%bonus%' OR lower(subject) LIKE '%right%' OR lower(subject) LIKE '%merger%' OR lower(subject) LIKE '%consolidation%') LIMIT 1", (company, eps_period, price["session"] if price else at[:10])).fetchone():
@@ -379,7 +380,7 @@ def assess(store, at):
                         result["priceReaction"] = {"beforeSession":anchors[-1]["session"],"comparisonSession":price["session"],"changePct":str(reaction)}
                         if reaction > POLICY["maximumPostDisclosureRisePct"]:
                             gates.append("Price has risen more than 20% from the verified pre-disclosure close")
-                result["valuation"] = {"pe": str(pe) if pe is not None else None, "period": fin.get("valuationPeriod")}
+                result["valuation"] = {"pe": str(pe) if pe is not None else None, "period": fin.get("valuationPeriod"), "shareBasisCheckedFrom": eps_period}
                 result["missing"].extend(gates)
                 result["qualified"] = result["qualified"] and not gates
                 key = digest(canonical([company, model, at, doc["id"], MODEL_VERSION]))

@@ -51,6 +51,8 @@ A candidate additionally requires:
 - Positive verified TTM/annual diluted EPS and price/EPS no greater than 40. Official corporate-action
   coverage must span the EPS baseline to the quote; splits, bonuses, rights and capital reorganisations
   require verified adjustments before this valuation may qualify.
+  For a TTM assembled from quarters, this interval starts at the earliest included quarter end,
+  rather than the latest: an intervening capital action can invalidate a sum of raw per-share figures.
 - A verified pre-disclosure close; a rise of more than 20% to the latest captured quote blocks
   inclusion. This safety filter does not establish that the remaining price offers upside.
 - Any parsed, date-verified auditor resignation, debt-payment default, admitted insolvency or
