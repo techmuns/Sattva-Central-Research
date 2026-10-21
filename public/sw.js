@@ -55,7 +55,7 @@ function appReleaseCacheKey() {
 
 // Keep the News presentation release independent of other UI version markers.
 function newsCardCacheKey() {
-  return `${appReleaseCacheKey()}-news-card-parity-v1-compact-news-reader-v1`;
+  return `${appReleaseCacheKey()}-news-card-parity-v1-compact-news-reader-v2`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
