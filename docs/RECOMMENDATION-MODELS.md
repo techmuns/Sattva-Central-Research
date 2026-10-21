@@ -83,6 +83,8 @@ or contract documents require a separate verified linking adapter. Cross-page re
 not guessed, even when this leaves a real catalyst unqualified.
 JV, consortium and subsidiary/associate attribution also require a verified ownership/allocation
 adapter; their entire contract or project value cannot be assigned to the listed issuer by default.
+Order amendments, reductions, extensions and renewals likewise stay unqualified until a verified
+incremental-value/backlog adapter separates new business from an existing contract's total value.
 unrecognised tables, units or compound projects require a verified adapter. Extraction is not proof
 that every page, amendment, payment term, margin or project milestone was reviewed. No unreported
 profit contribution, attributable share, commissioning date or contract margin is inferred.

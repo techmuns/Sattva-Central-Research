@@ -173,6 +173,7 @@ def extract_catalyst(text):
     capture("executionMonths", r"(?:execut(?:ed|ion)|deliver(?:y|ed)|complet(?:ed|ion))[^\n]{0,100}?\b(\d{1,2})\s*months?", lambda m: int(m[1]))
     capture("firmOrder", r"\b(?:received|secured|awarded|signed)\b[^\n]{0,90}\b(?:firm\s+order|purchase\s+order|contract)\b", lambda m: True, asserted=True)
     capture("notFirm", r"\b(?:letter\s+of\s+intent|memorandum\s+of\s+understanding|framework\s+agreement|lowest\s+bidder|L1\s+bidder)\b", lambda m: True)
+    capture("revisedTerms", r"\b(?:amendments?|amended|revised|modifications?|modified|reduced|reductions?|extensions?|extended|renewals?|renewed)\b", lambda m: True)
     capture("cancelled", r"\b(?:cancelled|terminated|withdrawn|revoked|delayed|postponed)\b", lambda m: True)
     capture("adverse", r"\b(?:auditor[^\n]{0,50}resign(?:ed|ation)|defaulted\s+on\s+(?:loan|debt|payment)|admitted\s+(?:to|into)\s+(?:insolvency|CIRP)|fraudulent\s+transactions?)\b", lambda m: True)
     capture("attributionUnclear", r"\b(?:consortium|joint\s+venture|JV|subsidiar(?:y|ies)|associate\s+company|including\s+GST|inclusive\s+of\s+(?:tax|GST))\b", lambda m: True)
@@ -255,6 +256,8 @@ def score_models(fin, fields=None):
                 any("offset" not in f for f in linked) or max(f["offset"] for f in linked)-min(f["offset"] for f in linked)>2000):
             r["missing"].append("Linked terms for one contract/project require verification")
     r = results["orders"]
+    if get_field("revisedTerms"):
+        r["missing"].append("Existing-order amendments/renewals require verified incremental value and backlog reconciliation")
     value, months = get_field("orderValue"), get_field("executionMonths")
     if get_field("firmOrder") and not get_field("notFirm"):
         r["score"] += 30; r["reasons"].append("Source identifies a received purchase order or signed contract")
