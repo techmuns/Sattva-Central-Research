@@ -1747,7 +1747,7 @@
       "pending": []
     },
     "isin:INE597J01018|Shalby": {
-      "lastAttemptAt": "2026-10-16T13:41:05+00:00",
+      "lastAttemptAt": "2026-10-21T16:13:54+00:00",
       "error": "search-unavailable",
       "lastResultCount": 52,
       "lastSuccessAt": "2026-10-02T08:02:07+00:00",
@@ -2671,6 +2671,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-21T15:34:33.243279+00:00"
+    "checkedAt": "2026-10-21T16:13:54.434988+00:00"
   }
 }
