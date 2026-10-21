@@ -4,6 +4,7 @@ import copy
 import datetime as dt
 import gzip
 import hashlib
+import http.client
 import io
 import json
 import os
@@ -438,6 +439,72 @@ class EvidenceTests(unittest.TestCase):
             self.assertFalse(assessment["eligibleForNewCatalyst"])
             self.assertIn("document-date-unverified", assessment["issues"])
             self.assertIn("document-date-" + evidence["status"], assessment["issues"])
+
+    def test_interrupted_http_body_keeps_window_and_continues_document_work(self):
+        financial_url = "https://nsearchives.nseindia.com/corporate/xbrl/financial.xml"
+        self.store.observe(financial_url, PRECISION, "financial", "fixture", {}, AT)
+        self.store.check("host:www.nseindia.com", AT)
+        store, test = self.store, self
+        class Response(io.BytesIO):
+            headers = {}
+            status = 200
+            def __init__(self, body=b"", error=None):
+                super().__init__(body)
+                self.error = error
+            def read(self, *args):
+                if self.error: raise self.error
+                return super().read(*args)
+        class Opener:
+            urls = []
+            def open(self, request, timeout):
+                self.urls.append(request.full_url)
+                if len(self.urls) == 1:
+                    return Response(error=http.client.IncompleteRead(b'{"data":[{"symbol":"PRECWIRE"'))
+                if len(self.urls) == 2:
+                    host = store.db.execute("SELECT * FROM checks WHERE key='host:www.nseindia.com'").fetchone()
+                    test.assertEqual(host["error"], "source-response-incomplete")
+                    test.assertEqual(host["success_at"], AT)
+                if request.full_url == financial_url:
+                    return Response((FIXTURES / "precision-wires-2026.xml").read_bytes())
+                return Response(b'{"data":[],"totalCount":0,"size":100,"page":0}'
+                    if "integrated-filing-results" in request.full_url else b'[]')
+        opener = Opener()
+        reader = PublicReader(store, maximum=200, opener=opener, sleep=lambda _: None)
+        directory = Path(self.tmp.name) / "absent-inputs"
+        collect(store, directory, reader, {}, self.tmp.name)
+        self.assertTrue(store.financial_history(PRECISION["isin"], "9999"))
+        self.assertIsNotNone(store.get("lastWalk"))
+        self.assertIsNone(store.get("recentThrough:integrated-equity"))
+        recent = store.db.execute("SELECT error FROM checks WHERE key='source:integrated-equity:recent'").fetchone()
+        self.assertIn("IncompleteRead", recent[0])
+        self.assertEqual(store.db.execute("SELECT count(*) FROM catalogue").fetchone()[0], 0,
+            "partial response bytes never become source records")
+        # Recover the original failed interval on the next day, instead of sliding it forward.
+        real_datetime = dt.datetime
+        tomorrow = real_datetime.now(dt.timezone.utc) + dt.timedelta(days=1)
+        class Tomorrow(real_datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return tomorrow.astimezone(tz) if tz else tomorrow.replace(tzinfo=None)
+        requests_before = len(opener.urls)
+        with mock.patch("recommendation_sources.dt.datetime", Tomorrow):
+            collect(store, directory, reader, {}, self.tmp.name)
+        self.assertEqual(opener.urls[requests_before], opener.urls[0])
+        recovered = store.db.execute("SELECT error FROM checks WHERE key='source:integrated-equity:recent'").fetchone()
+        self.assertIsNone(recovered[0])
+        self.assertEqual(store.db.execute("SELECT count(*) FROM versions").fetchone()[0], 1)
+
+    def test_short_content_length_is_not_accepted_as_complete_json(self):
+        response = io.BytesIO(b'[]')
+        response.headers = {"Content-Length": "500"}
+        opener = mock.Mock()
+        opener.open.return_value = response
+        reader = PublicReader(self.store, opener=opener, sleep=lambda _: None)
+        with self.assertRaisesRegex(SourceFailure, "IncompleteRead"):
+            reader.read(index_url(FAMILIES[2], "2026-10-15", "2026-10-21"))
+        check = self.store.db.execute("SELECT * FROM checks WHERE key='host:www.nseindia.com'").fetchone()
+        self.assertEqual(check["error"], "source-response-incomplete")
+        self.assertIsNone(check["success_at"])
 
     def test_no_runtime_ui_or_paid_storage(self):
         workflow = (ROOT / ".github/workflows/recommendation-foundation.yml").read_text()

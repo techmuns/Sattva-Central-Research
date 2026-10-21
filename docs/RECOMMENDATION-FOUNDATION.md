@@ -48,6 +48,10 @@ Recent, backfill and reconciliation checks retain separate outcomes. A successfu
 subset cannot clear a failed current window. Expired host refusals clear only after an actual
 successful response. Failed document reads retry after their saved one-day delay; successful
 reads keep their separate weekly recheck cadence.
+An interrupted HTTP body or a response shorter than its declared length is never parsed as
+complete evidence. It records a source failure, keeps the window pending and allows other
+families and document extraction to continue. The initial recent-window start is durable, so
+an unsuccessful first check cannot slide past uncaptured days at the next date rollover.
 
 ## Durable store
 
