@@ -19,7 +19,7 @@ export async function handleGithubNewsletter(request,env,{object,guardWrite,pdfH
  }
  let head;try{head=await readBackgroundView(env,request.url,'newsletter','head.json');}catch(error){if(posted)return json({ok:true,...posted.snapshot,outcomes:posted.outcomes,settingsChanged:posted.settingsChanged,schedule:{runtime:'github-actions',armed:false,reason:'prepared-unavailable'},delivery:'unavailable'});throw error;}
  if(head&&(head.version!==1||head.repo!==mfRepo(env)||head.feature!=='newsletter'||!head.snapshot||!head.schedule))throw Error('Invalid newsletter prepared inventory');
- const read=id=>readPrivateRecord(env,request.url,'newsletter',head,id);
+ const memo=new Map(),read=id=>readPrivateRecord(env,request.url,'newsletter',head,id,{memo});
  if(url.pathname.startsWith('/api/newsletter/pdf/')){
   if(request.method!=='GET')return json({ok:false,reason:'method'},405);const id=url.pathname.split('/').at(-1);if(!uuid(id))return json({ok:false,reason:'not-found'},404);
   const value=head?await read('pdf-'+id):await object.newsletterPdf(id);if(!value)return json({ok:false,reason:'not-found'},404);

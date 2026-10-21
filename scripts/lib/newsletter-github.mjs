@@ -23,6 +23,13 @@ export function decodeNewsletterColumn(value,table,column){
  const bytes=Buffer.from(value.blob64,'base64');if(bytes.toString('base64')!==value.blob64||bytes.length!==value.bytes||createHash('sha256').update(bytes).digest('hex')!==value.hash)throw Error('Retained PDF integrity failed');return bytes;
 }
 export const newsletterRequestContext=repo=>`${repo}:github-newsletter-request:v1`;
+// Source-only copies cannot spend model credits or address the subscriber list.
+// Keep their signed intent valid through a bounded free-runner backlog; ordinary
+// sends retain the one-hour window. The durable request ID still prevents replay.
+export function newsletterRequestIsFresh(input,now=Date.now()){
+ const age=now-input?.at,maxAge=input?.to==='me'&&input?.sourceOnly===true?24*3600000:3600000;
+ return Number.isFinite(input?.at)&&Number.isFinite(now)&&age>=-3600000&&age<=maxAge;
+}
 const metered=url=>url==='https://devde.muns.io/email/send/raw'||new URL(url).origin==='https://api.openai.com'||/^bedrock-runtime\.[a-z0-9-]+\.amazonaws\.com$/.test(new URL(url).hostname);
 export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClient,inputs,recipient,notify=async()=>{},verifyPdf=async()=>{throw Error('Live PDF delivery must be verified before email');},file=path.resolve('.cache/newsletter/state.sqlite'),out=path.resolve('.cache/newsletter/publication'),transportOptions={},localOptions={}}={}){
  const transport=githubBackgroundRelease('newsletter',{env,fetcher,...transportOptions}),signature=await backgroundContract('newsletter');let local,cycle=0,blocked=false,tail=Promise.resolve(),activeRequest=null;
@@ -71,7 +78,9 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
    const keys=await readerKeys(env.BACKGROUND_STATE_KEY),schedule=await copy.schedule.status();
    schedule.deliveryRecovery=newsletterRetryState(copy.db.prepare("SELECT edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL AND source != 'test'").all());
    const head={version:1,repo:transport.repo,feature:'newsletter',createdAt:new Date(localOptions.now?.()??Date.now()).toISOString(),snapshot:copy.store.snapshot(),schedule:{...schedule,runtime:'github-actions',armed:false,alarmAt:null},requestKey:{kid:keys.kid,publicKey:encode64(keys.publicKey)},processingEnabled:env.NEWSLETTER_PROCESSING_ENABLED==='true',inputRevision:await copy.storage.get('newsletter-source-revision')??null};
-   await packBackgroundViews(privateRecordViews([...records.keys()],id=>records.get(id),head,{repo:transport.repo,feature:'newsletter',env}),recipient,views,{repo:transport.repo,feature:'newsletter',sourceSignature:signature,cache});
+   // Small pages bound edge decoding for streamed PDFs; an older large single
+   // record retains its existing delivery limit and occupies a page on its own.
+   await packBackgroundViews(privateRecordViews([...records.keys()],id=>records.get(id),head,{repo:transport.repo,feature:'newsletter',env,partBytes:512*1024,recordBytes:4*1024*1024}),recipient,views,{repo:transport.repo,feature:'newsletter',sourceSignature:signature,cache});
   }finally{await copy?.close();}
   await sealBackgroundState(backup,state,'newsletter',{env});const result=await transport.publish({cycle:++cycle,state,views,sourceSignature:signature});try{await notify(result);}catch{/* Existing scheduled deployment also catches up. */}return result;
  }
@@ -80,7 +89,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   context:async(plan,work)=>{const previous=activeRequest;activeRequest={edition:plan.edition,to:plan.source==='test'?'me':'all',email:plan.source==='test'?plan.recipients[0]?.email:null,automatic:plan.source==='timer'};try{return await work();}finally{activeRequest=previous;}}});
  async function processRequest(envelope){
   const raw=await openForReader(envelope,env.BACKGROUND_STATE_KEY,newsletterRequestContext(transport.repo));if(raw.length>32768)throw Error('Newsletter request too large');const input=JSON.parse(new TextDecoder().decode(raw));
-  if(!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(input.id||'')||!Number.isFinite(input.at)||Math.abs((localOptions.now?.()??Date.now())-input.at)>3600000||!['morning','evening'].includes(input.edition)||!['me','all'].includes(input.to))throw Error('Invalid newsletter request');
+  if(!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(input.id||'')||!newsletterRequestIsFresh(input,localOptions.now?.()??Date.now())||!['morning','evening'].includes(input.edition)||!['me','all'].includes(input.to))throw Error('Invalid newsletter request');
   const previous=local.db.prepare('SELECT state,result FROM newsletter_requests WHERE id=?').get(input.id);if(previous)return previous.result?JSON.parse(previous.result):{ok:false,reason:'delivery-uncertain'};
   await refresh();local.db.prepare('INSERT INTO newsletter_requests VALUES(?,?,NULL,?)').run(input.id,'claimed',input.at);await publish();
   activeRequest=input;

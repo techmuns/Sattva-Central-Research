@@ -13,6 +13,10 @@ try {
   const keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)},ids=[];
   for(let n=0;n<1000&&ids.length<3;n++){const id=String(12345678901234560000n+BigInt(n));if(privateRecordBucket(id)===0)ids.push(id);}
   assert.equal(ids.length,3);
+  const large={body:'uncompressed '+Array.from({length:400},(_,n)=>String(n)).join(' ')};
+  const compact=[];for await(const entry of privateRecordViews(ids,()=>large,{}, {repo,feature,env,partBytes:200,recordBytes:2048}))compact.push(entry);
+  assert.equal(compact.length,4,'A legacy record above the page target occupies a page alone without raising the absolute record limit');
+  await assert.rejects(async()=>{for await(const entry of privateRecordViews(ids,()=>large,{}, {repo,feature,env,partBytes:200}))void entry;},/delivery budget/,'The default hard record bound stays unchanged');
   const records=new Map(ids.map(id=>[id,{id,body:'PRIVATE SOURCE HISTORY '+id}])),file=path.join(root,'package.gz'),site=path.join(root,'public');
   await packBackgroundViews(privateRecordViews(ids,id=>records.get(id),{state:{readyIds:ids}},{repo,feature,env,partBytes:200}),recipient,file,{repo,feature,sourceSignature});
   const publicTransport=gunzipSync(fs.readFileSync(file)).toString();

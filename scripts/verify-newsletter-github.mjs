@@ -2,7 +2,7 @@ import {newsletterRequest,NEWSLETTER_DEADLINE} from '../worker/newsletter-reques
 import assert from 'node:assert/strict';
 import fs from 'node:fs';import path from 'node:path';import {randomBytes,createHash} from 'node:crypto';
 import {localNewsletter} from './lib/newsletter-local.mjs';
-import {githubNewsletter,decodeNewsletterColumn} from './lib/newsletter-github.mjs';
+import {githubNewsletter,decodeNewsletterColumn,newsletterRequestIsFresh} from './lib/newsletter-github.mjs';
 import {exportNewsletter} from '../worker/newsletter-export.mjs';
 import {installPreparedBackground} from './lib/github-background-deployment.mjs';
 import {readerKeys,encode64,openForReader,sealForReader} from '../worker/mutual-funds-seal.mjs';
@@ -12,6 +12,9 @@ import {newsletterWakePlan} from './lib/newsletter-wake-plan.mjs';
 fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/newsletter-github-'));
 let at=Date.parse('2026-09-15T06:30:00Z');
 const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',now=()=>at;
+for(const hours of [0,1,2,23,24])assert(newsletterRequestIsFresh({at:at-hours*3600000,to:'me',sourceOnly:true},at));
+for(const input of [{at:at-86400001,to:'me',sourceOnly:true},{at:at+3600001,to:'me',sourceOnly:true},{at:'invalid',to:'me',sourceOnly:true},
+ {at:at-3600001,to:'all',sourceOnly:true},{at:at-3600001,to:'me',sourceOnly:false},{at:at-3600001,to:'me',sourceOnly:'true'}])assert.equal(newsletterRequestIsFresh(input,at),false,'Only an actual source-only single-recipient request receives the bounded queue allowance');
 const env={NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
 let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false,pdfWait=0,allowFixtureMail=false,cancelDuringPdf=null;
 let exists=false,sequence=1,body='',assetReads=0;const remote=new Map(),tag='newsletter-data';
@@ -76,7 +79,8 @@ try{
  let requestEnvelope;
  response=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({edition:'morning',to:'me',email:'fixture@example.com',sourceOnly:true})}),worker,{...common,fetcher:async(raw,options)=>{assert.equal(raw,`https://api.github.com/repos/${repo}/actions/workflows/newsletter-refresh.yml/dispatches`);const value=JSON.parse(options.body);assert.equal(value.ref,'main');assert(!value.inputs.request.includes('fixture@example.com'));requestEnvelope=JSON.parse(value.inputs.request);return new Response(null,{status:204});}});assert.equal(response.status,202);const queued=await response.json();assert(queued.requestId);assert.equal(queued.queued,true);
  const firstSend=runtime.schedule.sendNow;let testOptions;runtime.schedule.sendNow=async(...args)=>{testOptions=args[0];return firstSend.apply(runtime.schedule,args);};
- const result=await runtime.processRequest(requestEnvelope);assert.equal(testOptions.sourceOnly,true,'Source-only test requests remain source-only through the encrypted GitHub queue');runtime.schedule.sendNow=firstSend;assert.equal(result.reason,'no-token');const count=runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n;await runtime.processRequest(requestEnvelope);assert.equal(runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n,count,'Replayed request does not reserve or send twice');
+ at+=2*3600000; // Reproduce a free-runner queue outlasting the old one-hour request window.
+ const result=await runtime.processRequest(requestEnvelope);assert.equal(testOptions.sourceOnly,true,'A delayed encrypted source-only test retains its mode');runtime.schedule.sendNow=firstSend;assert.equal(result.reason,'no-token');const count=runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n;await runtime.processRequest(requestEnvelope);assert.equal(runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n,count,'Replayed delayed request does not reserve or send twice');
  const originalSend=runtime.schedule.sendNow;runtime.schedule.sendNow=async()=>{runtime.store.beginDelivery({key:'waiting-pdf',edition:'morning',day:'2026-09-15',source:'button',recipients:1});return runtime.schedule.fetcher('https://devde.muns.io/email/send/raw',{method:'POST',body:JSON.stringify({email:'fixture@example.com',html:'Synthetic'})});};
  removeDuringPdf=true;const queueKey=await readerKeys(env.BACKGROUND_STATE_KEY),removeEnvelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id:crypto.randomUUID(),at,edition:'morning',to:'all',email:null,token:null})),{kid:queueKey.kid,publicKey:encode64(queueKey.publicKey)},`${repo}:github-newsletter-request:v1`);
  await assert.rejects(runtime.processRequest(removeEnvelope),/Recipient removed/);assert.equal(emailCalls,0,'An unsubscribe during static PDF publication is rechecked before email I/O');removeDuringPdf=false;runtime.schedule.sendNow=originalSend;source.store.apply([{op:'subscribe',email:'fixture@example.com',by:'Fixture',editions:['morning','evening']}]);

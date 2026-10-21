@@ -47,6 +47,10 @@ Worker store/export limit stays unchanged. Frozen recipient bodies are individua
 database rows, so queue recovery metadata does not inflate by subscribers × parts × HTML bytes.
 Completed bodies follow the prior queue payload lifecycle; pending bodies and receipts survive
 restarts. Edition grouping is calculated once per multipart plan and frozen recipient render.
+Encrypted newsletter pages target 512 KiB rather than grouping up to 4 MiB of unrelated
+records into every chunk read. Legacy individual records retain their existing absolute bound.
+The static reader uses native byte/base64 conversion when available and a bounded two-page
+request-local memo. Download verification compares complete PDF bytes and hash, not HTTP 200.
 
 `verify-newsletter-retained.mjs` checks the real committed ten-day recovery with no mail,
 network or model requests. It verifies archive descriptors/parts, all eligible identities across
@@ -56,6 +60,9 @@ An explicitly requested test can use `sourceOnly: true` with `to: "me"`. The enc
 preserves that flag and disables model processing for the test, while exercising the same
 source selection, prices, multipart planning, PDF, queue, transport and threading. Automatic
 subscriber editions keep their configured enrichment and budgets.
+These signed, source-only single-recipient test requests remain valid for at most 24 hours
+so a free-runner backlog does not silently expire the requested verification before it starts.
+The durable request ID prevents replay; ordinary sends keep their one-hour validity window.
 
 Automatic wake admission coalesces against GitHub's actual queued/running processing
 jobs, instead of relying on a deployed status that can lag publication. The
