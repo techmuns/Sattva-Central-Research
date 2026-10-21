@@ -1656,8 +1656,8 @@
       "pending": []
     },
     "isin:INE148I01020|Sammaan Capital": {
-      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T11:24:40+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 35,
       "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
@@ -2671,6 +2671,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-21T10:49:23.033015+00:00"
+    "checkedAt": "2026-10-21T11:24:40.975256+00:00"
   }
 }
