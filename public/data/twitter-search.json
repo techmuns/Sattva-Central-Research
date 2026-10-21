@@ -1409,8 +1409,8 @@
       ]
     },
     "isin:INE722B01019|Praveg": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T05:14:43+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 23,
       "lastSuccessAt": "2026-10-16T06:34:32+00:00",
       "targetThrough": null,
@@ -2658,6 +2658,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 237,
-    "checkedAt": "2026-10-21T04:23:12.693770+00:00"
+    "checkedAt": "2026-10-21T05:14:43.021521+00:00"
   }
 }
