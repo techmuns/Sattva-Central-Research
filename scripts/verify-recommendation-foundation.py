@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts/lib"))
 from recommendation_foundation import Store, day, document_date, document_key, document_url, parse_financial_xml
-from recommendation_sources import BudgetExceeded, FAMILIES, PublicReader, SourceFailure, capture_window, collect, index_page
+from recommendation_sources import BudgetExceeded, FAMILIES, PublicReader, SourceFailure, capture_window, collect, index_page, index_url
 from recommendation_github import GithubState
 
 FIXTURES = ROOT / "scripts/fixtures/recommendation-foundation"
@@ -198,6 +198,16 @@ class EvidenceTests(unittest.TestCase):
         self.assertFalse(capture_window(self.store, Reader(), FAMILIES[0], "2026-10-01", "2026-10-07", {}))
         self.assertIsNone(self.store.get("index:integrated-equity:2026-10-01:2026-10-07"))
         self.assertEqual(self.store.db.execute("SELECT count(*) FROM catalogue").fetchone()[0], 1)
+
+    def test_real_legacy_index_covers_non_fo_and_exchange_dissemination(self):
+        body = (FIXTURES / "legacy-index.json").read_bytes()
+        family = next(f for f in FAMILIES if f[0] == "legacy-equity-quarterly")
+        self.assertNotIn("fo_sec", index_url(family, "2025-01-13", "2025-01-19"))
+        class Reader:
+            def read(self, url): return body
+        self.assertTrue(capture_window(self.store, Reader(), family, "2025-01-13", "2025-01-19", {}))
+        observation = self.store.db.execute("SELECT published_at FROM observations ORDER BY published_at DESC").fetchone()
+        self.assertEqual(observation[0], "2025-01-19T08:43:31+00:00")
 
     def test_git_hub_state_private_empty_and_incomplete_publication(self):
         client = GithubState(env={"GITHUB_REPOSITORY": "techmuns/Sattva-Central-Research", "GITHUB_TOKEN": "fixture"})

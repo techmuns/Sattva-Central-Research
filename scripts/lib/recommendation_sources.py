@@ -16,7 +16,9 @@ from recommendation_foundation import (canonical, day, document_date, document_u
 FAMILIES = [
     ("integrated-equity", "equities", None), ("integrated-sme", "sme", None),
     ("legacy-equity-quarterly", "equities", "Quarterly"),
+    ("legacy-equity-half-yearly", "equities", "Half-Yearly"),
     ("legacy-equity-annual", "equities", "Annual"),
+    ("legacy-sme-quarterly", "sme", "Quarterly"),
     ("legacy-sme-half-yearly", "sme", "Half-Yearly"),
     ("legacy-sme-annual", "sme", "Annual"),
 ]
@@ -94,7 +96,8 @@ def index_url(family, start, end, page=1):
         args.update(type="Integrated Filing- Financials", page=page, size=100)
         endpoint = "integrated-filing-results"
     else:
-        args.update(period=period, fo_sec="true")
+        # fo_sec=true is NSE's optional F&O-only filter, not a completeness switch.
+        args.update(period=period)
         endpoint = "corporates-financial-results"
     return "https://www.nseindia.com/api/" + endpoint + "?" + urlencode(args)
 
@@ -146,7 +149,8 @@ def capture_window(store, reader, family, start, end, lookup):
                 if identity in seen:
                     raise SourceFailure("Financial index repeated a record across pages")
                 seen.add(identity)
-                published = exchange_time(row.get("creation_Date")) or exchange_time(row.get("broadcast_Date"))
+                published = next((exchange_time(row.get(k)) for k in
+                    ["exchdisstime", "creation_Date", "broadcast_Date", "broadCastDate"] if exchange_time(row.get(k))), None)
                 if not published:
                     raise SourceFailure("Financial index publication clock is unavailable; row retained for adapter review")
                 if published and published > at:
@@ -156,7 +160,8 @@ def capture_window(store, reader, family, start, end, lookup):
                 if reported and not start <= reported <= end:
                     raise SourceFailure("Financial index ignored its requested publication interval")
                 if url:
-                    store.observe(url, lookup.get(row["symbol"]), "financial", "nse:" + family[0],
+                    company = lookup.get(row["isin"]) if row.get("isin") else lookup.get(row["symbol"])
+                    store.observe(url, company, "financial", "nse:" + family[0],
                         {**row, "date": reported}, at, published)
             progress = {"nextPage": page + 1, "seen": sorted(seen), "total": total,
                 "complete": len(seen) == total, "checkedAt": at}

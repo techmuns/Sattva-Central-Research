@@ -20,12 +20,14 @@ These provider terms can change; no paid fallback or spending configuration is i
 
 ## Sources and capture scope
 
-The six source families are NSE integrated financial filings for equity and SME, legacy equity
-quarterly/annual results, and legacy SME half-yearly/annual results. The source contracts were
+The eight source families are NSE integrated financial filings for equity and SME, plus legacy
+quarterly/half-yearly/annual results for both equity and SME. The source contracts were
 checked against NSE's own `dist/js/sections/corporate-filings.js` and actual original XBRL files.
 The integrated endpoint uses `type=Integrated Filing- Financials`, `page`, `size`, and `totalCount`.
 Governance responses, malformed pages, duplicate records and changing totals never close a window.
-Legacy responses at the safety ceiling are treated as potentially truncated.
+Legacy responses at the safety ceiling are treated as potentially truncated. NSE's optional
+`fo_sec` filter is never sent: it would silently restrict history to F&O securities. Legacy
+publication uses the exchange's dissemination clock (`exchdisstime`) before broadcast time.
 
 Public BSE/NSE identity directories and existing announcement/RSS/date-index snapshots supply
 additional original document links and observations. The collector never calls Muns, Screener,
