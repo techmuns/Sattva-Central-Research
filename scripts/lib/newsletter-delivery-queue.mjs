@@ -1,7 +1,7 @@
 import {gzipSync,gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {sendEmail} from '../../worker/newsletter-schedule.mjs';
-import {renderBriefHtml} from '../../worker/newsletter-brief.mjs';
+import {renderBriefHtml,briefStats} from '../../worker/newsletter-brief.mjs';
 import {acceptedStoryKeys,emailBytes,EMAIL_HTML_BYTES} from '../../worker/newsletter-email.mjs';
 
 // Only this encrypted GitHub database holds recipient bodies and retry state.
@@ -23,11 +23,12 @@ export class NewsletterDeliveryQueue {
 
   async deliver({key,edition,source,brief,list,messages,pdfUrl,documentId,credential,subject,summary}) {
     const host=new URL(this.local.schedule.dashboardUrl()).hostname;
+    const stats=briefStats(brief);
     const plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),
       messages:messages.map(m=>({keys:m.keys})),reported:brief.reported,windowFrom:brief.window.from,
       recipients:list.map(recipient=>({email:recipient.email,ok:false,status:null,reason:'not-attempted',
         parts:messages.map((message,i)=>{
-          const html=renderBriefHtml(brief,{...this.local.schedule.renderOptions(recipient),pdfUrl,part:message.part});
+          const html=renderBriefHtml(brief,{...this.local.schedule.renderOptions(recipient),stats,pdfUrl,part:message.part});
           if(emailBytes(html)>EMAIL_HTML_BYTES)throw Error('Prepared newsletter part exceeds email limit');
           return {part:i+1,total:messages.length,bytes:emailBytes(html),html,subject:message.subject,
             requestedMessageId:`<newsletter.${crypto.randomUUID()}@${host}>`,ok:false,status:null,reason:'not-attempted',attempts:0};

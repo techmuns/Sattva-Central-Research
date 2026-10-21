@@ -2,9 +2,9 @@
 // caps, long-lag arrivals and a morning job that starts after the next market has opened.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {buildBrief,briefStories,briefSummary,readNews,readMoves,readTrades,readSessionQuotes} from '../worker/newsletter-brief.mjs';
+import {buildBrief,briefStories,briefSummary,briefStats,renderBriefHtml,readNews,readMoves,readTrades,readSessionQuotes} from '../worker/newsletter-brief.mjs';
 import {renderBriefEmails} from '../worker/newsletter-email.mjs';
-import {newsletterRows} from '../worker/newsletter-sources.mjs';
+import {newsletterRows,newsletterHoldings} from '../worker/newsletter-sources.mjs';
 import {tradingViewTargets} from './lib/tradingview-news.mjs';
 
 const now=Date.parse('2026-10-21T04:22:31Z'),from=Date.parse('2026-10-20T10:30:00Z'),to=Date.parse('2026-10-21T02:30:00Z');
@@ -31,6 +31,9 @@ files.set('/data/corporate-actions.json',{capturedAt:'2026-10-21T02:00:00Z',rows
 files.set('/data/insider-archive/index.json',{months:{'2026-10':45}});
 files.set('/data/insider-archive/2026-10.json',{rows:Array.from({length:45},(_,i)=>({ticker:'ALPHA',date:'2026-10-19',cells:{'Trade Category':'Bulk deals','Insider':`Person ${i}`,'Transaction':'Buy','Trade Shares':i+1,'Source':'NSE'}}))});
 const env={ASSETS:{fetch:async request=>{const value=files.get(new URL(request.url).pathname);return value===undefined?new Response(null,{status:404}):typeof value==='string'?new Response(value):Response.json(value);}}};
+files.set('/data/announcement-identities.json',{entries:[{isin:'INE000000002',bseCode:'500002'}]});
+const extra=await newsletterHoldings({holdings:[{name:'BSE Only Holding',isin:'INE000000002',listed:true},{name:'Unresolved Listed Holding',isin:'INE000000003',listed:true},{name:'Private Holding',isin:'INE000000004',listed:false}]},env);
+assert.deepEqual(extra.map(h=>h.ticker),['500002','INE000000003'],'BSE-only and unresolved listed holdings remain in coverage by exact security identity; private lines stay out');
 const common={env,holdings,window:{from,to},reported:{empty:false,since:Date.parse('2026-10-01T00:00:00Z'),has:()=>false}};
 const quotes=await readSessionQuotes({env,holdings,now,edition:'morning'});
 assert.equal(quotes.session,'2026-10-19','Dussehra and a late start must not turn an unfinished 21 October session into a completed session');
@@ -49,6 +52,7 @@ const dealWindow={from:Date.parse('2026-10-19T00:00:00Z'),to:Date.parse('2026-10
 assert.equal((await readTrades({env,holdings,window:dealWindow,uncapped:true})).count,45);
 assert.equal((await readTrades({env,holdings,window:dealWindow,uncapped:true})).more,0);
 const moves=readMoves({holdings,window:dealWindow,uncapped:true,quotes:{state:'daily',session:'2026-10-19',rows:holdings.map(h=>({ticker:h.ticker,pct:10,at:Date.parse('2026-10-19T10:00:00Z')}))}});assert.equal(moves.count,51);assert.equal(moves.more,0);
+assert.equal(renderBriefHtml(brief,{stats:briefStats(brief)}),renderBriefHtml(brief),'Reusing the completed edition grouping preserves the exact email body');
 const messages=renderBriefEmails(brief),keys=new Set(messages.flatMap(m=>m.keys));
 for(const item of briefStories(brief))assert(item.keys.every(key=>keys.has(key)),'Every eligible source identity survives grouping and multipart rendering');
 assert(messages.length>1);assert(messages.every(m=>m.bytes<=90000));

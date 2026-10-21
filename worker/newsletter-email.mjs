@@ -31,7 +31,9 @@ export function acceptedStoryKeys(messages, acceptedParts) {
  * Whole companies stay together unless one company cannot fit by itself. Calendar, corporate actions, holdings and market rows follow the news. Extra parts are safer than silently dropping a busy day's news.
  */
 export function renderBriefEmails(brief, options = {}, { maxBytes = EMAIL_HTML_BYTES } = {}) {
-  const companies = briefStats(brief).companies;
+  // Group the immutable edition once, rather than once per packing candidate/part.
+  options = { ...options, stats: briefStats(brief) };
+  const companies = options.stats.companies;
   const full = renderBriefHtml(brief, options);
   if (emailBytes(full) <= maxBytes) return [{ html: full, subject: briefSubject(brief, options), bytes: emailBytes(full), keys: keysFor(companies), part: null }];
 

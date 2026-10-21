@@ -9,6 +9,23 @@ export async function newsletterJson(env, path) {
   return boundedJson(response, 32 * 1024 * 1024);
 }
 
+/** A listed direct holding does not stop being held because its NSE ticker is absent.
+ * Resolve by exact ISIN; retain the actual ISIN as the identifier when mapping is unresolved. */
+export async function newsletterHoldings(book, env) {
+  let directory = null, nse = null;
+  try { directory = await newsletterJson(env, '/data/announcement-identities.json'); } catch { /* Identity remains explicit. */ }
+  try { nse = await newsletterJson(env, '/data/filing-capture/nse-identities.json'); } catch { /* No inferred NSE membership. */ }
+  const nseEntries = Object.values(nse?.directories || {}).flatMap(d => d?.entries || []);
+  return book.holdings.filter(h => h?.name && (h.ticker || h.listed === true && h.isin)).map(h => {
+    if (h.ticker) return h;
+    const matches = nseEntries.filter(e => e.isin === h.isin && e.ticker);
+    const tickers = [...new Set(matches.map(e => e.ticker))];
+    const bse = (directory?.entries || []).find(e => e.isin === h.isin);
+    const ticker = tickers.length === 1 ? tickers[0] : bse?.bseCode || h.isin;
+    return { ...h, ticker: String(ticker).toUpperCase(), newsletterIdentity: tickers.length === 1 ? 'NSE' : bse?.bseCode ? 'BSE' : 'ISIN; exchange mapping unresolved' };
+  });
+}
+
 /** Each verified part is filtered and released before reading the next. Keep usable rows on
  * a failed part, with an explicit incomplete result; no failure can masquerade as empty success. */
 export async function newsletterRows(env, path, accept = () => true) {
@@ -48,7 +65,7 @@ export async function newsletterRows(env, path, accept = () => true) {
       }
     }
   } catch { failedParts.push(path); }
-  return { rows, ok: failedParts.length === 0, failedParts, capturedAt: value.capturedAt || value.updatedAt || value.newsUpdatedAt || null,
+  return { rows, ok: failedParts.length === 0, failedParts, capturedAt: value.newsUpdatedAt || value.capturedAt || value.updatedAt || null,
     sources: value.sources, entities: value.entities, coverage: value.tradingViewCoverage };
 }
 

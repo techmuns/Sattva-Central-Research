@@ -1,7 +1,7 @@
 import {newsletterRequest} from './newsletter-request.mjs';
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
 import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys } from './newsletter-email.mjs';
-import { buildBrief, briefStories, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { buildBrief, briefStats, briefStories, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
 import { contentIdentity, contentItems } from './newsletter-content.mjs';
 import { NewsletterContentStore, CONTENT_SCAN_MS } from './newsletter-content-store.mjs';
 import { openaiConfigured } from './newsletter-openai.mjs';
@@ -277,6 +277,7 @@ export class NewsletterSchedule {
       const reason = error?.code === 'email-too-large' ? 'email-too-large' : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map(r => ({ email: r.email, ok: false, reason })) });
     }
+    const renderStats = briefStats(brief);
     let pdfUrl, documentId;
     try {
       documentId = this.store.saveDocument(renderBriefPdf(brief, this.renderOptions()), pdfFilename(brief), key);
@@ -307,7 +308,7 @@ export class NewsletterSchedule {
       // unthreaded parts. Edition claims still prevent retries of uncertain sends.
       for (let i = 0; i < messages.length; i++) {
         const message = messages[i], part = outcome.parts[i];
-        const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), pdfUrl, part: message.part });
+        const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), stats: renderStats, pdfUrl, part: message.part });
         part.reason = 'sending';
         part.bytes = emailBytes(html);
         progress();

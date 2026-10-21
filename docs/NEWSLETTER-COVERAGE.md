@@ -14,8 +14,12 @@ Bajaj Auto's reviewed exact-ISIN TradingView alias is BAJAJ_AUTO, not BAJAJ-AUTO
 A later bounded public page must overlap the preceding successful poll; it does not need
 to return another complete 48 hours on every read. Existing gap evidence is preserved.
 
+Listed holdings without an NSE ticker are resolved by exact ISIN to verified NSE/BSE directory
+identifiers. An unresolved exchange mapping retains the real ISIN and its available company-news
+records; it never silently removes the holding or invents an exchange ticker.
+
 An eligible alert is a dated, company-attributed news report, non-routine exchange filing,
-trade disclosure, or qualifying price move on a listed direct portfolio holding, inside the
+trade disclosure, or qualifying price move on a listed direct portfolio holding, including BSE-only and suspended lines, inside the
 edition window or not yet reported within the retained ten-day ledger interval. Unrelated,
 uncertain, future and undated reports remain outside this dated brief. Routine filings remain
 on the dashboard. Related coverage is grouped with its sources; it is not silently discarded.

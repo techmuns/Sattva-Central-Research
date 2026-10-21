@@ -91,7 +91,7 @@ import { newsAiEnabled } from './newsletter-openai.mjs';
 import { attachContent, sameContentEvent } from './newsletter-content.mjs';
 import { attachPriceReasons, priceEvidenceItems, priceReasonWindow, priceReasonText, priceReasonSourcesNote } from './newsletter-price-reasons.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
-import { newsletterJson, newsletterRows, newsletterMonths } from './newsletter-sources.mjs';
+import { newsletterJson, newsletterRows, newsletterMonths, newsletterHoldings } from './newsletter-sources.mjs';
 import { EDITIONS, addDays, dayOnlyInstant, editionWindow, istDay, istDateLong, istInstant, istLabel, istTime, lateArrivalsFrom } from '../public/js/data/newsletter-shared.js';
 
 export const PRODUCTION_ORIGIN = 'https://sattva-central-research.tech-441.workers.dev';
@@ -512,7 +512,7 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
 export async function readContentSources({ env, fetcher = fetch, now = Date.now(), from, to = now }) {
   const book = await readAsset(env, BOOK_PATH);
   if (!Array.isArray(book?.holdings)) throw Object.assign(new Error('Book unavailable'), { code: 'book-unavailable' });
-  const holdings = book.holdings.filter(h => h?.ticker && h?.name);
+  const holdings = await newsletterHoldings(book, env);
   const common = { env, holdings, window: { from, to }, uncapped: true };
   const announcements = await readAnnouncements({ ...common, fetcher, now });
   const news = await readNews(common);
@@ -843,7 +843,7 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   if (!EDITIONS[edition]) throw Object.assign(new Error('Unknown edition'), { code: 'invalid-edition' });
   const book = await readAsset(env, BOOK_PATH);
   if (!Array.isArray(book?.holdings)) throw Object.assign(new Error('The portfolio book could not be read'), { code: 'book-unavailable' });
-  const holdings = book.holdings.filter((h) => h?.ticker && h?.name);
+  const holdings = await newsletterHoldings(book, env);
   const window = editionWindow(edition, day, settings, { to });
   // Late arrivals use the ledger's ten-day retention, including multi-day source outages,
   // but never reach before the ledger
@@ -1378,8 +1378,8 @@ export const storyDate = (ms) => { const d = new Date(ms + 5.5 * 3600 * 1000); r
 const clockLabel = (time) => { const [h, m] = String(time).split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'} IST`; };
 
 /** All parts share a dated edition subject; transport reply headers link each recipient's parts. */
-export function briefSubject(brief, { brand = BRAND } = {}) {
-  const n = briefStats(brief).updates;
+export function briefSubject(brief, { brand = BRAND, stats = null } = {}) {
+  const n = (stats || briefStats(brief)).updates;
   return `${brand} · ${n} update${n === 1 ? '' : 's'} on your ${EDITION_NAME.toLowerCase()} — ${shortDate(brief.at)} ${brief.day.slice(0, 4)} · ${brief.edition === 'morning' ? 'Morning' : 'Evening'}`;
 }
 
@@ -1685,9 +1685,9 @@ const routineNote = (n) => `${n} routine filing${n === 1 ? '' : 's'} (newspaper 
 /**
  * The email. `recipient` personalises the footer only, so one build serves every subscriber.
  */
-export function renderBriefHtml(brief, { dashboardUrl = PRODUCTION_ORIGIN, recipient = null, productName = PRODUCT_NAME, brand = BRAND, settings = null, pdfUrl = null, part = null, preview = false } = {}) {
-  const subject = briefSubject(brief, { brand, part });
-  const stats = briefStats(brief);
+export function renderBriefHtml(brief, { dashboardUrl = PRODUCTION_ORIGIN, recipient = null, productName = PRODUCT_NAME, brand = BRAND, settings = null, pdfUrl = null, part = null, preview = false, stats: suppliedStats = null } = {}) {
+  const stats = suppliedStats || briefStats(brief);
+  const subject = briefSubject(brief, { brand, part, stats });
   const companies = part?.companies ?? stats.companies;
   const includeSection = name => !part || Object.hasOwn(part.sections, name);
   const sendTime = settings?.[brief.edition]?.time || EDITIONS[brief.edition].defaultTime;
