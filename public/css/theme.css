@@ -793,7 +793,9 @@ a.news-story-link:hover .news-story-title { color: var(--accent-600); }
 
 /* Recover space from the News chrome without affecting the other workspaces. */
 #app:has(.news-toolbar) > [data-app-header] { padding-top: 10px; padding-bottom: 8px; }
+#app:has(.news-toolbar) .sattva-product-brand .sattva-wordmark { width: 14rem; }
 #app:has(.news-toolbar) > [data-app-content] { padding-top: 8px; padding-bottom: 0; }
+#app:has(.news-toolbar) #subview-mount { margin-bottom: 6px; }
 :has(> .news-toolbar), [data-score-table]:has(.news-card-table) { border-radius: 12px; }
 #content-host:has(.news-toolbar) > [data-section-head] { margin-bottom: 6px; }
 #content-host:has(.news-toolbar) > [data-section-head] h2 { font-size: 16px; line-height: 24px; }
@@ -803,6 +805,11 @@ a.news-story-link:hover .news-story-title { color: var(--accent-600); }
 .news-toolbar-actions { gap: 8px; }
 .news-toolbar-actions :where([data-news-count], [data-row-count]) { font-size: 11px; }
 .news-history-notice { flex-wrap: wrap; }
+@media (min-width: 768px) {
+  #app:has(.news-toolbar) [data-app-nav] .tab-bar { padding: 4px; }
+  #app:has(.news-toolbar) [data-app-nav] .tab-btn { min-height: 34px; padding-block: 5px; }
+  #app:has(.news-toolbar) #subview-mount .tab-btn { min-height: 32px; padding-block: 3px; }
+}
 @media (max-width: 639px) {
   .news-story-link { padding: 5px 10px; }
   .news-story-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; }
