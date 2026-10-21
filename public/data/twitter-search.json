@@ -1417,8 +1417,8 @@
       "pending": []
     },
     "isin:INE722B01019|PRAVEG": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T05:50:11+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 23,
       "lastSuccessAt": "2026-10-16T06:34:32+00:00",
       "targetThrough": null,
@@ -2657,7 +2657,7 @@
   "coverage": {
     "planned": 254,
     "attempted": 1,
-    "incomplete": 237,
-    "checkedAt": "2026-10-21T05:14:43.021521+00:00"
+    "incomplete": 240,
+    "checkedAt": "2026-10-21T05:50:11.605019+00:00"
   }
 }
