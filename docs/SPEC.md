@@ -445,6 +445,14 @@ operators and volume's 10-day-average unit. The fixed conditions appear below ea
 All five thresholds remain editable, including the other group's settings, and Reset defaults
 restores Strong Momentum and its default thresholds without changing scope or unrelated filters.
 
+The same table includes a compact **OI Δ%** column beside volume: near-month NSE stock-futures
+open interest versus that contract's previous-session OI, signed positive or negative. The hover
+provides the contract, raw OI and source time; Excel retains those fields. OI is informational
+and does not change the momentum gates. Missing, stale or failed readings and zero previous OI
+show a dash, never an invented zero. The existing Upstox minute collector supplies futures OI
+independently of cash prices; options, index futures and cash-market zero OI are excluded.
+OI observations follow the existing four-day minute archive, with no earlier-history claim.
+
 Every Strong Breakouts filter group leads with **All** and defaults to it, so the sub-view opens on
 the widest answer it can give. The trend filter used to ship on *Above 200 DMA only*, which meant a
 breakout below the primary trend line was absent from a table that gave no sign it was withholding

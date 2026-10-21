@@ -6,7 +6,8 @@ import {BreakoutStore, mergePrimary} from '../worker/breakout-store.mjs';
 import {BreakoutPrimary, minuteQuotes, primaryInstruments, primaryInventory, cashInstruments} from '../worker/breakout-primary.mjs';
 import {handleBreakouts} from '../worker/breakouts.mjs';
 import {MinuteArchive,MINUTE_RETENTION_MS} from '../worker/breakout-archive.mjs';
-import {liveCoverage} from '../public/js/data/breakout-live-shared.js';
+import {liveCoverage,normalizeOpenInterest,openInterestForQuote,validateQuote} from '../public/js/data/breakout-live-shared.js';
+import {mapUpstoxTargets,upstoxOpenInterest} from '../worker/upstox-market.mjs';
 import {prepareBreakoutCapture} from './collect-breakouts.mjs';
 const AT=Date.parse('2026-09-15T06:30:00Z');
 const iso=at=>new Date(at).toISOString();
@@ -22,6 +23,71 @@ function storage(){
  value.transaction=async fn=>fn(value);return value;
 }
 const instruments=[{segment:'NSE_EQ',instrument_key:'NSE_EQ|INE000000001',trading_symbol:'TEST'}];
+const future={segment:'NSE_FO',instrument_type:'FUT',underlying_type:'EQUITY',underlying_key:instruments[0].instrument_key,
+ instrument_key:'NSE_FO|12345',trading_symbol:'TEST FUT 29 SEP 26',expiry:Date.parse('2026-09-29T15:30:00+05:30')};
+const oi=(extra={})=>({current:1100,previous:1000,instrumentKey:future.instrument_key,symbol:future.trading_symbol,
+ expiry:'2026-09-29',quoteAt:iso(AT),checkedAt:iso(AT),sessionDate:'2026-09-15',...extra});
+test('OI maps only exact, unexpired near-month equity futures, excluding options, indices and ambiguity',async()=>{
+ const later={...future,instrument_key:'NSE_FO|23456',expiry:Date.parse('2026-10-27')};
+ const list=[...instruments,later,{...future,expiry:AT-86400000},{...future,instrument_type:'CE'},
+  {...future,underlying_type:'INDEX'},{...future,underlying_key:'NSE_EQ|INE000000009'},future];
+ const mapped=mapUpstoxTargets([{ticker:'OLD',isin:'INE000000001'}],list,AT)[0];
+ assert.deepEqual(mapped.oiInstrument,{instrumentKey:'NSE_FO|12345',symbol:future.trading_symbol,expiry:'2026-09-29'});
+ assert.equal(mapUpstoxTargets([{ticker:'TEST'}],[...instruments,future,{...future,instrument_key:'NSE_FO|99999'}],AT)[0].oiInstrument,undefined);
+ const next=mapUpstoxTargets([{ticker:'TEST'}],list,Date.parse('2026-09-30'))[0];assert.equal(next.oiInstrument.instrumentKey,'NSE_FO|23456');
+ const parsed=await cashInstruments(new Response(JSON.stringify(list)).body,'NSE');
+ assert.equal(parsed.filter(i=>i.segment==='NSE_FO').length,4);
+ assert.equal(parsed.find(i=>i.instrument_key==='NSE_FO|12345').underlying_key,instruments[0].instrument_key);
+});
+test('signed OI is a same-contract previous-session change; unknown, zero base and stale data never fabricate a signal',()=>{
+ for(const [current,expected] of [[1100,10],[900,-10],[1000,0],[0,-100]]) {
+  const reading=openInterestForQuote(row('TEST',AT,{openInterest:oi({current})}),AT);
+  assert.ok(Math.abs(reading.changePercent-expected)<1e-10);
+ }
+ for(const value of [null,{},oi({current:-1}),oi({previous:null}),oi({current:NaN}),oi({instrumentKey:'NSE_EQ|INE000000001'}),oi({quoteAt:iso(AT+120000)})])
+  assert.equal(normalizeOpenInterest(value,AT),null);
+ assert.equal(openInterestForQuote(row('TEST',AT,{openInterest:oi({previous:0})}),AT).changePercent,null);
+ for(const value of [row('TEST',AT,{openInterest:oi(),openInterestUnavailable:true}),row('TEST',AT,{openInterest:oi({sessionDate:'2026-09-14',quoteAt:iso(AT-86400000)})})]) {
+  const reading=openInterestForQuote(value,AT);assert.equal(reading.stale,true);assert.equal(reading.changePercent,null);
+ }
+ assert.equal(openInterestForQuote(row('TEST',AT,{openInterest:oi()}),AT+21*60000).changePercent,null);
+ assert.equal(openInterestForQuote(row('TEST',AT,{openInterest:oi()}),AT,true).changePercent,null);
+ assert.equal(validateQuote(row('TEST',AT,{openInterest:oi({current:-1})}),AT).price,108);
+ assert.equal(validateQuote(row('TEST',AT,{provider:'Yahoo Finance',openInterest:oi()}),AT).openInterest,undefined);
+});
+test('OI uses bounded V3 futures requests and its own source clock; source errors preserve cash quotes',async()=>{
+ const mapped=mapUpstoxTargets([{ticker:'TEST'}],[...instruments,future],AT);
+ const cash={instrument_token:instruments[0].instrument_key,symbol:'TEST',last_price:108,volume:2300,net_change:8,last_trade_time:AT};
+ const derivative={instrument_token:future.instrument_key,symbol:future.trading_symbol,oi:1100,previous_oi:1000,timestamp:iso(AT-60000)};
+ for(const fail of [false,true]) {
+  let calls=0;
+  const result=await minuteQuotes(mapped,new Map(),'secret-fixture',{now:()=>AT,fetcher:async(url,options)=>{
+   calls++;assert.equal(options.redirect,'manual');assert.equal(options.headers.authorization,'Bearer secret-fixture');
+   if(new URL(url).pathname.startsWith('/v2/')) return Response.json({status:'success',data:{TEST:cash}});
+   assert.equal(new URL(url).searchParams.get('instrument_key'),future.instrument_key);
+   return fail?new Response(null,{status:429}):Response.json({status:'success',data:{TEST:derivative}});
+  }});
+  assert.equal(calls,2);assert.equal(result.rows[0].price,108);assert.equal(result.reason,null);
+  assert.equal(result.rows[0].openInterestUnavailable,fail);
+  assert.equal(result.rows[0].openInterest?.quoteAt,fail?undefined:iso(AT-60000));
+ }
+ assert.equal(upstoxOpenInterest({status:'success',data:{TEST:{...derivative,symbol:'WRONG'}}},mapped,AT).size,0);
+ assert.equal(upstoxOpenInterest({status:'success',data:{TEST:{...derivative,previous_oi:undefined}}},mapped,AT).size,0);
+ assert.equal(upstoxOpenInterest({status:'success',data:{TEST:derivative}},[...mapped,{...mapped[0],ticker:'ALIAS'}],AT).size,2);
+});
+test('OI history survives restart and failure without inflating per-minute metadata or borrowing the cash clock',()=>{
+ const data=storage();let now=AT,store=new BreakoutStore(data,{now:()=>now});
+ for(let i=0;i<3;i++) {now=AT+i*60000;store.primarySave(primary([row('TEST',now,{base:null,openInterest:oi({current:1100+i,quoteAt:iso(now),checkedAt:iso(now)})})],{at:now,completedAt:now}));}
+ store=new BreakoutStore(data,{now:()=>now});assert.equal(store.read().rows[0].openInterest.current,1102);
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_metadata').one().n,1);
+ assert.deepEqual(store.history('TEST').rows.map(r=>r.openInterest.current),[1102,1101,1100]);
+ const saved=store.read().rows[0].openInterest;now+=60000;
+ store.primarySave(primary([row('TEST',now,{openInterestUnavailable:true})],{at:now,completedAt:now}));
+ const failed=store.read().rows[0];assert.deepEqual(failed.openInterest,saved);
+ assert.equal(openInterestForQuote(failed,now).changePercent,null);assert.equal(failed.price,108);
+ now+=60000;store.primarySave(primary([row('TEST',now,{openInterest:oi({current:800})})],{at:now,completedAt:now}));
+ assert.deepEqual(store.read().rows[0].openInterest,saved,'Delayed derivatives responses cannot replace a newer OI observation');
+});
 test('Upstox is preferred; failed/overdue primary uses fresh fallback and never removes saved prices',()=>{
  const f=fallback(),p=primary();
  assert.equal(mergePrimary(f,p,AT).rows[0].price,108);

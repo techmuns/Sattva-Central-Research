@@ -88,6 +88,28 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
   storage failures remain partial in Sources and return 503 from the health endpoint.
   Saved prices remain readable while either collector is impaired.
 
+### Momentum open interest (21 October 2026)
+
+The existing GitHub minute collector also requests near-month NSE equity futures from Upstox V3 full quotes
+in batches of at most 500. The daily instrument map retains stock futures and joins their exact
+`underlying_key` to the cash instrument; expired, ambiguous, index and option contracts are excluded.
+No new credential or subscription is introduced. Cash-price collection and fallback keep their
+existing cadence and behavior when futures reads fail.
+
+Optional quote field `openInterest` contains `{current, previous, instrumentKey, symbol, expiry,
+quoteAt, checkedAt, sessionDate}`. Counts are nonnegative integers; `previous` is that contract's
+previous-session OI from the provider, never a previous poll or another expiry. `openInterestUnavailable`
+marks a failed/missing current reading independently of cash success. Retained readings preserve
+their original source clock; older responses cannot replace newer OI. The scanner shows signed
+`(current / previous - 1) * 100` only for a fresh successful reading with a positive previous base.
+Unavailable data stays a dash. OI does not affect any momentum gate.
+
+Collection starts with this release, automatically on the next normal market-hours check.
+The existing four-calendar-day minute archive in the encrypted GitHub restart checkpoint retains
+OI observations; pre-release OI and missed
+OI intervals are not backfilled or claimed complete. The current reader never loads that archive.
+Source and check times, raw counts and the contract remain available on hover and in Excel.
+
 ### Server token setup
 
 The GitHub secret is available only inside GitHub jobs. Add the **same** Analytics
