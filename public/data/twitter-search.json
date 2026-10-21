@@ -1672,8 +1672,8 @@
       "pending": []
     },
     "isin:INE860D01013|Sanjivani Paranteral": {
-      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T12:08:31+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
@@ -2671,6 +2671,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-21T12:01:14.814371+00:00"
+    "checkedAt": "2026-10-21T12:08:31.431877+00:00"
   }
 }
