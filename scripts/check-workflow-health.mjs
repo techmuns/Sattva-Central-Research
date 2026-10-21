@@ -45,11 +45,18 @@ export function assessWorkflow(workflow, metadata, runs, { now = Date.now(), gra
   const latest = ordered[0];
   // A bounded audit is expected to disable itself. Keep its actual terminal
   // result inspectable without pretending it is an overdue ongoing collector.
-  if (workflow.episodeEndsAt && now >= Date.parse(workflow.episodeEndsAt)) return {
-    ...workflow, ok: true, issues: [], state: metadata.state, assessment: 'completed-episode', dueAt: null,
-    latestRun: latest ? { id: latest.id, status: latest.status, conclusion: latest.conclusion,
-      createdAt: latest.created_at, url: latest.html_url } : null,
-  };
+  if (workflow.episodeEndsAt && now >= Date.parse(workflow.episodeEndsAt)) {
+    const episodeIssues = [];
+    if (metadata.state !== 'disabled_manually') episodeIssues.push('audit-not-disabled');
+    if (!latest || !(Date.parse(latest.run_started_at || latest.created_at) >= Date.parse(workflow.episodeEndsAt)))
+      episodeIssues.push('audit-terminal-run-missing');
+    else if (latest.status !== 'completed' || !['success', 'failure'].includes(latest.conclusion))
+      episodeIssues.push('audit-terminal-run-incomplete');
+    return { ...workflow, ok: !episodeIssues.length, issues: episodeIssues, state: metadata.state,
+      assessment: episodeIssues.length ? 'incomplete-episode' : 'completed-episode', dueAt: null,
+      latestRun: latest ? { id: latest.id, status: latest.status, conclusion: latest.conclusion,
+        createdAt: latest.created_at, url: latest.html_url } : null };
+  }
   // Condition-skipped workflow_run jobs performed no collection. A concurrency
   // cancellation superseded by a newer run is likewise not a failed capture.
   // Retain real failures and unsuperseded cancellations; the cadence check below

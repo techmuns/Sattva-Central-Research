@@ -18,10 +18,20 @@ assert(!assessWorkflow(workflow, { state: 'disabled_inactivity' }, [run], { now 
 assert(!assessWorkflow(workflow, active, [], { now }).ok);
 assert(!assessWorkflow(workflow, active, [{ ...run, conclusion: 'failure' }], { now }).ok);
 const episode = { ...workflow, episodeEndsAt: '2026-09-05T19:00:00Z' };
-const ended = assessWorkflow(episode, { state: 'disabled_manually' }, [{ ...run, conclusion: 'failure' }], { now });
+const terminal = { ...run, conclusion: 'failure', created_at: '2026-09-05T19:05:00Z' };
+const ended = assessWorkflow(episode, { state: 'disabled_manually' }, [terminal], { now });
 assert(ended.ok, 'an ended one-off audit is not an overdue recurring collector');
 assert.equal(ended.assessment, 'completed-episode');
 assert.equal(ended.latestRun.conclusion, 'failure', 'the historical failure remains explicit and is never reported as a pass');
+assert(!assessWorkflow(episode, { state: 'disabled_manually' }, [], { now }).ok, 'an audit that never ran remains unhealthy after expiry');
+assert(!assessWorkflow(episode, active, [terminal], { now }).ok, 'an audit still active after expiry remains unhealthy');
+assert(!assessWorkflow(episode, { state: 'disabled_manually' }, [run], { now }).ok, 'an old run cannot prove the final audit happened');
+for (const conclusion of [null, 'cancelled', 'skipped']) assert(!assessWorkflow(episode, { state: 'disabled_manually' },
+  [{ ...terminal, status: conclusion ? 'completed' : 'in_progress', conclusion }], { now }).ok,
+  'missing or unfinished final observations remain unhealthy');
+assert(assessWorkflow(episode, { state: 'disabled_manually' }, [{ ...terminal,
+  created_at: '2026-09-05T18:55:00Z', run_started_at: '2026-09-05T19:05:00Z' }], { now }).ok,
+  'a queued final audit can start after the deadline');
 assert(!assessWorkflow(episode, { state: 'disabled_manually' }, [run], { now: now - 2 * 3600000 }).ok,
   'a disabled audit still fails during its promised observation window');
 assert(!assessWorkflow(workflow, active, [{ ...run, head_branch: 'codex/test' }], { now }).ok);
