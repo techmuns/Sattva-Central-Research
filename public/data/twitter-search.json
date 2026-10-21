@@ -1433,7 +1433,7 @@
       "pending": []
     },
     "isin:INE546Y01022|PRAXIS": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+      "lastAttemptAt": "2026-10-21T06:50:44+00:00",
       "error": "search-unavailable",
       "lastResultCount": 118,
       "targetThrough": "2026-09-18T06:26:21+00:00",
@@ -2658,6 +2658,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-21T06:12:29.309087+00:00"
+    "checkedAt": "2026-10-21T06:50:44.463253+00:00"
   }
 }
