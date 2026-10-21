@@ -50,7 +50,7 @@ export function newsStoryHtml(row, { key = row.id || row.url || '', meta = '', c
   return `<article data-news-key="${escapeHtml(String(key))}"${canLink ? '' : ' data-news-unlinkable'} class="news-story">
     <div class="news-story-content">${content}<span class="news-story-bookmark">${watch}${bookmark}</span></div>
     <details class="news-story-details" data-news-details data-norow data-news-details-open="${expandedStories.has(String(key))}"${expandedStories.has(String(key)) ? ' open' : ''}>
-      <summary aria-label="Story details" title="Story details"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <summary tabindex="0" aria-label="Story details" title="Story details"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <div class="news-story-expanded">
         ${newsThumbnail(row.image || row.publisherSourceRecord?.image)}
         <div class="news-story-detail-copy">
