@@ -1,7 +1,7 @@
 // Full dashboard with local captures: search identities, filter intersections and toolbar geometry.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdirSync} from 'node:fs';
 import {resolve,extname,sep} from 'node:path';
 const {chromium}=await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root=resolve('public'),at='2026-10-13T06:00:00Z';
@@ -38,6 +38,7 @@ const server=createServer((req,res)=>{
  res.setHeader('content-type',{'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'}[extname(file)]||'text/plain');res.end(body);}catch{res.writeHead(404).end();}
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));const origin=`http://127.0.0.1:${server.address().port}`;
+const evidence=resolve('.cache/news-ui');mkdirSync(evidence,{recursive:true});
 const browser=await chromium.launch();
 try{
  const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1280,height:800}});
@@ -49,8 +50,9 @@ try{
  await page.waitForFunction(()=>!document.querySelector('[data-table-loading]'));
  const search=page.getByRole('textbox',{name:'Search company, ticker or headline'});
  assert(!requests.includes('/data/announcement-identities.json'),'full directory stays off initial News load');
- for(const width of [1280,1024,390]){
-  await page.setViewportSize({width,height:800});
+ for(const [width,height] of [[1345,647],[1280,800],[1024,768],[390,800]]){
+  await page.setViewportSize({width,height});
+  await page.waitForFunction(()=>{const s=document.querySelector('[data-news-scroll]');return Math.abs(s.getBoundingClientRect().bottom-(innerHeight-8))<2});
   const geometry=await page.evaluate(()=>({search:document.querySelector('[data-news-search]').getBoundingClientRect().width,
    primary:[...document.querySelector('.news-toolbar-primary').children].map(x=>x.getBoundingClientRect().top),
    second:document.querySelector('.news-toolbar-filters').getBoundingClientRect().top,overflow:document.documentElement.scrollWidth>innerWidth+1}));
@@ -60,11 +62,21 @@ try{
   if(width>=1024)assert(geometry.second>Math.max(...geometry.primary)+25,'filters have their own deliberate row');
   const firstCard=page.locator('[data-news-key]').first();
   assert.equal(await firstCard.locator('a [data-news-feedback]').count(),0,'feedback stays outside the story link');
-  for(const name of ['Important','Not important','Why?'])assert(await firstCard.getByRole('button',{name,exact:true}).isVisible(),'visible feedback '+name+' at '+width);
+  assert.equal(await firstCard.getByRole('button',{name:'Important',exact:true}).isVisible(),false,'feedback stays out of the scan');
+  assert.equal(await firstCard.locator('.news-story-summary').isVisible(),false,'summaries expand on demand');
+  if(width>=1024){
+   const visible=await page.evaluate(()=>{const s=document.querySelector('[data-news-scroll]').getBoundingClientRect();return [...document.querySelectorAll('[data-news-key]')].filter(r=>{const b=r.getBoundingClientRect();return b.top>=s.top && b.bottom<=Math.min(s.bottom,innerHeight)}).length});
+   console.log(`Market News ${width}x${height}: ${visible} complete rows`);
+   assert(visible>=10,'at least 10 complete stories at normal zoom');
+  }
+  assert.equal(await page.locator('[data-section-head] p').count(),0,'no explanatory paragraph above News');
+  assert.equal(await page.locator('[data-news-more]').isVisible(),false,'successful history adds no footer clutter');
+  await page.screenshot({path:resolve(evidence,`market-${width}.png`)});
+  await firstCard.locator('summary').click();
+  for(const name of ['Important','Not important','Why?'])assert(await firstCard.getByRole('button',{name,exact:true}).isVisible(),'expanded feedback '+name+' at '+width);
   const footer=await firstCard.evaluate(card=>({top:card.querySelector('[data-news-feedback]').getBoundingClientRect().top,bottom:card.querySelector('a').getBoundingClientRect().bottom}));
   assert(footer.top>=footer.bottom,'feedback is below the story at '+width);
-  assert.equal(await page.locator('[data-feedback-menu]').count(),0,'no hidden feedback menu');
-  await page.screenshot({path:`/tmp/sattva-news-toolbar-${width}.png`});
+  await firstCard.locator('summary').click();
  }
  await page.setViewportSize({width:1280,height:800});
  await search.fill('LTIM guidance');
@@ -106,6 +118,7 @@ try{
  assert.equal(await page.locator('.news-toolbar-filters select').count(),3,'all scoped secondary filters remain available');
  const companyStory=page.locator('tbody tr[data-row-key]').first();
  assert.match(await companyStory.locator('.news-story-company').textContent(),/Possible match.*LTI Mindtree.*LTIM/,'unverified company relationship stays visible');
+ await companyStory.locator('summary').click();
  for(const name of ['Important','Not important','Why?'])assert(await companyStory.getByRole('button',{name,exact:true}).isVisible(),'visible company-news feedback '+name);
  assert.equal(await companyStory.locator('a [data-news-feedback]').count(),0,'company feedback is outside the article link');
  await page.getByRole('textbox',{name:'Search company, ticker or headline'}).fill('');
@@ -114,6 +127,15 @@ try{
  const illustrated=page.locator('[data-news-key]').filter({hasText:'portfolio update illustrated'});
  const broken=page.locator('[data-news-key]').filter({hasText:'portfolio update broken'});
  await illustrated.waitFor();
+ for(const [width,height] of [[1345,647],[1280,800],[1024,768]]){
+  await page.setViewportSize({width,height});
+  await page.waitForFunction(()=>{const s=document.querySelector('[data-table-scroll]');return Math.abs(s.getBoundingClientRect().bottom-(innerHeight-8))<2});
+  const visible=await page.evaluate(()=>{const s=document.querySelector('[data-table-scroll]').getBoundingClientRect();return [...document.querySelectorAll('[data-news-key]')].filter(r=>{const b=r.getBoundingClientRect();return b.top>=s.top && b.bottom<=Math.min(s.bottom,innerHeight)}).length});
+  console.log(`Portfolio News ${width}x${height}: ${visible} complete rows`);assert(visible>=10,'at least 10 scoped stories at normal zoom');
+ }
+ await page.setViewportSize({width:1280,height:800});
+ await illustrated.locator('summary').click();
+ await broken.locator('summary').click();
  assert.equal(await illustrated.locator('.news-story-thumbnail img').evaluate(img=>img.complete&&img.naturalWidth>0),true,'publisher image reaches Portfolio');
  await page.waitForFunction(()=>[...document.querySelectorAll('.news-story-thumbnail img')].some(img=>img.src.endsWith('broken-image.svg')&&img.hidden));
  assert(await broken.locator('.news-story-placeholder').isVisible(),'broken images show a clean placeholder');
@@ -130,7 +152,7 @@ try{
    if(width===390)assert(colors.important.height>=44,'touch target stays usable');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Portfolio has no horizontal overflow');
    await illustrated.scrollIntoViewIfNeeded();
-   await page.screenshot({path:`/tmp/sattva-news-portfolio-${theme}-${width}.png`});
+   await page.screenshot({path:resolve(evidence,`portfolio-${theme}-${width}.png`)});
   }
  }
  await page.setViewportSize({width:1280,height:800});

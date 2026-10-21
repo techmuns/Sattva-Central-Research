@@ -304,7 +304,7 @@ try {
   // The latest filing can belong to a newer IST day than the saved news.
   // Exercise feedback on retained stories even when Today is correctly empty.
   await page.getByRole('combobox', { name: 'News period', exact: true }).selectOption('30');
-  await page.waitForSelector('[data-news-key] [data-news-feedback]', { timeout: 60000 });
+  await page.waitForSelector('[data-news-key] .news-story-details summary', { timeout: 60000 });
   await page.evaluate(async () => {
     const { relevanceSettled } = await import('/js/data/surface-relevance.js');
     await relevanceSettled();
@@ -313,6 +313,7 @@ try {
   const firstCard = page.locator('[data-news-key]').filter({ has: page.locator('a[href^="http"]') }).first();
   const articleHref = await firstCard.locator('a[href^="http"]').first().getAttribute('href');
   assert(/^https?:/.test(articleHref), 'the card is still a link to the article');
+  await firstCard.locator('.news-story-details summary').click();
   const feedbackKey = await firstCard.locator('[data-news-feedback]').getAttribute('data-news-feedback');
   const control = page.locator(`[data-news-feedback=${JSON.stringify(feedbackKey)}]`);
   assert.equal(await page.locator('[data-feedback-menu]').count(), 0, 'no hidden News importance menu');
