@@ -14,7 +14,8 @@ const link = row => `<a data-norow href="${esc(safeUrl(row.sourceUrl || row.url)
 const cell = value => `<div style="max-width:260px;white-space:normal;overflow-wrap:anywhere">${esc(value || '—')}</div>`;
 function details(row) {
   const article = feed.meta().articles?.find(a => a.url === row.sourceUrl);
-  openDrill({ name: row.company, sub: 'Funding reported by Inc42', beforeGroupsHtml: `${fields.map(([key,label]) => `<p class="mt-3 text-sm"><strong>${label}</strong><br>${esc(row[key] || 'Not provided')}</p>`).join('')}
+  const readings = row.sourceFields && Object.keys(row.sourceFields).length ? Object.entries(row.sourceFields) : fields.map(([key,label]) => [label,row[key]]);
+  openDrill({ name: row.company, sub: 'Funding reported by Inc42', beforeGroupsHtml: `${readings.map(([label,value]) => `<p class="mt-3 text-sm"><strong>${esc(label)}</strong><br>${esc(value || 'Not provided')}</p>`).join('')}
     <p class="mt-4 text-xs text-slate-500">${esc(article?.notes?.join('\n') || '')}</p>
     <p class="mt-3 text-xs text-slate-500">Roundup published: ${esc(time(row.publishedAt))}. First captured: ${esc(time(row.firstSeenAt))}.</p>
     ${row.sourceMissing ? '<p class="mt-3 text-sm">Retained observation: this row is absent from the latest successful read of its article.</p>' : ''}
@@ -47,7 +48,7 @@ function paint() {
     showRank:false, showAvatar:false, nameWrap:true, nameMaxPx:210, dense:true, wrapHeads:true, nameAfter:1,
     sub:r => r.sourceMissing ? 'Retained · removed from source' : '',
     searchPlaceholder:'Search company, investor, sector or round...', searchable:r => fields.map(([key]) => r[key]).join(' '),
-    columns: fields.filter(([key]) => key !== 'company').map(([key,label]) => ({ label, get:r => cell(r[key]), html:true, sortValue:r => key === 'date' ? r.dateISO || '' : r[key] })).concat([{ label:'Source', get:link, html:true, sortable:false }]),
+    columns: fields.filter(([key]) => key !== 'company').map(([key,label]) => ({ label, get:r => cell(r[key]), html:true, sortable:key !== 'amount', sortValue:r => key === 'date' ? r.dateISO || '' : r[key] })),
     initialSort:{ key:'Funding date', dir:'desc' }, initialView:view,
     filters:[{ label:'Funding period', value:'latest', options:[{ value:'latest',label:'Latest captured week' }, { value:'all',label:'All captured history' }, ...[...new Set(rows.map(r => r.dateISO?.slice(0,4)).filter(Boolean))].sort().reverse().map(value => ({ value,label:value }))], match:(r,v) => v === 'all' || !v ? true : v === 'latest' ? r.sourceUrl === latest : r.dateISO?.startsWith(v) }, options('sector','Sectors'), options('round','Round types'), options('businessModel','Business models')],
     loading:!m.generatedAt && !m.readError,

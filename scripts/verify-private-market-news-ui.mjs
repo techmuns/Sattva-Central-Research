@@ -26,6 +26,7 @@ const origin=`http://127.0.0.1:${server.address().port}`,browser=await chromium.
 try{
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/*',route=>route.request().url().startsWith(origin+'/')?route.continue():route.abort());
+  await page.clock.install({time:new Date(capture.generatedAt)});
   await page.goto(origin);await page.getByRole('heading',{name:'Private Market News',exact:true}).waitFor();
   await page.waitForFunction(()=>document.querySelector('[data-table-count]')?.textContent.includes('499')||document.querySelector('main')?.textContent.includes('499 of 500'));
   assert.equal(await page.locator('[data-watch-toggle]').count(),0);
@@ -37,12 +38,16 @@ try{
   await search.fill('');await period.selectOption('latest');
   await page.getByRole('combobox',{name:'Sectors',exact:true}).selectOption('AI');await search.fill('Fixture Investor');
   capture={...capture,generatedAt:new Date(Date.parse(capture.generatedAt)+60000).toISOString(),deals:[...capture.deals,{...row(500),sector:'AI'}]};
-  await page.evaluate(()=>window.fixture.feed.refresh());
+  await page.clock.fastForward(5*60000);await page.waitForFunction(()=>window.fixture.feed.rows().length===501);
   assert.equal(await search.inputValue(),'Fixture Investor');assert.equal(await page.getByRole('combobox',{name:'Sectors',exact:true}).inputValue(),'AI');
   assert.equal(await search.evaluate(el=>document.activeElement===el),true,'Incoming captures retain active search focus');
-  unavailable=true;await page.evaluate(()=>window.fixture.feed.refresh());assert.equal(await search.inputValue(),'Fixture Investor');assert(await page.locator('tbody tr[data-row-key]').count()>0);
+  unavailable=true;await page.clock.fastForward(5*60000);await page.waitForFunction(()=>!!window.fixture.feed.meta().readError);assert.equal(await search.inputValue(),'Fixture Investor');assert(await page.locator('tbody tr[data-row-key]').count()>0);
   await page.getByRole('button',{name:'Coverage & source notes'}).click();assert((await page.locator('#modal-content').textContent()).includes('Saved rows remain readable'));
-  await page.keyboard.press('Escape');unavailable=false;
+  await page.keyboard.press('Escape');
+  await page.reload();await page.waitForFunction(()=>window.fixture?.feed.rows().length===501 && !!window.fixture.feed.meta().readError);
+  assert(await page.locator('tbody tr[data-row-key]').count()>0,'IndexedDB preserves captured history across an offline reload');
+  unavailable=false;await page.evaluate(()=>window.fixture.feed.refresh());
+  await page.getByPlaceholder('Search company, investor, sector or round...').fill('Fixture Investor');
   await page.evaluate(()=>{window.fixture.tab.destroy();window.fixture.tab.render({root:document.querySelector('#root'),scope:'portfolio'});});
   await page.getByRole('heading',{name:'Private Market News',exact:true}).waitFor();assert.equal(await search.inputValue(),'Fixture Investor');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Wide funding columns stay inside their scroller');

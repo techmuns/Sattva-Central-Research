@@ -1,10 +1,16 @@
 // Lazy public snapshot reader. Browser checks never request Inc42 or start jobs.
-import { revalidatedJson } from '../core/store.js';
+import { revalidatedJson, readEntry, writeEntry, KEYS } from '../core/store.js';
 let capture = null, pending = null, readError = null, browserCheckedAt = null;
 const listeners = new Set();
 export const rows = () => capture?.deals || [];
 export const meta = () => ({ ...capture, readError, browserCheckedAt });
 export const onChange = fn => { listeners.add(fn); return () => listeners.delete(fn); };
+function valid(value) {
+  const at = Date.parse(value?.generatedAt || '');
+  return value?.version === 1 && value.source === 'https://inc42.com/tag/funding-galore/' && Number.isFinite(at) && at <= Date.now() + 600000 &&
+    Array.isArray(value.deals) && new Set(value.deals.map(r => r?.id)).size === value.deals.length && Array.isArray(value.articles) && value.articles.every(a => a && typeof a.url === 'string' && typeof a.title === 'string' && ['pending','ok','unavailable','failed'].includes(a.status) && (!a.notes || Array.isArray(a.notes))) && !!value.archive && value.deals.every(r => /^[a-f0-9]{24}$/.test(r?.id) && /^https:\/\/inc42\.com\/(buzz|features|startups)\/[a-z0-9-]+\/$/.test(r.sourceUrl) &&
+      ['date','company','sector','subsector','businessModel','amount','round','investors','leadInvestor'].every(k => typeof r[k] === 'string'));
+}
 export function health(value = meta(), now = Date.now()) {
   const articles = value.articles || [];
   const pending = articles.filter(a => a.status === 'pending').length;
@@ -21,11 +27,21 @@ export function load() {
   if (pending) return pending;
   pending = (async () => {
     const previous = capture?.generatedAt, previousError = readError;
+    if (!capture) {
+      const saved = await readEntry(KEYS.privateMarketNews);
+      if (valid(saved?.value)) { capture = saved.value; listeners.forEach(fn => fn()); }
+    }
     try {
       const next = await revalidatedJson('data/private-market-news.json', { fresh: true });
-      if (next?.version !== 1 || !Array.isArray(next.deals) || !Array.isArray(next.articles) || !next.archive) throw Error('Invalid funding capture');
+      if (!valid(next)) throw Error('Invalid funding capture');
       // Do not regress a warm reader when a stale deployment arrives.
-      if (!capture || Date.parse(next.generatedAt || '') >= Date.parse(capture.generatedAt || '')) capture = next;
+      if (capture) {
+        const ids = new Set(next.deals.map(r => r.id));
+        if (Date.parse(next.generatedAt) < Date.parse(capture.generatedAt) || capture.deals.some(r => !ids.has(r.id))) throw Error('Publication is older or incomplete; retaining saved funding history');
+      }
+      const changed = capture?.generatedAt !== next.generatedAt;
+      capture = next;
+      if (changed) void writeEntry(KEYS.privateMarketNews, { value:capture, tag:capture.generatedAt });
       readError = null; browserCheckedAt = new Date().toISOString();
     } catch (error) { readError = error.message || 'Published funding capture unavailable'; }
     if (previous !== capture?.generatedAt || previousError !== readError) listeners.forEach(fn => fn());

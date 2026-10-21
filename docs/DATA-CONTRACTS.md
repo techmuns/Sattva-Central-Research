@@ -5926,3 +5926,6 @@ company, investor and every normalized table field. Shared bounded table mountin
 sorting, source links, complete filtered Excel export and source notes use the same
 row model. Opening, returning, reconnecting and visible five-minute checks revalidate
 published data without requesting Inc42 or dispatching a production workflow.
+The last verified public capture is also stored in IndexedDB, with the shared
+worker-backed memory budget. Offline reloads retain saved rows and disclose the
+failed publication check; older or incomplete replacements cannot delete reader history.
