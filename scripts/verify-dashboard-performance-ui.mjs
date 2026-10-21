@@ -92,6 +92,8 @@ function fetchAndCache(...args) {
     } else if (pathname === '/js/tabs/registry.js') {
       const source = readFileSync(path, 'utf8');
       res.end(previousRelease ? `${source}\nconst previousTabOrder = ${JSON.stringify(previousTabOrder)};
+// Readers introduced by the new release did not exist in this cached version.
+researchTabs.splice(0, researchTabs.length, ...researchTabs.filter(tab => previousTabOrder.includes(tab.meta.id)));
 researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrder.indexOf(b.meta.id));` : source);
     } else if (pathname === '/js/core/workspace.js' && previousRelease) {
       // The old navigation predates shared ordering. It follows the catalog rather than
