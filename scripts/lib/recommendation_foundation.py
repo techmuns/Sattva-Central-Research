@@ -156,7 +156,7 @@ def parse_financial_xml(body, expected):
         elif n.attrib.get("contextRef"):
             fact = {"tag": local(n.tag), "qualifiedTag": n.tag, "context": n.attrib["contextRef"],
                 "text": "".join(n.itertext()).strip(), "unitRef": n.attrib.get("unitRef"),
-                "decimals": n.attrib.get("decimals"), "nil": n.attrib.get("{http://www.w3.org/2001/XMLSchema-instance}nil") == "true"}
+                "decimals": n.attrib.get("decimals"), "nil": n.attrib.get("{http://www.w3.org/2001/XMLSchema-instance}nil") in {"true", "1"}}
             raw.append(fact)
             grouped.setdefault(fact["context"], []).append(fact)
     text_values = {}

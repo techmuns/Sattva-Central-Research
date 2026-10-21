@@ -76,6 +76,10 @@ class EvidenceTests(unittest.TestCase):
         revenue.text = ""
         parsed = parse_financial_xml(ET.tostring(root), PRECISION)
         self.assertFalse(any(f["metric"] == "revenue" for f in parsed["facts"]))
+        revenue.set("{http://www.w3.org/2001/XMLSchema-instance}nil", "1")
+        revenue.text = "0"
+        parsed = parse_financial_xml(ET.tostring(root), PRECISION)
+        self.assertFalse(any(f["metric"] == "revenue" for f in parsed["facts"]))
         with self.assertRaises(ValueError):
             parse_financial_xml(b'<!DOCTYPE x [<!ENTITY a "unsafe">]><x/>', PRECISION)
 
