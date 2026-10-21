@@ -76,4 +76,31 @@ const partial=await readNews({...common,uncapped:true});assert.equal(partial.com
 files.set(`/data/company-news/2026-10.parts/${sha}.json`,old);
 const bajaj=tradingViewTargets([{entityId:'isin:INE917I01010',ticker:'BAJAJ-AUTO',name:'Bajaj Auto'}],[{isin:'INE917I01010',ticker:'BAJAJ-AUTO',bseSymbol:'BAJAJ-AUTO'}]);
 assert.deepEqual(bajaj[0].symbols,['NSE:BAJAJ_AUTO','BSE:BAJAJ_AUTO']);
+
+// A full-source walk must preserve genuine company news without treating a search word
+// as company proof. The source rows remain unchanged for the broader News reader.
+const eternalHolding={ticker:'ETERNAL',name:'Eternal',isin:'INE758T01015'};
+const eternalEntity={...eternalHolding,entityId:'isin:INE758T01015',queries:['Eternal']};
+const eternalRows=['Eternal Lord of Music - Dictators (Official Music Video)',
+ 'Eternal Q2 preview: can Blinkit sustain growth?','Zomato announces quarterly results',
+ 'Eternal Limited announces a corporate update'].map((title,i)=>({title,entityId:eternalEntity.entityId,
+ ticker:'ETERNAL',publishedAt:'2026-10-20T12:00:00Z',url:`https://publisher.test/eternal/${i}`}));
+const eternalOriginal=JSON.stringify(eternalRows);
+const identityFiles=new Map([
+ ['/data/market-news.json',{articles:[],archive:[{month:'2026-10',file:'market-news/2026-10.json',count:0}]}],
+ ['/data/market-news/2026-10.json',{articles:[]}],
+ ['/data/company-news/index.json',{entities:[eternalEntity],queries:{[eternalEntity.entityId]:{Eternal:{lastSuccessAt:'2026-10-21T02:00:00Z'}}},archive:[{month:'2026-10',file:'company-news/2026-10.json',count:4}]}],
+ ['/data/company-news/2026-10.json',{articles:eternalRows}],
+ ['/data/tradingview-news/latest.json',{byTicker:{},entities:[eternalEntity]}],
+ ['/data/tradingview-news/index.json',{archive:[{month:'2026-10',file:'tradingview-news/2026-10.json',count:0}]}],
+ ['/data/tradingview-news/2026-10.json',{articles:[]}],
+]);
+const identityEnv={NEWSLETTER_GITHUB_ARCHIVES:true,ASSETS:{fetch:async request=>{
+ const value=identityFiles.get(new URL(request.url).pathname);return value?Response.json(value):new Response(null,{status:404});}}};
+const identityNews=await readNews({...common,env:identityEnv,holdings:[eternalHolding],uncapped:true});
+assert.equal(identityNews.count,3,'Legal, former-name and reviewed-context headlines remain eligible; a common-word music result does not');
+assert(!identityNews.groups.flatMap(g=>g.items).some(row=>row.headline.includes('Lord of Music')));
+assert.equal(identityNews.company.coverage.unchecked,1,'A saved old single-query success cannot certify newly reviewed legal-name/alias checks');
+assert.equal(JSON.stringify(eternalRows),eternalOriginal,'Source records are retained unchanged');
+
 console.log(`PASS newsletter coverage: late holiday morning prices, closing fallback, verified sharded company/publisher archives, independent-source recovery, 85 filings, 96 news items, 45 trades, 51 movers and 51 calendar/action rows without caps, ten-day catch-up, ${messages.length} complete multipart messages, corrupt-part status, exact-ISIN provider alias`);

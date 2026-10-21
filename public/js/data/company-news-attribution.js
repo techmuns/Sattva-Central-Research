@@ -2,7 +2,7 @@
 // Pure, shared by snapshot/live readers, search, exports, research and AI ranking.
 import { reviewedNewsIdentity } from './company-news-reviewed.js';
 import { createMemoryCache } from '../core/memory-cache.js';
-export const ATTRIBUTION_VERSION = 2;
+export const ATTRIBUTION_VERSION = 3;
 // Head/archive copies and separate period readers have different row objects but repeatedly
 // normalize the same company names and story text. Key this pure calculation by its exact
 // input, with a fixed byte budget; changed text always gets a fresh reading.
@@ -21,7 +21,7 @@ const withoutLegalSuffix = (name) => normalizeNewsText(name)
   .replace(/(?:\s+(?:limited|ltd|private|pvt|plc))+$/, '');
 const genericNames = new Set(['india', 'indian', 'global', 'international', 'industries', 'industry', 'company', 'corporation', 'holdings', 'finance', 'financial', 'capital', 'energy', 'steel', 'power', 'technologies', 'services']);
 // Common-word symbols need a qualified symbol or the full company name, never a prose hit.
-const ambiguousSymbols = new Set([...genericNames, 'idea', 'force', 'time', 'fine', 'best', 'more', 'next', 'team', 'gold', 'silver', 'pilot', 'focus', 'quick', 'ready', 'total', 'happy', 'prime']);
+const ambiguousSymbols = new Set([...genericNames, 'idea', 'force', 'time', 'fine', 'best', 'more', 'next', 'team', 'gold', 'silver', 'pilot', 'focus', 'quick', 'ready', 'total', 'happy', 'prime', 'eternal']);
 
 // An explicit user-reviewed ARTICLE–COMPANY mismatch, not a publisher/topic blacklist.
 // It applies only to these captured words. New/changed text must be assessed afresh.
@@ -38,7 +38,8 @@ const articleAddress = (value) => {
 
 /** Reviewed identity fields only. Never infer aliases or subsidiaries from a search result. */
 export function companyNewsAttribution(row = {}, identity = {}) {
-  identity = reviewedNewsIdentity(identity);
+  identity = reviewedNewsIdentity({ ...identity, ticker: identity.ticker || row.queryTicker || row.ticker,
+    entityId: identity.entityId || row.queryEntityId || row.entityId });
   const queryTicker = String(identity.ticker || row.queryTicker || row.ticker || '').toUpperCase() || null;
   const queryCompany = identity.name || identity.legalName || row.queryCompany || row.company || row.query || queryTicker;
   const queryEntityId = identity.entityId || row.queryEntityId || row.entityId || null;
@@ -51,7 +52,7 @@ export function companyNewsAttribution(row = {}, identity = {}) {
     ...list('subsidiaries').map(name => ({ name, kind: 'subsidiary' })),
     ...list('relatedEntities').filter(r => r.relationship && /^https:\/\//.test(r.evidenceUrl || ''))
       .flatMap(relation => [relation.name, ...(relation.aliases || [])].map(name => ({ name, kind: 'related', relation }))),
-  ].map(candidate => ({ ...candidate, key: withoutLegalSuffix(candidate.name) }));
+  ].map(candidate => ({ ...candidate, key: withoutLegalSuffix(candidate.name), fullKey: normalizeNewsText(candidate.name) }));
   const title = normalizeNewsText(row.title);
   const summary = normalizeNewsText(row.summary);
   // Only this explicitly bounded field is an article body. Never scan raw HTML, snippets posing
@@ -61,7 +62,13 @@ export function companyNewsAttribution(row = {}, identity = {}) {
   const evidence = [];
   for (const candidate of candidates) {
     if (candidate.key.length < 4 || genericNames.has(candidate.key)) continue;
+    const policy = list('ambiguousNames').find(rule => normalizeNewsText(rule?.name) === candidate.key);
     for (const [field, text] of [['title', title], ['summary', summary], ['articleBody', body]]) {
+      // A common word is not a company identity by itself, even in capitals. A legal
+      // suffix, qualified exchange symbol, or reviewed context must disambiguate it.
+      if ((ambiguousSymbols.has(candidate.key) || policy) &&
+          !(candidate.fullKey !== candidate.key && phrase(text, candidate.fullKey)) &&
+          !(Array.isArray(policy?.qualifiers) ? policy.qualifiers : []).some(name => phrase(text, normalizeNewsText(name)))) continue;
       if (phrase(text, candidate.key)) evidence.push({ field, match: candidate.name, kind: candidate.kind,
         ...(candidate.relation ? { relationship: candidate.relation } : {}) });
     }

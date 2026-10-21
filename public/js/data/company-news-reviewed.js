@@ -1,6 +1,15 @@
 // Reviewed search identities, shared by collectors and readers. A relationship widens discovery;
 // it NEVER turns the affiliate into an alias of the listed company or proves financial exposure.
 export const reviewedNewsIdentities = [
+  {
+    match: { isin: 'INE758T01015' }, legalName: 'Eternal Limited',
+    aliases: ['Eternal Limited', 'Eternal Ltd'], formerNames: ['Zomato Limited'],
+    // Context qualifies an Eternal mention; it does not turn a group business into
+    // an alias or attribute its standalone events to the listed parent.
+    ambiguousNames: [{ name: 'Eternal', qualifiers: ['Zomato', 'Blinkit', 'Hyperpure'] }],
+    officialDomains: ['eternal.com'], officialPages: ['https://www.eternal.com/investor-relations/'],
+    evidenceUrls: ['https://www.eternal.com/investor-relations/', 'https://www.eternal.com/'],
+  },
   ...['INE0LTR01029', 'INE0LTR03090'].map(isin => ({
     match: { isin }, legalName: 'Everest Fleet Private Limited', aliases: ['Everest Fleet'],
     officialDomains: ['everestfleet.com'], officialPages: ['https://everestfleet.com/newsroom/'],
@@ -74,7 +83,7 @@ export function reviewedNewsIdentity(identity = {}) {
   if (!match) return identity;
   const out = { ...identity };
   if (match.legalName && !out.legalName) out.legalName = match.legalName;
-  for (const field of ['brands', 'formerNames', 'aliases', 'searchAliases', 'officialDomains', 'officialPages', 'evidenceUrls', 'relatedEntities']) {
+  for (const field of ['brands', 'formerNames', 'aliases', 'searchAliases', 'officialDomains', 'officialPages', 'evidenceUrls', 'relatedEntities', 'ambiguousNames']) {
     out[field] = [...new Map([...(identity[field] || []), ...(match[field] || [])]
       .map(value => [typeof value === 'string' ? value.toLowerCase() : value.name.toLowerCase(), value])).values()];
   }

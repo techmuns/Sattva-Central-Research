@@ -479,7 +479,8 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   const checks = entities.map(entity => {
     const queries = index?.queries?.[entity.entityId] || {};
     const current = identities.get(upper(entity.entityId)) || entity;
-    const required = current.queries?.length ? current.queries.map(query => queries[query]) : Object.values(queries);
+    const requiredQueries = [...new Set([...(entity.queries || []), ...(current.queries || [])])];
+    const required = requiredQueries.length ? requiredQueries.map(query => queries[query]) : Object.values(queries);
     return { missing: !required.length || required.some(q => !q?.lastSuccessAt),
       failed: required.some(q => q?.error),
       stale: required.some(q => !q?.lastSuccessAt || window.to - Date.parse(q.lastSuccessAt) > 4 * 3600000) };

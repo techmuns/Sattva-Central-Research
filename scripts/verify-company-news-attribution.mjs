@@ -34,6 +34,10 @@ for (const test of cases) {
   }
   assert.equal(newsCanSupportAI(eventFor(row)), test.status === 'confirmed');
 }
+const legacyEternal = { ticker: 'ETERNAL', entityId: 'isin:INE758T01015', company: 'Eternal',
+  title: 'Eternal Lord of Music - Dictators (Official Music Video)', attribution: { version: 2, status: 'confirmed' } };
+assert.equal(attributionFor(legacyEternal).status, 'uncertain', 'warm version-two readings cannot keep a false common-word match');
+assert.equal(newsCanSupportAI(eventFor(legacyEternal)), false, 'legacy false matches cannot corroborate AI alerts');
 const mismatch = cases.find(t => t.id === 'reported-mismatch');
 assert.equal(attributeNewsRow({ ...mismatch.row, summary: 'Updated text could now discuss Jayaswal Neco Industries.' }, mismatch.identity).attribution.status, 'uncertain', 'changed evidence invalidates the narrow reviewed exclusion');
 assert.equal(attributeNewsRow({ ...mismatch.row, title: 'Jayaswal Neco Industries and Lululemon announce a joint venture' }, mismatch.identity).attribution.status, 'confirmed', 'never a publisher or Lululemon keyword blacklist');
