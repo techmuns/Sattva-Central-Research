@@ -10,6 +10,7 @@ export const meta=TAB_META['ai-recommendations'];
 let ctxRef=null,table=null,view=null,offTable=null,paintedScope=null,disposers=[];
 const time=value=>value&&Number.isFinite(Date.parse(value))?new Date(value).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'})+' IST':'Not yet confirmed';
 const price=value=>Number(value).toLocaleString('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2});
+const fieldLabel=value=>value.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,s=>s.toUpperCase());
 function sourceLink(url) {
   try { const u=new URL(url);if(u.protocol==='https:'&&['nsearchives.nseindia.com','archives.nseindia.com','www.bseindia.com'].includes(u.hostname)) return `<a class="text-brand-600 hover:underline" href="${esc(readableFilingUrl(u.href))}" target="_blank" rel="noopener noreferrer">Original filing ↗</a>`; } catch {}
   return '';
@@ -23,17 +24,20 @@ function details(row) {
     <p class="mt-3 text-sm">Price: ${esc(price(row.price))}, official close on ${esc(row.priceAsOf)}. Price captured: ${esc(time(row.priceCheckedAt))}.</p>
     <p class="mt-3 text-sm">First idea recorded: ${esc(time(row.issuedAt))}. Document date: ${esc(row.evidenceDate)}. ${sourceLink(row.sourceUrl)}</p>
     <p class="mt-3 text-sm">Valuation: ${esc(d.valuation?.pe ? Number(d.valuation.pe).toFixed(1)+'× '+d.valuation.period+' diluted EPS' : 'Not verified')}.</p>
-    ${Object.entries(d.fieldEvidence||{}).map(([key,f])=>`<p class="mt-3 text-sm"><strong>${esc(key)}</strong> · page ${esc(f.page)}<br>${esc(f.quote)}</p>`).join('')}
+    ${Object.entries(d.fieldEvidence||{}).map(([key,f])=>`<p class="mt-3 text-sm"><strong>${esc(fieldLabel(key))}</strong> · page ${esc(f.page)}<br>${esc(f.quote)}</p>`).join('')}
     <p class="mt-4 text-xs text-slate-500">No target price or probability of profit is inferred. Contract economics, complete project history, sector-specific risks and investment-size liquidity still require research. New adverse evidence or failed eligibility removes a name from the active list; the original decision remains in the outcome ledger.</p>`});
 }
 function coverage() {
   const m=feed.meta(), c=m.coverage||{};
+  const outcome=(model,horizon)=>{const r=m.backtest?.models?.[model]?.[horizon];return !r?'No observations yet':`${r.measured} of ${r.signals} outcomes measured${r.medianNetReturnPct!=null?' · median return after assumed costs '+Number(r.medianNetReturnPct).toFixed(1)+'%':' · waiting for outcomes'}`;};
   openModal(`<h2 class="font-display text-lg font-bold text-slate-900">Recommendation evidence</h2>
     <p class="mt-3 text-sm">Three fixed catalyst models run on GitHub Actions every six hours using original free exchange sources. The browser reads their prepared output and checks for updates every five minutes while visible and on return.</p>
     <p class="mt-3 text-sm">Prepared: ${esc(time(m.generatedAt))}. Browser publication check: ${esc(time(m.browserCheckedAt))}. Coverage remains partial. ${esc(m.error||'')}</p>
     <p class="mt-3 text-sm">${esc(c.financialCompanies??0)} companies with captured financial periods; ${esc(c.assessments??0)} catalyst assessments in this run; ${esc(c.pendingDocuments??0)} documents awaiting reading; ${esc(c.failedDocuments??0)} failed or oversized documents.</p>
-    <p class="mt-3 text-sm">Performance validation: ${esc(m.backtest?.strategyValidation||'Not established')}. Three- and six-month outcomes use actual first-observed signals, the next session’s opening price, a 50 bps round-trip cost assumption and the Nifty 500 price index. Missing prices and corporate actions remain unresolved outcomes. No historical recommendation is invented from a filing collected later.</p>
-    <details class="mt-4"><summary>Model outcomes and evidence gaps</summary><pre class="mt-3 text-xs" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(JSON.stringify({models:m.backtest?.models||{},missing:c.missingRequirements||{},limits:c.limitations||[]},null,2))}</pre></details>
+    <p class="mt-3 text-sm">Performance validation: Not yet established. Three- and six-month outcomes use actual first-observed signals, the next session’s opening price, a 50 bps round-trip cost assumption and the Nifty 500 price index. Missing prices and corporate actions remain unresolved outcomes. No historical recommendation is invented from a filing collected later.</p>
+    <details class="mt-4"><summary>Model outcomes and evidence gaps</summary>${[['earnings','Improving earnings'],['orders','Material new business'],['capacity','Productive new capacity']].map(([id,label])=>`<p class="mt-3 text-sm"><strong>${label}</strong><br>Three months: ${esc(outcome(id,'63'))}<br>Six months: ${esc(outcome(id,'126'))}</p>`).join('')}
+    ${Object.entries(c.missingRequirements||{}).map(([reason,n])=>`<p class="mt-2 text-xs">${esc(reason)} · ${esc(n)} assessments</p>`).join('')}
+    ${(c.limitations||[]).map(limit=>`<p class="mt-3 text-xs">${esc(limit)}</p>`).join('')}</details>
     <details class="mt-4"><summary>Actual source checks</summary><div class="text-xs" style="max-height:300px;overflow:auto">${(c.sourceChecks||[]).map(s=>`<p class="mt-2">${esc(s.key)} · successful read ${esc(time(s.success_at))}${s.error?' · '+esc(s.error):''}</p>`).join('')}</div></details>`,{size:'wide'});
 }
 function paint() {

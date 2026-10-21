@@ -60,7 +60,7 @@ try{
   unavailable=true;await page.evaluate(()=>window.refreshRecommendations());assert.equal(await page.getByText('Fixture Precision',{exact:true}).count(),1);assert.match(await page.locator('[data-recommendation-status]').innerText(),/could not be confirmed/);
   await page.evaluate(()=>window.setFixtureScope('watchlist'));assert.equal(await page.getByText('Fixture Precision',{exact:true}).count(),0);
   await page.evaluate(()=>window.setFixtureScope('universe'));await page.getByText('Fixture Precision',{exact:true}).waitFor();
-  await page.locator('[data-recommendation-coverage]').click();assert.match(await page.locator('#modal-content').innerText(),/not-established/);
+  await page.locator('[data-recommendation-coverage]').click();assert.match(await page.locator('#modal-content').innerText(),/Not yet established/);
   await page.keyboard.press('Escape');
   await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Table stays inside the mobile viewport');
