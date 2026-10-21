@@ -1,0 +1,14 @@
+[
+  {
+    "file": "reliance-2025.xml",
+    "url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_117298_1348254_16012025082021.xml",
+    "sha256": "7a4376e20bcff469a6674116f0e45a76233d6358517d082a0a714ba78e6c2e96",
+    "purpose": "Real original-source parser regression; never loaded as production financial history."
+  },
+  {
+    "file": "precision-wires-2026.xml",
+    "url": "https://nsearchives.nseindia.com/corporate/xbrl/INTEGRATED_FILING_INDAS_1742604_21102026124841_WEB.xml",
+    "sha256": "7a6264a32daa1ad490c8499d477888cb5322be471714cd87f138b31f66910486",
+    "purpose": "Real original-source parser regression; never loaded as production financial history."
+  }
+]

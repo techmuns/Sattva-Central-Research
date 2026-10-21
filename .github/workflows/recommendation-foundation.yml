@@ -1,0 +1,65 @@
+name: Recommendation evidence foundation
+
+on:
+  schedule:
+    - cron: "43 */6 * * *"
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/recommendation-foundation.yml'
+      - 'scripts/collect-recommendation-foundation.py'
+      - 'scripts/lib/recommendation_*.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recommendation-evidence-foundation
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    # Standard public-repository runners only. No large/private runner or billable storage fallback.
+    if: github.ref == 'refs/heads/main' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/workflows/recommendation-foundation.yml
+            scripts
+            public/data/announcement-identities.json
+            public/data/nse-announcements.json
+            public/data/corp-announcements.json
+            public/data/filing-capture/nse-identities.json
+            public/data/filing-capture/announcements-recent.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verify financial history and date contracts offline
+        run: python3 scripts/verify-recommendation-foundation.py
+      - name: Prepare free local PDF text extraction
+        run: |
+          if ! command -v pdftotext >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends poppler-utils
+          fi
+      - name: Restore permanent GitHub history
+        id: restore
+        run: python3 scripts/collect-recommendation-foundation.py restore
+      - name: Collect paced public evidence and retain checkpoints
+        id: collect
+        timeout-minutes: 12
+        run: python3 scripts/collect-recommendation-foundation.py collect
+      - name: Publish retained history even after an interrupted source walk
+        if: always() && steps.restore.outcome == 'success'
+        timeout-minutes: 4
+        run: python3 scripts/collect-recommendation-foundation.py publish
