@@ -1,6 +1,6 @@
 // Lazy public snapshot reader. Browser checks never request Inc42 or start jobs.
 import { revalidatedJson, readEntry, writeEntry, KEYS } from '../core/store.js';
-let capture = null, pending = null, readError = null, browserCheckedAt = null;
+let capture = null, pending = null, readError = null, browserCheckedAt = null, lastReadState = null;
 const listeners = new Set();
 export const rows = () => capture?.deals || [];
 export const meta = () => ({ ...capture, readError, browserCheckedAt });
@@ -45,7 +45,11 @@ export function load() {
       if (changed) void writeEntry(KEYS.privateMarketNews, { value:capture, tag:capture.generatedAt });
       readError = null; browserCheckedAt = new Date().toISOString();
     } catch (error) { readError = error.message || 'Published funding capture unavailable'; }
-    if (previous !== capture?.generatedAt || previousError !== readError) listeners.forEach(fn => fn());
+    // A stopped publisher can leave identical bytes readable as their actual
+    // source check ages. Update that freshness state even without new rows.
+    const readState = health().readState;
+    if (previous !== capture?.generatedAt || previousError !== readError || lastReadState !== readState) listeners.forEach(fn => fn());
+    lastReadState = readState;
     return { added: 0, checked: capture ? 1 : 0, failed: readError ? 1 : 0, partial: health().partial };
   })().finally(() => { pending = null; });
   return pending;

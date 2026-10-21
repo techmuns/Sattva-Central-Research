@@ -43,6 +43,8 @@ try{
   await page.clock.fastForward(5*60000);await page.waitForFunction(()=>window.fixture.feed.rows().length===501);
   assert.equal(await search.inputValue(),'Fixture Investor');assert.equal(await page.getByRole('combobox',{name:'Sectors',exact:true}).inputValue(),'AI');
   assert.equal(await search.evaluate(el=>document.activeElement===el),true,'Incoming captures retain active search focus');
+  await page.clock.fastForward(13*3600000);await page.getByText('Source check overdue',{exact:true}).waitFor();
+  assert.equal(await search.inputValue(),'Fixture Investor','An unchanged publication still ages its source freshness');
   unavailable=true;await page.clock.fastForward(5*60000);await page.waitForFunction(()=>!!window.fixture.feed.meta().readError);assert.equal(await search.inputValue(),'Fixture Investor');assert(await page.locator('tbody tr[data-row-key]').count()>0);
   await page.getByRole('button',{name:'Coverage & source notes'}).click();assert((await page.locator('#modal-content').textContent()).includes('Saved rows remain readable'));
   await page.keyboard.press('Escape');
