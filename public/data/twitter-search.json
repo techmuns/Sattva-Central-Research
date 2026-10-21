@@ -1494,11 +1494,20 @@
       "pending": []
     },
     "isin:INE004A01022|PROTEAN": {
-      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
-      "error": null,
-      "lastResultCount": 50,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 103,
+      "targetThrough": "2026-10-21T09:58:18+00:00",
+      "pending": [
+        {
+          "from": "2026-09-30T05:50:51+00:00",
+          "to": "2026-10-10T19:54:34.500000+00:00"
+        },
+        {
+          "from": "2026-10-10T19:54:34.500000+00:00",
+          "to": "2026-10-21T09:58:18+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-16T07:16:43+00:00",
       "lastSuccessAt": "2026-10-02T05:50:51+00:00"
     },
@@ -1520,23 +1529,19 @@
       "lastSuccessAt": "2026-09-13T23:47:09+00:00"
     },
     "isin:INE855B01025|Rain Industries": {
-      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
       "error": null,
-      "lastResultCount": 74,
-      "lastSuccessAt": "2026-10-16T07:16:43+00:00",
+      "lastResultCount": 59,
+      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE855B01025|RAIN": {
-      "lastAttemptAt": "2026-10-16T07:16:43+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 114,
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 110,
       "targetThrough": "2026-09-13T23:47:09+00:00",
       "pending": [
-        {
-          "from": "2026-09-04T23:47:09.668058+00:00",
-          "to": "2026-09-07T05:47:09.501044+00:00"
-        },
         {
           "from": "2026-09-07T05:47:09.501044+00:00",
           "to": "2026-09-09T11:47:09.334029+00:00"
@@ -1548,31 +1553,39 @@
         {
           "from": "2026-09-11T17:47:09.167015+00:00",
           "to": "2026-09-13T23:47:09+00:00"
+        },
+        {
+          "from": "2026-09-04T23:47:09.668058+00:00",
+          "to": "2026-09-06T02:47:09.584551+00:00"
+        },
+        {
+          "from": "2026-09-06T02:47:09.584551+00:00",
+          "to": "2026-09-07T05:47:09.501044+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-16T07:16:43+00:00"
+      "lastDiscoveryAt": "2026-10-21T09:58:18+00:00"
     },
     "isin:INE399G01023|Ramkrishna Forgings": {
-      "lastAttemptAt": "2026-10-16T07:50:57+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 10,
-      "lastSuccessAt": "2026-10-05T18:39:20+00:00",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": null,
+      "lastResultCount": 37,
+      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE399G01023|RKFORGE": {
-      "lastAttemptAt": "2026-10-16T08:33:49+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 7,
-      "lastSuccessAt": "2026-10-05T18:39:20+00:00",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": null,
+      "lastResultCount": 14,
+      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE027A01015|Rashtriya Chemicals": {
-      "lastAttemptAt": "2026-10-16T09:11:37+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 14,
-      "lastSuccessAt": "2026-09-13T23:47:09+00:00",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": null,
+      "lastResultCount": 23,
+      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -1603,31 +1616,31 @@
       "lastDiscoveryAt": "2026-10-02T06:48:54+00:00"
     },
     "isin:INE425Y01011|RPSG Ventures Limite": {
-      "lastAttemptAt": "2026-10-16T09:52:02+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-02T06:48:54+00:00",
+      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE425Y01011|RPSGVENT": {
-      "lastAttemptAt": "2026-10-16T10:02:24+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-02T06:48:54+00:00",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": null,
+      "lastResultCount": 7,
+      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE500L01026|S H Kelkar & Company": {
-      "lastAttemptAt": "2026-10-16T10:47:54+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-10-02T06:48:54+00:00",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE08U801020|Samhi Hotels": {
-      "lastAttemptAt": "2026-10-16T11:32:21+00:00",
+      "lastAttemptAt": "2026-10-21T09:58:18+00:00",
       "error": "search-unavailable",
       "lastResultCount": 10,
       "lastSuccessAt": "2026-10-02T06:48:54+00:00",
@@ -2656,8 +2669,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 240,
-    "checkedAt": "2026-10-21T09:29:54.793705+00:00"
+    "attempted": 10,
+    "incomplete": 233,
+    "checkedAt": "2026-10-21T09:58:18.146405+00:00"
   }
 }
