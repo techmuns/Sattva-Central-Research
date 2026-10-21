@@ -1,3 +1,4 @@
+import {privateMarketsSlot} from '../../public/js/data/private-markets-shared.js';
 import {newsletterSettings,scheduledEditions} from '../../public/js/data/newsletter-shared.js';
 
 // Match the existing five-minute runner cadence. An edition/retry becoming due
@@ -26,6 +27,7 @@ export function newsletterWakePlan(value,{now=Date.now()}={}){
  const wake=instant(schedule.lastWakeAt),checked=instant(schedule.lastCheckedAt);
  if(!Number.isFinite(wake)||wake>now+60000)return {due:true,reason:'wake-unverified'};
  const since=Number.isFinite(checked)?checked:wake;
+ if(schedule.privateMarkets?.enabled&&privateMarketsSlot(now).at>since)return {due:true,reason:'private-markets-due'};
  if(scheduledEditions(settings,Math.max(since,now-26*3600000),now).length)return {due:true,reason:'edition-due'};
  // Old aggregate-only readers cannot identify a disabled timer edition. They
  // retain the ordinary five-minute check rather than admitting every event.

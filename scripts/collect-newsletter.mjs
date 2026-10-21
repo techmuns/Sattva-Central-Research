@@ -1,3 +1,4 @@
+import {privateMarketsSources} from './lib/private-markets-sources.mjs';
 import {newsletterQuotes} from './lib/newsletter-quotes.mjs';
 import fs from 'node:fs';import {pathToFileURL} from 'node:url';import {resolve} from 'node:path';import {createHash} from 'node:crypto';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
@@ -40,13 +41,14 @@ async function main(){
    }while(Date.now()<deadline);throw Error('PDF was not published; email was not sent');
   })());return verifiedPdfs.get(document.id);
  };
- const runtime=await githubNewsletter({env:{...process.env,NEWSLETTER_GITHUB_ARCHIVES:true,ASSETS:newsletterAssets(),NEWSLETTER_QUOTES:newsletterQuotes()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
+ const runtime=await githubNewsletter({env:{...process.env,NEWSLETTER_GITHUB_ARCHIVES:true,ASSETS:newsletterAssets(),NEWSLETTER_QUOTES:newsletterQuotes()},legacyClient:input=>legacy({...input,action:'export'}),inputs:()=>legacy({action:'inputs'}),recipient,verifyPdf,privateMarketsSources:()=>privateMarketsSources(),notify:()=>dispatchWorkflow(fetch,{token:process.env.GITHUB_TOKEN,owner:'techmuns',repo:'Sattva-Central-Research',ref:'main'},'deploy.yml','main')});
  try{
   const completionWake=process.env.GITHUB_EVENT_NAME==='workflow_run';
   if(!completionWake)await runtime.publish();let request=null,bootstrap=false;
   if(process.env.GITHUB_EVENT_PATH){const stat=fs.statSync(process.env.GITHUB_EVENT_PATH);if(stat.size>8*1024*1024)throw Error('Workflow event too large');const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));bootstrap=event.inputs?.bootstrap===true||event.inputs?.bootstrap==='true';if(event.inputs?.request){if(typeof event.inputs.request!=='string'||event.inputs.request.length>64000)throw Error('Newsletter request too large');request=JSON.parse(event.inputs.request);}}
   if(bootstrap||process.env.NEWSLETTER_PROCESSING_ENABLED!=='true'){console.log('Read-only newsletter transfer: no model or email work.');}
   else if(request){const result=await runtime.processRequest(request);if(result?.ok===false)process.exitCode=1;}else{const wake=await runtime.wake({onlyIfDue:true});if(wake?.processed===false){console.log('Newsletter automatic wake coalesced with a recent retained check.');return;}const status=await runtime.schedule.status();if(['failed','missed','no-token','build-failed','book-unavailable','partial-send','unauthorised','upstream','timeout','request-expired'].includes(status.lastResult)||['discovery-failed','partial-source-read'].includes(status.content?.reason))process.exitCode=1;}
+  if(runtime.privateMarketsJob){const state=runtime.privateMarketsJob.status();console.log('Private Markets Intelligence:',JSON.stringify(state));if(['build-failed','sender-unavailable','delivery-uncertain','delivery-failed','missed','funding-source-unavailable'].includes(runtime.privateMarketsJob.runResult))process.exitCode=1;}
   await runtime.preparePreviews();await runtime.publish();console.log('Newsletter history, delivery claims and prepared files acknowledged on GitHub.');
  }finally{await runtime.close();}
 }

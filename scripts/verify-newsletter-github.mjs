@@ -1,3 +1,4 @@
+import {emptyCapture} from './lib/private-market-news.mjs';
 import {newsletterRequest,NEWSLETTER_DEADLINE} from '../worker/newsletter-request.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';import path from 'node:path';import {randomBytes,createHash} from 'node:crypto';
@@ -15,7 +16,7 @@ const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only
 for(const hours of [0,1,2,23,24])assert(newsletterRequestIsFresh({at:at-hours*3600000,to:'me',sourceOnly:true},at));
 for(const input of [{at:at-86400001,to:'me',sourceOnly:true},{at:at+3600001,to:'me',sourceOnly:true},{at:'invalid',to:'me',sourceOnly:true},
  {at:at-3600001,to:'all',sourceOnly:true},{at:at-3600001,to:'me',sourceOnly:false},{at:at-3600001,to:'me',sourceOnly:'true'}])assert.equal(newsletterRequestIsFresh(input,at),false,'Only an actual source-only single-recipient request receives the bounded queue allowance');
-const env={NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
+const env={PRIVATE_MARKETS_INTELLIGENCE_ENABLED:'true',NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
 let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false,pdfWait=0,allowFixtureMail=false,cancelDuringPdf=null;
 let exists=false,sequence=1,body='',assetReads=0;const remote=new Map(),tag='newsletter-data';
 const fetcher=async(raw,options={})=>{
@@ -51,19 +52,30 @@ try{
  source.db.prepare('UPDATE newsletter_documents SET rowid=0 WHERE id=?').run(pdfId);
  const oldBudget=source.schedule.content.newsBudget.reserve({job:'old-news',model:'fixture',amount:1234,now:at});assert(oldBudget.ok);
  const before=source.db.prepare('SELECT total_changes() n').get().n,keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
- const options={env,fetcher,recipient,verifyPdf:async()=>{cancelDuringPdf?.abort(new DOMException('Fixture caller cancelled','AbortError'));if(pdfWait)await new Promise(done=>setTimeout(done,pdfWait));if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
+ const options={env,fetcher,recipient,privateMarketsSources:async()=>({capture:emptyCapture(),roster:{ok:true,version:1,source:'Fixture fund source',checkedAt:new Date(at).toISOString(),funds:[{name:'PRIVATE FIXTURE FUND'}]}}),verifyPdf:async()=>{cancelDuringPdf?.abort(new DOMException('Fixture caller cancelled','AbortError'));if(pdfWait)await new Promise(done=>setTimeout(done,pdfWait));if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
  runtime=await githubNewsletter({...options,file:path.join(root,'runner.sqlite'),out:path.join(root,'publication'),legacyClient:input=>exportNewsletter(source.storage,input)});
  assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before);assert.deepEqual(runtime.store.snapshot(),source.store.snapshot());assert.deepEqual(Buffer.from(runtime.store.document(pdfId).body),pdf);assert.equal(runtime.store.delivery('old-unknown').finishedAt,null);
  assert.throws(()=>decodeNewsletterColumn({blob64:'AA==',bytes:1,hash:'wrong'},'newsletter_documents','body'),/integrity/);
  const stalePreview=()=>runtime.db.prepare('INSERT OR REPLACE INTO newsletter_views VALUES(?,?)').run('preview-morning-html-2',JSON.stringify({ok:true,body:'Old second part',part:2,parts:2}));
  stalePreview();await runtime.preparePreviews();assert.equal(providerCalls,0);assert.equal(emailCalls,0);
  const preview=JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-1').payload);assert.equal(preview.ok,true);assert.equal(preview.part,1);assert.equal(preview.parts,1);
+ const originalPrivateSources=runtime.privateMarketsJob.readSources;
+ runtime.privateMarketsJob.readSources=async()=>({capture:{invalid:true},roster:null});runtime.privateMarketsJob.setMeta({...runtime.privateMarketsJob.meta(),lastCheckedAt:null});
+ await runtime.preparePreviews();assert.equal(runtime.privateMarketsJob.status().lastResult,'build-failed');
+ assert.equal(JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-1').payload).ok,true,'A private bulletin build failure cannot block public-market previews');
+ runtime.privateMarketsJob.readSources=originalPrivateSources;runtime.privateMarketsJob.setMeta({...runtime.privateMarketsJob.meta(),lastCheckedAt:null});await runtime.preparePreviews();
  const saved=await runtime.publish(),site=path.join(root,'public');await installPreparedBackground([saved],{env,fetcher,publicRoot:site,scratch:path.join(root,'install')});
  const cipherFiles=new Map(fs.readdirSync(path.join(site,'generated-views/newsletter')).map(name=>[name,fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8')]));
  const again=await runtime.publish();await installPreparedBackground([again],{env,fetcher,publicRoot:site,scratch:path.join(root,'install-again')});for(const [name,value]of cipherFiles)assert.equal(fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8'),value,'Unchanged private readers reuse ciphertext instead of reuploading PDF history');
  const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,ASSETS:{fetch:async request=>{assetReads++;const file=path.join(site,new URL(request.url).pathname);return fs.existsSync(file)?new Response(fs.readFileSync(file)):new Response(null,{status:404});}}};
  const common={object:{newsletterPdf(){throw Error('Prepared saved PDFs cannot touch Cloudflare SQL');},newsletterSnapshot:async()=>source.store.snapshot()},now,pdfHeaders:filename=>({'content-type':'application/pdf','cache-control':'private, no-store'}),guardWrite:async()=>null};
  const statusResponse=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter'),worker,common),publicStatus=await statusResponse.json();
+ assert.equal(publicStatus.privateMarkets.enabled,true);
+ const privatePreview=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/private-markets/preview'),worker,common);
+ assert.equal(privatePreview.status,401);assert(!((await privatePreview.text()).includes('PRIVATE FIXTURE FUND')));
+ const authenticatedPreview=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/private-markets/preview',{headers:{authorization:'Bearer fixture-session-token-long'}}),worker,{...common,fetcher:async url=>{assert.equal(url,'https://fastapi.muns.io/auth/me');return Response.json({email:'fixture@example.com'});}});
+ assert.equal(authenticatedPreview.status,200);assert.match(await authenticatedPreview.text(),/Private Markets Intelligence/);
+ const outsiderPreview=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/private-markets/preview',{headers:{authorization:'Bearer fixture-session-token-long'}}),worker,{...common,fetcher:async()=>Response.json({email:'outsider@example.com'})});assert.equal(outsiderPreview.status,403);
  assert.equal(statusResponse.status,200);assert.equal(publicStatus.sourceOnlyTests,true);assert.equal(publicStatus.inputRevision,undefined);assert.equal(typeof publicStatus.revision,'number');
  publicStatus.schedule={...publicStatus.schedule,lastWakeAt:new Date(at).toISOString(),lastCheckedAt:new Date(at).toISOString(),reason:null};
  assert.equal(newsletterWakePlan(publicStatus,{now:at+1}).due,false,'The actual public response coalesces a recent check without a checkpoint revision field');
@@ -110,6 +122,12 @@ try{
  beforeWake=published;assert.equal((await restarted.wake({onlyIfDue:true})).processed,false);assert.equal(published,beforeWake);
  assert.equal(restarted.store.delivery('old-unknown').finishedAt,null);assert.deepEqual(Buffer.from(restarted.store.document(pdfId).body),pdf);
  assert(restarted.db.prepare('SELECT id FROM newsletter_news_ai_calls WHERE id=?').get(claim.id));
+ const recoverDaily=restarted.schedule.deliveryQueue.recover,wakeDaily=restarted.schedule.wake;
+ restarted.privateMarketsJob.setMeta({...restarted.privateMarketsJob.meta(),mailCooldownUntil:new Date(at+30*60000).toISOString()});
+ restarted.schedule.deliveryQueue.recover=async()=>{throw Error('Public retry must wait for the shared sender');};restarted.schedule.wake=async()=>{throw Error('Public timer must wait for the shared sender');};
+ assert.equal((await restarted.wake()).reason,'sender-cooldown');
+ await assert.rejects(restarted.schedule.fetcher('https://devde.muns.io/email/send/raw',{method:'POST',body:JSON.stringify({email:'fixture@example.com',html:'Synthetic'})}),/sender is held/);assert.equal(emailCalls,1,'A private provider hold also blocks public mail I/O');
+ restarted.schedule.deliveryQueue.recover=recoverDaily;restarted.schedule.wake=wakeDaily;restarted.privateMarketsJob.setMeta({...restarted.privateMarketsJob.meta(),mailCooldownUntil:null});
  failUpload=true;await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/archive rejected/);assert.equal(providerCalls,1);await assert.rejects(restarted.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'}),/stopped/);assert.equal(providerCalls,1);
  console.log('PASS newsletter GitHub migration: 1.5 MB legacy PDF and 5.1 MB chunked PDF exact bytes/hash, unknown deliveries and paid budgets retained, encrypted master restart, static PDF reader, cached ciphertext, private queued request and replay safety, acknowledged reservation before stubbed model I/O, publication failure stops further provider work');
 }finally{await restarted?.close();await runtime?.close();await source?.close();fs.rmSync(root,{recursive:true,force:true});}

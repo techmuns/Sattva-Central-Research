@@ -27,7 +27,7 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/*',route=>route.request().url().startsWith(origin+'/')?route.continue():route.abort());
   await page.clock.install({time:new Date(capture.generatedAt)});
-  await page.goto(origin);await page.getByRole('heading',{name:'Private Market News',exact:true}).waitFor();
+  await page.goto(origin);await page.getByRole('heading',{name:'Private Market',exact:true}).waitFor();
   await page.waitForFunction(()=>document.querySelector('[data-table-count]')?.textContent.includes('499')||document.querySelector('main')?.textContent.includes('499 of 500'));
   assert.equal(await page.locator('[data-watch-toggle]').count(),0);
   assert(await page.locator('tbody tr[data-row-key]').count()<100,'Shared table bounds mounted rows');
@@ -53,7 +53,7 @@ try{
   unavailable=false;await page.evaluate(()=>window.fixture.feed.refresh());
   await page.getByPlaceholder('Search company, investor, sector or round...').fill('Fixture Investor');
   await page.evaluate(()=>{window.fixture.tab.destroy();window.fixture.tab.render({root:document.querySelector('#root'),scope:'portfolio'});});
-  await page.getByRole('heading',{name:'Private Market News',exact:true}).waitFor();assert.equal(await search.inputValue(),'Fixture Investor');
+  await page.getByRole('heading',{name:'Private Market',exact:true}).waitFor();assert.equal(await search.inputValue(),'Fixture Investor');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Wide funding columns stay inside their scroller');
   mkdirSync('.cache/private-market',{recursive:true});await page.screenshot({path:'.cache/private-market/reader-light.png',fullPage:true});
   await page.emulateMedia({colorScheme:'dark'});await page.evaluate(()=>document.documentElement.dataset.theme='dark');await page.screenshot({path:'.cache/private-market/reader-dark.png',fullPage:true});
