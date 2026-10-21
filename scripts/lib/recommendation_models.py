@@ -157,8 +157,10 @@ def extract_catalyst(text):
         found, contradicted = [], False
         for page, value in enumerate(pages, 1):
             for match in re.finditer(pattern, value, re.I | re.S):
-                prefix = re.split(r"[.!?]", value[max(0,match.start()-90):match.start()])[-1]
-                if asserted and re.search(r"\b(?:not|no|never|nor|will|would|may|might|propos(?:e[ds]?|al)|plan(?:ned|s)?|expect(?:ed|s)?|intend(?:ed|s)?|scheduled?|target(?:ed|s)?|pending|conditional)\b|subject\s+to|to\s+be", prefix, re.I):
+                # Keep punctuation and wrapped lines: "not, under clause 1.2, received" is still
+                # negative. Conservative rejection is preferable to inventing an achieved event.
+                prefix = value[max(0,match.start()-90):match.start()]
+                if asserted and re.search(r"\b(?:not|no|never|nor|cannot|unable|can|could|should|shall|will|would|may|might|propos(?:e[ds]?|al)|plan(?:ned|s)?|expect(?:ed|s)?|intend(?:ed|s)?|scheduled?|target(?:ed|s)?|pending|conditional)\b|\b[a-z]+n['’]t\b|subject\s+to|to\s+be", prefix, re.I):
                     contradicted = True
                     continue
                 found.append({"value": transform(match), "page": page, "offset": match.start(), "quote": match[0][:650]})
