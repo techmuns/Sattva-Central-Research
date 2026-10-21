@@ -29,6 +29,7 @@ assert.equal(destroyed, 1);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const reads = [];
 async function alertFrame(page) {
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
   return page.evaluate(() => {
     const box = selector => {
       const el = document.querySelector(selector), rect = el.getBoundingClientRect();
@@ -41,10 +42,10 @@ async function alertFrame(page) {
     delete content.bottom; delete content.height;
     const subtabs = box('#subview-mount');
     return { header, nav, content, subtabs, mainTop: document.querySelector('#dashboard-main').offsetTop, subtabTop: document.querySelector('#subview-mount').getBoundingClientRect().top,
-      overflow: document.documentElement.scrollWidth > innerWidth + 1 };
+      overflow: document.documentElement.scrollWidth > innerWidth + 1, compactNews: !!document.querySelector('.news-toolbar') };
   });
 }
-function alignedAlerts(frame) {
+function alignedAlerts(frame, { compact = false } = {}) {
   for (const part of [frame.header, frame.content]) {
     assert.equal(part.left, frame.nav.left, 'alert reader starts at the main navigation edge');
     assert.equal(part.right, frame.nav.right, 'alert reader ends at the main navigation edge');
@@ -52,8 +53,8 @@ function alignedAlerts(frame) {
   assert.equal(frame.subtabs.x, frame.content.left, 'subtabs stay inside the common frame');
   assert.equal(frame.overflow, false, 'wide table columns do not widen the page');
   assert(frame.header.y >= 0, 'the brand has space above it');
-  assert(frame.subtabTop - frame.nav.bottom >= 20, 'main tabs and subtabs have dedicated space');
-  assert(frame.mainTop - frame.subtabs.bottom >= 19, 'subtabs and reader content have dedicated space');
+  assert(frame.subtabTop - frame.nav.bottom >= (compact ? 0 : 20), 'main tabs and subtabs have dedicated space');
+  assert(frame.mainTop - frame.subtabs.bottom >= (compact ? 0 : 19), 'subtabs and reader content have dedicated space');
 }
 const server = createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
@@ -287,12 +288,21 @@ try {
       assert.deepEqual(await alertFrame(page), before, `${width}px: returning to AI Alerts keeps its frame`);
       for (const tab of ['announcements', 'mutual-funds', 'earnings', 'news-section', 'breakouts']) {
         await page.locator(`#tabbar-mount [data-tab-id="${tab}"]`).click();
+        const reader = { announcements: 'corp-announcements', earnings: 'earnings-hub', 'news-section': 'news' }[tab] || tab;
+        await page.locator(`[data-active-tab="${reader}"]`).waitFor();
         const frame = await alertFrame(page);
-        alignedAlerts(frame);
-        assert.deepEqual(frame.header, before.header, `${width}px: ${tab} keeps the shared header`);
-        assert.deepEqual(frame.nav, before.nav, `${width}px: ${tab} keeps the shared main tabs`);
-        assert.equal(frame.subtabTop, before.subtabTop, `${width}px: ${tab} starts subtabs at the same position`);
-        assert.equal(frame.mainTop, before.mainTop, `${width}px: ${tab} starts the reader at the same position`);
+        // News deliberately reclaims the large shared gaps for its compact headline list.
+        const compactNews = tab === 'news-section' && frame.compactNews;
+        alignedAlerts(frame, { compact: compactNews });
+        if (compactNews) {
+          assert(frame.header.height <= before.header.height, `${width}px: News keeps its header compact`);
+          assert(frame.mainTop < before.mainTop, `${width}px: News gives the reclaimed space to its reader`);
+        } else {
+          assert.deepEqual(frame.header, before.header, `${width}px: ${tab} keeps the shared header`);
+          assert.deepEqual(frame.nav, before.nav, `${width}px: ${tab} keeps the shared main tabs`);
+          assert.equal(frame.subtabTop, before.subtabTop, `${width}px: ${tab} starts subtabs at the same position`);
+          assert.equal(frame.mainTop, before.mainTop, `${width}px: ${tab} starts the reader at the same position`);
+        }
       }
     }
     await page.setViewportSize({ width: 1024, height: 700 });

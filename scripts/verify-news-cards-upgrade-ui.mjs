@@ -24,8 +24,8 @@ tab.render({root:document.querySelector('#reading'),scope:'portfolio',live:{regi
 watchWorkerChanges(navigator.serviceWorker,()=>location.reload());
 await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;window.ready=true;
 </script>`;
-// Old release marker and a legacy table module create a genuinely warm baseline.
-const legacy = `export function render(ctx){ctx.root.innerHTML='<table data-legacy-news><tr><td>LTI Mindtree guidance update</td></tr></table>';}`;
+// The preceding immutable release serves the spacious News layout to a returning reader.
+const legacy = `export function render(ctx){ctx.root.innerHTML='<article data-legacy-news style="padding:20px;min-height:150px"><h3>LTI Mindtree guidance update</h3><p>Original publisher standfirst.</p><p>Is this important?</p></article>';}`;
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   res.setHeader('cache-control', 'no-cache');
@@ -38,7 +38,7 @@ const server = createServer((req, res) => {
     let body = readFileSync(file);
     if (path === '/sw.js') {
       body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js',self.location).href;");
-      if (!upgraded) body = body.replace('-news-card-parity-v1', '');
+      if (!upgraded) body = body.replace('-compact-news-reader-v4', '');
     }
     if (path === '/js/tabs/news.js' && !upgraded) body = legacy;
     res.setHeader('content-type', { '.js':'text/javascript', '.json':'application/json', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png' }[extname(file)] || 'application/octet-stream');
@@ -57,22 +57,24 @@ try {
   await page.waitForFunction(() => window.ready && navigator.serviceWorker.controller);
   await page.reload();
   await page.waitForFunction(() => window.ready);
-  assert.equal(await page.locator('[data-legacy-news]').count(), 1, 'returning reader starts on cached table');
-  assert(!(await page.evaluate(() => caches.keys())).some(key => key.includes('news-card-parity-v1')));
+  assert.equal(await page.locator('[data-legacy-news]').count(), 1, 'returning reader starts on cached spacious view');
+  assert(!(await page.evaluate(() => caches.keys())).some(key => key.includes('compact-news-reader-v4')));
   upgraded = true;
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await page.locator('.news-card-table .news-story').waitFor();
-  assert.equal(await page.locator('[data-legacy-news]').count(), 0, 'open reader replaces the legacy table automatically');
+  assert.equal(await page.locator('[data-legacy-news]').count(), 0, 'open reader replaces the spacious layout automatically');
+  assert.equal(await page.locator('.news-story-summary').isVisible(), false, 'returning reader gets compact default rows');
+  await page.locator('.news-story-details summary').click();
   assert(await page.locator('.news-story-thumbnail img').isVisible(), 'new image component is loaded through the upgraded graph');
   const colors = await page.locator('.news-story').evaluate(card => ['important','not-important'].map(value => getComputedStyle(card.querySelector('[data-vote="'+value+'"]')).color));
   assert.deepEqual(colors, ['rgb(4, 120, 87)','rgb(190, 18, 60)'], 'returning reader receives green/red feedback');
   const keys = await page.evaluate(() => caches.keys());
-  assert(keys.every(key => key.includes('news-card-parity-v1')), 'preceding immutable caches are removed');
+  assert(keys.every(key => key.includes('compact-news-reader-v4')), 'preceding immutable caches are removed');
   const cached = await page.evaluate(async () => {
     const cache = await caches.open((await caches.keys())[0]);
     return !!(await cache.match('/js/ui/news-story.js'));
   });
   assert(cached, 'shared story component is included in the new immutable graph');
   assert.deepEqual(errors, []);
-  console.log('PASS warm Portfolio session replaces its cached headline table with images and semantic feedback automatically, warms the new component and evicts the old graph');
+  console.log('PASS warm Portfolio session replaces its cached spacious cards with the compact expandable layout automatically, warms the new component and evicts the old graph');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
