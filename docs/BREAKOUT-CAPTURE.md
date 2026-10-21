@@ -90,7 +90,7 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
 
 ### Momentum open interest (21 October 2026)
 
-The existing minute alarm also requests near-month NSE equity futures from Upstox V3 full quotes
+The existing GitHub minute collector also requests near-month NSE equity futures from Upstox V3 full quotes
 in batches of at most 500. The daily instrument map retains stock futures and joins their exact
 `underlying_key` to the cash instrument; expired, ambiguous, index and option contracts are excluded.
 No new credential or subscription is introduced. Cash-price collection and fallback keep their
@@ -105,7 +105,8 @@ their original source clock; older responses cannot replace newer OI. The scanne
 Unavailable data stays a dash. OI does not affect any momentum gate.
 
 Collection starts with this release, automatically on the next normal market-hours check.
-The existing four-calendar-day minute archive retains OI observations; pre-release OI and missed
+The existing four-calendar-day minute archive in the encrypted GitHub restart checkpoint retains
+OI observations; pre-release OI and missed
 OI intervals are not backfilled or claimed complete. The current reader never loads that archive.
 Source and check times, raw counts and the contract remain available on hover and in Excel.
 
