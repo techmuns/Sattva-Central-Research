@@ -1173,11 +1173,12 @@ const BUILDERS = [
   {
     id: 'private-market-news',
     load: () => privateMarketNews.load(),
-    read({ plan }) {
-      const rows = privateMarketNews.rows(), meta = privateMarketNews.meta(), health = privateMarketNews.health();
+    read({ scope, plan }) {
+      const all = privateMarketNews.rows(), rows = scope === 'universe' ? all : [], meta = privateMarketNews.meta(), health = privateMarketNews.health();
       return sourcePacket(this.id, { source:'Inc42 Funding Galore — public Indian startup funding tables', asOf:meta.sourceCheckedAt || null,
         rowCount:rows.length, dataQuality:health.failed || health.partial || health.stale ? 'partial' : 'source-reported',
-        coverage:{ pending:health.pending, unavailable:health.unavailable, archiveComplete:meta.archive?.complete || false, scope:'Source-wide; independent of listed portfolio and watchlist. Not exhaustive VC/PE coverage.' },
+        coverage:{ pending:health.pending, unavailable:health.unavailable, archiveComplete:meta.archive?.complete || false, capturedRows:all.length,
+          scope:scope === 'universe' ? 'Source-wide Indian startup funding; not exhaustive VC/PE coverage.' : 'Excluded from narrowed research scopes: no mapping to listed holdings, watchlist companies or invested funds is established. The Private Market News reader shows the source-wide capture.' },
         ...chooseRows(rows, plan, row => ({ company:row.company, date:row.date, sector:row.sector, amount:row.amount, round:row.round,
           investors:clipped(row.investors,300), leadInvestor:row.leadInvestor, url:row.sourceUrl, sourceMissing:row.sourceMissing,
           notes:meta.articles?.find(a => a.url === row.sourceUrl)?.notes?.join('\n') || '' }), byDateDesc('dateISO')) });

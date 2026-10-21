@@ -5925,7 +5925,8 @@ and encrypted background transports remain separate. A 24 MiB uncompressed limit
 fails closed before exceeding static asset limits; growth beyond it requires sharding.
 
 The initial view is the latest successfully captured roundup; All captured history
-and source-year filters retain access to older and undated records. Search covers
+and roundup publication-year filters retain access to older records without
+guessing missing funding dates. All captured history also includes undated records. Search covers
 company, investor and every normalized table field. Shared bounded table mounting,
 sorting, source links, complete filtered Excel export and source notes use the same
 row model. Opening, returning, reconnecting and visible five-minute checks revalidate
@@ -5933,3 +5934,5 @@ published data without requesting Inc42 or dispatching a production workflow.
 The last verified public capture is also stored in IndexedDB, with the shared
 worker-backed memory budget. Offline reloads retain saved rows and disclose the
 failed publication check; older or incomplete replacements cannot delete reader history.
+Ask Research includes private funding rows in Universe research only; narrowed
+portfolio/Watchlist questions cannot imply an invested-fund or listed-holding mapping.

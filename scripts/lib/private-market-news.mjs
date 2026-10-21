@@ -19,10 +19,12 @@ export function articleUrl(raw) {
 }
 export function discover(html) {
   const articles = new Map();
-  for (const a of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+  const cards = [...html.matchAll(/<h2\b[^>]*class=["'][^"']*entry-title[^"']*["'][^>]*>[\s\S]*?<\/h2>/gi)];
+  const listing = cards.length ? cards.map(c => c[0]).join('\n') : html;
+  for (const a of listing.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const url = articleUrl(attr(a[1], 'href'));
     const title = attr(a[1], 'title') || textContent(a[2]);
-    if (url && title && /(?:this.week|funding.galore|funding.of.the.week|weekly.funding)/i.test(title + ' ' + url)) articles.set(url, { url, title });
+    if (url && title && (cards.length || /(?:this.week|funding.galore|funding.of.the.week|weekly.funding)/i.test(title + ' ' + url))) articles.set(url, { url, title });
   }
   // Configuration comes from the normal public archive, never an authenticated API.
   const config = html.match(/var ajax_object\s*=\s*(\{[^;]+\});/)?.[1];
@@ -38,7 +40,9 @@ const aliases = {
   round: ['fundingroundtype', 'round', 'roundtype', 'fundinground', 'stage'], investors: ['investors', 'investor'], leadInvestor: ['leadinvestor', 'leadinvestors'],
 };
 export function sourceDay(raw) {
-  const m = String(raw).match(/^(\d{1,2})[\s-]+([A-Za-z]+)[\s,-]+(20\d{2})$/);
+  const clean = String(raw).trim().replace(/\s*\*+$/, '');
+  if (/^20\d{2}-\d{2}-\d{2}$/.test(clean)) { const date = new Date(clean); return Number.isFinite(date.getTime()) && date.toISOString().slice(0,10) === clean ? clean : null; }
+  const m = clean.match(/^(\d{1,2})[\s-]+([A-Za-z]+)[\s,-]+(20\d{2})$/);
   if (!m) return null;
   const month = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m[2].slice(0,3).toLowerCase()) + 1;
   if (!month) return null;
@@ -51,14 +55,21 @@ export function parseArticle(html, article) {
   const title = textContent(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || article.title);
   const rows = []; const occurrences = new Map(); const notes = [];
   for (const table of html.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)) {
-    const lines = [...table[1].matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map(tr => [...tr[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(c => textContent(c[1])));
+    const rawLines = [...table[1].matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
+    const lines = rawLines.map(tr => [...tr[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(c => textContent(c[1])));
     const headerIndex = lines.findIndex(cells => cells.some(c => aliases.company.includes(normalize(c))) && cells.some(c => aliases.amount.includes(normalize(c))));
     if (headerIndex < 0) continue;
     const headers = lines[headerIndex];
     const index = Object.fromEntries(FIELDS.map(f => [f, headers.findIndex(c => aliases[f].includes(normalize(c)))]));
-    for (const cells of lines.slice(headerIndex + 1)) {
-      if (cells.some(c => /^source:|^\*+\s*(mix|part)/i.test(c))) { notes.push(cells.filter(Boolean).join('\n')); continue; }
+    for (let lineIndex = headerIndex + 1; lineIndex < lines.length; lineIndex++) {
+      const cells = lines[lineIndex];
+      if (cells.some(c => /(?:^|\n)[\s“”"'‘’]*Source\s*:\s*Inc42\b|^\*+\s*(mix|part)/i.test(c))) { notes.push(cells.filter(Boolean).join('\n')); continue; }
       if (cells.every(c => !c)) continue;
+      if ([...rawLines[lineIndex][1].matchAll(/\b(?:rowspan|colspan)\s*=\s*["']?(\d+)/gi)].some(m => Number(m[1]) !== 1)) throw Error('Funding table has unsupported merged data cells');
+      // Some source rows omit the last optional lead-investor cell entirely.
+      // Positional HTML columns still identify the eight supplied fields; the
+      // missing trailing value stays blank, never inferred from the investor list.
+      if (cells.length === headers.length - 1 && index.leadInvestor === headers.length - 1) cells.push('');
       if (cells.length !== headers.length || !cells[index.company] || cells[index.company] === headers[index.company]) throw Error('Funding table has an incomplete or repeated row');
       const record = Object.fromEntries(FIELDS.map(f => [f, index[f] >= 0 ? cells[index[f]] : '']));
       const company = record.company.normalize('NFKC').toLowerCase().trim(); const occurrence = occurrences.get(company) || 0; occurrences.set(company, occurrence + 1);

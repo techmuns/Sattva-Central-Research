@@ -11,6 +11,7 @@ const fields = [['date','Funding date'],['company','Company'],['sector','Sector'
 const time = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-IN', { timeZone:'Asia/Kolkata', dateStyle:'medium', timeStyle:'short' }) + ' IST' : 'Not yet confirmed';
 const safeUrl = value => { try { const u = new URL(value); return u.origin === 'https://inc42.com' ? u.href : 'https://inc42.com/tag/funding-galore/'; } catch { return 'https://inc42.com/tag/funding-galore/'; } };
 const link = row => `<a data-norow href="${esc(safeUrl(row.sourceUrl || row.url))}" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline">Inc42 ↗</a>`;
+const publicationYear = row => String(row.publishedAt || '').match(/^(20\d{2})-/)?.[1] || '';
 const cell = value => `<div style="max-width:260px;white-space:normal;overflow-wrap:anywhere">${esc(value || '—')}</div>`;
 function details(row) {
   const article = feed.meta().articles?.find(a => a.url === row.sourceUrl);
@@ -51,7 +52,7 @@ function paint() {
     searchPlaceholder:'Search company, investor, sector or round...', searchable:r => fields.map(([key]) => r[key]).join(' '),
     columns: fields.filter(([key]) => key !== 'company').map(([key,label]) => ({ label, get:r => cell(r[key]), html:true, sortable:key !== 'amount', sortValue:r => key === 'date' ? r.dateISO || '' : r[key] })),
     initialSort:{ key:'Funding date', dir:'desc' }, initialView:view,
-    filters:[{ label:'Funding period', value:'latest', options:[{ value:'latest',label:'Latest captured week' }, { value:'all',label:'All captured history' }, ...[...new Set(rows.map(r => r.dateISO?.slice(0,4)).filter(Boolean))].sort().reverse().map(value => ({ value,label:value }))], match:(r,v) => v === 'all' || !v ? true : v === 'latest' ? r.sourceUrl === latest : r.dateISO?.startsWith(v) }, options('sector','Sectors'), options('round','Round types'), options('businessModel','Business models')],
+    filters:[{ label:'Funding period', value:'latest', options:[{ value:'latest',label:'Latest captured week' }, { value:'all',label:'All captured history' }, ...[...new Set(rows.map(publicationYear).filter(Boolean))].sort().reverse().map(value => ({ value,label:`${value} roundups` }))], match:(r,v) => v === 'all' || !v ? true : v === 'latest' ? r.sourceUrl === latest : publicationYear(r) === v }, options('sector','Sectors'), options('round','Round types'), options('businessModel','Business models')],
     loading:!m.generatedAt && !m.readError,
     emptyMessage:rows.length ? 'No funding deals match these filters.' : 'Funding collection has not published readable rows yet. Coverage shows the latest attempt.',
     countNoun:'deals', fillMode:'windowed', stickyHead:'max(320px, calc(100vh - 340px))', onRowClick:details,

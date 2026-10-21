@@ -15,7 +15,7 @@ async function bounded(response, limit) {
   for await (const chunk of response.body) { bytes += chunk.length; if (bytes > limit) throw Error('Funding transport exceeds size budget'); chunks.push(Buffer.from(chunk)); }
   return Buffer.concat(chunks);
 }
-export function privateMarketRelease({ env = process.env, fetcher = fetch, head = () => execFileSync('git', ['rev-parse','HEAD'], { encoding:'utf8' }).trim() } = {}) {
+export function privateMarketRelease({ env = process.env, fetcher = fetch, head = () => execFileSync('git', ['rev-parse','HEAD'], { encoding:'utf8' }).trim(), sleep = ms => new Promise(r => setTimeout(r,ms)) } = {}) {
   if (env.GITHUB_REPOSITORY !== REPO) throw Error('Funding release repository mismatch');
   const root = `https://api.github.com/repos/${REPO}`, downloadRoot = `https://github.com/${REPO}/releases/download/${TAG}/`;
   async function api(suffix, options = {}) {
@@ -79,9 +79,12 @@ export function privateMarketRelease({ env = process.env, fetcher = fetch, head 
     const same = current.assets?.find(a => a.name === name && a.state === 'uploaded');
     if (!same) await api(`https://uploads.github.com/repos/${REPO}/releases/${current.id}/assets?name=${name}`, { method:'POST', headers:{ 'content-type':'application/gzip' }, body:compressed });
     if (!current.body?.includes('Capture initialized')) await api(`/releases/${current.id}`, { method:'PATCH', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ body:(current.body || '') + '\nCapture initialized' }) });
-    const acknowledged = await latest();
-    if (acknowledged?.asset.name !== name || JSON.stringify(await download(acknowledged)) !== plain) throw Error('Funding publication was not durably acknowledged');
-    return acknowledged;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try { const acknowledged = await latest(); if (acknowledged?.asset.name === name && JSON.stringify(await download(acknowledged)) === plain) return acknowledged; }
+      catch { /* A new upload may not yet be visible through the read API/CDN. */ }
+      if (attempt < 2) await sleep(1000);
+    }
+    throw Error('Funding publication was not durably acknowledged');
   }
   return { latest, download, publish };
 }

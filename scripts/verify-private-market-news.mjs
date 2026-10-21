@@ -13,13 +13,19 @@ const row = (name,amount) => `<tr><td>16 Oct 2026</td><td>${name}</td><td>AI</td
 const html = (rows = row('Fixture Company','$11.4 Mn *')) => `<h1>Fixture funding this week</h1><meta property="article:published_time" content="2026-10-17T09:00:00+05:30"><table><tr>${['Date','Name','Sector','Subsector','Business Model','Funding Round Size','Funding Round Type','Investors','Lead Investor'].map(s=>`<td>${s}</td>`).join('')}</tr>${rows}<tr><td></td><td colspan="6">Source: Inc42<br>*Mix of equity and debt<br>** Part of a larger round</td><td></td><td></td></tr></table>`;
 const listing = `<a href="${url}" title="Fixture funding this week">Fixture</a><script>var ajax_object = {"ajax_url":"https://inc42.com/wp-admin/admin-ajax.php","api_nonce":"public-fixture","max_page":"2"}; var data = {'query':'{"tag":"funding-galore"}'};</script>`;
 assert.equal(discover(listing).articles.length,1);
+assert.equal(discover(`<h2 class="entry-title"><a href="${url}">An older funding recap</a></h2>`).articles.length,1,'Every actual source card is discovered even when its title uses an older format');
 assert.equal(discover(`<a href="https://evil.test/buzz/funding-this-week/">Funding this week</a>`).articles.length,0);
 const parsed = parseArticle(html(),article);
 assert.equal(parsed.rows.length,1); assert.equal(parsed.rows[0].amount,'$11.4 Mn *'); assert.equal(parsed.rows[0].investors,'One & Two, Three (Investor)');
 assert.equal(parsed.rows[0].dateISO,'2026-10-16'); assert.equal(parsed.notes.length,1);
 assert.equal(parseArticle('<table><tr><td>Ad</td></tr></table>',article).status,'unavailable');
 assert.throws(()=>parseArticle(html('<tr><td>16 Oct 2026</td><td>Truncated</td></tr>'),article),/incomplete/);
+assert.throws(()=>parseArticle(html().replace('<td>16 Oct 2026</td>','<td rowspan="2">16 Oct 2026</td>'),article),/merged data cells/);
 assert.equal(sourceDay('31 Feb 2026'),null); assert.equal(sourceDay('Oct 2026'),null);
+assert.equal(sourceDay('2026-07-08'),'2026-07-08');assert.equal(sourceDay('7 Sep 2026 **'),'2026-09-07');assert.equal(sourceDay('5 Oct 2926'),null);assert.equal(sourceDay('15 Dec 20205'),null);
+assert.equal(parseArticle(html().replace('Source: Inc42','*Completely subscribed.\nSource : Inc42'),article).rows.length,1);
+assert.equal(parseArticle(html().replace('Source: Inc42','“Source: Inc42'),article).rows.length,1);
+const noLead=parseArticle(html().replace('<td>One &amp; Two</td></tr>','</tr>'),article);assert.equal(noLead.rows[0].leadInvestor,'');assert.equal(noLead.rows[0].investors,'One & Two, Three (Investor)');
 const state = emptyCapture(); state.articles.push({...article,status:'pending'});
 mergeArticle(state,state.articles[0],parseArticle(html(row('Fixture Company','$11.4 Mn *')+row('Other Company','—')),article),at);
 const id=state.deals[0].id;
@@ -92,7 +98,7 @@ const publishingFetcher=async(target,options={})=>{
   if(options.method==='PATCH'){releaseBody=JSON.parse(options.body).body;return Response.json({id:7});}
   return releaseExists?Response.json({id:7,tag_name:'private-market-news-data',body:releaseBody,assets:assets.map(({bytes,...a})=>a)}):new Response(null,{status:404});
 };
-const publishing=privateMarketRelease({env,fetcher:publishingFetcher,head:()=>env.GITHUB_SHA});
+const publishing=privateMarketRelease({env,fetcher:publishingFetcher,head:()=>env.GITHUB_SHA,sleep:async()=>{}});
 const published=await publishing.publish(captured);assert.equal(published.asset.name,name);assert.deepEqual(await publishing.download(published),captured);
 await publishing.publish(captured);assert.equal(assets.length,1,'Identical captures do not consume another asset');
 loseAcknowledgement=true;await assert.rejects(publishing.publish({...captured,generatedAt:'2026-10-21T09:00:00Z'}),/durably acknowledged/);
