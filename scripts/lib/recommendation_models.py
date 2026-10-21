@@ -175,7 +175,7 @@ def extract_catalyst(text):
     capture("notFirm", r"\b(?:letter\s+of\s+intent|memorandum\s+of\s+understanding|framework\s+agreement|lowest\s+bidder|L1\s+bidder)\b", lambda m: True)
     capture("cancelled", r"\b(?:cancelled|terminated|withdrawn|revoked|delayed|postponed)\b", lambda m: True)
     capture("adverse", r"\b(?:auditor[^\n]{0,50}resign(?:ed|ation)|defaulted\s+on\s+(?:loan|debt|payment)|admitted\s+(?:to|into)\s+(?:insolvency|CIRP)|fraudulent\s+transactions?)\b", lambda m: True)
-    capture("attributionUnclear", r"\b(?:consortium|joint\s+venture|JV\s+share|including\s+GST|inclusive\s+of\s+(?:tax|GST))\b", lambda m: True)
+    capture("attributionUnclear", r"\b(?:consortium|joint\s+venture|JV|subsidiar(?:y|ies)|associate\s+company|including\s+GST|inclusive\s+of\s+(?:tax|GST))\b", lambda m: True)
     capture("commissioned", r"\b(?:commenced\s+commercial\s+production|commercial\s+production\s+(?:has\s+)?commenced|successfully\s+commissioned)\b", lambda m: True, asserted=True)
     capture("existingUtilisation", r"(?:existing|current)\s+(?:capacity\s+)?utili[sz]ation[^\n]{0,50}?(\d{1,3}(?:\.\d+)?)\s*%", lambda m: str(D(m[1])))
     capture("funded", r"\b(?:fully\s+funded|funded\s+(?:entirely\s+)?(?:through|by|from)\s+internal\s+accruals)\b", lambda m: True, asserted=True)

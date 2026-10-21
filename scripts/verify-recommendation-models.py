@@ -69,7 +69,7 @@ class ModelTests(unittest.TestCase):
         f = fin_fixture(); f['baselineRevenue'] = D(4000000000)
         text = 'We received a purchase order.\nOrder value INR 60 crore.\nExecution 6 months.'
         self.assertTrue(score_models(f, extract_catalyst(text))['orders']['qualified'])
-        for extra in ['Letter of intent', 'The contract was cancelled', 'A consortium', 'inclusive of GST', '\nOrder value INR 90 crore.']:
+        for extra in ['Letter of intent', 'The contract was cancelled', 'A consortium', 'The JV received this order', 'Received by a subsidiary', 'inclusive of GST', '\nOrder value INR 90 crore.']:
             self.assertFalse(score_models(f, extract_catalyst(text + '\n' + extra))['orders']['qualified'], extra)
 
     def test_capacity_proposal_does_not_become_production(self):

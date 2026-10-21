@@ -81,6 +81,8 @@ negated, conditional and future claims cannot establish firm orders, production,
 Required contract/project terms must share a page and a bounded text span; explicit multiple-project
 or contract documents require a separate verified linking adapter. Cross-page relationships are
 not guessed, even when this leaves a real catalyst unqualified.
+JV, consortium and subsidiary/associate attribution also require a verified ownership/allocation
+adapter; their entire contract or project value cannot be assigned to the listed issuer by default.
 unrecognised tables, units or compound projects require a verified adapter. Extraction is not proof
 that every page, amendment, payment term, margin or project milestone was reviewed. No unreported
 profit contribution, attributable share, commissioning date or contract margin is inferred.
