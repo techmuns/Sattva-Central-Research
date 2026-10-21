@@ -137,7 +137,9 @@ def capture_window(store, reader, family, start, end, lookup):
     while True:
         page, at = progress["nextPage"], iso_now()
         try:
-            rows, total = index_page(reader.read(index_url(family, start, end, page)), family, page)
+            body = reader.read(index_url(family, start, end, page))
+            at = iso_now()  # Observation is after receipt, never the start of a slow source request.
+            rows, total = index_page(body, family, page)
             if progress["total"] is not None and total != progress["total"]:
                 # Live totals moved between pages. Keep discovered documents, restart this window next run.
                 store.set(key, {"nextPage": 1, "seen": [], "total": None})
@@ -251,7 +253,7 @@ def read_document(store, reader, doc, at, scratch):
     if b"<" in body[:100] and not body.startswith(b"%PDF"):
         parsed = parse_financial_xml(body, expected)
         parsed["retrievedFrom"] = url
-        store.save_version(doc, body, "xbrl", parsed, at)
+        store.save_version(doc, body, "xbrl", parsed, iso_now())
     elif body.startswith(b"%PDF"):
         # Poppler is free and local on this GitHub runner. Scans stay unreadable; no paid OCR fallback.
         with tempfile.TemporaryDirectory(dir=scratch) as tmp:
@@ -265,7 +267,7 @@ def read_document(store, reader, doc, at, scratch):
             re.escape(s) + r"\b", text, re.I) for s in expected["symbols"] + expected["bseCodes"])
         store.save_version(doc, body, "pdf", {"issuerMatches": issuer, "documentDate": evidence["date"],
             "dateEvidence": evidence, "retrievedFrom": url,
-            "financialExtraction": "unavailable: PDF tables require a verified adapter"}, at)
+            "financialExtraction": "unavailable: PDF tables require a verified adapter"}, iso_now())
     else:
         raise SourceFailure("Unsupported document format; retained URL needs a verified adapter")
 
