@@ -13,6 +13,7 @@ on:
       - 'public/js/data/private-market-funds.js'
       - 'public/js/investors/manager-images.js'
   schedule:
+    - cron: '30 3 * * 1' # Private Markets Intelligence: Monday 09:00 IST
     - cron: '1,6,11,16,21,26,31,36,41,46,51,56 * * * *'
   # A dense cron alone dropped the 19 October morning sends. Independent main-branch
   # collector completions also wake the runner; the two gates coalesce their frequency.

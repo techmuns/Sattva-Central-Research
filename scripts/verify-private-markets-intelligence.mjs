@@ -7,6 +7,7 @@ import {buildIntelligence,intelligenceEmails} from './lib/private-markets-intell
 import {PrivateMarketsJob} from './lib/private-markets-job.mjs';
 import {localNewsletter} from './lib/newsletter-local.mjs';
 import {newsletterWakePlan} from './lib/newsletter-wake-plan.mjs';
+assert.match(fs.readFileSync('.github/workflows/newsletter-refresh.yml','utf8'),/cron: '30 3 \* \* 1'/,'The primary weekly wake targets Monday 09:00 IST');
 fs.mkdirSync('.cache/private-markets-intelligence',{recursive:true});
 const root=fs.mkdtempSync(path.resolve('.cache/private-markets-intelligence/test-'));
 let at=Date.parse('2026-10-21T14:00:00Z');const monday=Date.parse('2026-10-26T03:30:00Z');

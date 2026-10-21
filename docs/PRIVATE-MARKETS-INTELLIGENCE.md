@@ -8,8 +8,8 @@ from the shared list stops both newsletters. No immediate production test send
 is part of activation.
 
 The existing GitHub newsletter processor and serialized account mutex own this
-edition. The five-minute wake and independent collector-completion recovery
-are retained. A newly due Monday boundary bypasses recent-check coalescing.
+edition. A dedicated Monday 03:30 UTC wake targets 09:00 IST; the five-minute wake
+and independent collector-completion recovery are retained. A newly due Monday boundary bypasses recent-check coalescing.
 GitHub schedules are best effort; delays beyond three hours are recorded as
 missed, with pending late arrivals/corrections retained for a later edition.
 No browser visit is required. Launching midweek does not resend an earlier Monday.
