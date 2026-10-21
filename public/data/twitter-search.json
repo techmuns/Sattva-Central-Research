@@ -1706,8 +1706,8 @@
       "lastDiscoveryAt": "2026-10-16T13:03:01+00:00"
     },
     "isin:INE08NE01025|Sanstar": {
-      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T13:43:09+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 5,
       "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
@@ -2671,6 +2671,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-21T13:14:25.416614+00:00"
+    "checkedAt": "2026-10-21T13:43:09.422944+00:00"
   }
 }
