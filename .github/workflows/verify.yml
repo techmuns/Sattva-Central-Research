@@ -363,11 +363,23 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-fund-returns-ui.mjs && node scripts/verify-mutual-funds-ui.mjs && node scripts/verify-mutual-funds-layout-ui.mjs && node scripts/verify-mutual-funds-cache-ui.mjs && node scripts/verify-mutual-funds-upgrade-ui.mjs
+      - name: Verify private funding reader and retained history
+        if: ${{ matrix.part == 3 }}
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-private-market-news-ui.mjs
+      - name: Retain private funding reader evidence
+        if: ${{ always() && matrix.part == 3 }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-funding-reader
+          path: .cache/private-market/*.png
+          include-hidden-files: true
       - name: Verify instant repeat visits and interaction cache boundaries
         if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-dashboard-performance-ui.mjs && node scripts/verify-private-market-news-ui.mjs
+        run: node scripts/verify-dashboard-performance-ui.mjs
       - name: Verify deferred tab interfaces and delayed navigation without user data
         if: ${{ matrix.part == 1 }}
         env:

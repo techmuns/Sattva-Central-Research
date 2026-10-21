@@ -22,7 +22,7 @@ try {
       const start = performance.now();
       const evidence = await research.buildResearchEvidence({ question, prepared, scope: 'portfolio' });
       cases.push({ question, ms: Math.round(performance.now() - start), chars: researchEvidenceChars(evidence),
-        companies: evidence.selection.companies, context: evidence.businessContext,
+        companies: evidence.selection.companies, context: evidence.businessContext, sourceIds:research.DASHBOARD_RESEARCH_SOURCES.map(s=>s.id),
         evidence, sources: evidence.sources.map(s => ({ id: s.id, status: s.status, count: s.rows.length })), preview: researchPreview(evidence) });
     }
     return cases;
@@ -43,7 +43,7 @@ try {
     }
     assert(r.context.candidates.every(c => c.weightPct === null));
     assert.match(r.context.holdingsBasis, /ownership and weights not established/);
-    assert.equal(r.sources.length, 21);
+    assert.deepEqual(r.sources.map(s=>s.id).sort(), r.sourceIds.sort());
     assert(r.sources.some(s => s.count));
     assert(r.chars <= 30000);
     assert(r.preview.items.every(p => p.kind === 'excerpt' || p.kind === 'headline'));

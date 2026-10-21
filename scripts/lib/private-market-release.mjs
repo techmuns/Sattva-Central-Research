@@ -36,7 +36,10 @@ export function privateMarketRelease({ env = process.env, fetcher = fetch, head 
     for (let page = 1; page <= 500; page++) {
       const assets = await api(`/releases/${current.id}/assets?per_page=100&page=${page}`);
       if (!Array.isArray(assets)) throw Error('Funding asset inventory unavailable');
-      for (const asset of assets) if (assetPattern.test(asset.name) && asset.state === 'uploaded' && asset.size > 0 && asset.size < MAX && (!latestAsset || asset.id > latestAsset.id)) latestAsset = asset;
+      for (const asset of assets) if (assetPattern.test(asset.name) && asset.state === 'uploaded') {
+        if (!Number.isSafeInteger(asset.id) || !Number.isSafeInteger(asset.size) || asset.size < 1 || asset.size >= MAX) throw Error('Invalid funding asset metadata');
+        if (!latestAsset || asset.id > latestAsset.id) latestAsset = asset;
+      }
       if (assets.length < 100) {
         if (!latestAsset && current.body?.includes('Capture initialized')) throw Error('Retained funding history is missing; refusing reset');
         return latestAsset ? { repo:REPO, feature:PRIVATE_MARKET_FEATURE, asset:latestAsset } : null;
@@ -57,6 +60,7 @@ export function privateMarketRelease({ env = process.env, fetcher = fetch, head 
     if (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REF !== 'refs/heads/main' || !/^\d+$/.test(env.GITHUB_RUN_ID || '') || !/^\d+$/.test(env.GITHUB_RUN_ATTEMPT || '') || !/^[a-f0-9]{40}$/.test(env.GITHUB_SHA || '') || head() !== env.GITHUB_SHA) throw Error('Funding publication requires the exact main-branch Actions checkout');
     const plain = JSON.stringify(validateCapture(value)); if (Buffer.byteLength(plain) > MAX) throw Error('Funding capture exceeds publication budget');
     const compressed = gzipSync(plain), name = `funding-${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT}-${hash(compressed)}.json.gz`;
+    if (compressed.length >= MAX) throw Error('Compressed funding capture exceeds publication budget');
     let current = await release();
     if (!current) current = await api('/releases', { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ tag_name:TAG, target_commitish:env.GITHUB_SHA, name:'Private market news — public funding facts', body:'Public factual funding tables and source-check history. No private data or publisher article bodies.', make_latest:'false' }) });
     const latestEntry = await latest();
@@ -64,7 +68,9 @@ export function privateMarketRelease({ env = process.env, fetcher = fetch, head 
     const same = current.assets?.find(a => a.name === name && a.state === 'uploaded');
     if (!same) await api(`https://uploads.github.com/repos/${REPO}/releases/${current.id}/assets?name=${name}`, { method:'POST', headers:{ 'content-type':'application/gzip' }, body:compressed });
     if (!current.body?.includes('Capture initialized')) await api(`/releases/${current.id}`, { method:'PATCH', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ body:(current.body || '') + '\nCapture initialized' }) });
-    return latest();
+    const acknowledged = await latest();
+    if (acknowledged?.asset.name !== name || JSON.stringify(await download(acknowledged)) !== plain) throw Error('Funding publication was not durably acknowledged');
+    return acknowledged;
   }
   return { latest, download, publish };
 }
