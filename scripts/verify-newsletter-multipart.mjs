@@ -120,7 +120,7 @@ try{
   assert(restarted.db.prepare('SELECT COUNT(*) n FROM newsletter_manual_attempts').get().n<=manualAttempts,'Recovery cannot reserve another manual attempt');
   assert.equal(restarted.store.sentStoryKeys().size,0);assert.equal(modelCalls,0);
   assert(mail.every(m=>m.email===addresses[0]),'No recovery message can go to another subscriber');
-  if(mode.includes('expir')){assert.equal(result.reason,'request-expired');assert.equal(mail.length,firstRun.length,'Expired tests never start another provider request');}
+  if(mode.includes('expir')){assert.equal(result.reason,'request-expired');assert.equal(mail.length,firstRun.length,'Expired tests never start another provider request');if(mode==='requested-test-expired')assert.equal((await restarted.schedule.status()).lastResult,'request-expired','The automatic expiry wake reports a terminal failure');}
   else if(legacyTest){assert.equal(result.reason,'partial-send');assert.equal(mail.length,firstRun.length,'Legacy tests remain one-shot even after an upgrade');}
   else{
    assert.equal(result.ok,true);assert.equal(result.sent,1);assert.equal(result.failed,0);assert(result.outcomes[0].parts.every(p=>p.ok));
