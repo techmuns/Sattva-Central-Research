@@ -2,13 +2,13 @@
 // caps, long-lag arrivals and a morning job that starts after the next market has opened.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {buildBrief,briefStories,briefSummary,briefStats,renderBriefHtml,readNews,readMoves,readTrades,readSessionQuotes} from '../worker/newsletter-brief.mjs';
+import {buildBrief,briefStories,briefSummary,briefStats,renderBriefHtml,readNews,readMoves,readTrades,readSessionQuotes,readAnnouncements} from '../worker/newsletter-brief.mjs';
 import {renderBriefEmails} from '../worker/newsletter-email.mjs';
 import {newsletterRows,newsletterHoldings} from '../worker/newsletter-sources.mjs';
 import {tradingViewTargets} from './lib/tradingview-news.mjs';
 
 const now=Date.parse('2026-10-21T04:22:31Z'),from=Date.parse('2026-10-20T10:30:00Z'),to=Date.parse('2026-10-21T02:30:00Z');
-const holdings=[{ticker:'ALPHA',name:'Alpha Solar',isin:'INE000000001'},...Array.from({length:50},(_,i)=>({ticker:`HELD${i}`,name:`Held Company ${i}`}))];
+const holdings=[{ticker:'ALPHA',name:'Alpha Solar',isin:'INE000000001',bseCode:'500001'},...Array.from({length:50},(_,i)=>({ticker:`HELD${i}`,name:`Held Company ${i}`}))];
 const entity={entityId:'isin:INE000000001',key:'ALPHA',ticker:'ALPHA',name:'Alpha Solar',legalName:'Alpha Solar',queries:['Alpha Solar']};
 const articles=Array.from({length:95},(_,i)=>({entityId:entity.entityId,ticker:'ALPHA',company:'Alpha Solar',
  title:`Alpha Solar contract ${i} worth ${i+100} crore`,source:'Fixture Publisher',url:`https://publisher.test/company/${i}`,
@@ -31,12 +31,14 @@ files.set('/data/corporate-actions.json',{capturedAt:'2026-10-21T02:00:00Z',rows
 files.set('/data/insider-archive/index.json',{months:{'2026-10':45}});
 files.set('/data/insider-archive/2026-10.json',{rows:Array.from({length:45},(_,i)=>({ticker:'ALPHA',date:'2026-10-19',cells:{'Trade Category':'Bulk deals','Insider':`Person ${i}`,'Transaction':'Buy','Trade Shares':i+1,'Source':'NSE'}}))});
 const env={NEWSLETTER_GITHUB_ARCHIVES:true,ASSETS:{fetch:async request=>{const value=files.get(new URL(request.url).pathname);return value===undefined?new Response(null,{status:404}):typeof value==='string'?new Response(value):Response.json(value);}}};
-files.set('/data/announcement-identities.json',{entries:[{isin:'INE000000002',bseCode:'500002'}]});
+files.set('/data/announcement-identities.json',{entries:[{bseCode:'999000'},{isin:'INE000000001',bseCode:'500001'},{isin:'INE000000002',bseCode:'500002'}]});
 const extra=await newsletterHoldings({holdings:[{name:'BSE Only Holding',isin:'INE000000002',listed:true},{name:'Unresolved Listed Holding',isin:'INE000000003',listed:true},{name:'Private Holding',isin:'INE000000004',listed:false}]},env);
 assert.deepEqual(extra.map(h=>h.ticker),['500002','INE000000003'],'BSE-only and unresolved listed holdings remain in coverage by exact security identity; private lines stay out');
 files.get('/data/market-news.json').archive=[{month:'2026-10',file:'market-news/2026-10.json',count:1}];
 files.get('/data/company-news/index.json').archive=[{month:'2026-10',file:'company-news/2026-10.json',count:95}];
 files.set('/data/tradingview-news/index.json',{archive:[{month:'2026-10',file:'tradingview-news/2026-10.json',count:0}]});
+files.set('/data/announcements-archive/index.json',{months:{'2026-10':0}});
+files.set('/data/announcements-archive/2026-10.json',{kind:'announcements',rows:[]});
 const common={env,holdings,window:{from,to},reported:{empty:false,since:Date.parse('2026-10-01T00:00:00Z'),has:()=>false}};
 const quotes=await readSessionQuotes({env,holdings,now,edition:'morning'});
 assert.equal(quotes.session,'2026-10-19','Dussehra and a late start must not turn an unfinished 21 October session into a completed session');
@@ -103,4 +105,43 @@ assert(!identityNews.groups.flatMap(g=>g.items).some(row=>row.headline.includes(
 assert.equal(identityNews.company.coverage.unchecked,1,'A saved old single-query success cannot certify newly reviewed legal-name/alias checks');
 assert.equal(JSON.stringify(eternalRows),eternalOriginal,'Source records are retained unchanged');
 
-console.log(`PASS newsletter coverage: late holiday morning prices, closing fallback, verified sharded company/publisher archives, independent-source recovery, 85 filings, 96 news items, 45 trades, 51 movers and 51 calendar/action rows without caps, ten-day catch-up, ${messages.length} complete multipart messages, corrupt-part status, exact-ISIN provider alias`);
+
+const known=await newsletterHoldings({holdings:[{name:'Alpha Solar',ticker:'ALPHA',isin:'INE000000001'},{name:'Unmapped',ticker:'UNMAPPED'}]},env);
+assert.equal(known[0].bseCode,'500001','Existing NSE holdings also carry the exact-ISIN BSE code for retained filings');
+assert.equal(known[1].bseCode,null,'A directory entry without ISIN cannot attach to an ISIN-less holding');
+const latestBse=files.get('/data/corp-announcements.json');
+const retainedBse=[{...latestBse.byTicker.ALPHA[0],ticker:'ALPHA',source:'BSE'},
+ {newsId:'retained-only',ticker:'OLDALPHA',scripCode:'500001',source:'BSE',date:'2026-10-15',time:'18:00',headline:'Retained BSE-only award',category:'Company Update',subCategory:'General',url:'https://www.bseindia.com/xml-data/corpfiling/retained.pdf'},
+ {newsId:'wrong-isin',ticker:'ALPHA',scripCode:'500001',isin:'INE000000999',source:'BSE',date:'2026-10-15',time:'18:00',headline:'Different security award'},
+ {ticker:'ALPHA',source:'NSE',date:'2026-10-15',time:'18:03',title:'Retained NSE-only award',url:'https://nsearchives.nseindia.com/corporate/retained-nse.pdf'},
+ {ticker:'ALPHA',isin:'INE000000001',scripCode:'500001',source:'Screener',date:'2026-10-15',time:'18:05',title:'New manufacturing capacity commissioned',referenceUrl:'https://www.screener.in/company/ALPHA/',documentUnavailable:true},
+ {ticker:'ALPHA',scripCode:'500001',date:'2026-10-15',time:'18:06',title:'Legacy captured capacity commissioned'},
+ {ticker:'ALPHA',scripCode:'999999',source:'BSE',date:'2026-10-15',time:'18:07',title:'Wrong security code award'},
+ {ticker:'ALPHA',scripCode:'500001',source:'Screener',publishedAt:'2026-10-15',title:'Dated-only retained manufacturing expansion'}];
+const retainedBody=JSON.stringify({items:retainedBse}),retainedHash=createHash('sha256').update(retainedBody).digest('hex');
+const retainedPart=`/data/announcements-archive/2026-10.parts/${retainedHash}.json`;
+files.set(retainedPart,retainedBody);
+files.set('/data/announcements-archive/index.json',{months:{'2026-10':8},updatedAt:'2026-10-21T02:00:00Z'});
+files.set('/data/announcements-archive/2026-10.json',{kind:'announcements',rows:[],_jsonShards:{version:2,field:'rows',rows:8,parts:[{file:`2026-10.parts/${retainedHash}.json`,sha256:retainedHash,bytes:Buffer.byteLength(retainedBody),rows:8,order:[0,1,2,3,4,5,6,7]}]}});
+const filingOptions={...common,lateFrom:Date.parse('2026-10-10T00:00:00Z'),uncapped:true,fetcher:async()=>{throw Error('offline fixture')}};
+const retainedFilings=await readAnnouncements(filingOptions);
+assert.equal(retainedFilings.count,90,'Older BSE/NSE/Screener filings survive the rolled head; duplicates fold and an explicit foreign ISIN is rejected');
+assert.equal(retainedFilings.filingArchive.ok,true);
+assert.deepEqual(retainedFilings.filingArchive.sources,{BSE:2,NSE:1,Screener:2,'Captured filing':1});
+assert.equal(retainedFilings.filingArchive.unverifiedSources,1);
+const datedOnly=retainedFilings.groups.flatMap(g=>g.items).find(row=>row.headline==='Dated-only retained manufacturing expansion');
+assert.equal(datedOnly.dayOnly,true,'A date-only retained value cannot become a precise midnight timestamp');
+assert(retainedFilings.groups.flatMap(g=>g.items).some(row=>row.exchanges.includes('Screener')&&row.url==='https://www.screener.in/company/ALPHA/'),'Unlinked notices keep their source and reference page');
+const oldFiling=retainedFilings.groups.flatMap(g=>g.items).find(row=>row.keys.includes('bse:retained-only'));
+assert.equal(oldFiling.ticker,'ALPHA','Immutable BSE code resolves a captured older ticker');assert.equal(oldFiling.late,true);
+assert(renderBriefEmails({...brief,announcements:retainedFilings}).some(message=>message.keys.includes('bse:retained-only')),'The retained source identity is included in actual multipart email output');
+files.delete('/data/corp-announcements.json');
+const withoutHead=await readAnnouncements(filingOptions);
+assert.equal(withoutHead.count,6,'Independent retained filings survive a failed latest head');assert.equal(withoutHead.bse.ok,false);assert.equal(withoutHead.filingArchive.ok,true);
+files.set('/data/corp-announcements.json',latestBse);
+files.set(retainedPart,retainedBody.replace('Retained BSE-only','Corrupted BSE-only'));
+const corruptFilings=await readAnnouncements(filingOptions);
+assert.equal(corruptFilings.count,85,'A bad history part never discards the usable latest head');assert.equal(corruptFilings.filingArchive.ok,false);assert(corruptFilings.filingArchive.failedParts.length>0);
+assert.equal((await newsletterRows({...env,NEWSLETTER_GITHUB_ARCHIVES:false},'/data/announcements-archive/2026-10.json')).ok,false,'Retained filing calculations stay on GitHub, not the Worker');
+
+console.log(`PASS newsletter coverage: late holiday morning prices, closing fallback, verified sharded company/publisher archives, independent-source recovery, 85 filings, 96 news items, 45 trades, 51 movers and 51 calendar/action rows without caps, ten-day catch-up, ${messages.length} complete multipart messages, corrupt-part status, exact-ISIN provider alias, retained multi-provider filing history and independent failures`);

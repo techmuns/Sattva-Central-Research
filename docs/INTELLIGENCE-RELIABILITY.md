@@ -277,6 +277,11 @@ qualify an Eternal headline, but a standalone group-business story is not a pare
 Ambiguous records remain captured and searchable as possible matches. Attribution revisions
 invalidate older readings and advance the service-worker release for returning readers.
 An optional company-relationship filter separates possible matches without deleting them.
+Daily email catch-up reads verified retained filing months independently of the latest
+three-day BSE head, retaining BSE, NSE and Screener provenance. Match by exact ISIN or BSE
+security code before a mutable ticker, preserve safe original source keys, and keep available
+records when an archive part fails. Unlinked notices and unknown provenance stay explicit.
+File completeness and latest exchange-capture health remain separate coverage claims.
 
 Large news parts are integrity-checked and read three at a time with a per-part timeout. A
 transient network/502/503/504 failure gets one bounded retry; access denials and corrupt parts do
