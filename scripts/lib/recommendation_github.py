@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sqlite3
 import subprocess
 import time
@@ -14,7 +15,8 @@ from pathlib import Path
 
 TAG = re.compile(r"recommendation-foundation-\d{4}-\d{2}$")
 ASSET = re.compile(r"foundation-\d+-\d+-([a-f0-9]{64})\.sqlite\.gz$")
-MAX_STATE = 512 * 1024 * 1024
+MAX_STATE = 4 * 1024 * 1024 * 1024
+MAX_ARCHIVE = 1024 * 1024 * 1024  # Below GitHub's per-asset ceiling; no memory-sized database copies.
 
 
 class GithubState:
@@ -36,11 +38,14 @@ class GithubState:
             time.sleep(max(0, 1 - (time.monotonic() - self.last_write)))
             self.last_write = time.monotonic()
         url = ("https://uploads.github.com/repos/" + self.repo if upload else self.root) + suffix
-        data = payload if isinstance(payload, bytes) else json.dumps(payload).encode() if payload is not None else None
+        upload_file = payload.open("rb") if upload and isinstance(payload, Path) else None
+        data = upload_file or (payload if isinstance(payload, bytes) else json.dumps(payload).encode() if payload is not None else None)
         headers = {"Authorization": "Bearer " + self.token, "Accept": "application/vnd.github+json",
             "User-Agent": "SattvaPublicEvidenceState", "X-GitHub-Api-Version": "2022-11-28"}
         if data is not None:
             headers["Content-Type"] = "application/octet-stream" if upload else "application/json"
+        if upload_file:
+            headers["Content-Length"] = str(payload.stat().st_size)
         try:
             with self.opener.open(urllib.request.Request(url, data=data, headers=headers, method=method), timeout=120) as r:
                 body = r.read(4 * 1024 * 1024 + 1)
@@ -51,6 +56,9 @@ class GithubState:
             if missing and e.code == 404:
                 return None
             raise RuntimeError("GitHub state request failed (HTTP " + str(e.code) + ")") from e
+        finally:
+            if upload_file:
+                upload_file.close()
 
     def publisher_guard(self):
         if (self.env.get("GITHUB_ACTIONS") != "true" or self.env.get("GITHUB_REF") != "refs/heads/main" or
@@ -103,19 +111,26 @@ class GithubState:
             return False
         asset, tag = max(candidates, key=lambda x: x[0]["id"])
         url = "https://github.com/" + self.repo + "/releases/download/" + tag + "/" + asset["name"]
-        if asset.get("browser_download_url") != url or not 0 < asset.get("size", 0) <= MAX_STATE:
+        if asset.get("browser_download_url") != url or not 0 < asset.get("size", 0) <= MAX_ARCHIVE:
             raise ValueError("Invalid retained state destination or size")
-        # Public download only: the repository token is never forwarded to an asset/CDN host.
-        with urllib.request.urlopen(url, timeout=120) as response:
-            body = response.read(MAX_STATE + 1)
-        checksum = hashlib.sha256(body).hexdigest()
-        if len(body) != asset["size"] or checksum != ASSET.fullmatch(asset["name"])[1]:
-            raise ValueError("Retained state hash or size mismatch; refusing a reset")
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         archive = destination.with_suffix(".restoring.gz")
         temporary = destination.with_suffix(".restoring.sqlite")
-        archive.write_bytes(body)
+        # Public download only: the repository token is never forwarded to an asset/CDN host.
+        checksum, received = hashlib.sha256(), 0
+        with urllib.request.urlopen(url, timeout=120) as response, archive.open("wb") as out:
+            while True:
+                part = response.read(1024 * 1024)
+                if not part:
+                    break
+                received += len(part)
+                if received > asset["size"] or received > MAX_ARCHIVE:
+                    raise ValueError("Restart download exceeds its declared size")
+                checksum.update(part)
+                out.write(part)
+        if received != asset["size"] or checksum.hexdigest() != ASSET.fullmatch(asset["name"])[1]:
+            raise ValueError("Retained state hash or size mismatch; refusing a reset")
         with gzip.open(archive, "rb") as src, temporary.open("wb") as dst:
             size = 0
             while True:
@@ -147,9 +162,19 @@ class GithubState:
             row = db.execute("SELECT value FROM meta WHERE key='repository'").fetchone()
             if not row or json.loads(row[0]).lower() != self.repo.lower():
                 raise ValueError("Restart repository does not match publisher")
-        # Fixed gzip timestamp makes retries of identical state byte-identical.
-        body = gzip.compress(source.read_bytes(), compresslevel=6, mtime=0)
-        checksum = hashlib.sha256(body).hexdigest()
+        # Stream a fixed-timestamp gzip. Larger history never requires a larger/paid runner.
+        archive = source.with_suffix(".publication.gz")
+        with source.open("rb") as original, archive.open("wb") as target:
+            with gzip.GzipFile(filename="", fileobj=target, mode="wb", compresslevel=6, mtime=0) as compressed:
+                shutil.copyfileobj(original, compressed, 1024 * 1024)
+        size = archive.stat().st_size
+        if size > MAX_ARCHIVE:
+            raise ValueError("Compressed state ceiling reached; retained history is not deleted")
+        hashed = hashlib.sha256()
+        with archive.open("rb") as original:
+            for chunk in iter(lambda: original.read(1024 * 1024), b""):
+                hashed.update(chunk)
+        checksum = hashed.hexdigest()
         name = "foundation-" + self.env["GITHUB_RUN_ID"] + "-" + self.env["GITHUB_RUN_ATTEMPT"] + "-" + checksum + ".sqlite.gz"
         tag = "recommendation-foundation-" + dt.datetime.now(dt.timezone.utc).strftime("%Y-%m")
         release = self.request("/releases/tags/" + tag, missing=True)
@@ -164,8 +189,8 @@ class GithubState:
         if len(assets) >= 990:
             raise ValueError("Monthly release capacity reached; history retained, no automatic deletion")
         asset = self.request("/releases/" + str(release["id"]) + "/assets?name=" + name,
-            "POST", body, upload=True)
-        if (asset.get("name") != name or asset.get("state") != "uploaded" or asset.get("size") != len(body) or
+            "POST", archive, upload=True)
+        if (asset.get("name") != name or asset.get("state") != "uploaded" or asset.get("size") != size or
                 asset.get("digest") not in (None, "sha256:" + checksum)):
             raise ValueError("GitHub did not acknowledge the complete retained state")
         return asset

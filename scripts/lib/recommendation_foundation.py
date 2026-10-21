@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 VERSION = 1
+MAX_DATABASE = 4 * 1024 * 1024 * 1024
 XBRLI = "http://www.xbrl.org/2003/instance"
 MONTHS = {m.lower(): i for i, m in enumerate(
     ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
@@ -265,6 +266,7 @@ class Store:
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA foreign_keys=ON")
+        self.db.execute("PRAGMA max_page_count=" + str(MAX_DATABASE // self.db.execute("PRAGMA page_size").fetchone()[0]))
         self.db.executescript("""
           CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS companies(key TEXT PRIMARY KEY,identity TEXT NOT NULL);
@@ -298,6 +300,10 @@ class Store:
     def get(self, key, default=None):
         row = self.db.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
         return json.loads(row[0]) if row else default
+
+    def has_capacity(self):
+        size = self.db.execute("PRAGMA page_count").fetchone()[0] * self.db.execute("PRAGMA page_size").fetchone()[0]
+        return size < MAX_DATABASE - 64 * 1024 * 1024
 
     def set(self, key, value):
         self.db.execute("INSERT OR REPLACE INTO meta VALUES(?,?)", (key, canonical(value)))

@@ -2,6 +2,9 @@
 """Offline financial evidence regressions, including actual source context/rounding pitfalls."""
 import copy
 import datetime as dt
+import gzip
+import hashlib
+import io
 import json
 import os
 import sqlite3
@@ -262,6 +265,29 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(captured.read_bytes(), original, "source files and reader inputs are never rewritten")
         self.assertEqual(self.store.summary(AT)["status"], "partial")
         self.assertTrue(self.store.get("lastWalk")["backfillPending"])
+
+    def test_streamed_restore_checks_hash_repository_and_integrity(self):
+        client = GithubState(env={"GITHUB_REPOSITORY": "techmuns/Sattva-Central-Research", "GITHUB_TOKEN": "fixture"})
+        self.store.set("repository", client.repo)
+        self.store.db.commit()
+        body = gzip.compress((Path(self.tmp.name) / "state.sqlite").read_bytes(), mtime=0)
+        name = "foundation-1-1-" + hashlib.sha256(body).hexdigest() + ".sqlite.gz"
+        release = {"id": 1, "tag_name": "recommendation-foundation-2026-10"}
+        url = "https://github.com/" + client.repo + "/releases/download/" + release["tag_name"] + "/" + name
+        asset = {"id": 1, "name": name, "state": "uploaded", "size": len(body), "browser_download_url": url}
+        destination = Path(self.tmp.name) / "restored.sqlite"
+        with mock.patch.object(client, "public_guard"), mock.patch.object(client, "releases", return_value=[release]), \
+                mock.patch.object(client, "assets", return_value=[asset]), mock.patch("recommendation_github.urllib.request.urlopen",
+                    return_value=io.BytesIO(body)) as download:
+            self.assertTrue(client.restore(destination))
+            download.assert_called_once_with(url, timeout=120)  # No Authorization header goes to the CDN.
+        with sqlite3.connect(destination) as db:
+            self.assertEqual(json.loads(db.execute("SELECT value FROM meta WHERE key='repository'").fetchone()[0]), client.repo)
+        with mock.patch.object(client, "public_guard"), mock.patch.object(client, "releases", return_value=[release]), \
+                mock.patch.object(client, "assets", return_value=[asset]), mock.patch("recommendation_github.urllib.request.urlopen",
+                    return_value=io.BytesIO(body[:-1] + b"X")):
+            with self.assertRaises(ValueError): client.restore(Path(self.tmp.name) / "corrupt.sqlite")
+        self.assertFalse((Path(self.tmp.name) / "corrupt.sqlite").exists())
 
     def test_bse_document_move_keeps_identity(self):
         name = "8e7253fb-1150-42d8-9764-bd3c39db7c33.pdf"

@@ -54,7 +54,9 @@ Missing/corrupt retained state fails instead of initializing an empty replacemen
 upload with an acknowledged size/digest is the publication marker. An interrupted upload cannot
 supersede the last usable generation. Source failure still runs the publication step after a
 successful restore. Generations, raw documents, corrections and observations are not age-pruned.
-The 512 MiB database ceiling fails visibly rather than deleting history or purchasing storage.
+The 4 GiB database / 1 GiB compressed-asset ceilings stop collection visibly rather than deleting
+history or purchasing storage. Source reads stop with room for checkpoints before the database
+ceiling; gzip download, restore and upload stream in bounded chunks on the standard runner.
 
 Tables retain public companies, canonical document identities, source observations, compressed
 original document versions, original XBRL facts/contexts/units, normalized financial facts,

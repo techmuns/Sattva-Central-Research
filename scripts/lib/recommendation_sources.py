@@ -56,7 +56,7 @@ class PublicReader:
         check = self.store.db.execute("SELECT cooldown_until FROM checks WHERE key=?", (key,)).fetchone()
         if check and check[0] and check[0] > now:
             raise SourceFailure("Source cooldown retained; no request attempted")
-        if self.used >= self.maximum or time.monotonic() >= self.deadline:
+        if self.used >= self.maximum or time.monotonic() >= self.deadline or not self.store.has_capacity():
             raise BudgetExceeded("Bounded collection walk finished; remaining work retained")
         self.sleep(max(0, 2 - (time.monotonic() - self.last)))
         self.used += 1
@@ -248,6 +248,9 @@ def read_document(store, reader, doc, at, scratch):
 def collect(store, data_dir, reader, lookup, scratch):
     today = dt.datetime.now(dt.timezone(dt.timedelta(minutes=330))).date()
     at = iso_now()
+    if not store.has_capacity():
+        store.check("storage-budget", at, "Retained-store ceiling approached; collection paused without deleting history")
+        return
     ingest_captured_events(store, data_dir, lookup, at)
     # Keep an explicit initial history boundary. Never slide it forward or forget an interrupted window.
     start = store.get("historyStart") or (today - dt.timedelta(days=3 * 366)).isoformat()
