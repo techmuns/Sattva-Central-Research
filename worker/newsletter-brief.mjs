@@ -91,6 +91,7 @@ import { newsAiEnabled } from './newsletter-openai.mjs';
 import { attachContent, sameContentEvent } from './newsletter-content.mjs';
 import { attachPriceReasons, priceEvidenceItems, priceReasonWindow, priceReasonText, priceReasonSourcesNote } from './newsletter-price-reasons.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
+import { newsletterJson, newsletterRows, newsletterMonths } from './newsletter-sources.mjs';
 import { EDITIONS, addDays, dayOnlyInstant, editionWindow, istDay, istDateLong, istInstant, istLabel, istTime, lateArrivalsFrom } from '../public/js/data/newsletter-shared.js';
 
 export const PRODUCTION_ORIGIN = 'https://sattva-central-research.tech-441.workers.dev';
@@ -420,83 +421,87 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
 // ---- 3. news on direct holdings ---------------------------------------------------------------------
 
 export async function readNews({ env, window, lateFrom = window.from, reported = null, holdings, uncapped = false }) {
-  const byTicker = bookIndex(holdings);
-  const place = placementFor({ window, lateFrom, reported });
-  const seen = new Set();
-  const rows = [];
-  const story = (ticker, company, article, { publisher, url, keys, via = null, late }) => {
-    const reading = matchKeywords(article.title);
-    return {
-      ticker, company, headline: String(article.title || ''), summary: typeof article.summary === 'string' ? article.summary : '',
-      url: typeof url === 'string' && /^https?:\/\//.test(url) ? url : null,
-      publisher, via, at: Date.parse(article.publishedAt), late, keys, dayOnly: false,
-      keywords: reading.map((k) => k.label), keywordIds: reading.map((k) => k.id), keywordGroups: [...new Set(reading.map((k) => k.group))],
-    };
+  const byTicker = bookIndex(holdings), entities = portfolioNewsEntities(holdings);
+  const identities = new Map(), heldEntities = new Map(entities.map(entity => [upper(entity.entityId), entity]));
+  const addIdentity = entity => {
+    const held = heldEntities.get(upper(entity?.entityId));
+    const resolved = held ? { ...entity, ticker: held.ticker, name: held.name, aliases: [...new Set([...(entity.aliases || []), entity.name, held.name].filter(Boolean))] } : entity;
+    for (const key of [entity?.entityId, entity?.key, entity?.ticker, resolved?.ticker].filter(Boolean)) identities.set(upper(key), resolved);
   };
-
-  // The four publishers' feeds, joined to the book by name.
-  const feed = await readAsset(env, PUBLISHERS_PATH);
-  let source;
-  if (Array.isArray(feed?.articles)) {
-    const entities = portfolioNewsEntities(holdings);
-    let inWindow = 0;
-    let oldest = null;
-    for (const article of feed.articles) {
-      const at = Date.parse(article?.publishedAt || '');
-      if (!Number.isFinite(at)) continue;
-      oldest = oldest == null ? at : Math.min(oldest, at);
-      if (at < window.from || at >= window.to) { if (at < Math.min(lateFrom, window.from) || at >= window.to) continue; } else inWindow += 1;
-      for (const match of matchPortfolioNews(article, entities)) {
-        const ticker = upper(match.ticker || match.entityId);
-        const key = `news:${ticker}|${article.url || article.id}`;
-        if (!ticker || seen.has(key)) continue;
-        const where = place(at, [key, `${ticker}|url:${articleUrlKey({ url: article?.url })}`]);
-        if (!where) continue;
-        seen.add(key);
-        rows.push({ ...story(ticker, match.company || match.attribution?.companyName || ticker, article, { publisher: article.publisher || article.source || null, url: article.url, keys: [key], late: where.late }), attribution: match.attribution?.status || null });
-      }
-    }
-    const publishers = (feed.sources || []).map((s) => (typeof s === 'string' ? s : s?.name || s?.label || s?.publisher || s?.id)).filter(Boolean);
-    source = { ok: true, capturedAt: feed.capturedAt || null, publishers, articles: feed.articles.length, inWindow, oldest };
-  } else {
-    source = { ok: false, reason: 'capture-unavailable' };
+  entities.forEach(addIdentity);
+  const place = placementFor({ window, lateFrom, reported }), rows = [], seen = new Map();
+  const from = Math.min(lateFrom, window.from);
+  const inSpan = article => { const at = Date.parse(article?.publishedAt || ''); return at >= from && at < window.to; };
+  function admit(article, ticker, { via = null, attribution = null } = {}) {
+    ticker = upper(ticker); if (!byTicker.has(ticker) || !inSpan(article)) return false;
+    const at = Date.parse(article.publishedAt), url = article.url || article.tradingViewUrl;
+    const key = article.tradingViewId ? `tv:${ticker}|${article.tradingViewId || url}` : `news:${ticker}|${url || article.id}`;
+    const alias = `${ticker}|url:${articleUrlKey({ url })}`, keys = [key, alias];
+    const where = place(at, keys); if (!where) return false;
+    const identity = url ? alias : key;
+    if (seen.has(identity)) { const old = seen.get(identity); old.keys = [...new Set([...old.keys, ...keys])]; return false; }
+    const reading = matchKeywords(article.title);
+    const row = { ticker, company: byTicker.get(ticker).name, headline: String(article.title || ''), summary: article.summary || '',
+      url: typeof url === 'string' && /^https?:\/\//.test(url) ? url : null,
+      publisher: article.publisher || article.source || null, via, at, late: where.late, keys, dayOnly: false, attribution,
+      keywords: reading.map(k => k.label), keywordIds: reading.map(k => k.id), keywordGroups: [...new Set(reading.map(k => k.group))] };
+    rows.push(row); seen.set(identity, row); return true;
   }
-
-  // TradingView's symbol-tagged headlines per holding. A tag is TradingView's, not the publisher's,
-  // and a sector story is tagged with every bank in it — measured, eight of one day's stories under
-  // State Bank of India were about the NSE IPO and bond yields — so a headline joins only under the
-  // dashboard's own name match (`matchPortfolioNews`, the rule the News tab and the publisher rows
-  // above use), or when the story is tagged with at most two symbols and this holding is one of
-  // them, which is a story about the company by the tag's own say-so. A headline the publishers
-  // already carried is one story.
-  const latest = await readAsset(env, TRADINGVIEW_PATH);
-  let tradingview;
-  if (latest?.byTicker && typeof latest.byTicker === 'object') {
-    tradingview = { ok: true, capturedAt: latest.newsUpdatedAt || latest.capturedAt || null, matched: 0, tagged: 0 };
-    const identities = new Map();
-    for (const entity of latest.entities || []) for (const key of [entity?.entityId, entity?.key, entity?.ticker].filter(Boolean)) identities.set(String(key).toUpperCase(), entity);
-    for (const [t, list] of Object.entries(latest.byTicker)) {
-      if (!Array.isArray(list)) continue;
-      const identity = identities.get(upper(t));
-      for (const a of list) {
-        const read = attributeNewsRow(a, identity || a);
-        const ticker = upper(read.ticker);
-        if (!ticker || !byTicker.has(ticker)) continue;
-        const at = Date.parse(a?.publishedAt || '');
-        const key = `tv:${ticker}|${a?.tradingViewId || a?.url}`;
-        if (!a?.title || seen.has(key)) continue;
-        const where = place(at, [key, `${ticker}|url:${articleUrlKey({ url: a?.url })}`]);
-        if (!where) continue;
-        tradingview.tagged += 1;
-        if (!['confirmed', 'related'].includes(read.attribution?.status)) continue;
-        seen.add(key); tradingview.matched += 1;
-        rows.push({ ...story(ticker, byTicker.get(ticker).name, a, { publisher: a.source || null, url: a.url || a.tradingViewUrl, keys: [key], via: 'TradingView', late: where.late }), attribution: read.attribution.status });
-      }
-    }
-  } else {
-    tradingview = { ok: false, reason: 'capture-unavailable', matched: 0, tagged: 0 };
+  const months = newsletterMonths(from, window.to);
+  // Read retained publisher history as well as the small latest head. A busy day's head is
+  // not the complete overnight window; verified archive parts own the older observations.
+  const feed = await newsletterRows(env, PUBLISHERS_PATH, inSpan);
+  const publisherArchives = [];
+  for (const month of months) publisherArchives.push(await newsletterRows(env, `/data/market-news/${month}.json`, inSpan));
+  for (const article of [...feed.rows, ...publisherArchives.flatMap(a => a.rows)]) {
+    for (const match of matchPortfolioNews(article, entities)) admit(article, match.ticker || match.entityId, { attribution: match.attribution?.status });
   }
-  return { source, tradingview, ...group(rows.sort((a, b) => b.at - a.at), uncapped ? Infinity : NEWS_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
+  const source = { ok: feed.ok, capturedAt: feed.capturedAt || null, publishers: (feed.sources || []).map(s => typeof s === 'string' ? s : s?.name || s?.label || s?.publisher || s?.id).filter(Boolean),
+    articles: feed.rows.length, inWindow: feed.rows.filter(a => Date.parse(a.publishedAt) >= window.from).length,
+    archiveComplete: publisherArchives.every(a => a.ok), failedParts: [...feed.failedParts, ...publisherArchives.flatMap(a => a.failedParts)] };
+
+  // The existing free Google News / Upstox capture is an independent source of eligible
+  // company news, including companies whose TradingView symbol/page is unavailable.
+  let index = null; try { index = await newsletterJson(env, '/data/company-news/index.json'); } catch { /* Report unavailable below. */ }
+  for (const entity of index?.entities || []) if (identities.has(upper(entity.entityId)) || byTicker.has(upper(entity.ticker))) addIdentity(entity);
+  const company = { ok: !!index, capturedAt: index?.updatedAt || null, matched: 0, failedParts: [], files: [] };
+  const checks = entities.map(entity => {
+    const queries = index?.queries?.[entity.entityId] || {};
+    const current = identities.get(upper(entity.entityId)) || entity;
+    const required = current.queries?.length ? current.queries.map(query => queries[query]) : Object.values(queries);
+    return { missing: !required.length || required.some(q => !q?.lastSuccessAt),
+      failed: required.some(q => q?.error),
+      stale: required.some(q => !q?.lastSuccessAt || window.to - Date.parse(q.lastSuccessAt) > 4 * 3600000) };
+  });
+  company.coverage = { companies: checks.length, unchecked: checks.filter(c => c.missing).length,
+    stale: checks.filter(c => c.stale).length, failed: checks.filter(c => c.failed).length };
+  company.partial = checks.some(c => c.missing || c.stale || c.failed);
+  for (const month of months) {
+    const path = `/data/company-news/${month}.json`;
+    const file = await newsletterRows(env, path, row => inSpan(row) && identities.has(upper(row.entityId || row.ticker)));
+    company.files.push(path); company.failedParts.push(...file.failedParts); if (!file.ok) company.ok = false;
+    for (const article of file.rows) {
+      const read = attributeNewsRow(article, identities.get(upper(article.entityId || article.ticker)));
+      if (['confirmed', 'related'].includes(read.attribution?.status) && admit(article, read.ticker, { via: article.tradingViewId ? 'TradingView' : 'Company news', attribution: read.attribution.status })) company.matched++;
+    }
+  }
+  const latest = await newsletterRows(env, TRADINGVIEW_PATH, inSpan);
+  for (const entity of latest.entities || []) if (identities.has(upper(entity.entityId)) || byTicker.has(upper(entity.ticker))) addIdentity(entity);
+  const tvArchives = [];
+  for (const month of months) tvArchives.push(await newsletterRows(env, `/data/tradingview-news/${month}.json`, inSpan));
+  const coverage = latest.coverage || null;
+  const tradingview = { ok: latest.ok, capturedAt: latest.capturedAt || null, matched: 0, tagged: 0, coverage,
+    partial: !latest.ok || !!(coverage?.staleOrFailedSymbols || coverage?.unresolvedCompanies || coverage?.possibleGapSymbols),
+    archiveComplete: tvArchives.every(a => a.ok), failedParts: [...latest.failedParts, ...tvArchives.flatMap(a => a.failedParts)] };
+  for (const article of [...latest.rows, ...tvArchives.flatMap(a => a.rows)]) {
+    const identity = identities.get(upper(article.entityId || article.captureKey || article.ticker));
+    if (!identity) continue;
+    const read = attributeNewsRow(article, identity);
+    if (!byTicker.has(upper(read.ticker))) continue;
+    tradingview.tagged++;
+    if (['confirmed', 'related'].includes(read.attribution?.status) && admit(article, read.ticker, { via: 'TradingView', attribution: read.attribution.status })) tradingview.matched++;
+  }
+  return { source, company, tradingview, ...group(rows.sort((a, b) => b.at - a.at), uncapped ? Infinity : NEWS_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
 }
 
 /** Background source discovery uses every eligible row, independent of email display limits. */
@@ -515,7 +520,7 @@ export async function readContentSources({ env, fetcher = fetch, now = Date.now(
 const monthOf = (day) => String(day).slice(0, 7);
 const cell = (cells, ...names) => names.map((n) => cells?.[n]).find((v) => v != null && v !== '') ?? null;
 
-export async function readTrades({ env, window, lateFrom = window.from, reported = null, holdings }) {
+export async function readTrades({ env, window, lateFrom = window.from, reported = null, holdings, uncapped = false }) {
   const byTicker = bookIndex(holdings);
   const byIsin = new Map(holdings.map((h) => [upper(h.isin), h]).filter(([k]) => k));
   const place = placementFor({ window, lateFrom, reported });
@@ -579,7 +584,7 @@ export async function readTrades({ env, window, lateFrom = window.from, reported
       });
     }
   }
-  return { source: { ok: true, capturedAt: index.updatedAt || null, months, identities: !!identities }, ...group(rows.sort((a, b) => b.at - a.at), TRADE_LIMIT) };
+  return { source: { ok: true, capturedAt: index.updatedAt || null, months, identities: !!identities }, ...group(rows.sort((a, b) => b.at - a.at), uncapped ? Infinity : TRADE_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
 }
 
 // ---- 5. the session's quotes: price moves and the portfolio table ----------------------------------
@@ -594,9 +599,11 @@ const clip = (value, max) => { const text = String(value ?? '').replace(/\s+/g, 
  * has not yet caught up, the capture's closing quote stands in and says so. ONE read serves both the
  * ±MOVE_PCT stories and the portfolio table, so the two can never disagree about a price.
  */
-export async function readSessionQuotes({ env, now = Date.now(), edition, holdings }) {
+export async function readSessionQuotes({ env, now = Date.now(), edition, day = istDay(now), holdings }) {
   const byTicker = bookIndex(holdings);
-  const session = expectedSession(now);
+  // A delayed morning job still describes the preceding completed trading session.
+  const sessionClock = edition === 'morning' ? istInstant(day) : now;
+  const session = expectedSession(sessionClock);
   const out = { state: 'unavailable', session, asOf: null, reason: null, priceDate: null, rows: [] };
   if (!session) return { ...out, reason: 'no-session' };
 
@@ -613,7 +620,7 @@ export async function readSessionQuotes({ env, now = Date.now(), edition, holdin
     const rows = [];
     for (const row of Array.isArray(capture?.rows) ? capture.rows : []) {
       const ticker = upper(row?.ticker);
-      if (!byTicker.has(ticker) || row.sessionDate !== session || !quoteFresh(row, now)) continue;
+      if (!byTicker.has(ticker) || row.sessionDate !== session || !quoteFresh(row, sessionClock)) continue;
       const pct = pctOf(row.price, row.prevClose);
       if (pct == null) continue;
       rows.push({ ticker, pct, last: row.price, prev: row.prevClose, at: Date.parse(row.quoteAt), provider: row.provider || 'Yahoo Finance', basis: 'capture' });
@@ -649,7 +656,7 @@ export async function readSessionQuotes({ env, now = Date.now(), edition, holdin
 }
 
 /** The holdings that moved at least MOVE_PCT on the session, as stories, from the session's quotes. */
-export function readMoves({ quotes, window, lateFrom = window.from, reported = null, holdings }) {
+export function readMoves({ quotes, window, lateFrom = window.from, reported = null, holdings, uncapped = false }) {
   const byTicker = bookIndex(holdings);
   const place = placementFor({ window, lateFrom, reported });
   const out = { state: quotes.state, session: quotes.session, asOf: quotes.asOf, reason: quotes.reason, priceDate: quotes.priceDate, groups: [], count: 0, more: 0 };
@@ -666,7 +673,7 @@ export function readMoves({ quotes, window, lateFrom = window.from, reported = n
     });
   }
   rows.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
-  return { ...out, ...group(rows, MOVE_LIMIT) };
+  return { ...out, ...group(rows, uncapped ? Infinity : MOVE_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
 }
 
 /** Company price performance only. Private Family quantities are never read by a public brief. */
@@ -833,19 +840,20 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   if (!Array.isArray(book?.holdings)) throw Object.assign(new Error('The portfolio book could not be read'), { code: 'book-unavailable' });
   const holdings = book.holdings.filter((h) => h?.ticker && h?.name);
   const window = editionWindow(edition, day, settings, { to });
-  // Late arrivals are read back to two windows before this one, but never to before the ledger
+  // Late arrivals use the ledger's ten-day retention, including multi-day source outages,
+  // but never reach before the ledger
   // began: an earlier brief carried those and the ledger cannot vouch either way.
   const lateFrom = reported && !reported.empty
-    ? Math.min(window.from, Math.max(lateArrivalsFrom(edition, day, settings), Number.isFinite(reported.since) ? reported.since : -Infinity))
+    ? Math.min(window.from, Math.max(window.to - 10 * 86400000, Number.isFinite(reported.since) ? reported.since : lateArrivalsFrom(edition, day, settings)))
     : window.from;
-  const common = { env, window, lateFrom, reported, holdings };
+  const common = { env, window, lateFrom, reported, holdings, uncapped: true };
   // The quotes are network-bound and run alongside; the committed files are read one after another
   // so the object never holds more than one large capture in memory at a time.
   const markets = readMarkets({ env, fetcher, now });
   const announcements = await readAnnouncements({ ...common, fetcher, now });
   const news = await readNews(common);
   const trades = await readTrades(common);
-  const quotes = await readSessionQuotes({ env, now, edition, holdings });
+  const quotes = await readSessionQuotes({ env, now, edition, day, holdings });
   const moves = readMoves({ ...common, quotes });
   const performance = await readPerformance({ env, quotes, holdings });
   const calendar = await readCalendar({ env, day, holdings, fetcher, now, screener });
@@ -1281,6 +1289,9 @@ export function briefSummary(brief) {
     performance: brief.performance?.state || 'unavailable', quoted: brief.performance?.quoted ?? 0,
     nse: brief.announcements.nse.ok, nseHistory: brief.announcements.nseHistory?.ok ?? false, bse: brief.announcements.bse.ok,
     publishers: brief.news.source.ok, tradingview: brief.news.tradingview?.ok ?? false,
+    companyNews: brief.news.company || null,
+    sourceCoverage: { publisherArchiveComplete: brief.news.source.archiveComplete ?? null, tradingview: brief.news.tradingview || null },
+    eligibility: { includedSourceItems: briefStories(brief).length, omittedByCaps: brief.announcements.more + brief.news.more + (brief.trades?.more || 0) + (brief.moves?.more || 0) },
     tradesSource: brief.trades?.source?.ok ?? false, prices: brief.moves?.state || 'unavailable',
     calendar: brief.calendar?.count ?? 0, actions: brief.actions?.count ?? 0,
     screenerCalendar: brief.calendar?.screener?.ok ?? false, mcCalendar: brief.calendar?.moneycontrol?.ok ?? false,
@@ -1563,6 +1574,11 @@ export function sourcesNote(brief) {
   bits.push(n.source.ok
     ? `publisher feeds (${n.source.publishers.join(', ') || 'four publishers'}) captured ${capturedLabel(n.source.capturedAt)}${n.source.capturedAt && Date.parse(n.source.capturedAt) < brief.window.to ? ', so later stories reach the next brief' : ''}${n.source.oldest != null && n.source.oldest > brief.window.from ? `; that capture starts at ${istLabel(n.source.oldest)}, so earlier publisher stories are not included` : ''}`
     : 'publisher capture unavailable');
+  if (n.source.archiveComplete === false) bits.push('Publisher archive read incomplete; usable captured reports retained');
+  if (n.company) bits.push(n.company.ok ? `Company-news archive (Google News / Upstox) checked through ${capturedLabel(n.company.capturedAt)}; ${n.company.matched} additional reports admitted` : 'Company-news archive incomplete or unavailable; usable captured reports retained');
+  if (n.company?.partial) bits.push(`Company-news query coverage partial: ${n.company.coverage.unchecked} unchecked, ${n.company.coverage.stale} stale, ${n.company.coverage.failed} failed company checks; retained reports remain included`);
+  if (n.tradingview?.partial) bits.push(`TradingView coverage partial: ${n.tradingview.coverage?.staleOrFailedSymbols || 0} stale/failed symbols, ${n.tradingview.coverage?.unresolvedCompanies || 0} unmapped companies, ${n.tradingview.coverage?.possibleGapSymbols || 0} historical window gaps; other captured company-news and publisher reports are included independently`);
+  if (n.tradingview?.archiveComplete === false) bits.push('TradingView archive read incomplete; usable captured reports retained');
   bits.push(n.tradingview?.ok ? `TradingView headlines captured ${capturedLabel(n.tradingview.capturedAt)}` : 'TradingView headlines unavailable');
   bits.push(t?.source?.ok ? `trades (bulk, block, SAST, insider) captured ${capturedLabel(t.source.capturedAt)}, dated by broadcast day${t.source.identities ? '' : '; BSE-only lines could not be matched'}` : 'trades capture unavailable');
   if (m) {
