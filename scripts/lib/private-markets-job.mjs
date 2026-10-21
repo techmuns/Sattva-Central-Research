@@ -95,7 +95,6 @@ export class PrivateMarketsJob {
      else if(result.reason!=='rate-limited')this.setMeta({...this.meta(),mailCooldownUntil:iso(this.now()+30*60000),lastResult:part.state==='uncertain'?'delivery-uncertain':'delivery-failed'});
      this.saveView('private-markets-status',this.status());await this.publish();return;
     }
-    if(!result.ok){if(part.state!=='pending')for(const later of recipient.parts)if(later.part>part.part&&later.state==='pending')later.state='blocked';break;}
    }
   }
   const unfinished=plan.recipients.some(r=>r.parts.some(p=>p.state==='pending'||p.state==='sending'));
