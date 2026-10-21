@@ -18,6 +18,7 @@ const { ATTRIBUTION_VERSION } = await import('../public/js/data/company-news-att
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const screenshot = process.argv[2] || null;
+let legacy = false;
 
 let seq = 0;
 const filing = (ticker, company, title, subCategory) => {
@@ -56,6 +57,13 @@ import * as tab from '/js/tabs/ai-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 coverage.prime({holdings:${JSON.stringify(holdings)}});
 tab.render({root:document.querySelector('#root'),scope:'portfolio',params:{}});
+if (new URLSearchParams(location.search).has('upgrade')) {
+  const { watchWorkerChanges } = await import('/js/core/app-updates.js');
+  watchWorkerChanges(navigator.serviceWorker, () => location.reload());
+  await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  window.ready = true;
+}
 </script></body></html>`;
 const fixtureModule = `
 import { currentDay } from '../ui/ai-alert-utils.js';
@@ -70,14 +78,31 @@ export async function collect({scope,onPartial}) {
 }`;
 const server = createServer((req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
+  res.setHeader('cache-control', 'no-cache');
   try {
-    if (pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+    if (pathname === '/' || pathname === '/index.html') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (pathname === '/js/data/daily-alerts.js') { res.setHeader('content-type', 'text/javascript'); res.end(fixtureModule); return; }
     if (pathname === '/js/data/capture-watchdog.js') { res.setHeader('content-type', 'text/javascript'); res.end('export const onCaptureLanded=()=>()=>{};'); return; }
+    if (pathname === '/sdk-fixture.js') { res.end(''); return; }
+    if (pathname === '/js/kpi-upgrade-fixture.js') {
+      res.setHeader('content-type', 'text/javascript');
+      res.end("import '/js/tabs/ai-alerts.js'; import '/js/core/app-updates.js';"); return;
+    }
     const path = resolve(root, `.${pathname}`);
     if (!path.startsWith(root + sep)) throw Error('Invalid path');
+    let body = readFileSync(path);
+    if (pathname === '/sw.js') {
+      body = body.toString()
+        .replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;")
+        .replace("const APP_ENTRY = '/js/app.js';", "const APP_ENTRY = '/js/kpi-upgrade-fixture.js';");
+      if (legacy) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-card-kpis`;');
+    }
+    // A preceding immutable renderer still contains the removed heading and chip. Everything
+    // else uses the real tab, ranking and shipped service-worker upgrade mechanism.
+    if (pathname === '/js/tabs/ai-alerts.js' && legacy) body = body.toString().replace('${listHeadMarkup(card)}',
+      '<div data-ai-kpis>KPIs in play · Fixture sector <span data-ai-kpi="revenue">Revenue</span></div>${listHeadMarkup(card)}');
     res.setHeader('content-type', { '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' }[extname(path)] || 'application/octet-stream');
-    res.end(readFileSync(path));
+    res.end(body);
   } catch { res.writeHead(404); res.end('{}'); }
 });
 await new Promise((done) => server.listen(0, '127.0.0.1', done));
@@ -153,7 +178,30 @@ try {
   assert.equal(await broken.locator('[data-ai-kpis]').count(), 0, 'no card claims a KPI line it could not read');
   assert.deepEqual(errors, [], 'zero page errors with the sector file missing');
   await broken.close();
+  await page.close();
+
+  legacy = true;
+  const returning = await browser.newPage();
+  returning.on('pageerror', error => errors.push(error.message));
+  await returning.route('**/*', route => route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
+  await returning.goto(`${origin}/?upgrade=1`);
+  await returning.waitForFunction(() => window.ready && navigator.serviceWorker.controller);
+  await returning.reload();
+  await returning.locator('[data-ai-kpis]').first().waitFor();
+  const oldCaches = await returning.evaluate(() => caches.keys());
+  assert(oldCaches.length > 0, 'returning reader has a warm immutable cache');
+  await returning.evaluate(() => localStorage.setItem('kpi-reader-state', 'retained'));
+  legacy = false;
+  await returning.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
+  await returning.waitForFunction(() => window.ready && document.querySelector('[data-ai-card]') && !document.querySelector('[data-ai-kpis]'));
+  assert.equal(await returning.locator('[data-ai-kpi]').count(), 0, 'automatic reload removes the cached chips');
+  assert.equal(await returning.evaluate(() => localStorage.getItem('kpi-reader-state')), 'retained');
+  const newCaches = await returning.evaluate(() => caches.keys());
+  assert(newCaches.length > 0 && oldCaches.every(key => !newCaches.includes(key)), 'the previous immutable cache is evicted');
+  assert.deepEqual(errors, [], 'zero page errors after the warm-session upgrade');
+  await returning.close();
   console.log('PASS simplified cards: no KPI heading or chips, complete KPI search, retained result figures, honest sector failure status, 390px layout, zero page errors.');
+  console.log('PASS returning session automatically removes cached KPI headings and chips, evicts the old module graph and retains reader state.');
 } finally {
   await browser.close();
   server.close();
