@@ -91,6 +91,7 @@ import { newsAiEnabled } from './newsletter-openai.mjs';
 import { attachContent, sameContentEvent } from './newsletter-content.mjs';
 import { attachPriceReasons, priceEvidenceItems, priceReasonWindow, priceReasonText, priceReasonSourcesNote } from './newsletter-price-reasons.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
+import { assessTradingViewCoverage } from '../public/js/data/tradingview-news-health.js';
 import { newsletterJson, newsletterRows, newsletterMonths, newsletterHoldings } from './newsletter-sources.mjs';
 import { EDITIONS, addDays, dayOnlyInstant, editionWindow, istDay, istDateLong, istInstant, istLabel, istTime, lateArrivalsFrom } from '../public/js/data/newsletter-shared.js';
 
@@ -424,7 +425,7 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
 
 // ---- 3. news on direct holdings ---------------------------------------------------------------------
 
-export async function readNews({ env, window, lateFrom = window.from, reported = null, holdings, uncapped = false }) {
+export async function readNews({ env, window, lateFrom = window.from, reported = null, holdings, uncapped = false, now = window.to }) {
   const byTicker = bookIndex(holdings), entities = portfolioNewsEntities(holdings);
   const identities = new Map(), heldEntities = new Map(entities.map(entity => [upper(entity.entityId), entity]));
   const addIdentity = entity => {
@@ -436,6 +437,7 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   const place = placementFor({ window, lateFrom, reported }), rows = [], seen = new Map();
   const from = Math.min(lateFrom, window.from);
   const inSpan = article => { const at = Date.parse(article?.publishedAt || ''); return at >= from && at < window.to; };
+  inSpan.range = { from, to: window.to };
   function admit(article, ticker, { via = null, attribution = null } = {}) {
     ticker = upper(ticker); if (!article?.title || !byTicker.has(ticker) || !inSpan(article)) return false;
     const at = Date.parse(article.publishedAt), url = article.url || article.tradingViewUrl;
@@ -456,11 +458,16 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   // not the complete overnight window; verified archive parts own the older observations.
   const feed = await newsletterRows(env, PUBLISHERS_PATH, inSpan);
   const publisherArchives = [];
-  for (const month of months) publisherArchives.push(await newsletterRows(env, `/data/market-news/${month}.json`, inSpan));
+  for (const month of months) {
+    const descriptor = feed.archive?.find(d => d.month === month && d.file === `market-news/${month}.json`);
+    const file = await newsletterRows(env, `/data/market-news/${month}.json`, inSpan, descriptor);
+    if (!descriptor) file.ok = false; publisherArchives.push(file);
+  }
   for (const article of [...feed.rows, ...publisherArchives.flatMap(a => a.rows)]) {
     for (const match of matchPortfolioNews(article, entities)) admit(article, match.ticker || match.entityId, { attribution: match.attribution?.status });
   }
   const source = { ok: feed.ok, capturedAt: feed.capturedAt || null, publishers: (feed.sources || []).map(s => typeof s === 'string' ? s : s?.name || s?.label || s?.publisher || s?.id).filter(Boolean),
+    checks: (feed.sources || []).map(s => ({ name: typeof s === 'string' ? s : s?.publisher || s?.name || s?.id, checkedAt: typeof s === 'string' ? null : s?.capturedAt || null, ok: typeof s === 'string' ? null : s?.ok ?? null, feeds: s?.feeds ?? null, feedsOk: s?.feedsOk ?? null })),
     articles: feed.rows.length, inWindow: feed.rows.filter(a => Date.parse(a.publishedAt) >= window.from).length,
     archiveComplete: publisherArchives.every(a => a.ok), failedParts: [...feed.failedParts, ...publisherArchives.flatMap(a => a.failedParts)] };
 
@@ -482,7 +489,9 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   company.partial = checks.some(c => c.missing || c.stale || c.failed);
   for (const month of months) {
     const path = `/data/company-news/${month}.json`;
-    const file = await newsletterRows(env, path, row => inSpan(row) && identities.has(upper(row.entityId || row.ticker)));
+    const descriptor = index?.archive?.find(d => d.month === month && d.file === `company-news/${month}.json`);
+    const file = await newsletterRows(env, path, Object.assign(row => inSpan(row) && identities.has(upper(row.entityId || row.ticker)), { range: inSpan.range }), descriptor);
+    if (!descriptor) file.ok = false;
     company.files.push(path); company.failedParts.push(...file.failedParts); if (!file.ok) company.ok = false;
     for (const article of file.rows) {
       const read = attributeNewsRow(article, identities.get(upper(article.entityId || article.ticker)));
@@ -491,11 +500,16 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   }
   const latest = await newsletterRows(env, TRADINGVIEW_PATH, inSpan);
   for (const entity of latest.entities || []) if (identities.has(upper(entity.entityId)) || byTicker.has(upper(entity.ticker))) addIdentity(entity);
-  const tvArchives = [];
-  for (const month of months) tvArchives.push(await newsletterRows(env, `/data/tradingview-news/${month}.json`, inSpan));
-  const coverage = latest.coverage || null;
+  const tvArchives = []; let tvIndex = null;
+  try { tvIndex = await newsletterJson(env, '/data/tradingview-news/index.json'); } catch { /* Report incomplete below. */ }
+  for (const month of months) {
+    const descriptor = tvIndex?.archive?.find(d => d.month === month && d.file === `tradingview-news/${month}.json`);
+    const file = await newsletterRows(env, `/data/tradingview-news/${month}.json`, inSpan, descriptor);
+    if (!descriptor) file.ok = false; tvArchives.push(file);
+  }
+  const coverage = latest.coverage || null, health = assessTradingViewCoverage(coverage, { now });
   const tradingview = { ok: latest.ok, capturedAt: latest.capturedAt || null, matched: 0, tagged: 0, coverage,
-    partial: !latest.ok || !!(coverage?.staleOrFailedSymbols || coverage?.unresolvedCompanies || coverage?.possibleGapSymbols),
+    partial: !latest.ok || health.status !== 'ok', health,
     archiveComplete: tvArchives.every(a => a.ok), failedParts: [...latest.failedParts, ...tvArchives.flatMap(a => a.failedParts)] };
   for (const article of [...latest.rows, ...tvArchives.flatMap(a => a.rows)]) {
     const identity = identities.get(upper(article.entityId || article.captureKey || article.ticker));
@@ -513,7 +527,7 @@ export async function readContentSources({ env, fetcher = fetch, now = Date.now(
   const book = await readAsset(env, BOOK_PATH);
   if (!Array.isArray(book?.holdings)) throw Object.assign(new Error('Book unavailable'), { code: 'book-unavailable' });
   const holdings = await newsletterHoldings(book, env);
-  const common = { env, holdings, window: { from, to }, uncapped: true };
+  const common = { env, holdings, window: { from, to }, uncapped: true, now };
   const announcements = await readAnnouncements({ ...common, fetcher, now });
   const news = await readNews(common);
   return { announcements, news };
@@ -851,7 +865,7 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   const lateFrom = reported && !reported.empty
     ? Math.min(window.from, Math.max(window.to - 10 * 86400000, Number.isFinite(reported.since) ? reported.since : lateArrivalsFrom(edition, day, settings)))
     : window.from;
-  const common = { env, window, lateFrom, reported, holdings, uncapped: true };
+  const common = { env, window, lateFrom, reported, holdings, uncapped: true, now };
   // The quotes are network-bound and run alongside; the committed files are read one after another
   // so the object never holds more than one large capture in memory at a time.
   const markets = readMarkets({ env, fetcher, now });
@@ -886,7 +900,7 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
     priceContext.window = { from: Math.min(...priceWindows.map(w => w.from)), to: Math.max(...priceWindows.map(w => w.to)) + 1 };
     // Resolve against the complete book so narrowing to movers cannot make an ambiguous
     // company name appear unique. Narrow only after the normal identity rules have run.
-    const priceCommon = { env, holdings, window: priceContext.window, uncapped: true };
+    const priceCommon = { env, holdings, window: priceContext.window, uncapped: true, now };
     priceContext.announcements = await readAnnouncements({ ...priceCommon, fetcher, now });
     priceContext.news = await readNews(priceCommon);
     for (const section of ['announcements', 'news']) priceContext[section].groups = priceContext[section].groups.filter(g => moverTickers.has(g.ticker));
@@ -1295,8 +1309,8 @@ export function briefSummary(brief) {
     nse: brief.announcements.nse.ok, nseHistory: brief.announcements.nseHistory?.ok ?? false, bse: brief.announcements.bse.ok,
     publishers: brief.news.source.ok, tradingview: brief.news.tradingview?.ok ?? false,
     companyNews: brief.news.company || null,
-    sourceCoverage: { nseHistory: brief.announcements.nseHistory, bse: brief.announcements.bse, trades: brief.trades?.source || null, publisherArchiveComplete: brief.news.source.archiveComplete ?? null, tradingview: brief.news.tradingview || null },
-    eligibility: { includedSourceItems: briefStories(brief).length, omittedByCaps: brief.announcements.more + brief.news.more + (brief.trades?.more || 0) + (brief.moves?.more || 0) },
+    sourceCoverage: { publisherChecks: brief.news.source.checks || [], nseHistory: brief.announcements.nseHistory, bse: brief.announcements.bse, trades: brief.trades?.source || null, publisherArchiveComplete: brief.news.source.archiveComplete ?? null, tradingview: brief.news.tradingview || null },
+    eligibility: { includedSourceItems: briefStories(brief).length, omittedByCaps: brief.announcements.more + brief.news.more + (brief.trades?.more || 0) + (brief.moves?.more || 0) + (brief.calendar?.more || 0) + (brief.actions?.more || 0) },
     tradesSource: brief.trades?.source?.ok ?? false, prices: brief.moves?.state || 'unavailable',
     calendar: brief.calendar?.count ?? 0, actions: brief.actions?.count ?? 0,
     screenerCalendar: brief.calendar?.screener?.ok ?? false, mcCalendar: brief.calendar?.moneycontrol?.ok ?? false,
@@ -1581,10 +1595,12 @@ export function sourcesNote(brief) {
   bits.push(n.source.ok
     ? `publisher feeds (${n.source.publishers.join(', ') || 'four publishers'}) captured ${capturedLabel(n.source.capturedAt)}${n.source.capturedAt && Date.parse(n.source.capturedAt) < brief.window.to ? ', so later stories reach the next brief' : ''}${n.source.oldest != null && n.source.oldest > brief.window.from ? `; that capture starts at ${istLabel(n.source.oldest)}, so earlier publisher stories are not included` : ''}`
     : 'publisher capture unavailable');
+  const differingPublisherChecks = (n.source.checks || []).filter(s => s.checkedAt !== n.source.capturedAt || s.ok === false || s.feedsOk != null && s.feedsOk < s.feeds);
+  if (differingPublisherChecks.length) bits.push(`Publisher-specific checks: ${differingPublisherChecks.map(s => `${s.name || 'Publisher'} ${s.ok === false ? 'failed' : s.checkedAt ? 'last successful read' : 'check time unknown'}${s.checkedAt ? ' ' + capturedLabel(s.checkedAt) : ''}`).join('; ')}; each provider can have a different coverage gap`);
   if (n.source.archiveComplete === false) bits.push('Publisher archive read incomplete; usable captured reports retained');
   if (n.company) bits.push(n.company.ok ? `Company-news archive (Google News / Upstox) checked through ${capturedLabel(n.company.capturedAt)}; ${n.company.matched} additional reports admitted` : 'Company-news archive incomplete or unavailable; usable captured reports retained');
   if (n.company?.partial) bits.push(`Company-news query coverage partial: ${n.company.coverage.unchecked} unchecked, ${n.company.coverage.stale} stale, ${n.company.coverage.failed} failed company checks; retained reports remain included`);
-  if (n.tradingview?.partial) bits.push(`TradingView capture-wide coverage partial: ${n.tradingview.coverage?.staleOrFailedSymbols || 0} stale/failed symbols, ${n.tradingview.coverage?.unresolvedCompanies || 0} unmapped companies, ${n.tradingview.coverage?.possibleGapSymbols || 0} historical window gaps; other captured company-news and publisher reports are included independently`);
+  if (n.tradingview?.partial) bits.push(`TradingView capture-wide coverage partial (${[...(n.tradingview.health?.critical || []), ...(n.tradingview.health?.warnings || [])].map(issue => issue.code).join(', ')}): ${n.tradingview.coverage?.staleOrFailedSymbols || 0} stale/failed symbols, ${n.tradingview.coverage?.unresolvedCompanies || 0} unmapped companies, ${n.tradingview.coverage?.possibleGapSymbols || 0} historical window gaps; other captured company-news and publisher reports are included independently`);
   if (n.tradingview?.archiveComplete === false) bits.push('TradingView archive read incomplete; usable captured reports retained');
   bits.push(n.tradingview?.ok ? `TradingView headlines captured ${capturedLabel(n.tradingview.capturedAt)}` : 'TradingView headlines unavailable');
   bits.push(t?.source?.ok ? `trades (bulk, block, SAST, insider) captured ${capturedLabel(t.source.capturedAt)}, dated by broadcast day${t.source.identities ? '' : '; BSE-only lines could not be matched'}` : 'trades capture unavailable');

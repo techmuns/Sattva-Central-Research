@@ -13,7 +13,7 @@ import { renderBriefPdf } from '../worker/newsletter-pdf.mjs';
 import { DEFAULT_SETTINGS, istInstant } from '../public/js/data/newsletter-shared.js';
 
 const now = istInstant('2026-09-23', '18:00');
-const envKey = { CLAUDE_KEY: 'ABSKfixture123456' };
+const envKey = { NEWSLETTER_GITHUB_ARCHIVES: true, CLAUDE_KEY: 'ABSKfixture123456' };
 const base = 'https://nsearchives.nseindia.com/corporate/xbrl/REG30_Restructuring_2711_WebXMLFile_20260923_';
 const urls = [`${base}155648372.xml`, `${base}162559488.xml`];
 const xml = ['ceat-lanka', 'ceat-tyresnmore'].map(n => readFileSync(new URL(`./fixtures/newsletter/${n}.xml`, import.meta.url), 'utf8'));
@@ -146,7 +146,12 @@ const assetData = {
   '/data/nse-filings/2026-09-23.json': { rows: items.map(i => ({ ticker: i.ticker, company: i.company, publishedAt: new Date(i.at).toISOString(),
     subject: 'Acquisition (including agreement to acquire)-XBRL', description: heading, url: i.url })) },
   '/data/corp-announcements.json': { byTicker: {}, capturedAt: new Date(now).toISOString() },
-  '/data/market-news.json': { articles: [] }, '/data/tradingview-news/latest.json': { byTicker: {} },
+  '/data/market-news.json': { articles: [], archive:[{month:'2026-09',file:'market-news/2026-09.json',count:0}] }, '/data/tradingview-news/latest.json': { byTicker: {} },
+  '/data/market-news/2026-09.json':{articles:[]},
+  '/data/company-news/index.json':{entities:[],queries:{},archive:[{month:'2026-09',file:'company-news/2026-09.json',count:0}]},
+  '/data/company-news/2026-09.json':{articles:[]},
+  '/data/tradingview-news/index.json':{archive:[{month:'2026-09',file:'tradingview-news/2026-09.json',count:0}]},
+  '/data/tradingview-news/2026-09.json':{articles:[]},
 };
 const assets = (overrides = {}) => ({ fetch: async req => { const path = new URL(req.url).pathname, value = { ...assetData, ...overrides }[path]; return value ? Response.json(value) : new Response('', { status: 404 }); } });
 const documentFetcher = async (url, init) => {
@@ -230,6 +235,9 @@ await test('the durable alarm collects without a browser or an email, then retai
   clock += 60000; await schedule.wake();
   assert.equal(schedule.content.status().ready, 2); assert.equal(store.deliveries().length, 0);
   assert.ok((await s.getAlarm()) > clock); assert.equal(schedule.content.status().reason, 'captured-sources-read');
+  const watermark=schedule.content.meta().scannedTo;clock+=3600000;
+  const missingCompany=new NewsletterSchedule(s,{ASSETS:assets({'/data/company-news/2026-09.json':null}),...envKey},store,{now:()=>clock,fetcher:documentFetcher});
+  await missingCompany.wake();assert.equal(missingCompany.content.status().reason,'partial-source-read');assert.equal(missingCompany.content.meta().scannedTo,watermark,'A failed company archive cannot advance discovery past recoverable older records');
   const restart = new NewsletterSchedule(s, { ASSETS: assets({ '/data/nse-filings/2026-09-23.json': null }), ...envKey }, store, { now: () => clock, fetcher: documentFetcher });
   clock += 3600000; await restart.wake();
   assert.equal(restart.content.status().ready, 2); assert.equal(restart.content.status().reason, 'partial-source-read');

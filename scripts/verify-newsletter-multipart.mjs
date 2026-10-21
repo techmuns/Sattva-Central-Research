@@ -1,3 +1,4 @@
+import {gunzipSync} from 'node:zlib';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import fs from 'node:fs';
@@ -85,6 +86,9 @@ try{
  const firstRun=mail.map(m=>structuredClone(m));
  if(mode!=='healthy'){
   assert(runtime.schedule.deliveryQueue.pending().length);
+  const savedPlan=JSON.parse(gunzipSync(runtime.db.prepare('SELECT payload FROM newsletter_delivery_queue WHERE payload IS NOT NULL').get().payload));
+  assert(savedPlan.recipients.every(r=>r.parts.every(p=>!('html' in p))),'Recovery metadata never contains the recipient/part HTML cross product');
+  assert.equal(runtime.db.prepare('SELECT COUNT(*) n FROM newsletter_delivery_bodies').get().n,9,'Frozen bodies are independently bounded rows');
   assert.equal((await runtime.schedule.status()).lastResult,mode==='checkpoint-crash'?'failed':'partial-send');
  }
  const retained=runtime.store.sentStoryKeys().size;assert(retained>0);
@@ -104,6 +108,7 @@ try{
  }
  result=restarted.store.delivery(result.key);
  assert.equal(restarted.schedule.deliveryQueue.pending().length,0);
+ assert.equal(restarted.db.prepare('SELECT COUNT(*) n FROM newsletter_delivery_bodies').get().n,0,'Acknowledged plans release only their completed frozen bodies');
  assert.equal(result.sent,mode==='unsubscribe'?2:3);
  if(mode==='unsubscribe'){
   assert.equal(mail.filter(m=>m.email===addresses[0]).length,2,'Removed recipient cannot get the pending reply');

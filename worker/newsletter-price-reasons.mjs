@@ -1,3 +1,4 @@
+import {newsletterNewsReadComplete} from './newsletter-sources.mjs';
 import {newsletterRequest} from './newsletter-request.mjs';
 // Price explanations use read source passages, never the size/sign of a move as its own cause.
 import { expectedSession, marketWindow } from '../public/js/data/breakout-live-shared.js';
@@ -74,7 +75,7 @@ export async function attachPriceReasons({ brief, context, env, fetcher = fetch,
   const rows = priceEvidenceItems(context, brief.moves);
   const sourceStates = [context.announcements?.nse, context.announcements?.nseHistory, context.announcements?.bse,
     context.news?.source, context.news?.tradingview];
-  const sourceIncomplete = sourceStates.some(s => !s?.ok);
+  const sourceIncomplete = sourceStates.some(s => !s?.ok || s.partial || s.missingDays?.length) || !newsletterNewsReadComplete(context.news) || !!context.news?.tradingview?.partial || !!context.news?.company?.partial;
   const items = [], requested = [];
   for (const move of moves) {
     const window = priceReasonWindow(brief.moves.session, move.row.at);

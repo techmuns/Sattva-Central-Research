@@ -11,7 +11,9 @@ export class NewsletterDeliveryQueue {
     this.local=local;this.publish=publish;this.context=context;this.now=now;
     local.db.exec(`CREATE TABLE IF NOT EXISTS newsletter_delivery_queue (
       key TEXT PRIMARY KEY, edition TEXT NOT NULL, source TEXT NOT NULL,
-      next_at INTEGER NOT NULL, payload BLOB, receipt TEXT)`);
+      next_at INTEGER NOT NULL, payload BLOB, receipt TEXT);
+      CREATE TABLE IF NOT EXISTS newsletter_delivery_bodies (
+      delivery TEXT NOT NULL,email TEXT NOT NULL,part INTEGER NOT NULL,html TEXT NOT NULL,PRIMARY KEY(delivery,email,part))`);
   }
 
   pending() { return this.local.db.prepare("SELECT key,edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL AND source != 'test' ORDER BY next_at,key").all(); }
@@ -24,17 +26,23 @@ export class NewsletterDeliveryQueue {
   async deliver({key,edition,source,brief,list,messages,pdfUrl,documentId,credential,subject,summary}) {
     const host=new URL(this.local.schedule.dashboardUrl()).hostname;
     const stats=briefStats(brief);
-    const plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),
+    let plan;this.local.db.exec('BEGIN');
+    try {
+    const saveBody=this.local.db.prepare('INSERT INTO newsletter_delivery_bodies(delivery,email,part,html) VALUES(?,?,?,?)');
+    plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),
       messages:messages.map(m=>({keys:m.keys})),reported:brief.reported,windowFrom:brief.window.from,
       recipients:list.map(recipient=>({email:recipient.email,ok:false,status:null,reason:'not-attempted',
         parts:messages.map((message,i)=>{
           const html=renderBriefHtml(brief,{...this.local.schedule.renderOptions(recipient),stats,pdfUrl,part:message.part});
           if(emailBytes(html)>EMAIL_HTML_BYTES)throw Error('Prepared newsletter part exceeds email limit');
-          return {part:i+1,total:messages.length,bytes:emailBytes(html),html,subject:message.subject,
+          saveBody.run(key,recipient.email,i+1,html);
+          return {part:i+1,total:messages.length,bytes:emailBytes(html),subject:message.subject,
             requestedMessageId:`<newsletter.${crypto.randomUUID()}@${host}>`,ok:false,status:null,reason:'not-attempted',attempts:0};
         })}))};
     this.local.db.prepare('INSERT INTO newsletter_delivery_queue(key,edition,source,next_at,payload) VALUES(?,?,?,?,?)')
       .run(key,edition,source,plan.nextAt,gzipSync(JSON.stringify(plan)));
+    this.local.db.exec('COMMIT');
+    }catch(error){this.local.db.exec('ROLLBACK');throw error;}
     return this.run(plan,credential);
   }
 
@@ -67,14 +75,18 @@ export class NewsletterDeliveryQueue {
           if(!credential){part.reason='no-token';recipient.reason='no-token';break;}
           // Publish this intent before the guarded provider I/O. If acceptance is
           // uncertain, recovery uses the very same RFC Message-ID and body.
+          // Older retained plans carry inline bodies; new plans read one bounded frozen
+          // body at a time, independent of the subscriber/part cross product.
+          const html=part.html??this.local.db.prepare('SELECT html FROM newsletter_delivery_bodies WHERE delivery=? AND email=? AND part=?').get(plan.key,recipient.email,part.part)?.html;
+          if(typeof html!=='string'||emailBytes(html)>EMAIL_HTML_BYTES)throw Error('Frozen newsletter body unavailable');
           part.request={messageId:part.requestedMessageId,subject:part.subject,
             inReplyTo:part.part===1?null:recipient.threadMessageId,
             references:part.part===1?[]:[recipient.threadMessageId],
-            bodySha256:createHash('sha256').update(part.html).digest('hex')};
+            bodySha256:createHash('sha256').update(html).digest('hex')};
           part.reason='sending';part.attempts++;this.save(plan);this.progress(plan);
           const root=recipient.parts[0];
           const result=await sendEmail({fetcher:this.local.schedule.fetcher,token:credential,email:recipient.email,
-            subject:part.request.subject,html:part.html,messageId:part.request.messageId,
+            subject:part.request.subject,html,messageId:part.request.messageId,
             inReplyTo:part.request.inReplyTo});
           Object.assign(part,result);
           if(part===root&&result.ok)recipient.threadMessageId=result.messageId||part.requestedMessageId;
@@ -94,6 +106,7 @@ export class NewsletterDeliveryQueue {
       if(complete||plan.source==='test') {
         this.local.store.finishDocument(plan.documentId,plan.recipients.flatMap(r=>r.parts));
         this.local.db.prepare('UPDATE newsletter_delivery_queue SET payload=NULL,receipt=? WHERE key=?').run(JSON.stringify(result),plan.key);
+        this.local.db.prepare('DELETE FROM newsletter_delivery_bodies WHERE delivery=?').run(plan.key);
       } else this.save(plan);
       await this.publish();return result;
     });

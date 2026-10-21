@@ -39,7 +39,9 @@ const iso = (at) => new Date(at).toISOString();
 const parseJson = (text, fallback) => { try { return JSON.parse(text); } catch { return fallback; } };
 
 export class NewsletterStore {
-  constructor(storage, { now = Date.now } = {}) {
+  constructor(storage, { now = Date.now, maxDocumentBytes = 1_500_000 } = {}) {
+    if (!Number.isSafeInteger(maxDocumentBytes) || maxDocumentBytes < 1 || maxDocumentBytes > 64 * 1024 * 1024) throw Error('Invalid newsletter PDF budget');
+    this.maxDocumentBytes = maxDocumentBytes;
     this.storage = storage;
     this.now = now;
   }
@@ -255,7 +257,7 @@ export class NewsletterStore {
   // Immutable PDFs have opaque bearer links and no subscriber addresses. Keep them independently
   // of the short delivery log: pruning that log must not break a previously emailed download.
   saveDocument(body, filename, deliveryKey) {
-    if (!(body instanceof Uint8Array) || body.byteLength > 1_500_000) throw new Error('Invalid newsletter PDF');
+    if (!(body instanceof Uint8Array) || body.byteLength > this.maxDocumentBytes) throw new Error('Invalid newsletter PDF');
     const id = crypto.randomUUID();
     this.rows('INSERT INTO newsletter_documents (id, filename, body, created_at, delivery_key) VALUES (?, ?, ?, ?, ?)', id, filename, body, iso(this.now()), deliveryKey);
     return id;

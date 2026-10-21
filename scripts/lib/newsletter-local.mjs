@@ -1,8 +1,9 @@
+import {NEWSLETTER_GITHUB_PDF_BYTES} from '../../worker/newsletter-document.mjs';
 import {githubBackgroundSqlite} from './github-background-sqlite.mjs';
 import {NewsletterStore} from '../../worker/newsletter-store.mjs';
 import {NewsletterSchedule} from '../../worker/newsletter-schedule.mjs';
 export function localNewsletter(file,{env=process.env,now=Date.now,fetcher=fetch}={}){
- const local=githubBackgroundSqlite(file),store=new NewsletterStore(local.storage,{now});store.init();
+ const local=githubBackgroundSqlite(file),store=new NewsletterStore(local.storage,{now,maxDocumentBytes:NEWSLETTER_GITHUB_PDF_BYTES});store.init();
  const schedule=new NewsletterSchedule(local.storage,env,store,{now,fetcher});schedule.content.meta();schedule.content.newsBudget.status(now());
  local.db.exec('CREATE TABLE IF NOT EXISTS newsletter_requests(id TEXT PRIMARY KEY,state TEXT NOT NULL,result TEXT,at INTEGER NOT NULL);CREATE TABLE IF NOT EXISTS newsletter_views(id TEXT PRIMARY KEY,payload TEXT NOT NULL)');
  async function applyInputs(input){

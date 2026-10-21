@@ -40,3 +40,19 @@ Regression: `node scripts/verify-newsletter-coverage.mjs`, plus the existing new
 quotes, multipart, GitHub runtime and TradingView suites. Covers a delayed post-holiday morning,
 closing fallback, retained/sharded reports absent from the latest head, corrupt parts, source
 outages, more than 80 filings/60 stories/eight per company, long-lag arrivals and complete parts.
+
+Large recovery editions use a GitHub-only PDF budget of 64 MiB. Static delivery splits the
+PDF into authenticated 256 KiB private records and streams the complete document; the legacy
+Worker store/export limit stays unchanged. Frozen recipient bodies are individual encrypted
+database rows, so queue recovery metadata does not inflate by subscribers × parts × HTML bytes.
+Completed bodies follow the prior queue payload lifecycle; pending bodies and receipts survive
+restarts. Edition grouping is calculated once per multipart plan and frozen recipient render.
+
+`verify-newsletter-retained.mjs` checks the real committed ten-day recovery with no mail,
+network or model requests. It verifies archive descriptors/parts, all eligible identities across
+all parts, and the complete PDF transport budget on free standard GitHub Actions.
+
+An explicitly requested test can use `sourceOnly: true` with `to: "me"`. The encrypted request
+preserves that flag and disables model processing for the test, while exercising the same
+source selection, prices, multipart planning, PDF, queue, transport and threading. Automatic
+subscriber editions keep their configured enrichment and budgets.
