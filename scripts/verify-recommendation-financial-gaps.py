@@ -178,10 +178,24 @@ class GapTests(unittest.TestCase):
         inventory=report['coverage']['sourceCheckInventory']
         self.assertEqual(inventory['total'],502);self.assertEqual(inventory['included'],2)
         self.assertEqual(inventory['archivedCompanyChecks'],500)
+        self.assertEqual(inventory['summaryRows'],1)
         self.assertTrue(all(not c['key'].startswith('gap-source:') for c in report['coverage']['sourceChecks']))
+        self.assertEqual(len(report['coverage']['sourceChecks']),3)
+        summary=report['coverage']['sourceChecks'][-1]
+        self.assertIn('500 failed',summary['key']);self.assertIn(AT,summary['key'])
+        self.assertIn('500 of 500',summary['error']);self.assertIsNone(summary['success_at'])
         self.assertEqual(self.store.db.execute("SELECT count(*) FROM checks WHERE key LIKE 'gap-source:%'").fetchone()[0],500)
         self.assertEqual(report['coverage']['financialHistory']['targetedCollection']['failedSourceChecks'],500)
         self.assertEqual(report['policy'],POLICY)
+        def check(at,success,error=None):
+            return {'key':'gap-source:company:integrated-equity','attempted_at':at,'success_at':success,'error':error}
+        earlier='2026-10-20T12:00:00+00:00'
+        checks,inventory=runner.reader_source_checks([check(earlier,earlier),check(AT,AT)])
+        self.assertEqual(checks[0]['success_at'],earlier);self.assertIsNone(checks[0]['error'])
+        checks,_=runner.reader_source_checks([check(AT,earlier,'source-unavailable')])
+        self.assertIsNone(checks[0]['success_at']);self.assertIn('1 of 1',checks[0]['error'])
+        checks,inventory=runner.reader_source_checks([])
+        self.assertEqual(checks,[]);self.assertEqual(inventory['summaryRows'],0)
 
 
 if __name__=='__main__':unittest.main(verbosity=2)

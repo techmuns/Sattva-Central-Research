@@ -28,9 +28,12 @@ per-company metric/period/value/source-version rows remain in archived `financia
 they are not downloaded into the tab. This additive coverage field changes no UI or model policy.
 `coverage.sourceChecks` includes global host/input/source/market checks. Per-company financial-index
 checks stay in the referenced archive's `checks` table. `sourceCheckInventory` reports
-`{total,included,archivedCompanyChecks,fullDetails}`; `financialHistory.targetedCollection` retains
-aggregate queue states and failed-check counts. This keeps expanding company details off the
-browser payload without discarding evidence or hiding the archived-detail count.
+`{total,included,archivedCompanyChecks,summaryRows,fullDetails}`; `financialHistory.targetedCollection`
+retains aggregate queue states and failed-check counts. One compact summary row in `sourceChecks`
+keeps archived failure counts and actual attempt times visible in the existing coverage view.
+Its successful-read time is the earliest company success only when every latest check succeeded;
+any failed check prevents an aggregate successful-read claim. `included` counts original global
+checks; `summaryRows` counts added aggregate rows. Full company evidence remains archived.
 `backtest` reports actual first-observed signals, measured sample sizes and unresolved outcome
 statuses separately; initial historical performance is unavailable. See
 [model rules and limitations](RECOMMENDATION-MODELS.md). No private portfolio membership is published.

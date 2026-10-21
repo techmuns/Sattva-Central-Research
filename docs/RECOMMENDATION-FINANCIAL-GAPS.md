@@ -74,7 +74,9 @@ summary and optional reader `coverage.financialHistory` expose compact counts wi
 the tab. Original source/history/decision tables are preserved.
 Global source checks remain in the reader. Its `coverage.sourceCheckInventory` explicitly counts
 per-company checks whose full details stay in the referenced archive; targeted failure/queue counts
-remain in `financialHistory.targetedCollection`. Expanding the company audit does not require
+remain in `financialHistory.targetedCollection`. A compact `sourceChecks` summary also shows company
+failure counts and actual attempt times in the existing coverage view; any failed latest check
+prevents an aggregate successful-read time. Expanding the company audit does not require
 downloading every company's check detail into the browser.
 
 Offline verification: `python3 scripts/verify-recommendation-financial-gaps.py`, plus the unchanged
