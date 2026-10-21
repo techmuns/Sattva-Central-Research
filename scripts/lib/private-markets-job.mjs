@@ -12,6 +12,7 @@ export class PrivateMarketsJob {
   local.db.exec(`CREATE TABLE IF NOT EXISTS private_markets_seen(id TEXT PRIMARY KEY,hash TEXT NOT NULL,row TEXT NOT NULL,pending INTEGER NOT NULL,change TEXT);
    CREATE TABLE IF NOT EXISTS private_markets_editions(key TEXT PRIMARY KEY,at INTEGER NOT NULL,state TEXT NOT NULL,plan BLOB NOT NULL);
    CREATE TABLE IF NOT EXISTS private_markets_meta(key TEXT PRIMARY KEY,payload TEXT NOT NULL)`);
+  if(!this.meta().activatedAt)this.setMeta({...this.meta(),activatedAt:iso(this.now())});
  }
  meta(){const row=this.local.db.prepare("SELECT payload FROM private_markets_meta WHERE key='state'").get();return row?JSON.parse(row.payload):{};}
  setMeta(value){this.local.db.prepare("INSERT INTO private_markets_meta VALUES('state',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload").run(JSON.stringify(value));}
@@ -23,7 +24,7 @@ export class PrivateMarketsJob {
   const now=this.now(),meta=this.meta();
   if(!force&&meta.lastCheckedAt&&now-Date.parse(meta.lastCheckedAt)<3600000)return;
   let capture,roster;
-  try{({capture,roster}=await this.readSources());}catch{this.capture=null;this.setMeta({...meta,lastCheckedAt:iso(now),sourceState:'funding-source-unavailable'});this.saveView('preview-private-markets-html-1',{ok:false,reason:'funding-source-unavailable'});this.saveView('private-markets-status',this.status());return;}
+  try{({capture,roster}=await this.readSources());}catch{this.runResult='funding-source-unavailable';this.capture=null;this.setMeta({...meta,lastCheckedAt:iso(now),sourceState:'funding-source-unavailable'});this.saveView('preview-private-markets-html-1',{ok:false,reason:'funding-source-unavailable'});this.saveView('private-markets-status',this.status());return;}
   try{validRoster(roster);}catch{roster={ok:false,reason:'Invested fund directory unavailable'};}
   const slot=privateMarketsSlot(now,{next:true}),model=buildIntelligence({capture,roster,at:now,slot});
   const initialized=!!meta.initializedAt,save=this.local.db.prepare('INSERT INTO private_markets_seen VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET hash=excluded.hash,row=excluded.row,pending=excluded.pending,change=excluded.change');
@@ -37,10 +38,10 @@ export class PrivateMarketsJob {
    }
   });
   this.capture=capture;this.roster=roster;
-  this.setMeta({...meta,initializedAt:meta.initializedAt||iso(now),lastCheckedAt:iso(now),sourceCheckedAt:capture.sourceCheckedAt,rosterCheckedAt:roster.checkedAt||null,rosterAvailable:roster.ok===true,sourceState:roster.ok?'ready':'fund-roster-unavailable',lastResult:meta.lastResult||'ready'});
+  this.setMeta({...meta,initializedAt:meta.initializedAt||iso(now),lastCheckedAt:iso(now),sourceCheckedAt:capture.sourceCheckedAt,rosterCheckedAt:roster.checkedAt||null,rosterAvailable:roster.ok===true,sourceState:roster.ok?'ready':'fund-roster-unavailable',lastResult:!meta.lastResult||['build-failed','funding-source-unavailable'].includes(meta.lastResult)?'ready':meta.lastResult});
   this.preparePreview();this.saveView('private-markets-status',this.status());
  }
- fail(){this.setMeta({...this.meta(),lastCheckedAt:iso(this.now()),sourceState:'build-failed',lastResult:'build-failed'});this.saveView('preview-private-markets-html-1',{ok:false,reason:'build-failed'});}
+ fail(){this.runResult='build-failed';this.setMeta({...this.meta(),lastCheckedAt:iso(this.now()),sourceState:'build-failed',lastResult:'build-failed'});this.saveView('preview-private-markets-html-1',{ok:false,reason:'build-failed'});}
  pending(){return this.local.db.prepare('SELECT id,change FROM private_markets_seen WHERE pending=1').all();}
  preparePreview(){
   if(!this.capture)return;
@@ -52,13 +53,13 @@ export class PrivateMarketsJob {
  async wake() {
   const now=this.now(),slot=privateMarketsSlot(now),meta=this.meta();
   // Launching midweek never sends an earlier Monday's edition retrospectively.
-  const launch=Date.parse(meta.initializedAt||iso(now)),eligible=slot.at>=launch;
+  const launch=Date.parse(meta.activatedAt||iso(now)),eligible=slot.at>=launch;
   for(const row of this.local.db.prepare("SELECT plan FROM private_markets_editions WHERE state='pending' AND key != ? ORDER BY at LIMIT 4").all(slot.key))await this.run(JSON.parse(gunzipSync(row.plan,{maxOutputLength:32*1024*1024})));
   const existing=this.local.db.prepare('SELECT state,plan FROM private_markets_editions WHERE key=?').get(slot.key);
   if(existing){if(existing.state==='pending'){const plan=JSON.parse(gunzipSync(existing.plan,{maxOutputLength:32*1024*1024}));await this.run(plan);}return;}
   if(!eligible)return;
-  if(now-slot.at>3*3600000){this.savePlan({...slot,recipients:[]},'missed');this.setMeta({...this.meta(),lastResult:'missed'});return;}
-  await this.prepare({force:true});if(!this.capture){this.setMeta({...this.meta(),lastResult:'funding-source-unavailable'});return;}
+  if(now-slot.at>3*3600000){this.runResult='missed';this.savePlan({...slot,recipients:[]},'missed');this.setMeta({...this.meta(),lastResult:'missed'});return;}
+  await this.prepare({force:true});if(!this.capture){this.runResult='funding-source-unavailable';this.setMeta({...this.meta(),lastResult:'funding-source-unavailable'});return;}
   // A failed protected source does not become a false zero-investments section.
   const model=buildIntelligence({capture:this.capture,roster:this.roster,at:now,slot,pending:this.pending()});
   const messages=intelligenceEmails(model,{dashboardUrl:this.local.schedule.dashboardUrl()});
@@ -91,6 +92,7 @@ export class PrivateMarketsJob {
     if(result.ok){part.acceptedMessageId=result.messageId;for(const o of message.observations)this.local.db.prepare('UPDATE private_markets_seen SET pending=0 WHERE id=? AND hash=?').run(o.id,o.hash);}
     this.savePlan(plan,'pending');await this.publish();await this.sleep(1000);
     if(!result.ok){
+     this.runResult=result.reason==='unauthorised'?'sender-unavailable':part.state==='uncertain'?'delivery-uncertain':result.reason==='rate-limited'?'sender-cooldown':'delivery-failed';
      if(result.reason==='unauthorised')this.setMeta({...this.meta(),blockedCredential:credentialHash,lastResult:'sender-unavailable'});
      else if(result.reason!=='rate-limited')this.setMeta({...this.meta(),mailCooldownUntil:iso(this.now()+30*60000),lastResult:part.state==='uncertain'?'delivery-uncertain':'delivery-failed'});
      this.saveView('private-markets-status',this.status());await this.publish();return;
@@ -102,6 +104,7 @@ export class PrivateMarketsJob {
   const failed=plan.recipients.some(r=>r.parts.some(p=>p.state==='refused'));
   // A restored 'sending' intent needs operator evidence, not another mail request.
   this.savePlan(plan,unfinished?'pending':uncertain?'uncertain':failed?'failed':plan.recipients.length?'sent':'no-recipients');
+  this.runResult=uncertain?'delivery-uncertain':failed?'delivery-failed':null;
   this.setMeta({...this.meta(),lastResult:uncertain?'delivery-uncertain':unfinished?'delivery-pending':failed?'delivery-failed':plan.recipients.length?'sent':'no-recipients'});
   this.saveView('private-markets-status',this.status());await this.publish();
  }

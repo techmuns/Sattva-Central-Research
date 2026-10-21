@@ -48,4 +48,14 @@ at=monday+2*WEEK;result='throw';await job.wake();assert.equal(calls,4);await job
 at=monday+3*WEEK;result='ok';remove=true;await job.wake();assert.equal(calls,4,'Unsubscription before external I/O cancels the recipient');
 const settings=local.store.settings();const wake=newsletterWakePlan({settings,schedule:{lastWakeAt:monday-1000,lastCheckedAt:monday-1000,privateMarkets:{enabled:true}}},{now:monday});assert.equal(wake.reason,'private-markets-due');
 await local.close();
+// A source refusal is shared across recipients and survives the next runner.
+at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'sender.sqlite'),{env,now:()=>at});
+for(const email of ['first@example.test','second@example.test'])local.store.apply([{op:'subscribe',email,by:'Fixture'}]);
+let senderCalls=0,code=429;const sender=async()=>{senderCalls++;return code===200?Response.json({success:true,data:{messageId:'<accepted@example.test>'}}):new Response('',{status:code});};
+const senderOptions=()=>({readSources,publish:async()=>{},refreshInputs:async()=>{},fetcher:sender,now:()=>at,sleep:async()=>{}});
+job=new PrivateMarketsJob(local,senderOptions());await job.prepare();at=monday;await job.wake();assert.equal(senderCalls,1,'A 429 stops before the second recipient');
+await local.close();local=localNewsletter(path.join(root,'sender.sqlite'),{env,now:()=>at});job=new PrivateMarketsJob(local,senderOptions());await job.wake();assert.equal(senderCalls,1,'The shared sender cooldown survives restart');
+at+=30*60000;code=200;await job.wake();assert.equal(senderCalls,3);assert.equal(job.status().lastResult,'sent');
+at=monday+WEEK;code=401;await job.wake();assert.equal(senderCalls,4);at+=3600000;await job.wake();assert.equal(senderCalls,4,'Known-invalid credentials cannot probe the rest of the list');
+await local.close();
 console.log('PASS private weekly clock, source evidence, exact fund/manager matching, lossless multipart, isolated history, durable claims, restart, cooldown and unsubscribe.');

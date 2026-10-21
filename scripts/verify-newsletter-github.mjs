@@ -59,6 +59,11 @@ try{
  const stalePreview=()=>runtime.db.prepare('INSERT OR REPLACE INTO newsletter_views VALUES(?,?)').run('preview-morning-html-2',JSON.stringify({ok:true,body:'Old second part',part:2,parts:2}));
  stalePreview();await runtime.preparePreviews();assert.equal(providerCalls,0);assert.equal(emailCalls,0);
  const preview=JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-1').payload);assert.equal(preview.ok,true);assert.equal(preview.part,1);assert.equal(preview.parts,1);
+ const originalPrivateSources=runtime.privateMarketsJob.readSources;
+ runtime.privateMarketsJob.readSources=async()=>({capture:{invalid:true},roster:null});runtime.privateMarketsJob.setMeta({...runtime.privateMarketsJob.meta(),lastCheckedAt:null});
+ await runtime.preparePreviews();assert.equal(runtime.privateMarketsJob.status().lastResult,'build-failed');
+ assert.equal(JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-1').payload).ok,true,'A private bulletin build failure cannot block public-market previews');
+ runtime.privateMarketsJob.readSources=originalPrivateSources;runtime.privateMarketsJob.setMeta({...runtime.privateMarketsJob.meta(),lastCheckedAt:null});await runtime.preparePreviews();
  const saved=await runtime.publish(),site=path.join(root,'public');await installPreparedBackground([saved],{env,fetcher,publicRoot:site,scratch:path.join(root,'install')});
  const cipherFiles=new Map(fs.readdirSync(path.join(site,'generated-views/newsletter')).map(name=>[name,fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8')]));
  const again=await runtime.publish();await installPreparedBackground([again],{env,fetcher,publicRoot:site,scratch:path.join(root,'install-again')});for(const [name,value]of cipherFiles)assert.equal(fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8'),value,'Unchanged private readers reuse ciphertext instead of reuploading PDF history');
