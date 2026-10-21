@@ -195,19 +195,29 @@ def ingest_captured_events(store, data_dir, lookup, at):
             if not isinstance(row, dict):
                 raise SourceFailure("Captured event row is malformed")
             store.catalogue(source, row, at)
-            company = lookup.get(row.get("isin")) or lookup.get(row.get("ticker")) or lookup.get(str(row.get("scripCode")))
+            # A supplied exact identifier never falls through to a possibly reused symbol.
+            if row.get("isin"):
+                company = lookup.get(str(row["isin"]).strip().upper())
+            elif row.get("scripCode"):
+                company = lookup.get(str(row["scripCode"]))
+            else:
+                company = lookup.get(row.get("ticker"))
             published = row.get("publishedAt") if trusted else None
             if source == "bse-date-index" and day(row.get("date")) and re.fullmatch(r"\d{2}:\d{2}:\d{2}", row.get("time") or ""):
                 published = dt.datetime.fromisoformat(row["date"] + "T" + row["time"]).replace(
                     tzinfo=dt.timezone(dt.timedelta(minutes=330))).astimezone(dt.timezone.utc).isoformat()
             if published:
                 try:
-                    published = dt.datetime.fromisoformat(published.replace("Z", "+00:00")).astimezone(dt.timezone.utc).isoformat()
-                    if published > at:
+                    parsed_clock = dt.datetime.fromisoformat(published.replace("Z", "+00:00"))
+                    published = parsed_clock.astimezone(dt.timezone.utc).isoformat() if parsed_clock.tzinfo else None
+                    if published and published > at:
                         published = None
                 except ValueError:
                     published = None
-            urls = [row.get("url")] + [x.get("url") if isinstance(x, dict) else x for x in row.get("sourceUrls", [])]
+            links = row.get("sourceUrls") or []
+            if not isinstance(links, list):
+                raise SourceFailure("Captured source URL list is malformed; raw row retained")
+            urls = [row.get("url")] + [x.get("url") if isinstance(x, dict) else x for x in links]
             for url in set(u for u in urls if document_url(u)):
                 described = " ".join(str(row.get(k) or "") for k in ["title", "subject", "summary", "description", "subCategory"])
                 kind = "financial" if re.search(r"(?:INTEGRATED_FILING_INDAS|/INDAS_|financial.result)", url, re.I) else (

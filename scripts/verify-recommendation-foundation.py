@@ -289,6 +289,28 @@ class EvidenceTests(unittest.TestCase):
             with self.assertRaises(ValueError): client.restore(Path(self.tmp.name) / "corrupt.sqlite")
         self.assertFalse((Path(self.tmp.name) / "corrupt.sqlite").exists())
 
+    def test_conflicting_board_dates_and_ist_rollover_are_quarantined(self):
+        root = ET.fromstring((FIXTURES / "precision-wires-2026.xml").read_bytes())
+        original = next(n for n in root if n.tag.endswith("}DateOfBoardMeetingWhenFinancialResultsWereApproved"))
+        conflict = copy.deepcopy(original)
+        conflict.text = "2026-08-11"
+        root.append(conflict)
+        parsed = parse_financial_xml(ET.tostring(root), PRECISION)
+        self.assertIsNone(parsed["documentDate"])
+        self.assertIn("ambiguous-document-dates", parsed["dateIssues"])
+        key = self.store.observe(URL, ALPEX, "event", "nse", {}, AT, "2026-10-20T18:15:00+00:00")
+        self.store.observe(URL, ALPEX, "event", "nse", {}, AT, "2026-10-20T19:00:00+00:00")
+        self.assertIn("same-document-multiple-publication-days", self.store.date_assessment(key)["issues"])
+
+    def test_unknown_isin_does_not_fall_back_to_a_reused_symbol(self):
+        from recommendation_sources import ingest_captured_events
+        directory = Path(self.tmp.name) / "identity-data"
+        (directory / "filing-capture").mkdir(parents=True)
+        (directory / "filing-capture/announcements-recent.json").write_text(json.dumps({"rows": [
+            {"isin": "INE000A01010", "ticker": "ALPEXSOLAR", "url": URL, "sourceUrls": None}]}))
+        ingest_captured_events(self.store, directory, {"ALPEXSOLAR": ALPEX}, AT)
+        self.assertIsNone(self.store.db.execute("SELECT company FROM documents").fetchone()[0])
+
     def test_bse_document_move_keeps_identity(self):
         name = "8e7253fb-1150-42d8-9764-bd3c39db7c33.pdf"
         self.assertEqual(document_key("https://www.bseindia.com/xml-data/corpfiling/AttachLive/" + name),

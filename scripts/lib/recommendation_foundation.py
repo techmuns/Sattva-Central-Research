@@ -230,9 +230,11 @@ def parse_financial_xml(body, expected):
         if len(aliases[(fact["context"], fact["metric"])]) > 1:
             fact["eligible"] = False
             fact["issues"].append("conflicting-metric-aliases")
+    board_dates = {day(value) for value in text_values.get("DateOfBoardMeetingWhenFinancialResultsWereApproved", [])} - {None}
     return {"issuerMatches": matches, "claims": claims, "rawFacts": raw, "contexts": contexts,
         "units": units, "facts": normalized, "issues": issues,
-        "documentDate": next(iter(text_values.get("DateOfBoardMeetingWhenFinancialResultsWereApproved", [])), None)}
+        "documentDate": next(iter(board_dates)) if len(board_dates) == 1 else None,
+        "dateIssues": ["ambiguous-document-dates"] if len(board_dates) > 1 else []}
 
 
 DATE_RE = (r"(?:\d{1,2}[ -](?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
@@ -357,14 +359,16 @@ class Store:
         publications = sorted({r["published_at"] for r in observations if r["published_at"]})
         dates = sorted({day(json.loads(r[0]).get("documentDate")) for r in versions} - {None})
         verified_issuer = bool(versions) and all(json.loads(r[0]).get("issuerMatches") for r in versions)
-        issues = []
+        issues = sorted({issue for r in versions for issue in json.loads(r[0]).get("dateIssues", [])})
         if len(reported) > 1:
             issues.append("same-document-multiple-reported-dates")
         if dates and any(d not in dates for d in reported):
             issues.append("reported-date-differs-from-document-date")
         if len(dates) > 1:
             issues.append("document-date-changed")
-        if len({p[:10] for p in publications}) > 1:
+        indian_days = {dt.datetime.fromisoformat(p.replace("Z", "+00:00")).astimezone(
+            dt.timezone(dt.timedelta(minutes=330))).date().isoformat() for p in publications}
+        if len(indian_days) > 1:
             issues.append("same-document-multiple-publication-days")
         if not publications:
             issues.append("exchange-publication-unverified")
