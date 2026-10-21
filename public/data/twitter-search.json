@@ -1302,87 +1302,90 @@
       "pending": []
     },
     "isin:INE119201023|Park Medi World": {
-      "lastAttemptAt": "2026-10-16T05:17:49+00:00",
-      "lastResultCount": 64,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-09-27T12:23:53+00:00",
+      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastResultCount": 48,
+      "error": null,
+      "lastSuccessAt": "2026-10-21T01:44:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE119201023|PARKHOSPS": {
-      "lastAttemptAt": "2026-10-16T05:50:21+00:00",
-      "lastResultCount": 18,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-09-27T12:23:53+00:00",
+      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastResultCount": 15,
+      "error": null,
+      "lastSuccessAt": "2026-10-21T01:44:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE417T01026|PB Fintech": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
-      "lastResultCount": 103,
+      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastResultCount": 108,
       "error": "result-cap-incomplete",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
       "targetThrough": "2026-10-16T06:34:32+00:00",
       "pending": [
         {
-          "from": "2026-09-06T19:20:14+00:00",
-          "to": "2026-09-26T12:57:23+00:00"
-        },
-        {
           "from": "2026-09-26T12:57:23+00:00",
           "to": "2026-10-16T06:34:32+00:00"
-        }
-      ]
-    },
-    "isin:INE417T01026|POLICYBZR": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
-      "lastResultCount": 110,
-      "error": "result-cap-incomplete",
-      "lastSuccessAt": "2026-09-08T19:20:14+00:00",
-      "targetThrough": "2026-10-16T06:34:32+00:00",
-      "pending": [
-        {
-          "from": "2026-09-06T19:20:14+00:00",
-          "to": "2026-09-26T12:57:23+00:00"
         },
         {
-          "from": "2026-09-26T12:57:23+00:00",
-          "to": "2026-10-16T06:34:32+00:00"
-        }
-      ]
-    },
-    "isin:INE15B701018|Pine Labs": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
-      "lastResultCount": 75,
-      "error": null,
-      "targetThrough": "2026-09-08T19:20:14+00:00",
-      "pending": [
+          "from": "2026-09-06T19:20:14+00:00",
+          "to": "2026-09-16T16:08:48.500000+00:00"
+        },
         {
-          "from": "2026-09-04T07:20:14.185651+00:00",
-          "to": "2026-09-08T19:20:14+00:00"
+          "from": "2026-09-16T16:08:48.500000+00:00",
+          "to": "2026-09-26T12:57:23+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-16T06:34:32+00:00"
+      "lastDiscoveryAt": "2026-10-21T01:44:05+00:00"
     },
-    "isin:INE15B701018|PINELABS": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
+    "isin:INE417T01026|POLICYBZR": {
+      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastResultCount": 109,
       "error": "result-cap-incomplete",
-      "lastResultCount": 106,
+      "lastSuccessAt": "2026-09-08T19:20:14+00:00",
       "targetThrough": "2026-10-16T06:34:32+00:00",
       "pending": [
         {
-          "from": "2026-10-07T06:34:32.830839+00:00",
-          "to": "2026-10-11T18:34:32.415419+00:00"
+          "from": "2026-09-26T12:57:23+00:00",
+          "to": "2026-10-16T06:34:32+00:00"
         },
+        {
+          "from": "2026-09-06T19:20:14+00:00",
+          "to": "2026-09-16T16:08:48.500000+00:00"
+        },
+        {
+          "from": "2026-09-16T16:08:48.500000+00:00",
+          "to": "2026-09-26T12:57:23+00:00"
+        }
+      ],
+      "lastDiscoveryAt": "2026-10-21T01:44:05+00:00"
+    },
+    "isin:INE15B701018|Pine Labs": {
+      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastResultCount": 47,
+      "error": null,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-21T01:44:05+00:00",
+      "lastSuccessAt": "2026-09-08T19:20:14+00:00"
+    },
+    "isin:INE15B701018|PINELABS": {
+      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "error": null,
+      "lastResultCount": 39,
+      "targetThrough": "2026-10-16T06:34:32+00:00",
+      "pending": [
         {
           "from": "2026-10-11T18:34:32.415419+00:00",
           "to": "2026-10-16T06:34:32+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-21T01:44:05+00:00"
     },
     "isin:INE572E01012|PNB Housing Fin": {
-      "lastAttemptAt": "2026-10-16T06:34:32+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-16T06:34:32+00:00",
       "targetThrough": null,
@@ -2653,8 +2656,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 1,
-    "incomplete": 239,
-    "checkedAt": "2026-10-21T01:08:54.423704+00:00"
+    "attempted": 7,
+    "incomplete": 237,
+    "checkedAt": "2026-10-21T01:44:05.667062+00:00"
   }
 }

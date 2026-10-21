@@ -1,10 +1,54 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-10-20T19:30:22+00:00",
+  "capturedAt": "2026-10-21T01:44:53+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2112717253317632431",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#TechWithMC | Meta's global policy chief Joel Kaplan to leave after a 15-year stint\n\nThe move comes ahead of US midterm elections that are scheduled to be held on November 3, 2026. Kaplan said he would remain at the company for a few months to help with the transition.\n\nRead More:\nhttps://t.co/3xE8qS9DzU",
+      "created_at": "2026-10-21T01:27:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2112717253317632431",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112712975220097115",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Qualcomm to cut jobs worldwide in performance-focused layoffs: Report\n\nOne of the world's biggest smartphone chipmakers, Qualcomm has been hit this year by a slump in consumer electronics sales as soaring memory prices weigh on demand in key markets.\n\nRead More:\nhttps://t.co/yFjuN45pbT",
+      "created_at": "2026-10-21T01:10:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2112712975220097115",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112708445283778970",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Expect our partners to show zero tolerance toward terrorism: EAM Jaishankar\n\n-India stands firm on its right to self-defense against terror.\n-Jaishankar welcomes 26/11 culprit Tahawwur Rana's extradition.\n-India and US expand ties in tech, energy, and defense.\n\nRead More:\nhttps://t.co/HTSvlBf57s",
+      "created_at": "2026-10-21T00:52:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2112708445283778970",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112704670506619229",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Trade Setup for October 21: Top 15 things to know before the opening bell\n\n-If Nifty sustains below 20-day EMA, decline towards 22,800 cannot be ruled out\n-Crucial support seen at 22,500\n-On upside, 23,000–23,200 range expected to act as key resistance zone\n\nRead More:\nhttps://t.co/a1nBudeJQp",
+      "created_at": "2026-10-21T00:37:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2112704670506619229",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
     {
       "tweet_id": "2112600989819965939",
       "handle": "moneycontrolcom",
@@ -208,6 +252,17 @@
       ]
     },
     {
+      "tweet_id": "2112576906294116812",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🚨 #MarcoRubioOnNews18 | “Iran is targeting commercial shipping in the Strait of Hormuz,” says US Secretary of State Marco Rubio, comparing the tactics to Nazi U-boat warfare during World War II and calling for international condemnation.\n\nRubio says energy traffic through the strait remains at 80–100% of pre-war levels, with most drones and missiles targeting ships intercepted, although some vessels have been hit and sailors killed.\n\nIn an exclusive conversation with Network18 MD and Group Editor-in-Chief Rahul Joshi, Rubio discusses maritime security and tensions in the region.\n\n@SecRubio | @18RahulJoshi | @StateDept | @USAmbIndia | @USAndIndia | #MarcoRubio #StraitOfHormuz #Iran #GlobalTrade",
+      "created_at": "2026-10-20T16:09:18+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2112576906294116812",
+      "image": "https://pbs.twimg.com/media/HVFhfB_asAAHgf4.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
       "tweet_id": "2112576575107731742",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -327,6 +382,22 @@
       ]
     },
     {
+      "tweet_id": "2112572096165618006",
+      "handle": "vittavridhaay",
+      "display_name": "VittaVridhaay",
+      "text": "📢 RESULT   ANNOUNCED PINE LABS LTD ON 29-10-2026 #Q2Results #Q2FY27 #Ramayana   #StocksToWatch #CrudeOil #SAvsAUS",
+      "created_at": "2026-10-20T15:50:12+00:00",
+      "url": "https://x.com/vittavridhaay/status/2112572096165618006",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112571074760351892",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -358,6 +429,22 @@
       "image": "https://pbs.twimg.com/media/HVFZRGpbUAMOoH6.jpg",
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112567003802477002",
+      "handle": "sunilgurjar01",
+      "display_name": "Sunil Gurjar, CFTe",
+      "text": "5- POLICYBZR https://t.co/kVDpTK7EDS",
+      "created_at": "2026-10-20T15:29:57+00:00",
+      "url": "https://x.com/sunilgurjar01/status/2112567003802477002",
+      "image": "https://pbs.twimg.com/media/HVFYfVUa0AAROQr.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"POLICYBZR\""
+        }
+      ]
     },
     {
       "tweet_id": "2112566983124209760",
@@ -686,6 +773,38 @@
         {
           "entityId": "isin:INE0O6601022",
           "query": "\"KROSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112561648141779049",
+      "handle": "hrprtsingh9",
+      "display_name": "Harpreet Singh",
+      "text": "The number the headline 8.4x hides:\n\n> consumer tech: ₹2,755 cr into 45 companies, now ₹37,214 cr (13.5x)\n> everything else: ~₹2,145 cr in, ~₹4,086 cr now (~1.9x)\n> AI startups: ₹614 cr into 28 companies, now ₹1,268 cr (2.1x)\n> deeptech: ₹455 cr into 30 companies, now ₹559 cr (1.2x)\n\n~90% of the portfolio's value sits in consumer tech, and the letter says much of that sits in two listed names, Eternal and PB Fintech.\n\nTake consumer tech out and the rest is a ~1.9x book. Respectable on its own. Nowhere near 8.4x.\n\nThe AI and deeptech cheques are young, so those are early marks. They are also where the next decade of returns has to come from.",
+      "created_at": "2026-10-20T15:08:41+00:00",
+      "url": "https://x.com/hrprtsingh9/status/2112561648141779049",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"PB Fintech\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112561645532922209",
+      "handle": "hrprtsingh9",
+      "display_name": "Harpreet Singh",
+      "text": "To put the two big wins into context:\n\n> Policybazaar: first cheque in Sep 2008, ~₹21 cr pre-money\n> Zomato: first cheque in Jul 2010, ~₹9.4 cr pre-money\n> by Mar 2025, PB Fintech and Eternal had a combined market cap of over ₹2.5 lakh cr\n> Info Edge's shares in the two were worth over ₹31,500 cr on the same date\n\n~₹30 cr of combined entry valuation became over ₹2.5 lakh cr of listed companies, and Info Edge held on for 15+ years.\n\nSame team, same letter: the AIFs it runs with outside LPs show ~22% gross IRR. The consumer tech book shows ~34%. My read is that the gap is mostly two early cheques it kept holding.",
+      "created_at": "2026-10-20T15:08:40+00:00",
+      "url": "https://x.com/hrprtsingh9/status/2112561645532922209",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"PB Fintech\""
         }
       ]
     },
@@ -2866,6 +2985,22 @@
       ]
     },
     {
+      "tweet_id": "2112504825824911759",
+      "handle": "nareshkumaraga5",
+      "display_name": "ca naresh kumar agarwal",
+      "text": "These 6 companies from my watchlist look good:\n\nHFCL: 80% growth guidance, ₹1,800 crore+ capex plan | Data centre play.\n\nE2E Networks: 1,024+ B200s going live in Q3FY27, a ₹1,000 crore long-term order, and a ₹1,500 crore capex plan.\n\nPNGS Reva: Natural diamond play | Lightweight jewellery.\n\nShadowfax: E-commerce and quick commerce are growing at a rapid pace, and the company could be a good proxy.\n\nAeroflex Industries: Skid assemblies for data centres. The company is investing ₹202 crore in capex for skid assemblies and SS hoses.\n\nPine Labs: UPI merchant MDR charges would generate extra revenue, directly boosting profits. Besides this, the company is already guiding for 21%–23%growth",
+      "created_at": "2026-10-20T11:22:53+00:00",
+      "url": "https://x.com/nareshkumaraga5/status/2112504825824911759",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112504813439070605",
       "handle": "Krimzon_Kross_",
       "display_name": "Krimzon Kross",
@@ -3042,6 +3177,22 @@
         {
           "entityId": "isin:INE0O6601022",
           "query": "\"KROSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112501542565879934",
+      "handle": "Anvith_",
+      "display_name": "The Indian Investor",
+      "text": "📊 Where does ₹100 go when invested in SBI Small Cap Fund?  \n\n 🔹 Ather Energy: ₹3.51  \n 🔹 Navin Fluorine: ₹3.28  \n 🔹 City Union Bank: ₹2.89  \n 🔹 Sundram Fasteners: ₹2.77  \n 🔹 Kalpataru Projects International: ₹2.66  \n 🔹 Pine Labs: ₹2.62  \n 🔹 Belrise Industries: ₹2.55  \n 🔹 Honeywell Automation: ₹2.43  \n 🔹 ZF Commercial Vehicle: ₹2.39  \n 🔹 Anand Rathi Wealth: ₹2.17  \n 🔹 Other Equity Holdings: ₹58.15  \n 🔹 Cash & Other Net Assets: ₹14.58  \n\n(Total AUM: ₹41,059.17 Crore as of Sept 2026)  \n\n🚫 No Recommendation.",
+      "created_at": "2026-10-20T11:09:50+00:00",
+      "url": "https://x.com/Anvith_/status/2112501542565879934",
+      "image": "https://pbs.twimg.com/media/HVEc9DebcAA-cfp.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
         }
       ]
     },
@@ -3486,6 +3637,38 @@
       ]
     },
     {
+      "tweet_id": "2112477487590506683",
+      "handle": "edelwiess950",
+      "display_name": "Edel weiss",
+      "text": "@nsinghal211 Big red candle like pb Fintech.",
+      "created_at": "2026-10-20T09:34:15+00:00",
+      "url": "https://x.com/edelwiess950/status/2112477487590506683",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"PB Fintech\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112476472166260771",
+      "handle": "mystockedge",
+      "display_name": "StockEdge",
+      "text": "Institutional Shareholding Rising!\n\nSeveral stocks have seen a clear increase in FII + DII holding in the latest quarter:\n\nAcme Solar Holdings → +12.8%\nJSW Infrastructure → +11.0%\nRHI Magnesita → +10.8%\nMeesho, Lenskart, Pine Labs & others also showing healthy institutional inflows\n\nRising institutional ownership often reflects growing confidence from large investors and can act as a supportive factor for the stock over the medium term.\n\nWant to track such institutional activity easily?\nSubscribe to StockEdge Premium for powerful Shareholding Scans & more.\n🔗 https://t.co/oDUtQfxgUr",
+      "created_at": "2026-10-20T09:30:13+00:00",
+      "url": "https://x.com/mystockedge/status/2112476472166260771",
+      "image": "https://pbs.twimg.com/media/HVEGJ-eX0AA469Z.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112473124298248633",
       "handle": "Gopalak53112528",
       "display_name": "Gopalakrishnan Srikanth",
@@ -3574,6 +3757,66 @@
       ]
     },
     {
+      "tweet_id": "2112458502409257403",
+      "handle": "PineLabs",
+      "display_name": "Pine Labs",
+      "text": "@SahilRk19 Hi Sahil, apologies for the inconvenience caused. Our team will get in touch with you shortly.",
+      "created_at": "2026-10-20T08:18:49+00:00",
+      "url": "https://x.com/PineLabs/status/2112458502409257403",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112458424122581188",
+      "handle": "PineLabs",
+      "display_name": "Pine Labs",
+      "text": "@SahilRk19 Hi Sahil, apologies for the inconvenience caused. Our team will get in touch with you shortly.",
+      "created_at": "2026-10-20T08:18:30+00:00",
+      "url": "https://x.com/PineLabs/status/2112458424122581188",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112458353817571614",
+      "handle": "PineLabs",
+      "display_name": "Pine Labs",
+      "text": "@SahilRk19 Hi Sahil, apologies for the inconvenience caused. Our team will get in touch with you shortly.",
+      "created_at": "2026-10-20T08:18:13+00:00",
+      "url": "https://x.com/PineLabs/status/2112458353817571614",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112449753741164605",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -3612,6 +3855,38 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2112444839652741170",
+      "handle": "Financewitpalak",
+      "display_name": "Finance With Palak",
+      "text": "FIIs BUYING THESE SMALL CAP STOCKS🔥\n\nBOOKMARK IT🔖\n\n 1. Cupid: FII holding increased from 1.01% to 4.17% (Change: +3.16%)  \n\n 2. Sterlite Tech: FII holding increased from 18.22% to 19.72% (Change: +1.50%)  \n\n 3. HFCL: FII holding increased from 7.08% to 15.74% (Change: +8.66%)  \n\n 4. MTAR: FII holding increased from 17.31% to 24.80% (Change: +7.49%)  \n\n 5. Pine Labs: FII holding increased from 4.80% to 9.49% (Change: +4.69%)  \n\n 6. Astra Microwave: FII holding increased from 7.56% to 10.74% (Change: +3.18%)  \n\n 7. Apollo Micro Systems: FII holding increased from 3.63% to 7.59% (Change: +3.96%)  \n\n 8. Paras Defence: FII holding increased from 5.06% to 8.29% (Change: +3.23%)  \n\n 9. Fedbank Financial Services Limited: FII holding increased from 0.66% to 9.30% (Change: +8.64%)  \n\n 10. IOL Chemicals and Pharmaceuticals: FII holding increased from 1.72% to 4.87% (Change: +3.15%)  \n\n 11. Dee Development Engineers Ltd.: FII holding increased from 2.17% to 4.67% (Change: +2.50%)  \n\n 12. IdeaForge: FII holding increased from 4.89% to 8.27% (Change: +3.38%)",
+      "created_at": "2026-10-20T07:24:31+00:00",
+      "url": "https://x.com/Financewitpalak/status/2112444839652741170",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112440578340426150",
+      "handle": "pinelabsonline",
+      "display_name": "Pine Labs Online",
+      "text": "@RajaniS13014810 Hi Rajani, we apologize for the inconvenience caused. Request you to DM us your contact number and the email id so we can assist you further.",
+      "created_at": "2026-10-20T07:07:35+00:00",
+      "url": "https://x.com/pinelabsonline/status/2112440578340426150",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112440445804380213",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -3643,6 +3918,22 @@
       "image": "https://pbs.twimg.com/media/HVDkggzboAAQZ82.jpg",
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112439567378960847",
+      "handle": "pinelabsonline",
+      "display_name": "Pine Labs Online",
+      "text": "@RajaniS13014810 Hi Rajani, we apologize for the inconvenience caused. Request you to DM us your contact number and the email id so we can assist you further.",
+      "created_at": "2026-10-20T07:03:34+00:00",
+      "url": "https://x.com/pinelabsonline/status/2112439567378960847",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
     },
     {
       "tweet_id": "2112438274900004946",
@@ -3685,6 +3976,22 @@
       ]
     },
     {
+      "tweet_id": "2112436336473067602",
+      "handle": "chartwhisp60202",
+      "display_name": "Chart Whisperer",
+      "text": "FIIs INCREASING STAKES IN THESE 12 STOCKS\n\nBookmark this list.\n\n1. HFCL: 7.08% → 15.74% (+8.66%)\n2. Fedbank Financial Services: 0.66% → 9.30% (+8.64%)\n3. MTAR Technologies: 17.31% → 24.80% (+7.49%)\n4. Pine Labs: 4.80% → 9.49% (+4.69%)\n5. Apollo Micro Systems: 3.63% → 7.59% (+3.96%)\n6. ideaForge Technology: 4.89% → 8.27% (+3.38%)\n7. Paras Defence: 5.06% → 8.29% (+3.23%)\n8. Astra Microwave: 7.56% → 10.74% (+3.18%)\n9. Cupid: 1.01% → 4.17% (+3.16%)\n10. IOL Chemicals & Pharmaceuticals: 1.72% → 4.87% (+3.15%)\n11. Dee Development Engineers: 2.17% → 4.67% (+2.50%)\n12. Sterlite Technologies: 18.22% → 19.72% (+1.50%)",
+      "created_at": "2026-10-20T06:50:44+00:00",
+      "url": "https://x.com/chartwhisp60202/status/2112436336473067602",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112436230067744801",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -3716,6 +4023,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112434066012377251",
+      "handle": "Monktrader001",
+      "display_name": "The Market Monk",
+      "text": "FIIs INCREASING STAKES IN THESE 12 STOCKS\n\nBookmark this list.\n\n1. HFCL: 7.08% → 15.74% (+8.66%)\n2. Fedbank Financial Services: 0.66% → 9.30% (+8.64%)\n3. MTAR Technologies: 17.31% → 24.80% (+7.49%)\n4. Pine Labs: 4.80% → 9.49% (+4.69%)\n5. Apollo Micro Systems: 3.63% → 7.59% (+3.96%)\n6. ideaForge Technology: 4.89% → 8.27% (+3.38%)\n7. Paras Defence: 5.06% → 8.29% (+3.23%)\n8. Astra Microwave: 7.56% → 10.74% (+3.18%)\n9. Cupid: 1.01% → 4.17% (+3.16%)\n10. IOL Chemicals & Pharmaceuticals: 1.72% → 4.87% (+3.15%)\n11. Dee Development Engineers: 2.17% → 4.67% (+2.50%)\n12. Sterlite Technologies: 18.22% → 19.72% (+1.50%)",
+      "created_at": "2026-10-20T06:41:43+00:00",
+      "url": "https://x.com/Monktrader001/status/2112434066012377251",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
     },
     {
       "tweet_id": "2112432881398419638",
@@ -3801,6 +4124,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112414649425830019",
+      "handle": "ManishJais40",
+      "display_name": "Manish Jaiswal",
+      "text": "These 6 companies from my watchlist look good:\n\nHFCL: 80% growth guidance, ₹1,800 crore+ capex plan | Data centre play.\n\nE2E Networks: 1,024+ B200s going live in Q3FY27, a ₹1,000 crore long-term order, and a ₹1,500 crore capex plan.\n\nPNGS Reva: Natural diamond play | Lightweight jewellery.\n\nShadowfax: E-commerce and quick commerce are growing at a rapid pace, and the company could be a good proxy.\n\nAeroflex Industries: Skid assemblies for data centres. The company is investing ₹202 crore in capex for skid assemblies and SS hoses.\n\nPine Labs: UPI merchant MDR charges would generate extra revenue, directly boosting profits. Besides this, the company is already guiding for 21%–23% growth.\n\nWe have a list of more than 50 high-growth businesses in Monthly Business Analysis Live with Manish.",
+      "created_at": "2026-10-20T05:24:33+00:00",
+      "url": "https://x.com/ManishJais40/status/2112414649425830019",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
     },
     {
       "tweet_id": "2112412574339985903",
@@ -4223,6 +4562,26 @@
       ]
     },
     {
+      "tweet_id": "2112346175643037996",
+      "handle": "PineLabs",
+      "display_name": "Pine Labs",
+      "text": "@BholeChatture Hi, we apologize for the inconvenience caused. Request you to DM us your contact number and the email id so we can assist you further.",
+      "created_at": "2026-10-20T00:52:28+00:00",
+      "url": "https://x.com/PineLabs/status/2112346175643037996",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112345610410135606",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -4339,6 +4698,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2112216491299148241",
+      "handle": "stocksntrends",
+      "display_name": "stocksntrends",
+      "text": "Before asking investors to examine a fund’s WORST returns, perhaps fund managers should examine their OWN WORST investment decisions.\n\nQuoting a -61% SIP XIRR over one year, -38% over two years and -23% over three years is not, by itself, evidence of a sound investment strategy.\n\nAnd celebrating a subsequent recovery does not retrospectively validate every decision made during the decline.\n\nA recovery is an outcome. It is NOT proof that the preceding investment decisions were right.\n\nYour argument essentially asks investors to endure the damage for 7–10 years because the market may eventually recover.\n\nBut here are the questions you conveniently leave unanswered:\n\n1. WHO is accountable for the lost decade?\n\nYou acknowledge that there was a phase when investors had not grown their money even after seven years, and that the worst 10-year return was just 4%.\n\nFour per cent over a decade is not a triumph of long-term investing. Depending on inflation and the timing of cash flows, it can represent a substantial loss of purchasing power.\n\nA child entering school today could be entering university when that decade ends. Who will compensate the family if the money earmarked for education has failed to grow meaningfully?\n\n2. WHY should investors accept the entire drawdown as inevitable?\n\nNobody expects a fund manager to predict every market top and bottom.\n\nBut distinguishing a genuine reversal from a temporary pullback, assessing deteriorating price structures and managing downside exposure are legitimate parts of investment analysis.\n\nSimple RAW PRICE ACTION had been signalling serious deterioration in several major stocks, including HDFC Bank, Reliance, ITC, TCS, Infosys, HCL Technologies, Tata Motors, IEX, PB Fintech and CMS Info.\n\nYet fund houses continued to hold or add exposure to several of these stocks.\n\nThe relevant question is not whether the market eventually recovers. It is whether the risks were adequately recognised when investors' money was being deployed.\n\n3. WHY is every dip presented as an opportunity, but every prolonged decline explained away using a 7–10-year horizon?\n\nA lower price does not automatically mean a better investment. Averaging down does not automatically demonstrate conviction. And a SIP is a method of investing—not immunity against poor asset selection or prolonged capital erosion.\n\nInvestors deserve to know whether the underlying price structure and risk-reward profile justify continued accumulation.\n\n4. YOUR OWN INDUSTRY'S PORTFOLIOS DESERVE THE SAME SCRUTINY.\n\nHDFC AMC's reported accumulation in PB Fintech, PPFAS's reported buying in IEX during Q2 2025, and its reported purchase of approximately 20 lakh CMS Info shares in October 2025 all raise legitimate questions about timing, downside assessment and capital allocation.\n\nThe actual holdings, transaction prices and portfolio-level losses must be verified. But these questions cannot be dismissed merely by telling investors to remain patient.\n\n5. AND FINALLY, YOUR FAVOURITE DISCLAIMER.\n\n“Past performance is not indicative of future returns.”\n\nAbsolutely correct.\n\nThen why should investors accept past recoveries as evidence that the next recovery will arrive within their investment horizon?\n\nIf past performance cannot guarantee future returns, neither can a historical recovery guarantee that the next decade will compensate investors adequately for the risks they take today.\n\nAn FD and an equity mutual fund serve different purposes. But investors choosing equity deserve more than a lecture on patience after suffering years of capital erosion.\n\nThey deserve disciplined capital allocation, honest risk assessment and managers willing to acknowledge when their investment decisions deserve scrutiny.\n\nNo one is demanding that you predict every bottom. We are asking why investors must bear the full consequences when your investment process fails to recognise the risks.",
+      "created_at": "2026-10-19T16:17:09+00:00",
+      "url": "https://x.com/stocksntrends/status/2112216491299148241",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"PB Fintech\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112209138172444982",
       "handle": "imhiteshmodi",
       "display_name": "Hitesh Modi",
@@ -4355,6 +4730,22 @@
         {
           "entityId": "isin:INE082A01010",
           "query": "\"KOPRAN\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112207079041900836",
+      "handle": "stocksntrends",
+      "display_name": "stocksntrends",
+      "text": "PB Fintech - Ab kya hua ? limping like a dog https://t.co/IKxpOFIi79",
+      "created_at": "2026-10-19T15:39:45+00:00",
+      "url": "https://x.com/stocksntrends/status/2112207079041900836",
+      "image": "https://pbs.twimg.com/media/HVARJHPbwAA3Gi0.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"PB Fintech\""
         }
       ]
     },
@@ -4443,6 +4834,22 @@
       ]
     },
     {
+      "tweet_id": "2112195608408961408",
+      "handle": "AnkitFinAlpha",
+      "display_name": "Ankit | FinAlpha",
+      "text": "What top Flexicap Funds bought and sold by VALUE in September 2026 ? - FinAlpha1Pager\n\nI analysed 25 top fund houses so you don't have to.\n\nSector Trends:\n• Inflows: Fund managers deployed the most capital into Realty (₹2,780 Cr), Finance (₹1,257 Cr), and Retailing (₹1,186 Cr). \n• Outflows: IT - Software (₹648 Cr), Diversified FMCG (₹352 Cr), and Transport Services (₹314 Cr) faced the highest net capital outflows.\n\nThese are the major value actions for Sep 2026:\n📈 Top 5 Increased Exposure: \n• DLF Ltd (₹2,647 Cr)\n• Lenskart Solutions Ltd (₹853 Cr)\n• Bharti Airtel Ltd (₹638 Cr)• Mahindra & Mahindra Ltd (₹501 Cr)\n• ICICI Bank Ltd (₹436 Cr)\n\n📉 Top 5 Decreased Exposure: \n• BSE Ltd (₹355 Cr)\n• AU Small Finance Bank Ltd (₹293 Cr)\n• HDFC Bank Ltd (₹282 Cr)\n• PB Fintech Ltd (₹271 Cr)\n• Ather Energy Ltd (₹243 Cr)\n\n🆕 Top 3 Fresh Buys: \n• Bajaj Finance Ltd (₹553 Cr)\n• Tata Motors Ltd (₹446 Cr)\n• Lalithaa Jewellery Mart Ltd (₹385 Cr)\n\n🚫 Top 3 Complete Exits: \n• Tata Consultancy Services Ltd (₹508 Cr)\n• Hindustan Unilever Ltd (₹413 Cr)\n• Avenue Supermarts Ltd (₹280 Cr)",
+      "created_at": "2026-10-19T14:54:10+00:00",
+      "url": "https://x.com/AnkitFinAlpha/status/2112195608408961408",
+      "image": "https://pbs.twimg.com/media/HVAGa1Ba4AAgUVi.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"PB Fintech\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112194309466521795",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -4452,6 +4859,22 @@
       "image": "https://pbs.twimg.com/media/HVAFNzmbcAAHvEL.jpg",
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112192738884235484",
+      "handle": "AnkitFinAlpha",
+      "display_name": "Ankit | FinAlpha",
+      "text": "Mirae Asset Flexicap Portfolio Update (September 2026) 📊\n\nMirae Asset's latest portfolio shows three fresh buys and three exits. The biggest addition was to Symbiotec Pharmalab Ltd, up 0.66%.\n\n🟢 3 Fresh Buys\n(BlueStone Jewellery & Lifestyle Ltd., National Stock Exchange of India Ltd., Kanohar Electricals Ltd.)\n\n🔴 3 Full Exits 📉\n(Pine Labs Ltd., Gland Pharma Ltd., Welspun Corp Ltd.)\n\n📈 6 Increase in Holdings\n(Accumulating: Symbiotec Pharmalab Ltd, Cummins India Ltd., Kusumgar Ltd., Shriram Finance Ltd., Jindal Steel Ltd., etc.)\n\n📉 8 Decrease in Holdings\n(Includes trimming in: Solar Industries India Ltd., Can Fin Homes Ltd., Divi's Laboratories Ltd., Sai Life Sciences Ltd., Cera Sanitaryware Ltd., etc.)\n\n⏸️ 70 Companies - No Change\n(Held steady on core positions: ICICI Bank Ltd, HDFC Bank Ltd, Reliance Industries Ltd., State Bank of India, Axis Bank Ltd., etc.)",
+      "created_at": "2026-10-19T14:42:46+00:00",
+      "url": "https://x.com/AnkitFinAlpha/status/2112192738884235484",
+      "image": "https://pbs.twimg.com/media/HVAEClRbAAAoVuJ.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
     },
     {
       "tweet_id": "2112191986489049415",
@@ -4550,6 +4973,22 @@
       ]
     },
     {
+      "tweet_id": "2112169822889169219",
+      "handle": "SahooSouvi71713",
+      "display_name": "𝐒𝐎𝐔𝐕𝐈𝐊 𝐒𝐀𝐇𝐎𝐎",
+      "text": "AI Hardware\n\nNetweb\nE2E Networks\n\nData Centre ( Cooling) \n\nKRN Heat Exchange\nAeroflex Industries\n\nPower Transmission\n\nCG Power\nTARIL\nRR Kable\nV Marc India\nPolycab\n\nHospitals \n\nYatharth\nPark Medi World\n\nQSR Space\n\nUnited Food Brands\n\nWhat you like? \nAnd What You Hold.",
+      "created_at": "2026-10-19T13:11:42+00:00",
+      "url": "https://x.com/SahooSouvi71713/status/2112169822889169219",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE119201023",
+          "query": "\"Park Medi World\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112166933969711485",
       "handle": "a_basumallick",
       "display_name": "Abhishek Basumallick",
@@ -4566,6 +5005,38 @@
         {
           "entityId": "isin:INE858B01029",
           "query": "\"ISGEC\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112163229325807867",
+      "handle": "SmarTradingA",
+      "display_name": "Smart Trading Alerts",
+      "text": "NPPA CAPS TRADE MARGINS ON 137 CANCER DRUGS\nEmkay Healthcare Report\n\nKIMS, Park Medi World, Global Health (Medanta), Max Healthcare, Rainbow Children's Medicare https://t.co/QNVMue2d7D",
+      "created_at": "2026-10-19T12:45:30+00:00",
+      "url": "https://x.com/SmarTradingA/status/2112163229325807867",
+      "image": "https://pbs.twimg.com/media/HU_pQHpa4AAOitt.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE119201023",
+          "query": "\"Park Medi World\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112153821590007992",
+      "handle": "garwarehitech",
+      "display_name": "Garware Hi-Tech Films Limited",
+      "text": "Get more flexibility with Pine Labs No Cost EMI on Garware Hi-Tech Films’ PPF, Window Films, and Ceramic &amp; Graphene Coating. \nChoose 3, 6 or 9-month instalments with 28+ bank credit cards.\n\n#GarwareHiTechFilms #NoCostEMI https://t.co/LzNRYWIzbk",
+      "created_at": "2026-10-19T12:08:07+00:00",
+      "url": "https://x.com/garwarehitech/status/2112153821590007992",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
         }
       ]
     },
@@ -4706,6 +5177,54 @@
       ]
     },
     {
+      "tweet_id": "2112125972157980684",
+      "handle": "Akash17971",
+      "display_name": "Akash Chaudhary",
+      "text": "Healthcare Stocks Worth Studying & Tracking 🏥\n\nHospitals & Healthcare Services\n▪️ Park Medi World\n▪️ Yatharth Hospital\n▪️ Healthcare Global Enterprises\n▪️ Kovai Medical Center\n▪️ Artemis Medicare Services\n▪️ Indraprastha Medical Corporation\n▪️ KMC Speciality Hospitals\n▪️ Gujarat Kidney\n▪️ Unihealth Hospitals\n▪️ Rays of Belief\n▪️ Asarfi Hospital\n▪️ Aashka Hospitals\n▪️ Lotus Eye Hospital\n▪️ Hannah Joseph Hospital\n\nPharma, Biotech & Healthcare Products\n▪️ Kwick Forensic Solutions\n▪️ Q-Line Biotech\n▪️ Avience Biomedicals\n▪️ Bio Medica Laboratories\n▪️ Remus Pharma\n▪️ Accent Microcell\n▪️ Influx Healthtech\n▪️ Aptus Pharma\n▪️ KRM Ayurveda\n▪️ Accretion Nutraveda\n▪️ Thyrocare Technologies\n▪️ Dr Lal Pathlabs\n▪️ Sai Life Sciences\n▪️ Poly Medicure\n\nHealthcare: A Non-Cyclical Sector Worth Studying\n\nHealthcare is one of the sectors worth tracking for long-term wealth creation.\n\n▪️ Consistent Demand: Healthcare services are essential, with demand continuing across different economic cycles.\n\n▪️ Non-Cyclical Nature: Unlike many cyclical industries, healthcare demand is relatively resilient during economic slowdowns.\n\n▪️ Demographic Tailwinds: India's growing population, ageing demographics and rising healthcare awareness can support long-term demand.\n\n▪️ Low Healthcare Penetration: Expanding access to hospitals, diagnostics and specialised treatments creates opportunities for growth.\n\n▪️ Rising Medical Expenditure: Increasing incomes, insurance coverage and demand for quality healthcare can support industry expansion.\n\n▪️ Multiple Growth Opportunities: Hospitals, diagnostics, medical devices, biotechnology, pharmaceuticals and specialised healthcare services offer diverse opportunities.\n\n▪️ Long-Term Structural Theme: Healthcare infrastructure expansion and increasing demand for advanced treatments could support growth over the coming years.\n\nWhat Should We Track?\n\nHospitals, diagnostic chains, medical device manufacturers, pharmaceutical companies and emerging healthcare businesses.\n\nHowever, a growing sector doesn't automatically make every stock a good investment. Valuations, debt, profitability, cash flows, promoter quality and execution remain critical.\n\nDisclaimer: This list is for educational and research purposes only, not a buy or sell recommendations.",
+      "created_at": "2026-10-19T10:17:27+00:00",
+      "url": "https://x.com/Akash17971/status/2112125972157980684",
+      "image": "https://pbs.twimg.com/media/HU_HXc8bEAAOPI-.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE119201023",
+          "query": "\"Park Medi World\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112124743768039728",
+      "handle": "BholeChatture",
+      "display_name": "Life of an extra-ordinary boy",
+      "text": "@PineLabs @PineLabs robotic responses and it's like no one is reading the stuff you guys demand. \n\nHow am I supposed to send you a screenshot of the app balance when you have app screenshots disabled?! And then you deny your own balance update sms, how ridiculous can it be?! Stick to dmrcc",
+      "created_at": "2026-10-19T10:12:34+00:00",
+      "url": "https://x.com/BholeChatture/status/2112124743768039728",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112124740353622472",
+      "handle": "BholeChatture",
+      "display_name": "Life of an extra-ordinary boy",
+      "text": "@PineLabs  your bharat card yatra/support system is ridiculous. Going to be two weeks since a request of failed top up was raised. Several emails down, still not resolved. Your customer executives cut the call away after being asked to transfer to a senior.",
+      "created_at": "2026-10-19T10:12:34+00:00",
+      "url": "https://x.com/BholeChatture/status/2112124740353622472",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112121471661388185",
       "handle": "afaqs",
       "display_name": "afaqs!",
@@ -4838,6 +5357,26 @@
       ]
     },
     {
+      "tweet_id": "2112089521890398379",
+      "handle": "OfflineOnAir",
+      "display_name": "The Offline Network",
+      "text": "Indian Startup IPOs: How They've Done\n\n2026\n🟢 Shadowfax: +133%\n🟢 Kissht: +103%\n🟢 Moneyview: +75%\n🟢 Amagi: +58%\n🟢 Rentomojo: +44%\n🟢 Shiprocket: +34%\n🟢 Aye Finance: +19%\n🔴 Purple Style Labs: -6%\n🔴 Fractal: -18%\n🔴 AceVector: -22%\n🔴 Turtlemint: -56%\n\n2025\n🟢 Ather Energy: +358%\n🟢 Meesho: +105%\n🟢 Groww: +101%\n🟢 Lenskart: +61%\n🟢 Urban Company: +54%\n🟢 BlueStone: +51%\n🟢 PhysicsWallah: +23%\n🔴 Capillary: -5%\n🔴 Pine Labs: -25%\n🔴 Wakefit: -29%\n🔴 ArisInfra: -35%\n\n2024\n🟢 BlackBuck: +118%\n🟢 TBO Tek: +77%\n🟢 ixigo: +55%\n🟢 Go Digit: +5%\n🔴 MobiKwik: -18%\n🔴 Unicommerce: -23%\n🔴 Swiggy: -40%\n🔴 Ola Electric: -53%\n🔴 FirstCry: -62%\n\n2023\n🟢 Honasa: +40%\n🟢 ideaForge: +9%\n🟢 Zaggle: +3%\n🔴 Yatra: -32%\n\n2022\n🔴 Delhivery: -16%\n🔴 Tracxn: -60%\n\n2021\n🟢 Eternal: +328%\n🟢 Nazara: +204%\n🟢 RateGain: +95%\n🟢 CarTrade: +86%\n🟢 Nykaa: +84%\n🟢 PB Fintech: +9%\n🔴 EaseMyTrip: -3%\n🔴 MapmyIndia: -12%\n🔴 Paytm: -21%\n\nBefore 2021\n🟢 Info Edge, 2006: +7,807%\n🟢 IndiaMart, 2019: +234%\n🟢 Justdial, 2013: +35%\n🔴 Matrimony, 2017: -45%\n\n30 of 50 are green!\n\nReturn from IPO issue price to NSE closing price on 16 Oct 2026, adjusted for bonus issues, splits and rights issues. \n\nSource: NSE.",
+      "created_at": "2026-10-19T07:52:37+00:00",
+      "url": "https://x.com/OfflineOnAir/status/2112089521890398379",
+      "image": "https://pbs.twimg.com/media/HU-lv6tasAA0c6i.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"PB Fintech\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112087292160704525",
       "handle": "The_mega_mine",
       "display_name": "Minion",
@@ -4922,6 +5461,74 @@
       ]
     },
     {
+      "tweet_id": "2112074131550470278",
+      "handle": "sekhargogi",
+      "display_name": "SEKHAR GOGINENI",
+      "text": "@KommawarSwapnil Pine labs is a good company.",
+      "created_at": "2026-10-19T06:51:28+00:00",
+      "url": "https://x.com/sekhargogi/status/2112074131550470278",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112071752105037946",
+      "handle": "PineLabs",
+      "display_name": "Pine Labs",
+      "text": "@MayankJainINC @BPCLRetail Hi Mayank, we understand the inconvenience you’re experiencing. Our team has prioritized this issue, and we’re working to resolve it at the earliest. We appreciate your patience in the meantime.",
+      "created_at": "2026-10-19T06:42:00+00:00",
+      "url": "https://x.com/PineLabs/status/2112071752105037946",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112068618972545291",
+      "handle": "MayankJainINC",
+      "display_name": "Mayank Jain",
+      "text": "@PineLabs @BPCLRetail Waiting for your revert",
+      "created_at": "2026-10-19T06:29:33+00:00",
+      "url": "https://x.com/MayankJainINC/status/2112068618972545291",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112067239239164073",
+      "handle": "mange_manali",
+      "display_name": "Manali Mango",
+      "text": "Hey folks 👋 \nI'm hiring a Principal Backend Engineer - Go + PostgreSQL (Remote) 🚀 \n\nWe're looking for a Principal Backend Engineer who can build and own critical product features, write production-grade Go, and solve complex backend engineering problems.\n\nThis is a hands-on Individual Contributor (IC) role, not a people management position.\n\nWhat we're looking for:\n- 8+ years of backend engineering experience.\n- Strong, hands-on experience with Go and PostgreSQL in production.\n- Ownership of a product feature area, from system design to production delivery.\n- Experience building customer-facing products, not just internal platforms or infrastructure.\n- Experience shipping customer-facing LLM/AI functionality beyond prototypes.\n- Strong technical decision-making, system design, and end-to-end ownership.\n\nWhat we're NOT looking for:\n- Engineering Managers or Heads of Engineering.\n- Candidates whose experience is primarily infrastructure, platform engineering, or refactoring, without product feature ownership.\n- Engineers without proven production experience in both Go and PostgreSQL.\n- Job-hoppers. You should have spent more than 2 years in your current role, or your last role if you're between jobs.\n\nWho should apply?\nIf you're currently working at a product company or SaaS business like the ones listed below, and meet the criteria above, we'd love to hear from you.\n\n1. Recurly\n2. Razorpay\n3. PhonePe\n4. CRED\n5. Postman\n6. BrowserStack\n7. Chargebee\n8. Gojek\n9. Swiggy\n10. Zepto\n11. Atlassian\n12. Freshworks\n13. Salesforce\n14. Stripe\n15. Uber\n16. Airbnb\n17. Flipkart\n18. Meesho\n19. Groww\n20. Dream11\n21. Juspay\n22. Pine Labs\n23. Zeta\n24. CoinDCX\n25. Druva\n26. Hasura\n27. CleverTap\n28. MoEngage\n29. Whatfix\n30. Zomato\n\nThe company list is only a starting point. Your experience and what you've built matter more than your company name.\n\nApply here:\nhttps://t.co/XcjNbl0NG0\n\nIf this sounds like you, apply now. Know someone who fits? Tag them or share this opportunity with them.\n\nCC. @hijunedkhatri @ClanX_AI",
+      "created_at": "2026-10-19T06:24:04+00:00",
+      "url": "https://x.com/mange_manali/status/2112067239239164073",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112065004199682477",
       "handle": "spe_auact",
       "display_name": "SPE AUACT Student Chapter",
@@ -4934,6 +5541,22 @@
         {
           "entityId": "isin:INE103A01014",
           "query": "\"MRPL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112062718492738015",
+      "handle": "Piaschek",
+      "display_name": "Harpreet Kaur Sandhu",
+      "text": "3 companies that turned profitable in FY26 after reporting losses in FY25:\n\n1. Paytm: 663 crore loss to 552 crore profit\n\n2. Pine Labs: 145 crore loss to 113 crore profit\n\n3. PVR INOX: 152 crore loss to 387 crore profit\n\nNote: PVR INOX's FY26 profit includes exceptional items.",
+      "created_at": "2026-10-19T06:06:06+00:00",
+      "url": "https://x.com/Piaschek/status/2112062718492738015",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
         }
       ]
     },
@@ -4970,6 +5593,42 @@
       ]
     },
     {
+      "tweet_id": "2112059095339716625",
+      "handle": "PineLabs",
+      "display_name": "Pine Labs",
+      "text": "@shitij_gupta Hi Shitij, we understand the inconvenience you’re experiencing. Our team has prioritized this issue, and we’re working to resolve it at the earliest. We appreciate your patience in the meantime.",
+      "created_at": "2026-10-19T05:51:43+00:00",
+      "url": "https://x.com/PineLabs/status/2112059095339716625",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112058389308297352",
+      "handle": "shitij_gupta",
+      "display_name": "shitij gupta",
+      "text": "@PineLabs @PineLabs Still waiting for your promised resolution",
+      "created_at": "2026-10-19T05:48:54+00:00",
+      "url": "https://x.com/shitij_gupta/status/2112058389308297352",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112055082552615031",
       "handle": "abhi2010ahm",
       "display_name": "Abhishek",
@@ -4990,6 +5649,22 @@
       ]
     },
     {
+      "tweet_id": "2112054619161735388",
+      "handle": "ysmnnit",
+      "display_name": "Yogendra Singh",
+      "text": "@PineLabs 🚨 Urgent! I recharged my metro card with ₹200. The app shows ₹262, but the metro terminal still shows ₹62 despite multiple balance-update attempts. I’m STUCK at the station, and customer care can’t resolve this. Please help immediately!\n\nCard Ref: 3882945634",
+      "created_at": "2026-10-19T05:33:55+00:00",
+      "url": "https://x.com/ysmnnit/status/2112054619161735388",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112054346901000646",
       "handle": "nilkamal_ltd",
       "display_name": "Nilkamal Ltd.",
@@ -5002,6 +5677,22 @@
         {
           "entityId": "isin:INE310A01015",
           "query": "\"Nilkamal\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112053651749347452",
+      "handle": "TechNodeGlobal",
+      "display_name": "TNGlobal",
+      "text": "India’s Pine Labs sees Singapore as template for Southeast Asia’s unified payment push [Q&amp;A]\nPine Labs has launched a unified payments platform in Sin\n\nhttps://t.co/ue9ge9gr7C",
+      "created_at": "2026-10-19T05:30:05+00:00",
+      "url": "https://x.com/TechNodeGlobal/status/2112053651749347452",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
         }
       ]
     },
@@ -5090,6 +5781,26 @@
       ]
     },
     {
+      "tweet_id": "2112049696852316397",
+      "handle": "PineLabs",
+      "display_name": "Pine Labs",
+      "text": "@MayankJainINC @BPCLRetail Hi Mayank, please delete the personal details you have shared publicly as the information can be misused. You can DM us your personal details to avoid misuse of such sensitive information. Additionally, our team will get in touch with you shortly.",
+      "created_at": "2026-10-19T05:14:22+00:00",
+      "url": "https://x.com/PineLabs/status/2112049696852316397",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2112049316999389646",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -5099,6 +5810,38 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2112049238788166004",
+      "handle": "MayankJainINC",
+      "display_name": "Mayank Jain",
+      "text": "@PineLabs @BPCLRetail My contact number is 9406654321\n\nTid 367377\n Tid 367376\n\nBPCL ,Dewas M.P.",
+      "created_at": "2026-10-19T05:12:33+00:00",
+      "url": "https://x.com/MayankJainINC/status/2112049238788166004",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112049166247707066",
+      "handle": "SahilRk19",
+      "display_name": "Sahil Rajesh kavethiya",
+      "text": "Looking for a reliable POS machine for my retail counter that accepts international all credit/debit cards without a GSTIN (under exemption threshold with Udyam). Which team can onboard smoothly?\n\n@HDFC_Bank @ICICIBank @AxisBank @PineLabs @Mswipe_ @Razorpay @PaytmBusiness",
+      "created_at": "2026-10-19T05:12:15+00:00",
+      "url": "https://x.com/SahilRk19/status/2112049166247707066",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE15B701018",
+          "query": "\"PINELABS\""
+        }
+      ]
     },
     {
       "tweet_id": "2112048846096540161",
@@ -5188,6 +5931,38 @@
         {
           "entityId": "isin:INE736A01011",
           "query": "\"CDSL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112042528728109513",
+      "handle": "KalamSavit69675",
+      "display_name": "@$avi",
+      "text": "POLICYBZR 1040 CE \n\nCMP : 29\n\nOptions traders, keep an eye on this setup! \n\nTrade setup ke liye DM \n\n#POLICYBZR #StockMarket #OptionsTrading #Nifty #Trading\n#GiftNifty\n Educational purposes only.",
+      "created_at": "2026-10-19T04:45:53+00:00",
+      "url": "https://x.com/KalamSavit69675/status/2112042528728109513",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"POLICYBZR\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112042106747535680",
+      "handle": "TToriya26590",
+      "display_name": "Tulika Toriya",
+      "text": "Stock Option Trade !! \n\n#POLICYBZR 1040 CALL | OCT \n\nFrom 30-31 \n\nFor Trade setup CONNECT ME !! \n\nThis is for Educational purpose, DYOR. !! \n\n#Nifty #BankNifty #Sensex #IciciBank #Q2Result #OptionsTrading #StockMarket #IndianStockMarket #ExpiryDay #IntradayTrading #PriceActio",
+      "created_at": "2026-10-19T04:44:12+00:00",
+      "url": "https://x.com/TToriya26590/status/2112042106747535680",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE417T01026",
+          "query": "\"POLICYBZR\""
         }
       ]
     },
@@ -5770,6 +6545,22 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"INDOMIM\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2112019049828016473",
+      "handle": "SmarTradingA",
+      "display_name": "Smart Trading Alerts",
+      "text": "Urban Company, Ujjivan Small Finance Bank, DLF, InterGlobe Aviation (IndiGo), Oberoi Realty, KIMS, Park Medi World, Global Health, Max Healthcare, Rainbow Children's Medicare\n\npart 2\n#BrokerageRadar https://t.co/xwY92LnxEC",
+      "created_at": "2026-10-19T03:12:35+00:00",
+      "url": "https://x.com/SmarTradingA/status/2112019049828016473",
+      "image": "https://pbs.twimg.com/media/HU9mHZtbkAAsW8R.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE119201023",
+          "query": "\"Park Medi World\""
         }
       ]
     },
@@ -7234,6 +8025,22 @@
       ]
     },
     {
+      "tweet_id": "2111729409908765126",
+      "handle": "IamPanditVarun",
+      "display_name": "CA Varun Tiwari",
+      "text": "@Yuvraj_77 Vikran Engineering and Park Medi World Ltd.",
+      "created_at": "2026-10-18T08:01:40+00:00",
+      "url": "https://x.com/IamPanditVarun/status/2111729409908765126",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE119201023",
+          "query": "\"Park Medi World\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2111728074366874015",
       "handle": "tenfingoals",
       "display_name": "TENFIN GOALS",
@@ -8298,6 +9105,22 @@
       ]
     },
     {
+      "tweet_id": "2111427619103338830",
+      "handle": "INVESTERNSIGHT",
+      "display_name": "INVESTER INSIGHT",
+      "text": "📉 🔻 TOP 5 LOSERS OF THE WEEK\n\n🥇 KRN Heat Exchanger — ₹1,139.60 | 🔴 −17.78%\n🥈 Sterlite Techno — ₹865.90 | 🔴 −14.71%\n🥉 Yes Bank — ₹17.50 | 🔴 −14.43%\n4️⃣ Avalon Technologies — ₹1,987.30 | 🔴 −13.61%\n5️⃣ Park Medi World — ₹235.70 | 🔴 −9.64%\n\n#INVESTERNSIGHT #Trading",
+      "created_at": "2026-10-17T12:02:27+00:00",
+      "url": "https://x.com/INVESTERNSIGHT/status/2111427619103338830",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE119201023",
+          "query": "\"Park Medi World\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2111427004969132092",
       "handle": "Beyondbizmedia",
       "display_name": "Beyond Biz",
@@ -9004,830 +9827,14 @@
           "query": "\"COALINDIA\""
         }
       ]
-    },
-    {
-      "tweet_id": "2111378982537208175",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Turn E-Waste into Solutions, Not Mountains of Waste! 🌱\nUnder Special Campaign 6.0, SECL promotes the 3Rs—Reduce, Reuse and Recycle—to tackle e-waste, conserve valuable resources and build a cleaner, greener and more sustainable future!\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:49:11+00:00",
-      "url": "https://x.com/secl_cil/status/2111378982537208175",
-      "image": "https://pbs.twimg.com/media/HU0f_Jua0AAmZDo.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111378861808353560",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Right Disposal, Greener Tomorrow! 🌱\nUnder Special Campaign 6.0, SECL encourages responsible e-waste disposal through authorised collection centres, take-back programmes and certified recyclers. Keep e-waste out of landfills and protect our environment!\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:48:42+00:00",
-      "url": "https://x.com/secl_cil/status/2111378861808353560",
-      "image": "https://pbs.twimg.com/media/HU0f4OiaIAArtiy.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111378748352434452",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Every Piece Counts, Every Resource Matters! 🌍\nUnder Special Campaign 6.0, SECL promotes responsible e-waste recycling to recover valuable materials, conserve natural resources, reduce the need for fresh mining and protect the environment for a sustainable future!\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:48:15+00:00",
-      "url": "https://x.com/secl_cil/status/2111378748352434452",
-      "image": "https://pbs.twimg.com/media/HU0fxlhaIAEXml6.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111378634661355747",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Every Device Deserves a Second Life! 💻📱\nUnder Special Campaign 6.0, SECL encourages donating, reusing, refurbishing and recycling electronic devices to reduce e-waste, conserve resources and build a cleaner, greener future!\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:47:48+00:00",
-      "url": "https://x.com/secl_cil/status/2111378634661355747",
-      "image": "https://pbs.twimg.com/media/HU0fq8vbIAAlw5Q.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111378520341610653",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Separate E-Waste, Protect the Planet! 🌍\nUnder Special Campaign 6.0, SECL encourages proper e-waste segregation and responsible recycling. Keep electronic waste out of regular dustbins and take a step towards a cleaner, greener future!\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:47:21+00:00",
-      "url": "https://x.com/secl_cil/status/2111378520341610653",
-      "image": "https://pbs.twimg.com/media/HU0fkUwaEAARkJp.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111378209271156799",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Clear Your Digital Clutter and E-Waste Too!\nUnder Special Campaign 6.0, SECL encourages responsible e-waste management. Back up your data, recycle old devices safely and take a step towards a cleaner, greener future!\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:46:07+00:00",
-      "url": "https://x.com/secl_cil/status/2111378209271156799",
-      "image": "https://pbs.twimg.com/media/HU0fSMNbkAEASQJ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111377939812220986",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Choose Repair Over Replacement! 🌱\nUnder Special Campaign 6.0, SECL promotes repairing, maintaining and reusing electronic devices to reduce e-waste, conserve resources and build a greener, sustainable future\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:45:03+00:00",
-      "url": "https://x.com/secl_cil/status/2111377939812220986",
-      "image": "https://pbs.twimg.com/media/HU0fCfdbMAAvG8i.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111377824066252918",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Don't Let E-Waste Break the Cycle! 🌍🌱\nUnder Special Campaign 6.0, SECL encourages responsible use, safe disposal and resource conservation. Together, let's reduce e-waste and protect our planet for a greener future!\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:44:35+00:00",
-      "url": "https://x.com/secl_cil/status/2111377824066252918",
-      "image": "https://pbs.twimg.com/media/HU0e7xiaYAAZi3j.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111377740515385776",
-      "handle": "Chandanomm",
-      "display_name": "🇮🇳Chandan Singh BJP",
-      "text": "58,000 shareholders by the end of Reliance's first listed year. 100 million Jio customers in 170 days. More than 23 crore demat accounts across CDSL and NSDL, as stated in the campaign brief.\n\nThese numbers represent different parts of India's business and investing story, from share ownership to digital connectivity.\n\n#JioIPO #Reliance",
-      "created_at": "2026-10-17T08:44:15+00:00",
-      "url": "https://x.com/Chandanomm/status/2111377740515385776",
-      "image": "https://pbs.twimg.com/media/HU0e3IUakAAaYrI.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111377704260182418",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "Less E-Waste, Cleaner Environment, Healthier Communities! \nUnder Special Campaign 6.0, SECL promotes responsible e-waste management for a greener, healthier and more sustainable future.\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:44:06+00:00",
-      "url": "https://x.com/secl_cil/status/2111377704260182418",
-      "image": "https://pbs.twimg.com/media/HU0e0v0aoAAuTA6.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111377015022752205",
-      "handle": "sauramtv",
-      "display_name": "Sauramtv",
-      "text": "ಎಂಆರ್‌ಪಿಎಲ್ ಸ್ಫೋಟ ದುರಂತ: ಚಿಕಿತ್ಸೆ ಫಲಕಾರಿಯಾಗದೆ ಗಾಯಾಳು ರಾಜೇಶ್ ಡಿಸಿಲ್ವ ಸಾ*ವು!\n\n#MRPLBlast #MangaluruNews #RajeshDSouza #IndustrialTragedy #BreakingNews #SauramTV #MRPLAccident #FatalBlast #TragicDeath #LatestUpdate\n\nhttps://t.co/ZBKajDOfES https://t.co/pZHa7KgJGQ",
-      "created_at": "2026-10-17T08:41:22+00:00",
-      "url": "https://x.com/sauramtv/status/2111377015022752205",
-      "image": "https://pbs.twimg.com/media/HU0c8XmaAAAhy1y.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE103A01014",
-          "query": "\"MRPL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111373255013806378",
-      "handle": "MousumiMahanti",
-      "display_name": "DailyBazaar",
-      "text": "India Gets Relief From US Tariff Threat: What Changes for Reliance Industries and Oil Companies? #investinshares #russianoil #trump #ussanctions #grahamact #relianceindustries #indianoil #bpcl #hpcl #mrpl\n\nhttps://t.co/mM4SnT7CYE",
-      "created_at": "2026-10-17T08:26:26+00:00",
-      "url": "https://x.com/MousumiMahanti/status/2111373255013806378",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE103A01014",
-          "query": "\"MRPL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111373199661494478",
-      "handle": "MahantiMousumi",
-      "display_name": "Invest In Shares",
-      "text": "India Gets Relief From US Tariff Threat: What Changes for Reliance Industries and Oil Companies? #investinshares #russianoil #trump #ussanctions #grahamact #relianceindustries #indianoil #bpcl #hpcl #mrpl\n\nhttps://t.co/ImV6Y269Tv",
-      "created_at": "2026-10-17T08:26:12+00:00",
-      "url": "https://x.com/MahantiMousumi/status/2111373199661494478",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE103A01014",
-          "query": "\"MRPL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111373097068855318",
-      "handle": "SwingAcumen",
-      "display_name": "Market Acumen",
-      "text": "India’s Top Biggest IPOs \n\n1️⃣ Jio Platforms – ₹30,213 Cr (2026)\n2️⃣ Hyundai Motor India – ₹27,859 Cr (2024)\n3️⃣ NSE – ₹22,562 Cr (2026)\n4️⃣ LIC – ₹20,557 Cr (2022)\n5️⃣ Paytm – ₹18,300 Cr (2021)\n6️⃣ Coal India – ₹15,200 Cr (2010)\n7️⃣ Tata Capital – ₹15,512 Cr (2025)",
-      "created_at": "2026-10-17T08:25:48+00:00",
-      "url": "https://x.com/SwingAcumen/status/2111373097068855318",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111370711457820711",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "📄➡️💻 Special Campaign 6 के तहत कागज़ी बोझ कम कर डिजिटल कार्यप्रणाली को बढ़ावा दें। कम कागज़, बेहतर प्रबंधन और तेज़ कार्य निष्पादन। ♻️✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #coalindia",
-      "created_at": "2026-10-17T08:16:19+00:00",
-      "url": "https://x.com/secl_cil/status/2111370711457820711",
-      "image": "https://pbs.twimg.com/media/HU0YbbibYAA2Yaw.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111370494284865839",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🌐📂 Special Campaign 6 के तहत डिजिटल दस्तावेज़ों से जरूरी रिकॉर्ड तक पहुँच अब हर जगह आसान। कहीं भी, कभी भी—डिजिटल दस्तावेज़ सुलभ। 💻☁️✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #coalindia",
-      "created_at": "2026-10-17T08:15:27+00:00",
-      "url": "https://x.com/secl_cil/status/2111370494284865839",
-      "image": "https://pbs.twimg.com/media/HU0YPe1aQAAwNVj.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111369957334503709",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🗂️💻 Special Campaign 6 के तहत अभिलेखों का डिजिटलीकरण—सुरक्षित रिकॉर्ड, आसान खोज और तेज़ कार्यप्रणाली की ओर कदम। अभिलेख सुरक्षित, डिजिटल रूप में सुव्यवस्थित। ✅✨\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #coalindia",
-      "created_at": "2026-10-17T08:13:19+00:00",
-      "url": "https://x.com/secl_cil/status/2111369957334503709",
-      "image": "https://pbs.twimg.com/media/HU0XvvnbAAAQKfI.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111369737523651009",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🕒💻 Special Campaign 6 के तहत डिजिटल रिकॉर्ड से जरूरी जानकारी तक पहुँच अब आसान और तेज़। कभी भी, कहीं भी—डिजिटल रिकॉर्ड हमेशा उपलब्ध। 📁☁️✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:12:27+00:00",
-      "url": "https://x.com/secl_cil/status/2111369737523651009",
-      "image": "https://pbs.twimg.com/media/HU0XlG2bsAAbudV.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111368585113489480",
-      "handle": "pawarrushikant",
-      "display_name": "Rushikant Pawar",
-      "text": "@Market_Edge_007 Mrpl",
-      "created_at": "2026-10-17T08:07:52+00:00",
-      "url": "https://x.com/pawarrushikant/status/2111368585113489480",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE103A01014",
-          "query": "\"MRPL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111367883179835463",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "📲✨ Special Campaign 6 के तहत कतारों से आगे बढ़ें और डिजिटल सेवाओं को अपनाएँ। समय बचाएँ, प्रक्रिया आसान बनाएँ—कतार नहीं, डिजिटल द्वार चुनें। 💻✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #coalindia",
-      "created_at": "2026-10-17T08:05:05+00:00",
-      "url": "https://x.com/secl_cil/status/2111367883179835463",
-      "image": "https://pbs.twimg.com/media/HU0V3ByagAALxNs.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111367602341875846",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🌿💻 Special Campaign 6 के तहत डिजिटल कार्यप्रणाली अपनाकर कागज़ की खपत कम करने की दिशा में कदम। कागज़ बचाएँ, डिजिटल अपनाएँ—कार्यप्रणाली को स्मार्ट और पर्यावरण को हरा-भरा बनाएँ। 📄➡️💻🌱\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:03:58+00:00",
-      "url": "https://x.com/secl_cil/status/2111367602341875846",
-      "image": "https://pbs.twimg.com/media/HU0VeuzawAEiKfp.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111367193195884938",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🔍💻 Special Campaign 6 के तहत रिकॉर्ड प्रबंधन को डिजिटल बनाकर दस्तावेज़ों की खोज और उपलब्धता को अधिक आसान बनाया जा रहा है। अब फाइलों के ढेर में खोजने के बजाय डिजिटल माध्यम से सही दस्तावेज़ तक तेज़ और सुगम पहुँच। 📂✅\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:02:20+00:00",
-      "url": "https://x.com/secl_cil/status/2111367193195884938",
-      "image": "https://pbs.twimg.com/media/HU0VPuraQAAUuGE.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111366950152749558",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🖨️💻 Special Campaign 6 के तहत अनावश्यक प्रिंटिंग को कम कर डिजिटल कार्यप्रणाली को बढ़ावा दिया जा रहा है। जहाँ डिजिटल प्रति पर्याप्त हो, वहाँ कागज़ बचाएँ—कार्य को तेज़, सरल और पर्यावरण के प्रति जिम्मेदार बनाएँ। 🌱✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India\n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T08:01:22+00:00",
-      "url": "https://x.com/secl_cil/status/2111366950152749558",
-      "image": "https://pbs.twimg.com/media/HU0VCAragAAI_WI.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111366562754302340",
-      "handle": "ManojMehtamm",
-      "display_name": "Manoj Mehta (Modi Ka Parivar)",
-      "text": "The campaign brief highlights more than 23 crore demat accounts across CDSL and NSDL.\nDemat accounts allow investors to hold securities electronically, but having an account does not automatically mean applying for every IPO is the right choice.\n#JioIPO #InvestorAwareness https://t.co/dYpD7rckNM",
-      "created_at": "2026-10-17T07:59:50+00:00",
-      "url": "https://x.com/ManojMehtamm/status/2111366562754302340",
-      "image": "https://pbs.twimg.com/media/HU0UsjwbYAEpS4b.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111366519066382442",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "📄➡️💻 Special Campaign 6 के तहत भौतिक दस्तावेज़ों को डिजिटल स्वरूप में बदलकर रिकॉर्ड प्रबंधन को अधिक सरल, सुरक्षित और सुलभ बनाया जा रहा है। डिजिटलीकरण से दस्तावेज़ों तक तेज़ पहुँच के साथ कार्यप्रणाली में दक्षता और पारदर्शिता भी बढ़ रही है। ✅✨\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:59:40+00:00",
-      "url": "https://x.com/secl_cil/status/2111366519066382442",
-      "image": "https://pbs.twimg.com/media/HU0UpfwaQAETkG0.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111366239364972616",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "💻📁 Special Campaign 6 के तहत दस्तावेज़ों का डिजिटलीकरण बेहतर रिकॉर्ड प्रबंधन और तेज़ कार्यप्रणाली की दिशा में महत्वपूर्ण कदम है। सुरक्षित डिजिटल अभिलेखों के साथ आज की व्यवस्था बन रही है अधिक सुगम, सक्षम और भविष्य के लिए तैयार। ☁️✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:58:33+00:00",
-      "url": "https://x.com/secl_cil/status/2111366239364972616",
-      "image": "https://pbs.twimg.com/media/HU0UXgubMAA3tPG.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111365848720142801",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "📁💻 Special Campaign 6 के तहत अभिलेखों के सुव्यवस्थित डिजिटलीकरण से कार्यप्रणाली को अधिक सरल, सुरक्षित और प्रभावी बनाया जा रहा है। बेहतर रिकॉर्ड प्रबंधन के साथ डिजिटल सेवाओं को मिल रही है नई गति। ✅✨\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:57:00+00:00",
-      "url": "https://x.com/secl_cil/status/2111365848720142801",
-      "image": "https://pbs.twimg.com/media/HU0UACFaQAAC51K.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111365330593612140",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "📂📂✅ Special Campaign 6 के तहत हर लंबित फाइल को चरणबद्ध तरीके से समाधान की ओर ले जाने का प्रयास जारी है। तेज़ निपटारा, बेहतर कार्यप्रणाली और समयबद्ध समाधान के साथ दक्षता की नई सीढ़ियाँ तय की जा रही हैं। 🚀\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:54:56+00:00",
-      "url": "https://x.com/secl_cil/status/2111365330593612140",
-      "image": "https://pbs.twimg.com/media/HU0Tg07aIAA5z6n.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111364942570111152",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "💻📂 Special Campaign 6 के तहत पारंपरिक फाइलों से ई-फाइल की ओर बढ़ते कदम कार्यप्रणाली को अधिक तेज़, सरल और प्रभावी बना रहे हैं। डिजिटल माध्यम से लंबित मामलों के त्वरित निपटारे के साथ पारदर्शिता और दक्षता को भी नई गति मिल रही है। ✅⚡\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:53:24+00:00",
-      "url": "https://x.com/secl_cil/status/2111364942570111152",
-      "image": "https://pbs.twimg.com/media/HU0TOAAbIAA9OXl.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111364607252242910",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "⚡💻 Special Campaign 6 के तहत डिजिटल कार्यप्रणाली को बढ़ावा देकर काम की रफ्तार और दक्षता को नई गति दी जा रही है। लंबित प्रक्रियाओं को डिजिटल माध्यम से सरल बनाकर तेज़ कार्रवाई, सुगम रिकॉर्ड प्रबंधन और समयबद्ध समाधान की दिशा में निरंतर प्रयास। 📂✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:52:04+00:00",
-      "url": "https://x.com/secl_cil/status/2111364607252242910",
-      "image": "https://pbs.twimg.com/media/HU0S4yzaUAADOJr.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111364344705675488",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🖱️💻 Special Campaign 6 के तहत डिजिटल प्रक्रियाओं को सरल और अधिक प्रभावी बनाने की दिशा में निरंतर प्रयास। एक क्लिक से कई प्रक्रियाओं को आसान बनाकर कार्य में तेजी, बेहतर समन्वय और समयबद्ध निपटारे को बढ़ावा दिया जा रहा है। ✅📂\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:51:01+00:00",
-      "url": "https://x.com/secl_cil/status/2111364344705675488",
-      "image": "https://pbs.twimg.com/media/HU0Sow0bQAAUeki.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111363626409812314",
-      "handle": "DeccanHerald",
-      "display_name": "Deccan Herald",
-      "text": "MRPL blast: Another worker succumbs to injuries https://t.co/vx2dX0aePC https://t.co/zAoPwd66QS",
-      "created_at": "2026-10-17T07:48:10+00:00",
-      "url": "https://x.com/DeccanHerald/status/2111363626409812314",
-      "image": "https://pbs.twimg.com/media/HU0SBCFWAAAjyQ6.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE103A01014",
-          "query": "\"MRPL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111361975557161128",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🌱💻 Special Campaign 6 के तहत कम कागज़ और अधिक डिजिटल कार्यप्रणाली को बढ़ावा दिया जा रहा है। डिजिटलीकरण से रिकॉर्ड प्रबंधन को सरल और व्यवस्थित बनाते हुए कागज़ की खपत कम करने तथा पर्यावरण संरक्षण की दिशा में सार्थक कदम। 📄➡️🌿\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:41:36+00:00",
-      "url": "https://x.com/secl_cil/status/2111361975557161128",
-      "image": "https://pbs.twimg.com/media/HU0QgbvboAABzKt.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111361670056673560",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "☁️📂 Special Campaign 6 के तहत रिकॉर्ड के सुरक्षित डिजिटलीकरण और आसान उपलब्धता को बढ़ावा दिया जा रहा है। डिजिटल रिकॉर्ड प्रबंधन से दस्तावेज़ों तक त्वरित पहुँच, बेहतर सुरक्षा और अधिक व्यवस्थित कार्यप्रणाली सुनिश्चित करने की दिशा में निरंतर प्रयास। 💻✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:40:24+00:00",
-      "url": "https://x.com/secl_cil/status/2111361670056673560",
-      "image": "https://pbs.twimg.com/media/HU0QPCbaQAA93oJ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111361351671275882",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🔑💻 Special Campaign 6 के तहत डिजिटल समाधानों को अपनाकर लंबित मामलों के निपटारे को सरल और प्रभावी बनाया जा रहा है। डिजिटल कार्यप्रणाली पेंडेंसी की बाधाओं को दूर कर रिकॉर्ड तक आसान पहुँच, तेज़ कार्रवाई और समयबद्ध समाधान का मार्ग प्रशस्त कर रही है। 📂✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:39:08+00:00",
-      "url": "https://x.com/secl_cil/status/2111361351671275882",
-      "image": "https://pbs.twimg.com/media/HU0P8gebsAAU_jH.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111361121592742082",
-      "handle": "kushwahasunil61",
-      "display_name": "Sunil k",
-      "text": "@DemandorSupply CDSL, polycab",
-      "created_at": "2026-10-17T07:38:13+00:00",
-      "url": "https://x.com/kushwahasunil61/status/2111361121592742082",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111361064260825378",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "📑💻 Special Campaign 6 के तहत रिकॉर्ड प्रबंधन को सरल, सुरक्षित और अधिक प्रभावी बनाने के लिए डिजिटलीकरण को बढ़ावा दिया जा रहा है। दस्तावेज़ों को डिजिटल स्वरूप में संरक्षित कर उनकी उपलब्धता आसान बनाने के साथ कार्यप्रणाली को तेज़ और व्यवस्थित बनाने की दिशा में महत्वपूर्ण कदम। ✅📂\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:37:59+00:00",
-      "url": "https://x.com/secl_cil/status/2111361064260825378",
-      "image": "https://pbs.twimg.com/media/HU0PsIjbEAAS-Oh.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111360895142261008",
-      "handle": "WealthGenius_",
-      "display_name": "Wealth Genius News and Updates",
-      "text": "📊 19 STOCKS THAT POSTED SOLID/GOOD Q2 RESULTS 🚀\n📅 16 October 2026\n\n🟢 E2E Networks\n🟢 SG Finserve\n🟢 Onward Technologies\n🟢 Solara Active Pharma\n🟢 Ujjivan Small Finance Bank\n🟢 Himadri Speciality Chemical\n🟢 RPEL\n🟢 Federal Bank\n🟢 Bajaj Housing Finance\n🟢 Crompton Greaves Consumer Electricals\n🟢 Jayaswal Neco Industries\n🟢 Paushak\n🟢 Indo Rama Synthetics\n🟢 Supreme Power Equipment\n🟢 Modison\n🟢 Shoppers Stop\n🟢 Aurum PropTech\n🟢 Punjab National Bank\n🟢 Benaras\n\n📌 Keep these stocks on your Q2 earnings watchlist.\n\n#Q2Results #StockMarket #IndianStocks \n\nJoin our Telegram-  https://t.co/zh4G7Qeaxw",
-      "created_at": "2026-10-17T07:37:19+00:00",
-      "url": "https://x.com/WealthGenius_/status/2111360895142261008",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE854B01010",
-          "query": "\"Jayaswal Neco Industries\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111360756042342825",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🌐📂 Special Campaign 6 के तहत डिजिटल प्रक्रियाओं के माध्यम से लंबित मामलों के निपटारे को अधिक तेज़ और प्रभावी बनाया जा रहा है। तकनीक से जुड़ी कार्यप्रणाली पेंडेंसी से समाधान तक एक सीधी, सुगम और पारदर्शी राह तैयार कर रही है। 💻✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:36:46+00:00",
-      "url": "https://x.com/secl_cil/status/2111360756042342825",
-      "image": "https://pbs.twimg.com/media/HU0PYlPbAAAbn6f.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111360417226523041",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "💻📄 Special Campaign 6 के तहत कागज़ आधारित कार्यप्रणाली से डिजिटल व्यवस्था की ओर बढ़ते कदम। डिजिटल प्रक्रियाओं को अपनाकर काम को अधिक तेज़, व्यवस्थित और सुगम बनाने के साथ लंबित मामलों के प्रभावी निपटारे को भी नई गति मिल रही है। ☁️✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:35:25+00:00",
-      "url": "https://x.com/secl_cil/status/2111360417226523041",
-      "image": "https://pbs.twimg.com/media/HU0PFHRbsAArkYR.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111359935942647907",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "📄✈️ Special Campaign 6 के तहत लंबित मामलों को तेजी से निस्तारित कर समाधान की ओर बढ़ाने पर जोर दिया जा रहा है। समयबद्ध कार्रवाई और प्रभावी निपटारे के साथ हर लंबित प्रकरण को नई दिशा और नई गति देने की पहल। ✅🌱\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:33:30+00:00",
-      "url": "https://x.com/secl_cil/status/2111359935942647907",
-      "image": "https://pbs.twimg.com/media/HU0OqG1bUAAidDR.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111359582052471071",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🏁 Special Campaign 6 के तहत लंबित मामलों को समाधान की मंज़िल तक पहुँचाने पर विशेष जोर। समयबद्ध कार्रवाई, तेज़ निपटारा और निरंतर प्रयासों के साथ हर प्रकरण को पेंडेंसी से निकालकर समाधान की ओर आगे बढ़ाया जा रहा है। ✅🚀\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:32:06+00:00",
-      "url": "https://x.com/secl_cil/status/2111359582052471071",
-      "image": "https://pbs.twimg.com/media/HU0OUCXaYAECuV0.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111359104920977662",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "🔓 Special Campaign 6 के तहत लंबित मामलों के समाधान की राह को आसान बनाने पर जोर। समयबद्ध कार्रवाई और प्रभावी निपटारे के साथ पेंडेंसी की बाधाओं को दूर कर हर प्रकरण को समाधान तक पहुँचाने की दिशा में निरंतर प्रयास। 🔑✅\n\n@kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@SwachhBharatGov\n@swachhbharat\n@MoHUA_India \n\n#specialcampaign6 #SHS2026 #Swachhotsav #SwachhBharat #teamsecl #coalindia #EwasteManagement #CoalIndia",
-      "created_at": "2026-10-17T07:30:12+00:00",
-      "url": "https://x.com/secl_cil/status/2111359104920977662",
-      "image": "https://pbs.twimg.com/media/HU0N3h3bQAA67XP.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111357035883491789",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "One practical habit can prevent one avoidable disposal mistake. Responsible e-waste management begins with segregation and an appropriate formal channel.\n\n @kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@MoHUA_India\n\n#specialcampaign6 #teamsecl #coalindia #EwasteManagement",
-      "created_at": "2026-10-17T07:21:59+00:00",
-      "url": "https://x.com/secl_cil/status/2111357035883491789",
-      "image": "https://pbs.twimg.com/media/HU0MB2lb0AAP3-C.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111356910763209006",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "One practical habit can prevent one avoidable disposal mistake. Secure data handling does not determine the environmental route of the hardware.\n\n @kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@MoHUA_India\n\n#specialcampaign6 #teamsecl #coalindia #EwasteManagement",
-      "created_at": "2026-10-17T07:21:29+00:00",
-      "url": "https://x.com/secl_cil/status/2111356910763209006",
-      "image": "https://pbs.twimg.com/media/HU0L6jEbcAA73mw.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111356822758346803",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "One practical habit can prevent one avoidable disposal mistake. Cables, chargers and peripherals should not simply disappear into general waste. \n\n @kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@MoHUA_India\n\n#specialcampaign6 #teamsecl #coalindia #EwasteManagement",
-      "created_at": "2026-10-17T07:21:08+00:00",
-      "url": "https://x.com/secl_cil/status/2111356822758346803",
-      "image": "https://pbs.twimg.com/media/HU0L1bnbkAAkr6W.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111356729464410263",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "One practical habit can prevent one avoidable disposal mistake. Procurement, IT, stores, administration and users can all contribute to better e-waste management.\n\n @kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@MoHUA_India\n\n#specialcampaign6 #teamsecl #coalindia #EwasteManagement",
-      "created_at": "2026-10-17T07:20:46+00:00",
-      "url": "https://x.com/secl_cil/status/2111356729464410263",
-      "image": "https://pbs.twimg.com/media/HU0LwBEagAAEiHU.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111356643988426813",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "One practical habit can prevent one avoidable disposal mistake. Appropriate sorting, transport, treatment and recovery also matter. \n\n @kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@MoHUA_India\n\n#specialcampaign6 #teamsecl #coalindia #EwasteManagement",
-      "created_at": "2026-10-17T07:20:25+00:00",
-      "url": "https://x.com/secl_cil/status/2111356643988426813",
-      "image": "https://pbs.twimg.com/media/HU0Lq7LbUAAT-jH.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111356565190238252",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "One practical habit can prevent one avoidable disposal mistake. Routine care can help equipment remain useful for longer. \n\n @kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@MoHUA_India\n\n#specialcampaign6 #teamsecl #coalindia #EwasteManagement https://t.co/XaNvbxTWsL",
-      "created_at": "2026-10-17T07:20:06+00:00",
-      "url": "https://x.com/secl_cil/status/2111356565190238252",
-      "image": "https://pbs.twimg.com/media/HU0LmeCb0AAma4o.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111356490212892980",
-      "handle": "secl_cil",
-      "display_name": "SECL",
-      "text": "One practical habit can prevent one avoidable disposal mistake. Durability and repairability can support more responsible consumption. \n\n @kishanreddybjp\n@satishdubeyy\n@CoalMinistry\n@CoalIndiaHQ\n@DARPG_GoI\n@MoJSDDWS\n@MoHUA_India\n\n#specialcampaign6 #teamsecl #coalindia #EwasteManagement",
-      "created_at": "2026-10-17T07:19:49+00:00",
-      "url": "https://x.com/secl_cil/status/2111356490212892980",
-      "image": "https://pbs.twimg.com/media/HU0LiFaakAA2UQi.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2111355346401001631",
-      "handle": "udayavani_web",
-      "display_name": "Udayavani",
-      "text": "ಸೆ.30 ರ ಎಂ‌ಆರ್ ಪಿಎಲ್ ಸ್ಫೋಟದಲ್ಲಿ ಗಾಯಗೊಂಡಿದ್ದ ಮತ್ತೋರ್ವ ನೌಕರ ಸಾವು :- https://t.co/Nx4hWGQMag\n#Udayavani #mrpl #gasincident #tragic #Mangaluru https://t.co/Caw7PdsZQ5",
-      "created_at": "2026-10-17T07:15:16+00:00",
-      "url": "https://x.com/udayavani_web/status/2111355346401001631",
-      "image": "https://pbs.twimg.com/media/HU0KfIEaYAAVOTc.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE103A01014",
-          "query": "\"MRPL\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 254,
-    "attempted": 8,
-    "incomplete": 239,
-    "checkedAt": "2026-10-20T19:29:44.993151+00:00"
+    "attempted": 7,
+    "incomplete": 237,
+    "checkedAt": "2026-10-21T01:44:05.667062+00:00"
   },
   "archive": [
     {
@@ -9942,9 +9949,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-10-21T01:09:10.020Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-10-21T01:44:53.626Z",
     "lastSuccessAt": null
   }
 }
