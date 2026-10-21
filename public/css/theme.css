@@ -818,7 +818,9 @@ a.news-story-link:hover .news-story-title { color: var(--accent-600); }
   .news-story-bookmark { flex-direction: column; gap: 2px; }
   .news-story-details > summary { top: 5px; right: 0; width: 44px; height: 44px; }
   .news-story-expanded { gap: 10px; padding-inline: 10px; }
-  .news-story-meta { gap: 4px; }
+  .news-story-meta { gap: 2px 4px; height: auto; min-height: 14px; flex-wrap: wrap; white-space: normal; }
+  .news-story-company { flex-basis: 100%; max-width: 100%; }
+  .news-story-company + span { display: none; }
   .news-toolbar :where(input, select, [data-export], [data-news-export], [data-watch-toggle]) { min-height: 38px; }
   .news-story-feedback .relevance-feedback-question { flex-basis: 100%; }
   .news-story-feedback :where(.relevance-vote, .relevance-why-toggle) { min-height: 44px; }

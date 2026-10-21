@@ -29,7 +29,7 @@ export function newsStoryHtml(row, { key = row.id || row.url || '', meta = '', c
   rememberDetails();
   const canLink = newsLinkable(row.url);
   const storyBody = body ?? `<div class="news-story-copy">
-      <h3 class="news-story-title">${escapeHtml(row.title || '(untitled)')}</h3>
+      <h3 class="news-story-title" title="${escapeHtml(row.title || '(untitled)')}">${escapeHtml(row.title || '(untitled)')}</h3>
       <div class="news-story-meta">${company ? `<span class="news-story-company" title="${escapeHtml(company)}">${escapeHtml(company)}</span><span aria-hidden="true">·</span>` : ''}${meta}${canLink ? '' : '<span class="news-story-no-link">No link available</span>'}</div>
     </div>`;
   const content = canLink
