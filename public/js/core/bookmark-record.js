@@ -1,6 +1,7 @@
 // Explicit, portable snapshots. Never persist a feed object, session or credential.
 export const SECTION_LABELS = {
   'daily-alerts': 'All Alerts', 'ai-alerts': 'AI Alerts', news: 'News',
+  'private-market-news': 'Private market news',
   'corp-announcements': 'Corporate announcements', 'nse-filings': 'NSE filings',
   'corporate-actions': 'Corporate actions', 'insider-trades': 'Insider trades',
   'earnings-hub': 'Earnings', concall: 'Con-call', 'public-chatter': 'Public chatter',
