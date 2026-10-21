@@ -1,5 +1,5 @@
 {
-  "description": "Stable synthetic recall/precision cases, except the explicitly marked user-reported captured mismatch. Synthetic headlines are test inputs, not real reporting.",
+  "description": "Stable synthetic recall/precision cases, except explicitly marked captured counterexamples. Synthetic headlines are test inputs, not real reporting.",
   "cases": [
     {"id":"accent", "identity":{"ticker":"NESTLEIND","name":"Nestle India"}, "row":{"title":"Nestlé India reports quarterly earnings"}, "status":"confirmed"},
     {"id":"ticker-brand", "identity":{"ticker":"DMART","name":"Avenue Supermarts","brands":["DMart"]}, "row":{"title":"DMart reports quarterly earnings"}, "status":"confirmed"},
@@ -20,6 +20,18 @@
     {"id":"generic-name", "identity":{"name":"India Ltd"}, "row":{"title":"India approves a new project"}, "status":"uncertain"},
     {"id":"common-word-ticker", "identity":{"ticker":"IDEA","name":"Vodafone Idea"}, "row":{"title":"A new idea wins regulatory approval"}, "status":"uncertain"},
     {"id":"numeric-symbol", "identity":{"ticker":"500001","name":"Example Limited"}, "row":{"title":"Other Company wins an order worth 500001 dollars"}, "status":"uncertain"},
-    {"id":"reported-mismatch", "synthetic":false, "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Lululemon stock analysis: Is it a buy amid cheap valuation? By Investing.com", "summary":"Lululemon stock analysis: Is it a buy amid cheap valuation?", "url":"https://in.investing.com/news/stock-market-news/lululemon-stock-analysis-is-it-a-buy-amid-cheap-valuation-93CH-5582818", "source":"Investing.com India"}, "status":"unrelated"}
+    {"id":"reported-mismatch", "synthetic":false, "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Lululemon stock analysis: Is it a buy amid cheap valuation? By Investing.com", "summary":"Lululemon stock analysis: Is it a buy amid cheap valuation?", "url":"https://in.investing.com/news/stock-market-news/lululemon-stock-analysis-is-it-a-buy-amid-cheap-valuation-93CH-5582818", "source":"Investing.com India"}, "status":"unrelated"},
+    {"id":"eternal-music","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Eternal Lord of Music - Dictators (Official Music Video)"},"status":"uncertain"},
+    {"id":"eternal-sports","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Mourinho receives eternal glory from Roma fans on return with Real Madrid"},"status":"uncertain"},
+    {"id":"eternal-uppercase","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"ETERNAL Anima game launches next March"},"status":"uncertain"},
+    {"id":"eternal-other-company","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Eternal Hospitality sets up a U.S. holding company"},"status":"uncertain"},
+    {"id":"eternal-legal-name","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Eternal Limited announces quarterly results"},"status":"confirmed"},
+    {"id":"eternal-legal-abbreviation","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Eternal Ltd announces quarterly results"},"status":"confirmed"},
+    {"id":"eternal-reviewed-context","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Eternal Q2 preview: can Blinkit sustain growth?"},"status":"confirmed"},
+    {"id":"eternal-former-name","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Zomato announces quarterly results"},"status":"confirmed"},
+    {"id":"eternal-qualified-symbol","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"NSE:ETERNAL announces quarterly results"},"status":"confirmed"},
+    {"id":"eternal-context-is-not-alias","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Blinkit opens a delivery store"},"status":"uncertain"},
+    {"id":"eternal-bare-name","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Eternal announces an update"},"status":"uncertain"},
+    {"id":"eternal-snippet-context","identity":{"ticker":"ETERNAL","name":"Eternal","entityId":"isin:INE758T01015"},"row":{"title":"Eternal announces an update","summary":"Related: Blinkit results"},"status":"uncertain"}
   ]
 }

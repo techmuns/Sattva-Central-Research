@@ -1372,9 +1372,18 @@ await test('current shipped assets build source-only with direct-company scope a
     fetcher:async()=>new Response('',{status:503}), now, includeAi:false });
   const holdings = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url))).holdings;
   const tickers = new Set(holdings.map(h=>h.ticker?.toUpperCase()).filter(Boolean));
+  // Listed direct holdings can have no raw NSE symbol. Scope is proved by exact
+  // held ISIN and the captured exchange directory, including BSE-only equities.
+  const heldIsins = new Set(holdings.filter(h=>h.listed===true && h.isin).map(h=>h.isin));
+  for (const isin of heldIsins) tickers.add(isin.toUpperCase());
+  const bseDirectory = JSON.parse(readFileSync(new URL('../public/data/announcement-identities.json', import.meta.url)));
+  const nseDirectory = JSON.parse(readFileSync(new URL('../public/data/filing-capture/nse-identities.json', import.meta.url)));
+  for (const entry of [...(bseDirectory.entries || []), ...Object.values(nseDirectory.directories || {}).flatMap(d=>d.entries || [])]) {
+    if (heldIsins.has(entry.isin)) for (const id of [entry.ticker, entry.bseCode]) if (id) tickers.add(String(id).toUpperCase());
+  }
   assert.ok(real.book.listed > 0 && real.book.listed <= real.book.lines);
   for (const story of briefStories(real)) {
-    assert.ok(tickers.has(story.ticker));
+    assert.ok(tickers.has(story.ticker), `Alert ${story.ticker} must belong to a directly held exchange identity`);
     assert.ok(story.at >= (real.lateFrom ?? real.window.from) && story.at < real.window.to);
     if (story.kind === 'news') assert.equal(story.mood.id, 'neutral');
   }

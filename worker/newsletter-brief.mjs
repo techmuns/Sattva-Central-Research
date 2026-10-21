@@ -354,32 +354,68 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
     }
   }
 
-  // BSE's date-indexed capture.
+  // The latest corporate-filing head is only three days. Independent retained
+  // months also carry NSE and Screener records; preserve their actual provenance.
+  const byIsin = new Map(holdings.filter(h => h.isin).map(h => [upper(h.isin), h]));
+  const byBseCode = new Map(holdings.map(h => [String(h.bseCode || (/^\d{6}$/.test(h.ticker) ? h.ticker : '')).trim(), h]).filter(([code]) => code));
+  const heldFiling = (a, fallback = a.ticker) => {
+    if (a.isin) return byIsin.get(upper(a.isin));
+    const code = String(a.scripCode || a.bseCode || '').trim();
+    const held = byBseCode.get(code) || byTicker.get(upper(fallback));
+    return code && held?.bseCode && code !== String(held.bseCode).trim() ? null : held;
+  };
+  const publishedFilingInstant = a => /T\d{2}:\d{2}.*(?:Z|[+-]\d{2}:\d{2})$/i.test(a.publishedAt || '') ? Date.parse(a.publishedAt) : NaN;
+  const filingInstant = a => {
+    const published = publishedFilingInstant(a); if (Number.isFinite(published)) return published;
+    const day = a.date || (/^\d{4}-\d{2}-\d{2}$/.test(a.publishedAt || '') ? a.publishedAt : null);
+    try { return day ? a.time ? istInstant(day, String(a.time).slice(0, 5)) : dayOnlyInstant(day) : NaN; } catch { return NaN; }
+  };
+  const filingVenue = (a, fallback = 'Captured filing') => {
+    if (['NSE', 'BSE'].includes(upper(a.source))) return upper(a.source);
+    if (upper(a.source) === 'SCREENER') return 'Screener';
+    try { const host = new URL(a.url).hostname;
+      if (['www.bseindia.com', 'bseindia.com'].includes(host)) return 'BSE';
+      if (['nsearchives.nseindia.com', 'archives.nseindia.com', 'www.nseindia.com'].includes(host)) return 'NSE';
+    } catch { /* An unlinked retained filing stays explicit. */ }
+    return fallback;
+  };
   const capture = await readAsset(env, BSE_PATH);
-  let bse;
-  if (capture?.byTicker && typeof capture.byTicker === 'object') {
-    bse = { ok: true, capturedAt: capture.capturedAt || null, from: capture.from || null, to: capture.to || null, matched: 0,
-      partial: !!(capture.failed?.length || capture.failedWindows?.length || capture.shortfall?.length || capture.categoryInventoryVerified === false) };
-    for (const [ticker, list] of Object.entries(capture.byTicker)) {
-      const key = upper(ticker);
-      if (!byTicker.has(key) || !Array.isArray(list)) continue;
-      for (const a of list) {
-        if (!a?.date) continue;
-        // BSE prints the filing's own exchange time, which is Indian time. A row with no clock is
-        // filed at its day's close and says "day only" on the page.
-        const dayOnly = !a.time;
-        const at = dayOnly ? dayOnlyInstant(a.date) : istInstant(a.date, String(a.time).slice(0, 5));
-        if (!inSpan(at)) continue;
-        bse.matched += 1;
-        rows.push({
-          exchange: 'BSE', ticker: key, company: byTicker.get(key).name,
-          subject: a.subCategory || a.category || null, category: a.category || null, description: null,
-          headline: a.headline || a.title || a.subCategory || a.category || key, url: a.url || null, at, key: bseKey(a), dayOnly, critical: a.critical === true,
-        });
-      }
+  const bse = capture?.byTicker && typeof capture.byTicker === 'object'
+    ? { ok: true, capturedAt: capture.capturedAt || null, from: capture.from || null, to: capture.to || null, matched: 0,
+      partial: !!(capture.failed?.length || capture.failedWindows?.length || capture.shortfall?.length || capture.categoryInventoryVerified === false) }
+    : { ok: false, reason: 'capture-unavailable', capturedAt: null, from: null, to: null, matched: 0 };
+  const appendFiling = (a, holding, fallback) => {
+    const at = filingInstant(a); if (!holding || !inSpan(at)) return;
+    const ticker = upper(holding.ticker), exchange = filingVenue(a, fallback), legacyKey = bseKey(a);
+    if (exchange === 'BSE') bse.matched++;
+    const key = exchange === 'NSE' ? nseKey({ ...a, company: a.company || holding.name, publishedAt: a.publishedAt || new Date(at).toISOString(), subject: a.subject || a.title || a.headline })
+      : exchange === 'BSE' ? bseKey({ ...a, scripCode: a.scripCode || holding.bseCode || ticker }) : `capture:${ticker}:${exchange}:${legacyKey}`;
+    rows.push({ exchange, ticker, company: holding.name,
+      subject: a.subCategory || a.category || a.subject || null, category: a.category || null, description: a.description || null,
+      headline: a.headline || a.title || a.subCategory || a.category || ticker, url: a.url || a.referenceUrl || null,
+      at, key, aliasKeys: a.newsId || a.scripCode ? [legacyKey] : [],
+      dayOnly: !a.time && !Number.isFinite(publishedFilingInstant(a)), critical: a.critical === true });
+    return exchange;
+  };
+  for (const [ticker, list] of Object.entries(capture?.byTicker || {})) {
+    if (Array.isArray(list)) for (const a of list) if (a) appendFiling(a, heldFiling(a, ticker), 'BSE');
+  }
+  const archiveIndex = await readAsset(env, '/data/announcements-archive/index.json');
+  const filingArchive = { ok: !!archiveIndex?.months, capturedAt: archiveIndex?.updatedAt || null,
+    months: [], failedParts: [], matched: 0, sources: {}, unverifiedSources: 0 };
+  for (const month of newsletterMonths(from, window.to)) {
+    const path = `/data/announcements-archive/${month}.json`, count = archiveIndex?.months?.[month];
+    const indexed = Number.isSafeInteger(count) && count >= 0;
+    // Announcement query indexes differ from news accelerators. Scan their bounded
+    // verified parts and filter immediately, without interpreting a news index.
+    const file = await newsletterRows(env, path, a => !!a && typeof a === 'object' && !!heldFiling(a) && inSpan(filingInstant(a)), indexed ? { count } : null);
+    if (!indexed) { file.ok = false; file.failedParts.push(path + ':not-indexed'); }
+    filingArchive.months.push(month); filingArchive.failedParts.push(...file.failedParts);
+    if (!file.ok) filingArchive.ok = false;
+    for (const a of file.rows) { const source = appendFiling(a, heldFiling(a));
+      if (source) { filingArchive.matched++; filingArchive.sources[source] = (filingArchive.sources[source] || 0) + 1;
+        if (source === 'Captured filing') filingArchive.unverifiedSources++; }
     }
-  } else {
-    bse = { ok: false, reason: 'capture-unavailable', capturedAt: null, from: null, to: null, matched: 0 };
   }
 
   // One filing lodged with both exchanges is one filing: fold the copies, name both venues, and keep
@@ -390,12 +426,12 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
     const held = folded.get(key);
     if (held) {
       if (!held.exchanges.includes(row.exchange)) held.exchanges.push(row.exchange);
-      for (const alias of [row.key, `${row.ticker}|${row.exchange}:${row.url || row.at}`]) if (!held.keys.includes(alias)) held.keys.push(alias);
+      for (const alias of [row.key, ...(row.aliasKeys || []), `${row.ticker}|${row.exchange}:${row.url || row.at}`]) if (!held.keys.includes(alias)) held.keys.push(alias);
       held.copies.push(row);
       held.firstAt = Math.min(held.firstAt, row.at);
       continue;
     }
-    folded.set(key, { ...row, exchanges: [row.exchange], keys: [row.key, `${row.ticker}|${row.exchange}:${row.url || row.at}`], copies: [row], firstAt: row.at });
+    folded.set(key, { ...row, exchanges: [row.exchange], keys: [...new Set([row.key, ...(row.aliasKeys || []), `${row.ticker}|${row.exchange}:${row.url || row.at}`])], copies: [row], firstAt: row.at });
   }
 
   const admitted = [];
@@ -406,7 +442,7 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
     const typed = f.copies.find((c) => c.exchange === 'BSE') || f;
     const type = announcementTypeOf(typed.exchange === 'BSE'
       ? { category: typed.category, subCategory: typed.subject, title: typed.headline }
-      : { title: typed.subject, description: typed.description });
+      : { title: typed.subject || typed.headline, description: typed.description });
     if (type.id === 'routine') { routineHidden += 1; continue; }
     const where = place(f.firstAt, f.keys);
     if (!where) { outside += 1; continue; }
@@ -420,7 +456,7 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
       direction: signal.direction, importance: signal.importance, filingRule: signal.filingRule,
     });
   }
-  return { nse, nseHistory, bse, routineHidden, outside, ...group(admitted, uncapped ? Infinity : ANNOUNCEMENT_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
+  return { nse, nseHistory, bse, filingArchive, routineHidden, outside, ...group(admitted, uncapped ? Infinity : ANNOUNCEMENT_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
 }
 
 // ---- 3. news on direct holdings ---------------------------------------------------------------------
@@ -479,7 +515,8 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   const checks = entities.map(entity => {
     const queries = index?.queries?.[entity.entityId] || {};
     const current = identities.get(upper(entity.entityId)) || entity;
-    const required = current.queries?.length ? current.queries.map(query => queries[query]) : Object.values(queries);
+    const requiredQueries = [...new Set([...(entity.queries || []), ...(current.queries || [])])];
+    const required = requiredQueries.length ? requiredQueries.map(query => queries[query]) : Object.values(queries);
     return { missing: !required.length || required.some(q => !q?.lastSuccessAt),
       failed: required.some(q => q?.error),
       stale: required.some(q => !q?.lastSuccessAt || window.to - Date.parse(q.lastSuccessAt) > 4 * 3600000) };
@@ -1309,7 +1346,7 @@ export function briefSummary(brief) {
     nse: brief.announcements.nse.ok, nseHistory: brief.announcements.nseHistory?.ok ?? false, bse: brief.announcements.bse.ok,
     publishers: brief.news.source.ok, tradingview: brief.news.tradingview?.ok ?? false,
     companyNews: brief.news.company || null,
-    sourceCoverage: { publisherChecks: brief.news.source.checks || [], nseHistory: brief.announcements.nseHistory, bse: brief.announcements.bse, trades: brief.trades?.source || null, publisherArchiveComplete: brief.news.source.archiveComplete ?? null, tradingview: brief.news.tradingview || null },
+    sourceCoverage: { publisherChecks: brief.news.source.checks || [], nseHistory: brief.announcements.nseHistory, bse: brief.announcements.bse, filingArchive: brief.announcements.filingArchive || null, trades: brief.trades?.source || null, publisherArchiveComplete: brief.news.source.archiveComplete ?? null, tradingview: brief.news.tradingview || null },
     eligibility: { includedSourceItems: briefStories(brief).length, omittedByCaps: brief.announcements.more + brief.news.more + (brief.trades?.more || 0) + (brief.moves?.more || 0) + (brief.calendar?.more || 0) + (brief.actions?.more || 0) },
     tradesSource: brief.trades?.source?.ok ?? false, prices: brief.moves?.state || 'unavailable',
     calendar: brief.calendar?.count ?? 0, actions: brief.actions?.count ?? 0,
@@ -1600,6 +1637,8 @@ export function sourcesNote(brief) {
   if (n.source.archiveComplete === false) bits.push('Publisher archive read incomplete; usable captured reports retained');
   if (n.company) bits.push(n.company.ok ? `Company-news archive (Google News / Upstox) checked through ${capturedLabel(n.company.capturedAt)}; ${n.company.matched} additional reports admitted` : 'Company-news archive incomplete or unavailable; usable captured reports retained');
   if (n.company?.partial) bits.push(`Company-news query coverage partial: ${n.company.coverage.unchecked} unchecked, ${n.company.coverage.stale} stale, ${n.company.coverage.failed} failed company checks; retained reports remain included`);
+  if (brief.announcements.filingArchive?.ok === false) bits.push('Retained filing history is incomplete; available captured filings are included');
+  if (brief.announcements.filingArchive?.unverifiedSources) bits.push(`${brief.announcements.filingArchive.unverifiedSources} retained filings have unverified source provenance`);
   if (n.tradingview?.partial) bits.push(`TradingView capture-wide coverage partial (${[...(n.tradingview.health?.critical || []), ...(n.tradingview.health?.warnings || [])].map(issue => issue.code).join(', ')}): ${n.tradingview.coverage?.staleOrFailedSymbols || 0} stale/failed symbols, ${n.tradingview.coverage?.unresolvedCompanies || 0} unmapped companies, ${n.tradingview.coverage?.possibleGapSymbols || 0} historical window gaps; other captured company-news and publisher reports are included independently`);
   if (n.tradingview?.archiveComplete === false) bits.push('TradingView archive read incomplete; usable captured reports retained');
   bits.push(n.tradingview?.ok ? `TradingView headlines captured ${capturedLabel(n.tradingview.capturedAt)}` : 'TradingView headlines unavailable');

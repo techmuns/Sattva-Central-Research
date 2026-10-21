@@ -18,12 +18,12 @@ export async function newsletterHoldings(book, env) {
   try { nse = await newsletterJson(env, '/data/filing-capture/nse-identities.json'); } catch { /* No inferred NSE membership. */ }
   const nseEntries = Object.values(nse?.directories || {}).flatMap(d => d?.entries || []);
   return book.holdings.filter(h => h?.name && (h.ticker || h.listed === true && h.isin)).map(h => {
-    if (h.ticker) return h;
+    const bse = h.isin ? (directory?.entries || []).find(e => e.isin === h.isin) : null;
+    if (h.ticker) return { ...h, bseCode: bse?.bseCode || h.bseCode || null };
     const matches = nseEntries.filter(e => e.isin === h.isin && e.ticker);
     const tickers = [...new Set(matches.map(e => e.ticker))];
-    const bse = (directory?.entries || []).find(e => e.isin === h.isin);
     const ticker = tickers.length === 1 ? tickers[0] : bse?.bseCode || h.isin;
-    return { ...h, ticker: String(ticker).toUpperCase(), newsletterIdentity: tickers.length === 1 ? 'NSE' : bse?.bseCode ? 'BSE' : 'ISIN; exchange mapping unresolved' };
+    return { ...h, ticker: String(ticker).toUpperCase(), bseCode: bse?.bseCode || h.bseCode || null, newsletterIdentity: tickers.length === 1 ? 'NSE' : bse?.bseCode ? 'BSE' : 'ISIN; exchange mapping unresolved' };
   });
 }
 
@@ -32,7 +32,7 @@ export async function newsletterHoldings(book, env) {
 export async function newsletterRows(env, path, accept = () => true, descriptor = null, range = accept.range || null) {
   const rows = [], failedParts = [], ordered = [];
   // Monthly archive calculation belongs only to the standard GitHub Node runner.
-  if (/\/data\/(?:company-news|market-news|tradingview-news)\/\d{4}-\d{2}\.json$/.test(path) && env.NEWSLETTER_GITHUB_ARCHIVES !== true) return { rows, ok: false, failedParts: [path + ':github-only'] };
+  if (/\/data\/(?:company-news|market-news|tradingview-news|announcements-archive)\/\d{4}-\d{2}\.json$/.test(path) && env.NEWSLETTER_GITHUB_ARCHIVES !== true) return { rows, ok: false, failedParts: [path + ':github-only'] };
   let value;
   try { value = await newsletterJson(env, path); } catch { return { rows, ok: false, failedParts: [path] }; }
   let position = 0, count = 0;
@@ -41,6 +41,7 @@ export async function newsletterRows(env, path, accept = () => true, descriptor 
     const spec = shardSpec(value);
     if (!spec) {
       if (Array.isArray(value.articles)) value.articles.forEach(item => append(item));
+      else if (Array.isArray(value.rows)) value.rows.forEach(item => append(item));
       else if (value.byTicker && typeof value.byTicker === 'object') {
         for (const [key, list] of Object.entries(value.byTicker)) for (const row of list || []) append({ ...row, captureKey: key });
       } else throw Error('capture-shape');

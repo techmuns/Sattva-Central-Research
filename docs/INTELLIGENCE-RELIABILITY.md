@@ -270,7 +270,18 @@ Economic Times JM Financial initiation story must remain searchable in Portfolio
 Alerts when its date is included in the chosen period. Explicit brokerage coverage/rating/target changes are eligible material research events;
 they do not invent a directional judgment or automatically receive the highest priority. AI
 Alerts keeps its 14-day material-evidence window; All Alerts is the broader retained view.
+Common-word company names require a qualified legal name, exchange symbol or reviewed
+company context before becoming confirmed news. Capitalization alone is insufficient. Eternal's
+former name and context are grounded in its official investor pages; a Blinkit co-mention can
+qualify an Eternal headline, but a standalone group-business story is not a parent-company event.
+Ambiguous records remain captured and searchable as possible matches. Attribution revisions
+invalidate older readings and advance the service-worker release for returning readers.
 An optional company-relationship filter separates possible matches without deleting them.
+Daily email catch-up reads verified retained filing months independently of the latest
+three-day BSE head, retaining BSE, NSE and Screener provenance. Match by exact ISIN or BSE
+security code before a mutable ticker, preserve safe original source keys, and keep available
+records when an archive part fails. Unlinked notices and unknown provenance stay explicit.
+File completeness and latest exchange-capture health remain separate coverage claims.
 
 Large news parts are integrity-checked and read three at a time with a per-part timeout. A
 transient network/502/503/504 failure gets one bounded retry; access denials and corrupt parts do
