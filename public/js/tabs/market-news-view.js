@@ -465,7 +465,7 @@ function listHtml(rows) {
           </button>
         </div>
       </div>
-      <div data-news-scroll class="scrollbar-thin divide-y divide-slate-100 overflow-y-auto">
+      <div data-news-scroll class="scrollbar-thin divide-y divide-slate-100 overflow-y-auto" style="max-height: max(120px, calc(100vh - 300px))">
         ${shown.map(cardHtml).join('') || '<p class="px-5 py-10 text-center text-sm text-slate-400">No story matches your search.</p>'}
       </div>
       ${moreFooter()}

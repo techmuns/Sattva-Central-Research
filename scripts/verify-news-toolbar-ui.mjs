@@ -60,7 +60,9 @@ try{
   assert(geometry.search>(width===390?280:350),'search has useful company/headline width at '+width);
   for(const selector of ['[data-news-period]','[data-news-publisher]','[data-news-section]','[data-news-topic]','[data-news-export]'])assert(await page.locator(selector).isVisible(),'reachable '+selector);
   if(width>=1024)assert(geometry.second>Math.max(...geometry.primary)+25,'filters have their own deliberate row');
-  const firstCard=page.locator('[data-news-key]').first();
+  const firstKey=await page.locator('[data-news-key]').first().getAttribute('data-news-key');
+  const firstCard=page.locator(`[data-news-key=${JSON.stringify(firstKey)}]`);
+  assert.equal(await firstCard.locator('details').evaluate(details=>details.open),false,'story remains collapsed before checking the next viewport');
   assert.equal(await firstCard.locator('a [data-news-feedback]').count(),0,'feedback stays outside the story link');
   assert.equal(await firstCard.getByRole('button',{name:'Important',exact:true}).isVisible(),false,'feedback stays out of the scan');
   assert.equal(await firstCard.locator('.news-story-summary').isVisible(),false,'summaries expand on demand');
@@ -73,7 +75,7 @@ try{
   }
   assert.equal(await page.locator('[data-section-head] p').count(),0,'no explanatory paragraph above News');
   assert.equal(await page.locator('[data-news-more]').isVisible(),false,'successful history adds no footer clutter');
-  await page.screenshot({path:resolve(evidence,`market-${width}.png`)});
+  await page.screenshot({path:resolve(evidence,`market-${width}x${height}.png`)});
   await firstCard.locator('summary').click();
   for(const name of ['Important','Not important','Why?'])assert(await firstCard.getByRole('button',{name,exact:true}).isVisible(),'expanded feedback '+name+' at '+width);
   const footer=await firstCard.evaluate(card=>({top:card.querySelector('[data-news-feedback]').getBoundingClientRect().top,bottom:card.querySelector('a').getBoundingClientRect().bottom}));

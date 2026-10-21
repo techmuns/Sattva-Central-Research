@@ -769,6 +769,7 @@ a.news-story-link:focus-visible { outline: 2px solid var(--accent-600); outline-
 .news-story-thumbnail img[hidden] { display: none; }
 .news-story-copy { flex: 1; min-width: 0; }
 .news-story-title { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; line-height: 16px; color: var(--ink-900); }
+.news-story:has(> .news-story-details[open]) .news-story-title { display: block; overflow: visible; white-space: pre-line; overflow-wrap: anywhere; -webkit-line-clamp: unset; }
 a.news-story-link:hover .news-story-title { color: var(--accent-600); }
 .news-story-summary { margin: 4px 0 0; color: var(--ink-600); font-size: 13px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
 .news-story-company { overflow: hidden; text-overflow: ellipsis; max-width: 55%; color: var(--ink-600); }
@@ -791,7 +792,6 @@ a.news-story-link:hover .news-story-title { color: var(--accent-600); }
 .news-story-expanded { display: flex; gap: 14px; padding: 10px 12px 14px; border-top: 1px solid rgb(var(--edge-slate-100, 241 245 249)); }
 .news-story-details:not([open]) > .news-story-expanded { display: none; }
 .news-story-detail-copy { min-width: 0; flex: 1; }
-.news-story-full-title { margin: 0; color: var(--ink-900); font-size: 14px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-line; }
 
 /* Recover space from the News chrome without affecting the other workspaces. */
 #app:has(.news-toolbar) > [data-app-header] { padding-top: 8px; padding-bottom: 6px; }

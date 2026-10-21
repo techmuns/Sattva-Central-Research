@@ -8,9 +8,21 @@ let listening = false;
 function rememberDetails() {
   if (listening || typeof document === 'undefined') return;
   listening = true;
+  // Toggle notifications are queued; resize-driven rendering can run before them.
+  // Commit a summary activation before its native default action changes the DOM.
+  document.addEventListener('click', event => {
+    const summary = event.target.closest?.('[data-news-details] > summary');
+    if (!summary || event.defaultPrevented) return;
+    const details = summary.parentElement;
+    const key = details.closest('[data-news-key]').dataset.newsKey;
+    if (details.open) expandedStories.delete(key); else expandedStories.add(key);
+  });
   document.addEventListener('toggle', event => {
     const details = event.target;
     if (!details.matches?.('[data-news-details]') || !details.isConnected) return;
+    // Ignore the parser's initial notification when an open row is recreated.
+    if (details.dataset.newsDetailsOpen === String(details.open)) return;
+    details.dataset.newsDetailsOpen = String(details.open);
     const key = details.closest('[data-news-key]').dataset.newsKey;
     if (details.open) expandedStories.add(key); else expandedStories.delete(key);
   }, true);
@@ -37,12 +49,11 @@ export function newsStoryHtml(row, { key = row.id || row.url || '', meta = '', c
     : `<div class="news-story-link" data-news-unlinkable>${storyBody}</div>`;
   return `<article data-news-key="${escapeHtml(String(key))}"${canLink ? '' : ' data-news-unlinkable'} class="news-story">
     <div class="news-story-content">${content}<span class="news-story-bookmark">${watch}${bookmark}</span></div>
-    <details class="news-story-details" data-news-details data-norow${expandedStories.has(String(key)) ? ' open' : ''}>
+    <details class="news-story-details" data-news-details data-norow data-news-details-open="${expandedStories.has(String(key))}"${expandedStories.has(String(key)) ? ' open' : ''}>
       <summary aria-label="Story details" title="Story details"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <div class="news-story-expanded">
         ${newsThumbnail(row.image || row.publisherSourceRecord?.image)}
         <div class="news-story-detail-copy">
-          <p class="news-story-full-title">${escapeHtml(row.title || '(untitled)')}</p>
           ${row.summary ? `<p class="news-story-summary">${escapeHtml(row.summary)}</p>` : ''}
           ${tags ? `<div class="news-row-extras">${tags}</div>` : ''}
           <div class="news-story-feedback">${feedback}</div>

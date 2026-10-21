@@ -38,7 +38,7 @@ const server = createServer((req, res) => {
     let body = readFileSync(file);
     if (path === '/sw.js') {
       body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js',self.location).href;");
-      if (!upgraded) body = body.replace('-compact-news-reader-v2', '');
+      if (!upgraded) body = body.replace('-compact-news-reader-v3', '');
     }
     if (path === '/js/tabs/news.js' && !upgraded) body = legacy;
     res.setHeader('content-type', { '.js':'text/javascript', '.json':'application/json', '.css':'text/css', '.svg':'image/svg+xml', '.png':'image/png' }[extname(file)] || 'application/octet-stream');
@@ -58,7 +58,7 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.ready);
   assert.equal(await page.locator('[data-legacy-news]').count(), 1, 'returning reader starts on cached spacious view');
-  assert(!(await page.evaluate(() => caches.keys())).some(key => key.includes('compact-news-reader-v2')));
+  assert(!(await page.evaluate(() => caches.keys())).some(key => key.includes('compact-news-reader-v3')));
   upgraded = true;
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await page.locator('.news-card-table .news-story').waitFor();
@@ -69,7 +69,7 @@ try {
   const colors = await page.locator('.news-story').evaluate(card => ['important','not-important'].map(value => getComputedStyle(card.querySelector('[data-vote="'+value+'"]')).color));
   assert.deepEqual(colors, ['rgb(4, 120, 87)','rgb(190, 18, 60)'], 'returning reader receives green/red feedback');
   const keys = await page.evaluate(() => caches.keys());
-  assert(keys.every(key => key.includes('compact-news-reader-v2')), 'preceding immutable caches are removed');
+  assert(keys.every(key => key.includes('compact-news-reader-v3')), 'preceding immutable caches are removed');
   const cached = await page.evaluate(async () => {
     const cache = await caches.open((await caches.keys())[0]);
     return !!(await cache.match('/js/ui/news-story.js'));
