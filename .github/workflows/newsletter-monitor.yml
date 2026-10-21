@@ -1,4 +1,5 @@
 name: Monday newsletter delivery monitor
+# workflow-health-until: 2026-10-20T02:30:00Z
 on:
   push:
     branches: [main]

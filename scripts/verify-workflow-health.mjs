@@ -17,6 +17,13 @@ assert(!assessWorkflow(workflow, active, [{ ...run, created_at: '2026-09-03T01:3
 assert(!assessWorkflow(workflow, { state: 'disabled_inactivity' }, [run], { now }).ok);
 assert(!assessWorkflow(workflow, active, [], { now }).ok);
 assert(!assessWorkflow(workflow, active, [{ ...run, conclusion: 'failure' }], { now }).ok);
+const episode = { ...workflow, episodeEndsAt: '2026-09-05T19:00:00Z' };
+const ended = assessWorkflow(episode, { state: 'disabled_manually' }, [{ ...run, conclusion: 'failure' }], { now });
+assert(ended.ok, 'an ended one-off audit is not an overdue recurring collector');
+assert.equal(ended.assessment, 'completed-episode');
+assert.equal(ended.latestRun.conclusion, 'failure', 'the historical failure remains explicit and is never reported as a pass');
+assert(!assessWorkflow(episode, { state: 'disabled_manually' }, [run], { now: now - 2 * 3600000 }).ok,
+  'a disabled audit still fails during its promised observation window');
 assert(!assessWorkflow(workflow, active, [{ ...run, head_branch: 'codex/test' }], { now }).ok);
 assert(!assessWorkflow({ ...workflow, schedules: ['*/15 * * * *'] }, active, [run], { now }).ok, 'frequent capture requires recent successful runs');
 const recent = { ...run, created_at: '2026-09-05T19:15:00Z' };
@@ -48,6 +55,7 @@ for (const file of ['announcements-refresh.yml', 'corporate-actions-refresh.yml'
     `${file}: a queued capture starts from the latest checkpoint on its branch`);
 }
 assert(catalog.some(w => w.file === 'tradingview-news-refresh.yml'));
+assert.equal(catalog.find(w => w.file === 'newsletter-monitor.yml').episodeEndsAt, '2026-10-20T02:30:00Z');
 assert(catalog.some(w => w.file === 'verify.yml') && catalog.some(w => w.file === 'deploy.yml'));
 assert(!catalog.some(w => ['filings-health.yml', 'bse-ipo-refresh.yml'].includes(w.file)), 'exclude self-reference and removed workflow catalog entries');
 for (const entry of catalog) for (const cron of entry.schedules) assert.doesNotThrow(() => cronMatches(cron, now));

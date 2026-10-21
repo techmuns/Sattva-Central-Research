@@ -83,7 +83,10 @@ export async function checkNewsCustomerDelivery({ base = null, publicDir = fileU
       }
       if (!meta.newsHistory?.loaded || meta.newsHistory?.pending || meta.newsHistory?.error) findings.push({ code: 'retained-history-incomplete' });
       for (const family of ['news', 'market-news']) if (report.feeds.find(feed => feed.id === family)?.status !== 'ok') findings.push({ code: 'alerts-news-feed-incomplete', source: family });
-      const identity = row => String(row.ticker || row.entityId || '').toUpperCase();
+      // The same held ISIN can have older tickerless observations and newer
+      // exchange-symbol observations. All Alerts combines those companions;
+      // comparing their display ticker would falsely report the old copy lost.
+      const identity = row => String(row.entityId || row.ticker || '').toUpperCase();
       const recordKey = row => `${identity(row)}|${row.url ? canonicalArticleUrl(row.url) : anonymousArticleContentKey(row)}`;
       const newsEvents = report.events.filter(event => event.feed === 'news' || event.feed === 'market-news');
       const delivered = new Set(newsEvents.map(event => recordKey(event.sourceRecord || event)));

@@ -49,6 +49,12 @@ try {
   assert.deepEqual(healthy.onemi, { held: true, news: true, allAlerts: true, aiEligibleByAge: true, aiCandidate: true });
   assert.deepEqual(healthy.blockedRequests, { api: 0, external: 0, writes: 0 }, 'public news checks need no API, model or capture job');
 
+  captures([et, privateStory, { ...privateStory, ticker: null }]);
+  const tickerlessCompanion = await checkNewsCustomerDelivery({ publicDir, now });
+  assert.equal(tickerlessCompanion.missingPortfolioNews, 0,
+    'the same held ISIN/article remains delivered when an old observation lacks the newer ticker');
+  assert.equal(tickerlessCompanion.ok, true, JSON.stringify(tickerlessCompanion));
+
   captures([privateStory]);
   const missingStory = await checkNewsCustomerDelivery({ publicDir, now });
   assert.equal(missingStory.ok, false);

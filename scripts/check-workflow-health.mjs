@@ -8,7 +8,11 @@ import { pathToFileURL } from 'node:url';
 export function workflowCatalog(dir = new URL('../.github/workflows/', import.meta.url)) {
   return readdirSync(dir).filter(file => /\.ya?ml$/.test(file)).map(file => {
     const text = readFileSync(new URL(file, dir instanceof URL ? dir : pathToFileURL(`${resolve(dir)}/`)), 'utf8');
+    const episodeEndsAt = text.match(/^# workflow-health-until:\s*(\S+)\s*$/m)?.[1];
+    if (episodeEndsAt && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(episodeEndsAt) ||
+        !Number.isFinite(Date.parse(episodeEndsAt)))) throw Error(`Invalid workflow health episode: ${file}`);
     return { file, name: text.match(/^name:\s*(.+)$/m)?.[1]?.replace(/^['"]|['"]$/g, '') || file,
+      ...(episodeEndsAt ? { episodeEndsAt } : {}),
       schedules: [...text.matchAll(/^\s+-\s+cron:\s*["']([^"']+)["']/gm)].map(m => m[1]) };
   }).filter(w => w.file !== 'filings-health.yml' && (w.schedules.length || ['verify.yml', 'deploy.yml'].includes(w.file)));
 }
@@ -39,6 +43,13 @@ export function assessWorkflow(workflow, metadata, runs, { now = Date.now(), gra
   const ordered = runs.filter(r => r.head_branch === 'main' && ['schedule', 'workflow_dispatch', 'workflow_run', 'push'].includes(r.event))
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
   const latest = ordered[0];
+  // A bounded audit is expected to disable itself. Keep its actual terminal
+  // result inspectable without pretending it is an overdue ongoing collector.
+  if (workflow.episodeEndsAt && now >= Date.parse(workflow.episodeEndsAt)) return {
+    ...workflow, ok: true, issues: [], state: metadata.state, assessment: 'completed-episode', dueAt: null,
+    latestRun: latest ? { id: latest.id, status: latest.status, conclusion: latest.conclusion,
+      createdAt: latest.created_at, url: latest.html_url } : null,
+  };
   // Condition-skipped workflow_run jobs performed no collection. A concurrency
   // cancellation superseded by a newer run is likewise not a failed capture.
   // Retain real failures and unsuperseded cancellations; the cadence check below
@@ -92,7 +103,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const report = await checkWorkflows({ repository: process.env.GITHUB_REPOSITORY, token: process.env.GITHUB_TOKEN });
   const lines = ['## Scheduled pipeline health', '', 'Read-only checks. UTC schedules allow two hours for GitHub queueing and collection; data-health checks have independent freshness thresholds.', ''];
   for (const workflow of report.workflows) {
-    const line = `${workflow.name}: ${workflow.ok ? 'passing' : workflow.issues.join(', ')}`;
+    const line = `${workflow.name}: ${workflow.assessment === 'completed-episode'
+      ? `bounded audit ended ${workflow.episodeEndsAt}; retained result: ${workflow.latestRun?.conclusion || 'unavailable'}`
+      : workflow.ok ? 'passing' : workflow.issues.join(', ')}`;
     console.log(line); lines.push(`- ${line}`);
     if (!workflow.ok && process.env.GITHUB_ACTIONS === 'true') console.log(`::error::${line}`);
   }
