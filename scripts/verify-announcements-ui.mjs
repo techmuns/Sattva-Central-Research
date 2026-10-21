@@ -304,6 +304,14 @@ try {
   // The latest filing can belong to a newer IST day than the saved news.
   // Exercise feedback on retained stories even when Today is correctly empty.
   await page.getByRole('combobox', { name: 'News period', exact: true }).selectOption('30');
+  // This section checks publisher article tags and links. The combined feed can paint only X
+  // posts in its first virtual window; those post bodies intentionally have no publisher tags.
+  const hasPosts = await page.evaluate(async () => {
+    const posts = await import('/js/data/twitter-news.js');
+    await posts.load();
+    return posts.rows().length > 0;
+  });
+  if (hasPosts) await page.locator('[data-news-source]').selectOption('publishers');
   await page.waitForSelector('[data-news-key] .news-story-details summary', { timeout: 60000 });
   await page.evaluate(async () => {
     const { relevanceSettled } = await import('/js/data/surface-relevance.js');
@@ -314,6 +322,7 @@ try {
   const articleHref = await firstCard.locator('a[href^="http"]').first().getAttribute('href');
   assert(/^https?:/.test(articleHref), 'the card is still a link to the article');
   await firstCard.locator('.news-story-details summary').click();
+  await firstCard.locator('.category-chip').waitFor({ state: 'visible', timeout: 60000 });
   const feedbackKey = await firstCard.locator('[data-news-feedback]').getAttribute('data-news-feedback');
   const control = page.locator(`[data-news-feedback=${JSON.stringify(feedbackKey)}]`);
   assert.equal(await page.locator('[data-feedback-menu]').count(), 0, 'no hidden News importance menu');
