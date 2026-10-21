@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Synthetic public-page responses only. No TradingView/production access in CI.
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdtempSync, rmSync, mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { tradingViewTargets, tradingViewNewsUrl, parseTradingViewNews, readTradingViewNews } from './lib/tradingview-news.mjs';
 import { enrichTradingViewNews } from './enrich-tradingview-news.mjs';
@@ -84,7 +84,9 @@ assert.equal(mergeCompanyNewsArticles([newest], [{ ...row, lastSeenAt: at }])[0]
 assert.equal(mergeCompanyNewsArticles(enriched, [row])[0].url, syndicated.url, 'prefer the original publisher link when a later mirror only supplies its TradingView URL');
 assert.equal(attributeNewsRow({ ...row, title: 'A broad sector headline', relatedSymbols: ['NSE:ALPHA'] }, alpha).attribution.status, 'uncertain', 'feed symbol tags are discovery context, not direct-company evidence');
 
-const scratch = mkdtempSync(join(tmpdir(), 'tradingview-news-test-'));
+const testRoot = fileURLToPath(new URL('../.cache/tradingview-news-tests/', import.meta.url));
+mkdirSync(testRoot,{recursive:true});
+const scratch = mkdtempSync(join(testRoot, 'run-'));
 const realFetch = globalThis.fetch;
 try {
   writeJson(join(scratch, 'announcement-identities.json'), { entries: directory });
@@ -144,8 +146,12 @@ try {
   assert(!filterCompanyNewsByScope(companyNewsArchiveRows(dir), 'portfolio', newHoldings).some(r => r.entityId === alpha.entityId));
   assert(Object.values(readJson(join(dir, 'tradingview.json')).entries).filter(e => e.entityId === alpha.entityId).every(e => !e.active));
 
+  // A healthy latest page overlaps the preceding poll, even if it is shorter than 48 hours.
+  const overlapping = async () => Response.json({ items: Array.from({length:30},(_,i)=>item(`overlap-${i}`,'NSE:NEWCO',{published:Math.floor((now+12600000)/1000)})) });
+  await enrichTradingViewNews({...options,portfolio:{holdings:[newHoldings[1]]},fetcher:overlapping,now:now+16200000});
+  assert.equal(readJson(join(dir,'tradingview.json')).coverage.possibleGapSymbols,0,'A complete overlap does not invent a history gap');
   // Bounded pages cannot certify full history. A later quiet read does not erase a detected gap.
-  const crowded = async () => Response.json({ items: Array.from({ length: 30 }, (_, i) => item(`crowded-${i}`, 'NSE:NEWCO')) });
+  const crowded = async () => Response.json({ items: Array.from({ length: 30 }, (_, i) => item(`crowded-${i}`, 'NSE:NEWCO',{published:Math.floor((now+17100000)/1000)})) });
   await enrichTradingViewNews({ ...options, portfolio: { holdings: [newHoldings[1]] }, fetcher: crowded, now: now + 18000000 });
   assert.equal(readJson(join(dir, 'tradingview.json')).coverage.possibleGapSymbols, 1);
   mode = 'empty';

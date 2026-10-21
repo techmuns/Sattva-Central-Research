@@ -720,7 +720,7 @@ const calendarKind = (eventType) => {
  * the tests); Moneycontrol's is the committed daily capture, so a result it names carries the
  * capture's own date.
  */
-export async function readCalendar({ env, day, holdings, fetcher = fetch, now = Date.now(), screener = null }) {
+export async function readCalendar({ env, day, holdings, fetcher = fetch, now = Date.now(), screener = null, uncapped = false }) {
   const byTicker = bookIndex(holdings);
   const resolver = buildResolver({ book: holdings });
   const from = day;
@@ -788,7 +788,7 @@ export async function readCalendar({ env, day, holdings, fetcher = fetch, now = 
   }
 
   const rows = [...merged.values()].sort((a, b) => a.date.localeCompare(b.date) || String(a.time || '99:99').localeCompare(String(b.time || '99:99')) || a.company.localeCompare(b.company));
-  return { screener: screenerSource, moneycontrol, from, to, rows: rows.slice(0, CALENDAR_LIMIT), count: rows.length, more: Math.max(0, rows.length - CALENDAR_LIMIT) };
+  return { screener: screenerSource, moneycontrol, from, to, rows: uncapped ? rows : rows.slice(0, CALENDAR_LIMIT), count: rows.length, more: uncapped ? 0 : Math.max(0, rows.length - CALENDAR_LIMIT) };
 }
 
 // ---- 7. corporate action dates -------------------------------------------------------------------
@@ -798,7 +798,7 @@ export async function readCalendar({ env, day, holdings, fetcher = fetch, now = 
  * capture the Corporate Actions view lists, matched by ticker or ISIN exactly as that view matches
  * the Portfolio scope. The purpose is the source's own wording; nothing is derived from it.
  */
-export async function readActions({ env, day, holdings }) {
+export async function readActions({ env, day, holdings, uncapped = false }) {
   const from = day;
   const to = addDays(day, CALENDAR_DAYS);
   const empty = { from, to, rows: [], count: 0, more: 0 };
@@ -828,7 +828,7 @@ export async function readActions({ env, day, holdings }) {
     });
   }
   rows.sort((a, b) => a.on.localeCompare(b.on) || a.company.localeCompare(b.company));
-  return { source: { ok: true, capturedAt: capture.capturedAt || null, rows: capture.rowCount ?? capture.rows.length, debtSkipped }, from, to, rows: rows.slice(0, ACTIONS_LIMIT), count: rows.length, more: Math.max(0, rows.length - ACTIONS_LIMIT) };
+  return { source: { ok: true, capturedAt: capture.capturedAt || null, rows: capture.rowCount ?? capture.rows.length, debtSkipped }, from, to, rows: uncapped ? rows : rows.slice(0, ACTIONS_LIMIT), count: rows.length, more: uncapped ? 0 : Math.max(0, rows.length - ACTIONS_LIMIT) };
 }
 
 // ---- the brief -----------------------------------------------------------------------------------
@@ -861,10 +861,10 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   const quotes = await readSessionQuotes({ env, now, edition, day, holdings });
   const moves = readMoves({ ...common, quotes });
   const performance = await readPerformance({ env, quotes, holdings });
-  const calendar = await readCalendar({ env, day, holdings, fetcher, now, screener });
+  const calendar = await readCalendar({ env, day, holdings, fetcher, now, screener, uncapped: true });
   // The corporate-actions capture is the largest file the brief reads, so it goes last, with
   // nothing else large still held.
-  const actions = await readActions({ env, day, holdings });
+  const actions = await readActions({ env, day, holdings, uncapped: true });
   const brief = {
     version: 3, edition, day, at: window.at, builtAt: now,
     onDemand: to != null,
@@ -1584,7 +1584,7 @@ export function sourcesNote(brief) {
   if (n.source.archiveComplete === false) bits.push('Publisher archive read incomplete; usable captured reports retained');
   if (n.company) bits.push(n.company.ok ? `Company-news archive (Google News / Upstox) checked through ${capturedLabel(n.company.capturedAt)}; ${n.company.matched} additional reports admitted` : 'Company-news archive incomplete or unavailable; usable captured reports retained');
   if (n.company?.partial) bits.push(`Company-news query coverage partial: ${n.company.coverage.unchecked} unchecked, ${n.company.coverage.stale} stale, ${n.company.coverage.failed} failed company checks; retained reports remain included`);
-  if (n.tradingview?.partial) bits.push(`TradingView coverage partial: ${n.tradingview.coverage?.staleOrFailedSymbols || 0} stale/failed symbols, ${n.tradingview.coverage?.unresolvedCompanies || 0} unmapped companies, ${n.tradingview.coverage?.possibleGapSymbols || 0} historical window gaps; other captured company-news and publisher reports are included independently`);
+  if (n.tradingview?.partial) bits.push(`TradingView capture-wide coverage partial: ${n.tradingview.coverage?.staleOrFailedSymbols || 0} stale/failed symbols, ${n.tradingview.coverage?.unresolvedCompanies || 0} unmapped companies, ${n.tradingview.coverage?.possibleGapSymbols || 0} historical window gaps; other captured company-news and publisher reports are included independently`);
   if (n.tradingview?.archiveComplete === false) bits.push('TradingView archive read incomplete; usable captured reports retained');
   bits.push(n.tradingview?.ok ? `TradingView headlines captured ${capturedLabel(n.tradingview.capturedAt)}` : 'TradingView headlines unavailable');
   bits.push(t?.source?.ok ? `trades (bulk, block, SAST, insider) captured ${capturedLabel(t.source.capturedAt)}, dated by broadcast day${t.source.identities ? '' : '; BSE-only lines could not be matched'}` : 'trades capture unavailable');

@@ -11,6 +11,8 @@ filters before retaining large decoded collections, and keeps usable independent
 reports when a source/part fails. Existing collector cadence, free providers, query gate,
 refusal backoff, AI budgets, private state encryption and subscriber consent remain in force.
 Bajaj Auto's reviewed exact-ISIN TradingView alias is BAJAJ_AUTO, not BAJAJ-AUTO.
+A later bounded public page must overlap the preceding successful poll; it does not need
+to return another complete 48 hours on every read. Existing gap evidence is preserved.
 
 An eligible alert is a dated, company-attributed news report, non-routine exchange filing,
 trade disclosure, or qualifying price move on a listed direct portfolio holding, inside the
