@@ -1,5 +1,6 @@
 """Paced, bounded reads of free original exchange documents. Refusals stop that host."""
 import datetime as dt
+import http.client
 import json
 import re
 import subprocess
@@ -69,11 +70,14 @@ class PublicReader:
         try:
             with self.opener.open(request, timeout=20) as response:
                 # No credential, proxy, cookie rotation or alternative host on an access refusal.
-                if int(response.headers.get("Content-Length", "0")) > limit:
+                declared = response.headers.get("Content-Length")
+                if int(declared or "0") > limit:
                     raise SourceFailure("Source exceeds document byte budget")
                 body = response.read(limit + 1)
                 if len(body) > limit:
                     raise SourceFailure("Source exceeds document byte budget")
+                if declared is not None and len(body) != int(declared):
+                    raise http.client.IncompleteRead(body, max(0, int(declared) - len(body)))
                 if re.search(br"Access Denied|errors\.edgesuite\.net|Too Many Requests", body[:3000], re.I):
                     raise urllib.error.HTTPError(url, 403, "Source refusal", {}, None)
                 self.store.check(key, iso_now(), detail={"httpStatus": getattr(response, "status", 200)})
@@ -87,7 +91,9 @@ class PublicReader:
             if error.code in (401, 403, 429, 430):
                 self.store.check(key, now, "access-refused", {"httpStatus": error.code}, cooldown)
             raise SourceFailure("Original source HTTP " + str(error.code), status=error.code) from error
-        except (OSError, ValueError) as error:
+        except (OSError, ValueError, http.client.HTTPException) as error:
+            self.store.check(key, iso_now(), "source-response-incomplete" if isinstance(error, http.client.IncompleteRead)
+                else "source-unavailable", {"error": type(error).__name__})
             raise SourceFailure("Original source unavailable: " + type(error).__name__) from error
 
 
@@ -306,7 +312,12 @@ def collect(store, data_dir, reader, lookup, scratch):
             key = "recentThrough:" + family[0]
             previous = store.get(key)
             overlap = (today - dt.timedelta(days=6)).isoformat()
-            beginning = min(overlap, (dt.date.fromisoformat(previous) - dt.timedelta(days=1)).isoformat()) if previous else overlap
+            initial_key = "recentStart:" + family[0]
+            if not store.get(initial_key):
+                store.set(initial_key, overlap)
+                store.db.commit()  # A first failed interval must survive the next calendar rollover.
+            beginning = min(overlap, (dt.date.fromisoformat(previous) - dt.timedelta(days=1)).isoformat()
+                if previous else store.get(initial_key))
             end = min(today.isoformat(), (dt.date.fromisoformat(beginning) + dt.timedelta(days=6)).isoformat())
             if capture_window(store, reader, family, beginning, end, lookup):
                 store.set(key, end)
