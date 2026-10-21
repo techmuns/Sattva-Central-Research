@@ -789,6 +789,7 @@ a.news-story-link:hover .news-story-title { color: var(--accent-600); }
 .news-story-details > summary:focus-visible { outline: 2px solid var(--accent-600); outline-offset: -2px; }
 .news-story-details[open] > summary svg { transform: rotate(180deg); }
 .news-story-expanded { display: flex; gap: 14px; padding: 10px 12px 14px; border-top: 1px solid rgb(var(--edge-slate-100, 241 245 249)); }
+.news-story-details:not([open]) > .news-story-expanded { display: none; }
 .news-story-detail-copy { min-width: 0; flex: 1; }
 .news-story-full-title { margin: 0; color: var(--ink-900); font-size: 14px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-line; }
 
