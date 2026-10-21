@@ -1,6 +1,6 @@
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { BREAKOUT_OBJECT, BREAKOUT_LIMIT, tickerValid, marketWindow, expectedSession, quoteFresh, istDate } from '../public/js/data/breakout-live-shared.js';
-import { mapUpstoxTargets, upstoxIdentity, upstoxRows } from './upstox-market.mjs';
+import { mapUpstoxTargets, upstoxIdentity, upstoxRows, upstoxOpenInterest } from './upstox-market.mjs';
 
 export const PRIMARY_OBJECT = 'breakout-upstox:v1';
 export const PRIMARY_TIMER = 'upstox-minute-timer';
@@ -8,7 +8,7 @@ export const PRIMARY_INTERVAL = 60000;
 export const PRIMARY_MAX_AGE = 120000;
 const INVENTORY = 'upstox-inventory';
 const UPSTOX_CLIENT = 'SattvaCentralResearch/1.0';
-const MAPPING_VERSION = 2;
+const MAPPING_VERSION = 3;
 
 export function primaryInventory(targets) {
   if (!Array.isArray(targets) || !targets.length || targets.length > BREAKOUT_LIMIT || new Set(targets.map(t => t.ticker)).size !== targets.length) throw Error('Invalid inventory');
@@ -37,6 +37,9 @@ export async function cashInstruments(stream, exchange) {
           if (!depth) {
             const item=JSON.parse(pending.slice(start,cursor+1));
             if (item.segment===`${exchange}_EQ` || (exchange==='SUSPENDED' && ['NSE_EQ','BSE_EQ'].includes(item.segment))) rows.push({segment:item.segment,instrument_type:item.instrument_type,instrument_key:item.instrument_key,trading_symbol:item.trading_symbol,exchange_token:item.exchange_token});
+            else if (exchange==='NSE' && item.segment==='NSE_FO' && item.instrument_type==='FUT' && item.underlying_type==='EQUITY')
+              rows.push({segment:item.segment,instrument_type:item.instrument_type,instrument_key:item.instrument_key,trading_symbol:item.trading_symbol,
+                underlying_key:item.underlying_key,underlying_type:item.underlying_type,expiry:item.expiry});
             start=-1;phase='comma';
           }
         } else if (/\s/.test(c)) continue;
@@ -76,6 +79,20 @@ export async function minuteQuotes(mapped, bases, token, {fetcher = fetch, now =
       }
       rows.push(...upstoxRows(await boundedJson(response,4*1024*1024),batch,bases,now()));
     } catch { reason='unavailable'; break; }
+  }
+  // OI failure stays independent of cash-price success; preserve prices and leave
+  // missing futures observations unavailable. These are bounded, read-only batches.
+  for (const row of rows) row.openInterestUnavailable=true;
+  const futures = mapped.filter(t=>t.oiInstrument && rows.some(r=>r.ticker===t.ticker));
+  for (let offset=0; offset<futures.length; offset+=500) {
+    const batch=futures.slice(offset,offset+500), url=new URL('https://api.upstox.com/v3/market-quote/quotes');
+    url.searchParams.set('instrument_key',[...new Set(batch.map(t=>t.oiInstrument.instrumentKey))].join(','));
+    try {
+      const response=await fetcher(url,{headers:{authorization:`Bearer ${token}`,accept:'application/json','user-agent':UPSTOX_CLIENT},redirect:'manual',signal:AbortSignal.timeout(10000)});
+      if (!response.ok) {await response.body?.cancel();break;}
+      const readings=upstoxOpenInterest(await boundedJson(response,4*1024*1024),batch,now());
+      for (const row of rows) if(readings.has(row.ticker)) {row.openInterest=readings.get(row.ticker);row.openInterestUnavailable=false;}
+    } catch {break;}
   }
   return {rows,reason};
 }
@@ -133,7 +150,7 @@ export class BreakoutPrimary {
     const mapped=[], failed=[];
     for (const exchange of new Set(targets.map(t=>upstoxIdentity(t).exchange))) {
       const subset=targets.filter(t=>upstoxIdentity(t).exchange===exchange);
-      try { mapped.push(...mapUpstoxTargets(subset,await this.instruments(exchange,this.fetcher))); }
+      try { mapped.push(...mapUpstoxTargets(subset,await this.instruments(exchange,this.fetcher),this.now())); }
       catch {
         failed.push(exchange);
         // A same-inventory cache can continue supplying exact identities through a list outage.

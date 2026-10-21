@@ -87,7 +87,11 @@ const companies = [
 const fixture = { ...original, companies, company_count: companies.length, failures: 0 };
 // The prior release's actual renderer proves a warm module cache receives the new criteria UI.
 const previousControls = readFileSync(resolve('scripts/fixtures/momentum-controls-previous.txt'), 'utf8');
-let previousRelease = false, quoteUnavailable = false, quoteDelta = 0;
+let previousRelease = false, quoteUnavailable = false, quoteDelta = 0, oiUnavailable = false, oiZero = false;
+const oiFixture = ticker => ['MOMOA','MOMOB'].includes(ticker) ? {openInterest:{
+  current:ticker==='MOMOA' ? oiZero ? 1000 : 1100 : 900,previous:ticker==='MOMOB' && oiZero ? 0 : 1000,
+  instrumentKey:ticker==='MOMOA'?'NSE_FO|12345':'NSE_FO|23456',symbol:`${ticker} FUT 27 OCT 26`,expiry:'2026-10-27',
+  quoteAt:new Date(AT).toISOString(),checkedAt:new Date(AT).toISOString(),sessionDate:'2026-10-09'},openInterestUnavailable:oiUnavailable} : {};
 
 // ---- the server ------------------------------------------------------------------------------
 const CT = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
@@ -101,6 +105,7 @@ const server = createServer((req, res) => {
   if (path === '/api/breakouts') return json({version:1,state:'complete',targets:companies.map(c=>c.ticker),failures:[],
     completedAt:new Date(AT).toISOString(),rows:quoteUnavailable ? [] : companies.filter(c=>Number.isFinite(c.cmp)&&c.cmp>0).map(c=>({ticker:c.ticker,price:c.cmp+quoteDelta,volume:500,prevClose:c.cmp,
       sessionDate:'2026-10-09',quoteAt:new Date(AT).toISOString(),checkedAt:new Date(AT).toISOString(),provider:'Upstox',exchange:'NSE',
+      ...oiFixture(c.ticker),
       volumeBase:{average:1000,from:'2026-09-24',to:'2026-10-08',count:10,exchange:'NSE'}}))});
   if (path.startsWith('/api/')) return json({ ok: false });
   if (path === '/sdk-fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end(''); return; }
@@ -114,6 +119,7 @@ const server = createServer((req, res) => {
     }
     if (path === '/js/tabs/breakouts.js' && previousRelease) {
       body = body.toString()
+        .replace(/^      col\('OI Δ%'.*\n/m, '')
         // Synthetic previous summary markup proves the immutable cache removes both surfaces.
         .replace('    ${momentumControls(gate, thresholds)}', '    ${momentumControls(gate, thresholds)}<div class="stat-card">Scanned 4</div><div class="stat-card">Strong Momentum 3</div><div class="stat-card">Volume + Momentum 0</div><div class="stat-card">Pass Both 0</div><section aria-label="Passing stocks by sector">Passers by sector</section>')
         .replace(/function momentumControls\([\s\S]*?(?=function momentumControlFocus\()/, () => previousControls)
@@ -230,8 +236,43 @@ try {
     await page.click('#content-host [data-mgate="strong-momentum"]');
     await page.waitForSelector('#content-host [data-mgate="strong-momentum"][aria-pressed="true"]');
 
-    const expectedCols = ['Stock', 'Price', 'Strong Momentum', 'Volume + Momentum', 'MACD Crossover', 'Volume vs 10D Avg', 'RSI Daily', 'RSI Weekly', 'RSI Monthly', 'MACD', '20-DMA Status'];
+    const expectedCols = ['Stock', 'Price', 'Strong Momentum', 'Volume + Momentum', 'MACD Crossover', 'Volume vs 10D Avg', 'OI Δ%', 'RSI Daily', 'RSI Weekly', 'RSI Monthly', 'MACD', '20-DMA Status'];
     ok('ranked table carries every momentum column', expectedCols.every((c) => v.ths.some((th) => th === c || th.startsWith(c))), v.ths.join(' · '));
+    const oiCells = async () => {
+      await page.waitForFunction(()=>!document.querySelector('[data-rows-pending]'));
+      return page.locator('#content-host [data-score-table] table').evaluate(table => {
+        const index=[...table.tHead.rows[0].cells].findIndex(th=>th.textContent.includes('OI Δ%'));
+        return [...table.tBodies[0].rows].map(row=>({stock:row.textContent,text:row.cells[index]?.textContent.trim(),title:row.cells[index]?.querySelector('[title]')?.title}));
+      });
+    };
+    const initialOi=await oiCells();
+    ok('OI adds one compact column with signed positive and negative changes and an unavailable dash',
+      initialOi.find(r=>r.stock.includes('MOMOA')).text==='+10.00%' && initialOi.find(r=>r.stock.includes('MOMOB')).text==='-10.00%' && initialOi.find(r=>r.stock.includes('MOMOC')).text==='—');
+    ok('OI hover gives the futures contract, comparison and source time', /MOMOA FUT 27 OCT 26.*Upstox/.test(initialOi.find(r=>r.stock.includes('MOMOA')).title));
+    await page.locator('[data-sort="OI Δ%"]').click();
+    const descOi=await oiCells();
+    ok('OI sorts numerically descending, with missing readings last', descOi.map(r=>r.text).join('|')==='+10.00%|-10.00%|—');
+    await page.locator('[data-sort="OI Δ%"]').click();
+    ok('OI sorts numerically ascending, keeping missing readings last', (await oiCells()).map(r=>r.text).join('|')==='-10.00%|+10.00%|—');
+    oiUnavailable=true;
+    await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
+    await page.waitForFunction(()=>![...document.querySelectorAll('#content-host tbody td')].some(td=>/^[+-]10\.00%$/.test(td.textContent.trim())));
+    ok('failed OI checks keep all passing stock rows but never show the saved reading as current', (await oiCells()).length===3 && (await oiCells()).every(r=>r.text==='—') && /3 of 4 stocks pass/.test(await page.locator('#content-host').innerText()));
+    oiUnavailable=false;oiZero=true;
+    await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
+    await page.waitForFunction(()=>document.querySelector('#content-host tbody')?.textContent.includes('0.00%'));
+    const zeroOi=await oiCells();
+    ok('unchanged OI is zero while a missing previous-session base stays unavailable', zeroOi.find(r=>r.stock.includes('MOMOA')).text==='0.00%' && zeroOi.find(r=>r.stock.includes('MOMOB')).text==='—');
+    oiZero=false;
+    await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
+    await page.waitForFunction(()=>document.querySelector('#content-host tbody')?.textContent.includes('+10.00%'));
+    await page.evaluate(()=>{window.exported={columns:[],rows:[]};window.ExcelJS={Workbook:class {
+      constructor(){this.xlsx={writeBuffer:async()=>new Uint8Array()};}
+      addWorksheet(){return {set columns(value){window.exported.columns=value;},addRow(row){window.exported.rows.push(row);},getRow(){return {};}};}
+    }};});
+    await page.locator('#content-host [data-export]').click();
+    const oiExport=await page.evaluate(()=>window.exported);
+    ok('Excel preserves signed numeric OI, missing cells and dated contract provenance', oiExport.rows.length===3 && Math.abs(oiExport.rows.find(r=>r.ticker==='MOMOA').oi_change-10)<1e-9 && Math.abs(oiExport.rows.find(r=>r.ticker==='MOMOB').oi_change+10)<1e-9 && oiExport.rows.find(r=>r.ticker==='MOMOC').oi_change===null && oiExport.rows.find(r=>r.ticker==='MOMOA').oi_contract==='MOMOA FUT 27 OCT 26');
 
     ok('the gate toggle offers four options', v.gateButtons === 4, `${v.gateButtons}`);
     ok('six adjustable threshold inputs', v.thresholdInputs === 6, `${v.thresholdInputs}`);
@@ -490,12 +531,14 @@ try {
     // The old flat panel renders one input per THRESHOLD_FIELDS entry (now six, including rsiD3),
     // and — the point of this check — no grouped fieldsets. The upgrade below adds the three groups.
     ok('returning-session fixture starts on the previous flat criteria panel', await page.locator('[data-mthreshold]').count() === 6 && await page.locator('[data-momentum-group]').count() === 0);
+    ok('returning reader starts without an OI column', await page.locator('[data-sort="OI Δ%"]').count()===0);
     previousRelease = false;
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForFunction(() => document.querySelector('#content-host [data-score-table]') && !document.querySelector('#content-host [data-section-head] [data-live-info]'), null, { timeout: 60000 });
     const upgradedView = await page.evaluate(readView);
     ok('the already-open scanner automatically removes badges, summary cards and sector chart', !upgradedView.headerHasBadges && upgradedView.statCards.length === 0 && !upgradedView.sector);
     await page.waitForSelector('[data-momentum-group]');
+    ok('the already-open scanner receives the OI column and signed readings', await page.locator('[data-sort="OI Δ%"]').count()===1 && (await page.locator('#content-host tbody').innerText()).includes('+10.00%'));
     ok('the already-open scanner receives grouped criteria and their matching stylesheet', await page.locator('[data-momentum-group]').count() === 3 &&
       await page.locator('.momentum-rule-groups').evaluate(el => getComputedStyle(el).display === 'grid'));
     await page.click('#content-host [data-momentum-coverage]');

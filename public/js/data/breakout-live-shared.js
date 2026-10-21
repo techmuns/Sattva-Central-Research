@@ -47,13 +47,33 @@ export function validateQuote(row, now = Date.now()) {
       !/^\d{4}-\d{2}-\d{2}$/.test(volumeBase.from) || !/^\d{4}-\d{2}-\d{2}$/.test(volumeBase.to) ||
       volumeBase.from > volumeBase.to || volumeBase.to >= row.sessionDate ||
       volumeBase.exchange !== (row.exchange === 'BSE' ? 'BSE' : 'NSE'))) throw Error('Invalid momentum volume base');
+  const openInterest = row.provider === 'Upstox' && row.exchange === 'NSE' ? normalizeOpenInterest(row.openInterest,now) : null;
   return { ticker: row.ticker, name: String(row.name || row.ticker).slice(0, 180), price: row.price,
     volume: row.volume, prevClose: positive(row.prevClose) ? row.prevClose : null,
     quoteAt: new Date(row.quoteAt).toISOString(), checkedAt: new Date(row.checkedAt).toISOString(),
     ...(feedAt ? {feedAt:new Date(feedAt).toISOString()} : {}),
+    ...(openInterest ? {openInterest} : {}),
+    ...(row.openInterestUnavailable === true ? {openInterestUnavailable:true} : {}),
     ...(volumeBase ? {volumeBase: {average:volumeBase.average,from:volumeBase.from,to:volumeBase.to,count:10,exchange:volumeBase.exchange}} : {}),
     sessionDate: row.sessionDate, provider: row.provider, exchange: row.exchange === 'BSE' ? 'BSE' : 'NSE', kind: row.kind === 'recovered-candle' ? 'recovered-candle' : 'quote',
     base: base ? { high: base.high, low: base.low, average: base.average, averageVolume: base.averageVolume, count: 30, to: base.to } : null };
+}
+// OI is a separate futures observation with its own source clock and contract.
+// Invalid/missing OI must never invalidate an otherwise usable cash quote.
+export function normalizeOpenInterest(value, now = Date.now()) {
+  if (!value || !Number.isSafeInteger(value.current) || value.current < 0 || !Number.isSafeInteger(value.previous) || value.previous < 0 ||
+      !/^NSE_FO\|\d+$/.test(value.instrumentKey || '') || typeof value.symbol !== 'string' || !value.symbol || value.symbol.length > 180 ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(value.expiry || '') || !Number.isFinite(Date.parse(value.quoteAt)) ||
+      !Number.isFinite(Date.parse(value.checkedAt)) || Date.parse(value.quoteAt) > now + 60000 || Date.parse(value.checkedAt) > now + 60000 ||
+      Date.parse(value.quoteAt) > Date.parse(value.checkedAt) + 60000 || value.sessionDate !== istDate(value.quoteAt) || value.expiry < value.sessionDate) return null;
+  return {current:value.current,previous:value.previous,instrumentKey:value.instrumentKey,symbol:value.symbol,expiry:value.expiry,
+    quoteAt:new Date(value.quoteAt).toISOString(),checkedAt:new Date(value.checkedAt).toISOString(),sessionDate:value.sessionDate};
+}
+export function openInterestForQuote(row, now = Date.now(), unavailable = false) {
+  const reading = row?.provider === 'Upstox' && row.exchange === 'NSE' ? normalizeOpenInterest(row.openInterest,now) : null;
+  if (!reading) return null;
+  const current = !unavailable && row.openInterestUnavailable !== true && reading.sessionDate === row.sessionDate && quoteFresh(reading,now);
+  return {...reading,stale:!current,changePercent:current && reading.previous > 0 ? (reading.current / reading.previous - 1) * 100 : null};
 }
 export function quoteFresh(row, now = Date.now()) {
   if (!row || row.sessionDate !== expectedSession(now)) return false;

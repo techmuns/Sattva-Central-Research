@@ -1,4 +1,4 @@
-import { istDate, validateQuote } from '../public/js/data/breakout-live-shared.js';
+import { istDate, validateQuote, normalizeOpenInterest } from '../public/js/data/breakout-live-shared.js';
 
 // Verified against each provider's exact BSE identity, 21 September 2026.
 const YAHOO_BSE = {BENGALASM:'BENGALASM.BO','543225':'ALTIUSINVIT.BO','504375':'IDREAM.BO'};
@@ -36,7 +36,7 @@ export const upstoxIdentity = target => {
   const exchange = symbol.endsWith('.BO') ? 'BSE' : 'NSE';
   return {exchange, symbol: exchange==='BSE' && /^\d+$/.test(target.ticker) ? target.ticker : symbol.slice(0,-3)};
 };
-export function mapUpstoxTargets(targets, instruments) {
+export function mapUpstoxTargets(targets, instruments, now = Date.now()) {
   const index = new Map();
   const add = (key, item) => {
     if (!index.has(key)) index.set(key, item);
@@ -58,6 +58,38 @@ export function mapUpstoxTargets(targets, instruments) {
     const {exchange,symbol} = upstoxIdentity(target);
     const kind = target.isin ? 'isin' : exchange === 'BSE' && /^\d+$/.test(symbol) ? 'code' : 'symbol';
     const item = index.get(`${exchange}:${kind}:${target.isin || symbol}`);
-    return item ? [{...target,exchange,instrumentKey:item.instrument_key,upstoxSymbol:item.trading_symbol}] : [];
+    if (!item) return [];
+    // Near-month stock futures only, joined by the provider's exact underlying key.
+    // Never interpret cash-market zero OI, options or index futures as stock OI.
+    const futures = instruments.filter(f => exchange === 'NSE' && f.segment === 'NSE_FO' &&
+      f.instrument_type === 'FUT' && f.underlying_type === 'EQUITY' && f.underlying_key === item.instrument_key &&
+      /^NSE_FO\|\d+$/.test(f.instrument_key || '') && f.trading_symbol && Number.isFinite(f.expiry) && istDate(f.expiry) >= istDate(now))
+      .sort((a,b) => a.expiry - b.expiry);
+    const first = futures[0];
+    const unique = first && !futures.some(f => f.expiry === first.expiry && f.instrument_key !== first.instrument_key);
+    return [{...target,exchange,instrumentKey:item.instrument_key,upstoxSymbol:item.trading_symbol,
+      ...(unique ? {oiInstrument:{instrumentKey:first.instrument_key,symbol:first.trading_symbol,expiry:istDate(first.expiry)}} : {})}];
   });
+}
+
+export function upstoxOpenInterest(payload, targets, now = Date.now()) {
+  if (payload?.status !== 'success' || !payload.data) throw Error('unavailable');
+  const requested = new Map();
+  for (const target of targets.filter(t => t.oiInstrument)) {
+    const key=target.oiInstrument.instrumentKey;
+    requested.set(key,[...(requested.get(key) || []),target]);
+  }
+  const readings = new Map();
+  for (const data of Object.values(payload.data)) {
+    for (const target of requested.get(data.instrument_token) || []) {
+    const instrument = target.oiInstrument;
+    if (data.symbol !== instrument.symbol) continue;
+    const at = sourceTime(data.timestamp);
+    if (!Number.isFinite(at)) continue;
+    const reading = normalizeOpenInterest({current:data.oi,previous:data.previous_oi,
+      ...instrument,quoteAt:new Date(at).toISOString(),checkedAt:new Date(now).toISOString(),sessionDate:istDate(at)},now);
+    if (reading) readings.set(target.ticker,reading);
+    }
+  }
+  return readings;
 }

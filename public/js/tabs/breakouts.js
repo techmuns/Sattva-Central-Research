@@ -768,6 +768,14 @@ function momentumVolCell(v, volMult) {
   const title = `Today's cumulative volume so far vs the 10-day average. Threshold ≥ ${Number(volMult).toFixed(1)}×. ${provNote(v)}`;
   return `<span title="${escapeHtml(title)}">${toneSpan(`${num(r, 2)}×`, r >= volMult ? 'pos' : r >= 1 ? 'warn' : 'neg')}</span>`;
 }
+function momentumOiCell(v) {
+  const oi = v.openInterest;
+  const detail = oi ? `Near-month stock futures · ${oi.symbol} · OI ${formatNumber(oi.current)} vs ${formatNumber(oi.previous)} previous session · Upstox · ${live.stamp(oi.quoteAt)} · Checked ${live.stamp(oi.checkedAt)}` : 'Open interest unavailable (stock futures).';
+  const pct = oi?.changePercent;
+  if (pct == null) return `<span class="text-slate-400" title="${escapeHtml(oi?.stale ? `Saved OI; current data unavailable. ${detail}` : detail)}">—</span>`;
+  const text = `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+  return `<span title="${escapeHtml(`Open interest change vs previous session · ${detail}`)}">${toneSpan(text,pct > 0 ? 'pos' : pct < 0 ? 'neg' : null)}</span>`;
+}
 function macdPill(v) {
   if (v.macdBullish == null) return `<span class="${mPillBase} ${M_NA}">—</span>`;
   const title = `MACD line ${num(v.macdLine, 2)} vs signal ${num(v.macdSignal, 2)} · ${v.macdAboveZero ? 'above' : 'below'} zero. ${provNote(v)}`;
@@ -971,6 +979,7 @@ function renderMomentumScanner(ctx, rows) {
       col('Volume + Momentum', (v) => filterPill(v.f2), (v) => (v.f2.pass ? 1 : 0)),
       col('MACD Crossover', (v) => filterPill(v.f3), (v) => (v.f3.pass ? 1 : 0)),
       col('Volume vs 10D Avg', (v) => momentumVolCell(v, thresholds.volMult), (v) => v.volRatio10d ?? -1, 'right'),
+      col('OI Δ%', (v) => momentumOiCell(v), (v) => v.openInterest?.changePercent ?? null, 'right'),
       col('RSI Daily', (v) => rsiLiveCell(v, 'rsiDaily'), (v) => v.rsiDaily ?? -1, 'right'),
       col('RSI Weekly', (v) => rsiLiveCell(v, 'rsiWeekly'), (v) => v.rsiWeekly ?? -1, 'right'),
       col('RSI Monthly', (v) => rsiLiveCell(v, 'rsiMonthly'), (v) => v.rsiMonthly ?? -1, 'right'),
@@ -1041,6 +1050,13 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Filter 2 (Volume + Momentum)', key: 'f2', width: 26, get: (s) => vf(s).f2.evaluable ? yn(vf(s).f2.pass) : 'Exception' },
     { header: 'Filter 3 (MACD Crossover)', key: 'f3', width: 24, get: (s) => vf(s).f3.evaluable ? yn(vf(s).f3.pass) : 'Exception' },
     { header: 'Volume / 10-day average', key: 'vol', width: 30, get: (s) => (vf(s).volRatio10d == null ? null : Number(vf(s).volRatio10d.toFixed(2))) },
+    { header: 'OI change % (near-month futures)', key: 'oi_change', width: 26, get: (s) => vf(s).openInterest?.changePercent ?? null },
+    { header: 'Open interest', key: 'oi', width: 18, get: (s) => vf(s).openInterest?.current ?? null },
+    { header: 'Previous session OI', key: 'oi_previous', width: 22, get: (s) => vf(s).openInterest?.previous ?? null },
+    { header: 'OI contract', key: 'oi_contract', width: 32, get: (s) => vf(s).openInterest?.symbol ?? '' },
+    { header: 'OI source time', key: 'oi_time', width: 28, get: (s) => vf(s).openInterest?.quoteAt ?? '' },
+    { header: 'OI check time', key: 'oi_checked', width: 28, get: (s) => vf(s).openInterest?.checkedAt ?? '' },
+    { header: 'OI status', key: 'oi_status', width: 18, get: (s) => !vf(s).openInterest ? 'Unavailable' : vf(s).openInterest.stale ? 'Saved; outdated' : vf(s).openInterest.changePercent == null ? 'No previous OI base' : 'Current' },
     { header: 'RSI Daily', key: 'rsid', width: 16, get: (s) => (vf(s).rsiDaily == null ? null : Number(vf(s).rsiDaily.toFixed(2))) },
     { header: 'RSI Weekly', key: 'rsiw', width: 16, get: (s) => (vf(s).rsiWeekly == null ? null : Number(vf(s).rsiWeekly.toFixed(2))) },
     { header: 'RSI Monthly', key: 'rsim', width: 16, get: (s) => (vf(s).rsiMonthly == null ? null : Number(vf(s).rsiMonthly.toFixed(2))) },

@@ -166,6 +166,11 @@ export class BreakoutStore {
       const accepted=new Set();
       for (const row of rows) {
         const previous=retained.get(row.ticker);
+        // Keep the last futures observation through a partial source failure.
+        // Its own clock makes stale OI unavailable in the scanner; it never inherits the cash clock.
+        if (row.exchange==='NSE' && previous?.openInterest && (!row.openInterest || Date.parse(row.openInterest.quoteAt)<Date.parse(previous.openInterest.quoteAt))) {
+          row.openInterest=previous.openInterest;row.openInterestUnavailable=true;
+        }
         if(!replacesQuote(row,previous)) cleanFailures.push({ticker:row.ticker,reason:'stale'});
         else {retained.set(row.ticker,row);accepted.add(row.ticker);}
       }

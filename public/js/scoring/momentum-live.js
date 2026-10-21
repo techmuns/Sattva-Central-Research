@@ -27,7 +27,7 @@
 // Live recompute
 // ---------------------------------------------------------------------------------------
 
-import { quoteFresh, expectedSession, istDate } from '../data/breakout-live-shared.js';
+import { quoteFresh, expectedSession, istDate, openInterestForQuote } from '../data/breakout-live-shared.js';
 import { isoWeekKey, monthKey } from './momentum-history.js';
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 
@@ -177,6 +177,7 @@ export function scannerIndicators(company, quote, {now = Date.now(), unavailable
   // A valid quote remains a current price even when the indicator history is
   // behind. History alignment gates the filters, never the displayed price.
   value.isLiveQuote = fresh;
+  value.openInterest = openInterestForQuote(quote,now,unavailable);
   if (fresh) value.price = quote.price;
   value.historyAligned = usable;
   value.evaluable = value.evaluable && usable;
