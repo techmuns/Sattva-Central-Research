@@ -17,5 +17,5 @@ export function arrangeNewsToolbar(host) {
   primary.append(search, period, actions); filters.append(...remaining);
   toolbar.replaceChildren(primary, filters);
   // Company tables share the measured viewport; the market list owns its own lifecycle.
-  if (host.querySelector('.news-card-table')) return fitTableViewport(host, { bottomGap: 8 });
+  if (host.querySelector('.news-card-table')) return fitTableViewport(host, { bottomGap: 44 });
 }

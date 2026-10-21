@@ -484,14 +484,14 @@ function fillRest(root, rows, wantScroll) {
   section.removeAttribute('data-rows-pending');
   host.tabIndex = 0; host.setAttribute('role', 'region'); host.setAttribute('aria-label', 'Market news stories');
   const windowed = mountWindowedList({ scroller: host, content: host, items: rows,
-    key: r => String(r.id || r.url), rowSelector: '[data-news-key]', estimateHeight: 38,
+    key: r => String(r.id || r.url), rowSelector: '[data-news-key]', estimateHeight: 34,
     initialKey: wantScroll?.key || null,
     renderRows: (list, from, to) => list.slice(from, to).map(cardHtml).join(''),
     spacerHtml: (height, edge) => `<div data-window-spacer="${edge}" aria-hidden="true" style="height:${height}px;border:0;padding:0"></div>`,
     onWindow: (start, total) => { section.dataset.virtualStart = start; section.dataset.virtualTotal = total; },
   });
   if (wantScroll?.key) host.scrollTop -= wantScroll.offset || 0;
-  const unfit = fitTableViewport(root, { bottomGap: () => 8 + (root.querySelector('[data-news-more]')?.offsetHeight || 0), scrollerSelector: '[data-news-scroll]' });
+  const unfit = fitTableViewport(root, { bottomGap: () => 44 + (root.querySelector('[data-news-more]')?.offsetHeight || 0), scrollerSelector: '[data-news-scroll]' });
   return () => { unfit(); windowed.destroy(); };
 }
 
