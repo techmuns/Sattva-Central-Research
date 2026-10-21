@@ -100,7 +100,7 @@ class PublicReader:
             raise SourceFailure("Original source unavailable: " + type(error).__name__) from error
 
 
-def index_url(family, start, end, page=1):
+def index_url(family, start, end, page=1, symbol=None):
     name, index, period = family
     args = {"index": index, "from_date": dt.date.fromisoformat(start).strftime("%d-%m-%Y"),
         "to_date": dt.date.fromisoformat(end).strftime("%d-%m-%Y")}
@@ -111,6 +111,8 @@ def index_url(family, start, end, page=1):
         # fo_sec=true is NSE's optional F&O-only filter, not a completeness switch.
         args.update(period=period)
         endpoint = "corporates-financial-results"
+    if symbol:
+        args["symbol"] = symbol
     return "https://www.nseindia.com/api/" + endpoint + "?" + urlencode(args)
 
 
@@ -138,9 +140,12 @@ def index_page(body, family, page):
     return rows, total
 
 
-def capture_window(store, reader, family, start, end, lookup, phase="recent"):
+def capture_window(store, reader, family, start, end, lookup, phase="recent", symbol=None, expected_isin=None):
+    if bool(symbol) != bool(expected_isin):
+        raise ValueError("A company-filtered window requires its exact expected ISIN")
     key = "index:" + family[0] + ":" + start + ":" + end
-    check_key = "source:" + family[0] + ":" + phase
+    key += ":symbol:" + symbol if symbol else ""
+    check_key = ("gap-source:" + expected_isin + ":" + family[0]) if symbol else "source:" + family[0] + ":" + phase
     progress = store.get(key, {"nextPage": 1, "seen": [], "total": None})
     # A completed recent interval is re-read. An interrupted interval resumes without discarding pages.
     if progress.get("complete"):
@@ -148,7 +153,7 @@ def capture_window(store, reader, family, start, end, lookup, phase="recent"):
     while True:
         page, at = progress["nextPage"], iso_now()
         try:
-            body = reader.read(index_url(family, start, end, page))
+            body = reader.read(index_url(family, start, end, page, symbol=symbol))
             at = iso_now()  # Observation is after receipt, never the start of a slow source request.
             rows, total = index_page(body, family, page)
             if progress["total"] is not None and total != progress["total"]:
@@ -158,6 +163,8 @@ def capture_window(store, reader, family, start, end, lookup, phase="recent"):
             seen = set(progress["seen"])
             for row in rows:
                 store.catalogue("nse:" + family[0], row, at)
+                if symbol and (row["symbol"] != symbol or row.get("isin") and row["isin"] != expected_isin):
+                    raise SourceFailure("Financial index ignored company filter or returned a conflicting ISIN")
                 url = next((document_url(row.get(k)) for k in ["xbrl", "ixbrl", "attachment", "pdf_attach"]
                     if document_url(row.get(k))), None)
                 identity = str(row.get("seq_Id") or row.get("seqNumber") or url or canonical(row))
@@ -344,30 +351,40 @@ def collect(store, data_dir, reader, lookup, scratch):
         pass
     finally:
         reader.maximum = total_budget
-    try:
-        # Reserve work for both financials and date verification; a busy index cannot starve either.
-        docs = []
-        for kind, maximum in [("financial", 100), ("event", 20)]:
-            docs.extend(store.db.execute("""SELECT * FROM documents WHERE company IS NOT NULL AND
+    # Fill exact missing company periods without waiting for the broad weekly archive cursor.
+    # This shares the existing request/time ceiling; ordinary discovery and event work retain slots.
+    from recommendation_financial_gaps import audit_financial_gaps, fill_financial_gaps
+    gaps = audit_financial_gaps(store, iso_now(), persist=False)
+    fill_financial_gaps(store, reader, lookup, scratch, gaps)
+    # Unused targeted capacity returns to ordinary financial work (up to its original 100).
+    # A request slice, rather than only a document count, preserves room for event reads/redirects.
+    for kind in ["financial", "event"]:
+        maximum = min(100, max(0, total_budget-reader.used-20)) if kind == "financial" else min(20,max(0,total_budget-reader.used))
+        reader.maximum = min(total_budget,reader.used+maximum)
+        try:
+            docs = store.db.execute("""SELECT * FROM documents WHERE company IS NOT NULL AND
             (kind=? OR (?='event' AND kind='catalyst')) AND
             (next_retry IS NULL OR next_retry<=?) AND
             (status='failed' OR checked_at IS NULL OR checked_at<?) ORDER BY kind='catalyst' DESC,
             checked_at IS NOT NULL, checked_at,first_seen,id LIMIT ?""",
-            (kind, kind, at, (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat(timespec="seconds"), maximum)).fetchall())
-        for doc in docs:
-            checked = iso_now()
-            try:
-                read_document(store, reader, doc, checked, scratch)
-            except (SourceFailure, ValueError, ET_PARSE_ERROR, subprocess.SubprocessError, FileNotFoundError) as error:
-                retry = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=24)).isoformat(timespec="seconds")
-                store.db.execute("UPDATE documents SET checked_at=?,status='failed',next_retry=?,error=? WHERE id=?",
-                    (checked, retry, type(error).__name__ + ": " + str(error)[:300], doc["id"]))
-                store.db.commit()
-    except BudgetExceeded:
-        pass
+            (kind, kind, at, (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat(timespec="seconds"), maximum)).fetchall()
+            for doc in docs:
+                checked = iso_now()
+                try:
+                    read_document(store, reader, doc, checked, scratch)
+                except (SourceFailure, ValueError, ET_PARSE_ERROR, subprocess.SubprocessError, FileNotFoundError) as error:
+                    retry = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=24)).isoformat(timespec="seconds")
+                    store.db.execute("UPDATE documents SET checked_at=?,status='failed',next_retry=?,error=? WHERE id=?",
+                        (checked, retry, type(error).__name__ + ": " + str(error)[:300], doc["id"]))
+                    store.db.commit()
+        except BudgetExceeded:
+            pass
+        finally:
+            reader.maximum = total_budget
     store.set("lastWalk", {"at": at, "finishedAt": iso_now(), "requests": reader.used,
         "historyStart": start, "backfillPending": any((store.get("backfill:" + f[0]) or today.isoformat()) >= start for f in FAMILIES)})
     store.db.commit()
+    audit_financial_gaps(store, iso_now())
 
 
 # ElementTree exceptions are deliberately handled as document failures, not empty financials.

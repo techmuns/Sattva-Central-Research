@@ -52,6 +52,22 @@ Recent, backfill and reconciliation checks retain separate outcomes. A successfu
 subset cannot clear a failed current window. Expired host refusals clear only after an actual
 successful response. Failed document reads retry after their saved one-day delay; successful
 reads keep their separate weekly recheck cadence.
+Company-specific financial gap filling now shares this same budget. It audits exact current and
+year-earlier fields, a reported annual/TTM revenue and diluted-EPS baseline, and actual annual/half-year
+cash flow. It requests two-year company-filtered NSE index windows, reads original filings for the
+needed periods (including known revisions and newer quarters), and retains every discovered link.
+It reserves at most 100 requests/four minutes for targeted work, then retains ordinary financial
+and event collection slots. Broad index discovery retains its 60-request slice; ordinary financial
+and event reads each retain 20-request slots; ordinary financial reads can use up to their original
+100 requests when the targeted work leaves capacity. The global 200-request/ten-minute ceiling, two-second
+pacing, six-hour schedule and host cooldowns are unchanged. Source slowness can exhaust the global
+time ceiling; unfinished work remains queued rather than being described as complete.
+Per-company windows, pagination, family order, retry dates and interrupted work survive runner exit
+and calendar rollover. Current financials and recent dated catalyst disclosures receive collection
+priority; this priority never changes a model score. An index that ignores its symbol filter or
+returns a conflicting ISIN cannot close the company window. Financial XML still verifies the issuer.
+Known losses, negative cash flow, conflicting statements and unsupported BSE-only histories remain
+explicit failures/gaps; the collector never searches for an older profitable substitute.
 An interrupted HTTP body or a response shorter than its declared length is never parsed as
 complete evidence. It records a source failure, keeps the window pending and allows other
 families and document extraction to continue. The initial recent-window start is durable, so
@@ -79,6 +95,14 @@ All evidenced versions are returned: consumers must explicitly reconcile restate
 Shared attachments assigned to different securities retain every observation but quarantine the
 document identity and its financial facts. A conflict never stops unrelated ingestion. The BSE
 date-index adapter validates and flattens its actual `byTicker` groups against `rowCount`.
+
+`financial_gap_state(company,at,payload)` retains the latest exact field/period/value/source-version
+audit for the complete retained company directory. `financial_gap_audits(at,summary)` appends audit
+counts; `financial_gap_walks(company,state)` retains collection progress, not investment decisions.
+Every immutable Release generation retains its own snapshot. These derived tables do not modify
+original financial facts, observation times, model rules or signal/outcome ledgers. The compact
+`financialGapSummary` meta entry is included in the Actions job summary and prepared reader coverage.
+The full audit is inspectable in the archived SQLite, rather than being loaded by the browser.
 
 The job summary reports counts. Detailed coverage can be regenerated without network access:
 

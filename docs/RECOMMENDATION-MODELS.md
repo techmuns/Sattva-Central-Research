@@ -15,6 +15,10 @@ the three hypotheses and records outcomes. The job is bounded to thirty minutes.
 uses at most 100 requests/six minutes, at least two seconds apart and at most 42 calendar dates.
 Financial collection retains its existing independent 200-request/ten-minute ceiling. Access
 refusals retain the existing host cooldown; there is no proxy/cookie/provider fallback.
+Within that ceiling, a persistent company/period gap audit now directs free original NSE filing
+reads to missing quarterly comparisons, reported annual/TTM baselines and cash statements. It
+does not change `catalysts-1`, scores, valuation/liquidity/quality gates or required positive values.
+See [the evidence collector](RECOMMENDATION-FOUNDATION.md) for allocation and remaining source gaps.
 
 All original source versions, observations, extraction quotes, decisions, reviews and outcome
 versions remain on GitHub Releases inside the financial-history archive. Collection does not

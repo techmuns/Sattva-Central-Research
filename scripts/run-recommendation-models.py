@@ -32,6 +32,7 @@ def analyze(store, scratch, at=None, extract=True):
         "coverage": {"captureStartedAt": store.get("recommendationCaptureStart"), "financialCompanies": len({r['company'] for r in coverage['financialCoverage']}),
             "assessments": scored["assessments"], "missingRequirements": scored["missing"], "pendingDocuments": pending_docs, "failedDocuments": failed_docs,
             "sourceChecks": coverage["sourceChecks"], "history": coverage["lastWalk"],
+            "financialHistory": store.get("financialGapSummary"),
             "limitations": ["Research evidence scores have not established an investment edge.", "Historical financial, contract and capacity coverage is incomplete.",
                 "PDF annexure adapter reads up to twelve pages and cannot certify a complete contract or project history.", "Quotes are official end-of-day closes, with their actual session dates."]}}
     store.set("recommendationLatest", report)

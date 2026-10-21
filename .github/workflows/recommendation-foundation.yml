@@ -46,7 +46,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Verify financial history and date contracts offline
-        run: python3 scripts/verify-recommendation-foundation.py && python3 scripts/verify-recommendation-models.py
+        run: python3 scripts/verify-recommendation-foundation.py && python3 scripts/verify-recommendation-models.py && python3 scripts/verify-recommendation-financial-gaps.py
       - name: Prepare free local PDF text extraction
         run: |
           if ! command -v pdftotext >/dev/null; then
