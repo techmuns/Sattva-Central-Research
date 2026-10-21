@@ -19,9 +19,10 @@ export function health(value = meta(), now = Date.now()) {
   const stale = !Number.isFinite(at) || at > now + 600000 || now - at > 12 * 3600000;
   const failed = !!value.readError || !!value.error || Date.parse(value.cooldownUntil || '') > now;
   const partial = !value.archive?.complete || !!pending || !!unavailable;
+  const loaded = !!value.generatedAt;
   return { pending, unavailable, stale, failed, partial,
-    label: failed ? 'Collection / delivery needs attention' : stale ? 'Source check overdue' : partial ? 'Latest capture · archive coverage partial' : 'Source checked',
-    readState: failed ? 'unavailable' : stale ? 'dated' : partial ? 'partial' : 'read' };
+    label: failed ? 'Collection / delivery needs attention' : !loaded ? 'Loading funding capture…' : stale ? 'Source check overdue' : partial ? 'Latest capture · archive coverage partial' : 'Source checked',
+    readState: failed ? 'unavailable' : !loaded ? 'unchecked' : stale ? 'dated' : partial ? 'partial' : 'read' };
 }
 export function load() {
   if (pending) return pending;

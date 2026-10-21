@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { collect, collectionDue } from './collect-private-market-news.mjs';
 import { privateMarketRelease } from './lib/private-market-release.mjs';
-import { validateCapture } from './lib/private-market-news.mjs';
+import { validateCapture, RESERVATION_ERROR } from './lib/private-market-news.mjs';
 export async function runPrivateMarketJob({ transport = privateMarketRelease(), bootstrap = () => JSON.parse(fs.readFileSync('public/data/private-market-news.json')), now = () => new Date().toISOString(), collector = collect } = {}) {
   const latest = await transport.latest();
   const state = latest ? await transport.download(latest) : validateCapture(bootstrap());
@@ -14,7 +14,7 @@ export async function runPrivateMarketJob({ transport = privateMarketRelease(), 
   // Reserve the entire walk before any source request. A timeout/upload failure
   // still spends this window, so hourly triggers cannot multiply source traffic.
     const reservation = now();
-    state.attemptedAt = reservation; state.generatedAt = reservation; state.error = 'Collection started; completion not yet confirmed';
+    state.attemptedAt = reservation; state.generatedAt = reservation; state.error = RESERVATION_ERROR;
     await transport.publish(state);
     await collector(state, { reservation, now });
   }

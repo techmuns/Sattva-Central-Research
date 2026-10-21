@@ -7,14 +7,16 @@ import { SOURCE, discover, parseArticle, mergeArticle, emptyCapture, validateCap
 // At most 32 sequential public requests per six-hour walk; no immediate retries.
 // A refusal stops the entire walk and persists a 24-hour source cooldown.
 export function collectionDue(state, now = Date.now()) { return !(Date.parse(state.cooldownUntil || '') > now || Date.parse(state.attemptedAt || '') > now - 6 * 3600000); }
-export async function collect(state, { request = fetch, now = () => new Date().toISOString(), sleep = ms => new Promise(r => setTimeout(r, ms)), budget = 32, gapMs = 3000, archivePages = 2, checkpoint = () => {}, reservation = null } = {}) {
+export async function collect(state, { request = fetch, now = () => new Date().toISOString(), sleep = ms => new Promise(r => setTimeout(r, ms)), budget = 32, gapMs = 3000, archivePages = 2, checkpoint = () => {}, reservation = null, timeBudgetMs = 5 * 60000, clock = () => performance.now() } = {}) {
   validateCapture(state);
   if (Date.parse(state.cooldownUntil || '') > Date.parse(now()) || reservation !== state.attemptedAt && !collectionDue(state, Date.parse(now()))) return state;
   state.attemptedAt = now(); state.error = null; let requests = 0; let stopped = false;
+  const deadline = clock() + timeBudgetMs;
+  const available = (spare = 0) => requests < budget - spare && clock() < deadline;
   async function read(url, options = {}, redirects = 0) {
-    if (requests >= budget) throw Error('Request budget exhausted');
+    if (!available()) { const error = Error('Source walk budget reached; progress retained'); error.code = 'source_budget'; throw error; }
     if (requests++) await sleep(gapMs);
-    const response = await request(url, { ...options, headers: { 'user-agent': 'SattvaResearchFunding/1.0 (+https://github.com/techmuns/Sattva-Central-Research)', ...options.headers }, signal: AbortSignal.timeout(45000), redirect: 'manual' });
+    const response = await request(url, { ...options, headers: { 'user-agent': 'SattvaResearchFunding/1.0 (+https://github.com/techmuns/Sattva-Central-Research)', ...options.headers }, signal: AbortSignal.timeout(20000), redirect: 'manual' });
     if ([301,302,303,307,308].includes(response.status)) {
       const location = response.headers.get('location'); await response.body?.cancel();
       const target = location && new URL(location, url);
@@ -43,8 +45,10 @@ export async function collect(state, { request = fetch, now = () => new Date().t
       const parsed = parseArticle(await read(article.url), article); mergeArticle(state, article, parsed, now());
       console.log(`${parsed.status}: ${article.url} (${parsed.rows.length} rows)`);
     } catch (error) {
+      if (error.code === 'source_budget') { article.status = 'pending'; return; }
       article.status = 'failed'; article.error = error.message; article.attemptedAt = now(); article.retryAfter = new Date(Date.parse(now()) + 86400000).toISOString();
       state.error = error.message;
+      console.warn(`failed: ${article.url} (${error.message})`);
     }
     checkpoint(state);
   }
@@ -58,7 +62,7 @@ export async function collect(state, { request = fetch, now = () => new Date().t
     // page cannot starve the current reader, while source refusals still stop all work.
     const latest = new Set(listing.articles.slice(0, 2).map(a => a.url));
     for (const article of state.articles.filter(a => latest.has(a.url))) {
-      if (requests >= budget || stopped) break;
+      if (!available() || stopped) break;
       await captureArticle(article);
     }
     if (state.archive.maxPage && maxPage !== state.archive.maxPage) { state.archive.nextPage = 2; state.archive.complete = false; }
@@ -66,7 +70,7 @@ export async function collect(state, { request = fetch, now = () => new Date().t
     // Re-scan the public Load More inventory after a full pass. Listing movement cannot
     // strand older links behind a page number which used to mean something else.
     if (state.archive.complete && Date.parse(state.archive.checkedAt || '') < Date.parse(now()) - 7 * 86400000) { state.archive.nextPage = 2; state.archive.complete = false; }
-    for (let i = 0; i < archivePages && !state.archive.complete && requests < budget - 1 && !stopped; i++) {
+    for (let i = 0; i < archivePages && !state.archive.complete && available(1) && !stopped; i++) {
       if (state.archive.nextPage > maxPage) { state.archive.complete = true; state.archive.checkedAt = now(); break; }
       const body = new URLSearchParams({ action: 'inc42_loadmore_tag_posts', nonce: listing.ajax.api_nonce, page: String(state.archive.nextPage), query: listing.query });
       let found;
@@ -82,18 +86,19 @@ export async function collect(state, { request = fetch, now = () => new Date().t
     const queue = state.articles.filter(a => !attempted.has(a.url) && (a.status === 'pending' || !a.attemptedAt || Date.parse(a.retryAfter || '') <= Date.parse(now())))
       .sort((a,b) => Number(latest.has(b.url)) - Number(latest.has(a.url)) || Number(a.status !== 'pending') - Number(b.status !== 'pending') || (a.attemptedAt || '').localeCompare(b.attemptedAt || ''));
     for (const article of queue) {
-      if (requests >= budget || stopped) break;
+      if (!available() || stopped) break;
       await captureArticle(article);
     }
   } catch (error) { state.error = error.message; }
-  state.generatedAt = now(); state.lastRun = { requests, budget, pending: state.articles.filter(a => a.status === 'pending').length };
+  state.generatedAt = now(); state.lastRun = { requests, budget, timeBudgetReached:clock() >= deadline, pending: state.articles.filter(a => a.status === 'pending').length };
   return validateCapture(state);
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const file = path.resolve(process.env.PRIVATE_MARKET_FILE || 'public/data/private-market-news.json');
   const state = fs.existsSync(file) ? validateCapture(JSON.parse(fs.readFileSync(file))) : emptyCapture();
   const checkpoint = value => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file + '.tmp', JSON.stringify(value)); fs.renameSync(file + '.tmp', file); };
-  await collect(state, { budget: Math.min(1000, Math.max(4, Number(process.env.PRIVATE_MARKET_BUDGET || 32))), archivePages: Number(process.env.PRIVATE_MARKET_ARCHIVE_PAGES || 2), checkpoint });
+  const budget = Math.min(1000, Math.max(4, Number(process.env.PRIVATE_MARKET_BUDGET || 32)));
+  await collect(state, { budget, timeBudgetMs:(budget > 32 ? 55 : 5) * 60000, archivePages: Number(process.env.PRIVATE_MARKET_ARCHIVE_PAGES || 2), checkpoint });
   checkpoint(state);
   console.log(JSON.stringify({ deals: state.deals.length, articles: state.articles.length, archive: state.archive, lastRun: state.lastRun, sourceCheckedAt: state.sourceCheckedAt, error: state.error, cooldownUntil: state.cooldownUntil }));
 }

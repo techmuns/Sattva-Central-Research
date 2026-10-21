@@ -5902,7 +5902,9 @@ roundups can repeat an announcement, so row counts are not unique transaction to
 `private-market-news.yml` wakes hourly on standard free GitHub Actions runners.
 A serialized, persisted six-hour reservation bounds source walks across triggers,
 including failed runs. Each walk has at most 32 sequential requests, separated by
-three seconds. No immediate source retries occur. HTTP 401/403/429 or an access
+three seconds. The normal source loop also yields after five minutes, leaving
+time to publish its checkpoint before the runner timeout; pending articles resume
+in later walks. No immediate source retries occur. HTTP 401/403/429 or an access
 challenge stops the walk and records at least a 24-hour cooldown (honoring longer
 Retry-After up to seven days). New/latest roundups and resumable public Load More
 archive traversal share the budget; old checks rotate for corrections. Archive
@@ -5913,7 +5915,9 @@ coverage separately. Existing scheduled workflow health also inventories this jo
 
 Immutable, compressed, integrity-checked snapshots remain in the GitHub release
 `private-market-news-data`, including durable progress and all retained rows. There
-is no artifact expiry or data commit to main. Only this public snapshot enters
+is no artifact expiry or data commit to main. Deployment planning reads a bounded
+reverse cursor of recent asset metadata, keeping older evidence without repeatedly
+downloading an ever-growing release inventory. Only this public snapshot enters
 Cloudflare static hosting, through the existing automatic Deploy workflow's prepared
 input comparison. A capture may be published even when collection reports a failure,
 so coverage can show the failure alongside the last good rows. Private-source data

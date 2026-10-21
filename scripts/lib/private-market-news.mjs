@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 
 export const SOURCE = 'https://inc42.com/tag/funding-galore/';
+export const RESERVATION_ERROR = 'Collection started; completion not yet confirmed';
 export const FIELDS = ['date', 'company', 'sector', 'subsector', 'businessModel', 'amount', 'round', 'investors', 'leadInvestor'];
 export function textContent(html = '') {
   const named = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—', rsquo: '’', lsquo: '‘', hellip: '…' };

@@ -31,6 +31,8 @@ try{
   await page.waitForFunction(()=>document.querySelector('[data-table-count]')?.textContent.includes('499')||document.querySelector('main')?.textContent.includes('499 of 500'));
   assert.equal(await page.locator('[data-watch-toggle]').count(),0);
   assert(await page.locator('tbody tr[data-row-key]').count()<100,'Shared table bounds mounted rows');
+  await page.getByText('Fixture Company 0',{exact:true}).click();assert((await page.locator('#drill-content').textContent()).includes('Mix of equity and debt'));
+  await page.keyboard.press('Escape');
   const period=page.getByRole('combobox',{name:'Funding period',exact:true});await period.selectOption('all');
   const search=page.getByPlaceholder('Search company, investor, sector or round...');await search.fill('Older History Investor');
   await page.getByText('Fixture Company 499',{exact:true}).waitFor();

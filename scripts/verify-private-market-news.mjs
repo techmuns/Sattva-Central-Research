@@ -31,6 +31,9 @@ const older='https://inc42.com/buzz/older-funding-this-week/';
 const request=async (target,options)=>{calls.push({target,options});return new Response(target===SOURCE?listing:target.includes('admin-ajax')?`<a href="${older}" title="Older funding this week">Older</a>`:html());};
 const captured=await collect(emptyCapture(),{request,now:()=>at,sleep:async ms=>pauses.push(ms),budget:4});
 assert.equal(calls.length,4);assert(pauses.every(ms=>ms===3000));assert.equal(captured.deals.length,2);assert.equal(captured.archive.complete,true);assert.equal(captured.sourceCheckedAt,at);
+let elapsed=0, deadlineReads=0;
+const timed=await collect(emptyCapture(),{request:async()=>{deadlineReads++;elapsed=6000;return new Response(listing);},now:()=>at,clock:()=>elapsed,timeBudgetMs:5000});
+assert.equal(deadlineReads,1);assert.equal(timed.lastRun.timeBudgetReached,true);assert.equal(timed.articles[0].status,'pending');assert.equal(timed.error,null,'A time-bounded batch retains pending work without inventing source failure');
 const archiveCall=calls.find(c=>c.target.includes('admin-ajax'));assert(archiveCall.options.body instanceof URLSearchParams);assert.equal(archiveCall.options.body.get('page'),'2');
 await collect(captured,{request,now:()=>at});assert.equal(calls.length,4,'Repeated triggers share the durable six-hour gate');
 const limited=emptyCapture();let refusals=0;
@@ -51,12 +54,15 @@ await collect(redirected,{request:async target=>{redirectedReads++;return target
 // Current public snapshot and transport are bounded and validated before publication.
 assert.throws(()=>validateCapture({...captured,deals:[{...captured.deals[0],sourceUrl:'javascript:alert(1)'}]}));
 const repo='techmuns/Sattva-Central-Research';const env={GITHUB_REPOSITORY:repo,GITHUB_TOKEN:'fixture-only',GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'123',GITHUB_RUN_ATTEMPT:'1'};
-const bytes=gzipSync(JSON.stringify(captured)),digest=createHash('sha256').update(bytes).digest('hex'),name=`funding-123-1-${digest}.json.gz`;
+const bytes=gzipSync(JSON.stringify(captured)),digest=createHash('sha256').update(bytes).digest('hex'),name=`funding-123-1-1-${digest}.json.gz`;
 const asset={id:101,name,state:'uploaded',size:bytes.length,browser_download_url:`https://github.com/${repo}/releases/download/private-market-news-data/${name}`};
 let corrupt=false,missing=false,mutations=0;
+const graphReply=(assets,exists=true,body='Capture initialized',pageInfo={hasPreviousPage:false,startCursor:null})=>Response.json({data:{repository:{release:exists?{databaseId:7,tagName:'private-market-news-data',description:body,releaseAssets:{nodes:assets.map(a=>({name:a.name,size:a.size,downloadUrl:a.browser_download_url})),pageInfo}}:null}}});
 const fetcher=async(target,options={})=>{
   if(target.startsWith('https://github.com/')){assert.equal(options.headers?.authorization,undefined);return new Response(corrupt?Buffer.from('corrupt'):bytes);}
-  assert.equal(options.headers.authorization,'Bearer fixture-only');if(options.method)mutations++;
+  assert.equal(options.headers.authorization,'Bearer fixture-only');
+  if(target==='https://api.github.com/graphql'){assert.match(JSON.parse(options.body).query,/^query FundingCapture/);return graphReply(missing?[]:[asset]);}
+  if(options.method)mutations++;
   if(target.includes('/assets?'))return Response.json(missing?[]:[asset]);
   return Response.json({id:7,tag_name:'private-market-news-data',body:'Capture initialized'});
 };
@@ -75,6 +81,7 @@ let releaseExists=false,releaseBody='',sequence=1,loseAcknowledgement=false;cons
 const publishingFetcher=async(target,options={})=>{
   if(target.startsWith('https://github.com/')){assert.equal(options.headers?.authorization,undefined);const held=assets.find(a=>a.browser_download_url===target);return new Response(held.bytes);}
   assert.equal(options.headers.authorization,'Bearer fixture-only');
+  if(target==='https://api.github.com/graphql')return graphReply(assets,releaseExists,releaseBody);
   if(target.startsWith('https://uploads.github.com/')){
     const name=new URL(target).searchParams.get('name'),bytes=Buffer.from(options.body);
     const asset={id:sequence++,name,state:'uploaded',size:bytes.length,browser_download_url:`https://github.com/${repo}/releases/download/private-market-news-data/${name}`,bytes};
@@ -86,10 +93,13 @@ const publishingFetcher=async(target,options={})=>{
   return releaseExists?Response.json({id:7,tag_name:'private-market-news-data',body:releaseBody,assets:assets.map(({bytes,...a})=>a)}):new Response(null,{status:404});
 };
 const publishing=privateMarketRelease({env,fetcher:publishingFetcher,head:()=>env.GITHUB_SHA});
-const published=await publishing.publish(captured);assert.equal(published.asset.id,1);assert.deepEqual(await publishing.download(published),captured);
+const published=await publishing.publish(captured);assert.equal(published.asset.name,name);assert.deepEqual(await publishing.download(published),captured);
 await publishing.publish(captured);assert.equal(assets.length,1,'Identical captures do not consume another asset');
 loseAcknowledgement=true;await assert.rejects(publishing.publish({...captured,generatedAt:'2026-10-21T09:00:00Z'}),/durably acknowledged/);
 assert.deepEqual(await publishing.download(await publishing.latest()),captured,'Failed publication preserves the last complete capture');
+let pages=0;
+const paged=privateMarketRelease({env,fetcher:async(target,options)=>{assert.equal(target,'https://api.github.com/graphql');pages++;return JSON.parse(options.body).variables.before?graphReply([asset]):graphReply([{name:'incomplete',size:0}],true,'Capture initialized',{hasPreviousPage:true,startCursor:'older'});}});
+assert.equal((await paged.latest()).asset.name,name);assert.equal(pages,2,'A bounded reverse cursor recovers earlier complete data without scanning years of metadata');
 // A late callback after leaving the view cannot fetch, and lifecycle hooks are removed.
 const doc=new EventTarget(),win=new EventTarget();doc.visibilityState='hidden';let callback,cancelled=0;
 const stop=bindLifecycle({doc,win,schedule:fn=>{callback=fn;return 1;},cancel:()=>cancelled++});stop();await callback();assert.equal(cancelled,1);

@@ -3,7 +3,7 @@ import path from 'node:path';
 import {githubBackgroundRelease} from './github-background-release.mjs';
 import {installBackgroundViews} from './github-background-package.mjs';
 import {BACKGROUND_FEATURES,backgroundContract} from '../../worker/github-background-contract.mjs';
-import {privateMarketRelease,installPrivateMarket,PRIVATE_MARKET_FEATURE} from './private-market-release.mjs';
+import {privateMarketRelease,installPrivateMarket,PRIVATE_MARKET_FEATURE,fundingAssetPattern} from './private-market-release.mjs';
 
 export async function preparedBackgroundPlan({env=process.env,fetcher=fetch}={}) {
   const entries=[];
@@ -17,6 +17,7 @@ export async function preparedBackgroundPlan({env=process.env,fetcher=fetch}={})
   return entries;
 }
 export const preparedBackgroundIdentity=entries=>Object.fromEntries(entries.map(entry=>{
+  if(entry.feature===PRIVATE_MARKET_FEATURE){if(!fundingAssetPattern.test(entry.asset?.name||''))throw Error('Invalid prepared funding generation');return [entry.feature,entry.asset.name];}
   if(![...BACKGROUND_FEATURES,PRIVATE_MARKET_FEATURE].includes(entry.feature)||!Number.isSafeInteger(entry.asset?.id)||entry.asset.id<1)throw Error('Invalid prepared generation');
   return [entry.feature,entry.asset.id];
 }));

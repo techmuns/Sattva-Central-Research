@@ -19,7 +19,7 @@ function details(row) {
     <p class="mt-4 text-xs text-slate-500">${esc(article?.notes?.join('\n') || '')}</p>
     <p class="mt-3 text-xs text-slate-500">Roundup published: ${esc(time(row.publishedAt))}. First captured: ${esc(time(row.firstSeenAt))}.</p>
     ${row.sourceMissing ? '<p class="mt-3 text-sm">Retained observation: this row is absent from the latest successful read of its article.</p>' : ''}
-    ${row.revisions?.length ? `<p class="mt-3 text-xs">${row.revisions.length} earlier source revision(s) retained in the capture.</p>` : ''}<p class="mt-4">${link(row)} · ${esc(row.sourceTitle)}</p>` });
+    ${row.revisions?.length ? `<details class="mt-3 text-xs"><summary>${row.revisions.length} earlier source version(s)</summary>${row.revisions.map(v => `<p class="mt-3"><strong>Captured ${esc(time(v.capturedAt))}</strong><br>${Object.entries(v.sourceFields || {}).map(([label,value]) => `${esc(label)}: ${esc(value)}`).join('<br>')}</p>`).join('')}</details>` : ''}<p class="mt-4">${link(row)} · ${esc(row.sourceTitle)}</p>` });
 }
 function coverage() {
   const m = feed.meta(), h = feed.health();
@@ -42,7 +42,8 @@ function paint() {
   const scroll = root.querySelector('[data-table-scroll]');
   const position = scroll ? { top:scroll.scrollTop, left:scroll.scrollLeft } : null;
   offTable?.(); offTable = null;
-  const latest = [...(m.articles || [])].filter(a => a.status === 'ok').sort((a,b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))[0]?.url;
+  const latestArticle = [...(m.articles || [])].filter(a => a.status === 'ok').sort((a,b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))[0];
+  const latest = latestArticle?.url;
   const options = (key, label) => ({ label, options:[{ value:'all', label:`All ${label.toLowerCase()}` }, ...[...new Set(rows.map(r => r[key]).filter(v => v && !/^[-–—_]$/.test(v)))].sort().map(value => ({ value,label:value }))], match:(r,v) => v === 'all' || !v || r[key] === v });
   table = scoreTable({ rows, key:r => r.id, name:r => r.company, watchKey:() => null, showWatchFilter:false,
     showRank:false, showAvatar:false, nameWrap:true, nameMaxPx:210, dense:true, wrapHeads:true, nameAfter:1,
@@ -57,10 +58,10 @@ function paint() {
     bookmarkDate:r => r.dateISO, bookmarkSource:() => 'Inc42 Funding Galore', link:r => safeUrl(r.sourceUrl), exportName:'sattva-private-market-news',
     onExport:visible => exportRows({ filename:'sattva-private-market-news', sheetName:'Private market funding', rows:visible,
       columns:[...fields.map(([key,header]) => ({ key,header,get:r => r[key],width:key === 'investors' ? 70 : 24 })), ...['sourceUrl','sourceTitle','publishedAt','firstSeenAt','updatedAt','sourceMissing'].map(key => ({ key,header:key,get:r => String(r[key] ?? '') })),
-        { key:'notes',header:'Source footnotes',get:r => (m.articles || []).find(a => a.url === r.sourceUrl)?.notes?.join('\n') || '' }, { key:'sourceFields',header:'All original source fields',get:r => JSON.stringify(r.sourceFields) }] }),
+        { key:'notes',header:'Source footnotes',get:r => (m.articles || []).find(a => a.url === r.sourceUrl)?.notes?.join('\n') || '' }, { key:'sourceFields',header:'All original source fields',get:r => JSON.stringify(r.sourceFields) }, { key:'revisions',header:'Prior source versions',get:r => JSON.stringify(r.revisions || []) }] }),
   });
-  root.innerHTML = `${sectionHead({ title:'Private Market News', description:'Indian startup funding reported by Inc42 · Across the source universe, independent of listed-company scopes.', meta:`<span class="text-xs text-slate-500">${esc(h.label)}</span>` })}
-    ${table.html}<p class="mt-3 text-xs text-slate-500">Source listing checked ${esc(time(m.sourceCheckedAt))} · Weekly roundups · <button type="button" data-private-market-coverage class="text-brand-600 hover:underline">Coverage & source notes</button></p>`;
+  root.innerHTML = `${sectionHead({ title:'Private Market News', description:'Weekly Indian startup funding reported by Inc42 · Across the source universe, independent of listed-company scopes.', meta:`<span class="text-xs text-slate-500">${esc(h.label)}</span>` })}
+    ${table.html}<p class="mt-3 text-xs text-slate-500">Latest roundup published ${esc(time(latestArticle?.publishedAt))} · Source listing checked ${esc(time(m.sourceCheckedAt))} · <button type="button" data-private-market-coverage class="text-brand-600 hover:underline">Coverage & source notes</button></p>`;
   offTable = table.wire(root); root.querySelector('[data-private-market-coverage]').onclick = coverage;
   const next = root.querySelector('[data-table-scroll]'); if (position && next) { next.scrollTop = position.top; next.scrollLeft = position.left; }
   if (input) { const field = root.querySelector('input'); if (field && field.value === input.value) { field.focus({ preventScroll:true }); field.setSelectionRange(input.start, input.end); } }
