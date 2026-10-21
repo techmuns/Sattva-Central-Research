@@ -1,12 +1,6 @@
 #!/usr/bin/env node
-// scripts/verify-kpi-impact-ui.mjs — the "KPIs in play" row on real AI Alerts cards, in a browser.
-//
-// The real AI Alerts tab and ranking run over events built by the real collectors' own event
-// builders (announcementEvent, the news signal) for companies the committed sector file classifies,
-// with the General Alerts collector replaced by a fixture so nothing leaves the machine. It asserts
-// what a reader sees: the row, its chips in evidence order, each chip a door to its source with the
-// mechanism in its tooltip, no row for a company whose sector is not resolved, search by KPI name,
-// no sideways scroll at phone width, and zero page errors.
+// AI Alerts retains KPI search and evidence after removing the card's KPI heading and chips.
+// The real tab and ranking read locally collected fixture events; no production requests.
 //
 //   PLAYWRIGHT_ROOT=/path/to/node_modules/playwright node scripts/verify-kpi-impact-ui.mjs [screenshot.png]
 
@@ -96,52 +90,31 @@ try {
   await page.route('**/*', (route) => (route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' })));
   await page.goto(origin);
   const card = (ticker) => page.locator(`[data-ai-card][data-ticker="${ticker}"]`);
-  await card('BHEL').locator('[data-ai-kpis]').waitFor({ timeout: 15000 });
+  await card('BHEL').waitFor({ timeout: 15000 });
 
   // textContent, not innerText: every card is `content-visibility: auto`, and Chromium keeps one it
   // has not yet rendered near the viewport SKIPPED — empty innerText — while its text is all there.
   const text = (locator) => locator.evaluate((el) => el.textContent.replace(/\s+/g, ' ').trim());
-  const chips = async (ticker) => card(ticker).locator('[data-ai-kpi]').evaluateAll((els) => els.map((el) => el.textContent.replace(/\s+/g, ' ').trim()));
-  const bhel = card('BHEL').locator('[data-ai-kpis]');
-  assert.equal(await bhel.getAttribute('data-kpi-group'), 'capital_goods');
-  assert.match(await text(bhel), /KPIs in play · Capital Goods/i);
-  assert.deepEqual(await chips('BHEL'), ['Order Inflow', 'Order Book', 'Book-to-Bill Ratio']);
-  const inflow = card('BHEL').locator('[data-ai-kpi="order_inflow"]');
-  assert.equal(await inflow.evaluate((a) => a.tagName), 'A', 'a chip is a door to its source');
-  assert.equal(await inflow.getAttribute('href'), events[0].url);
-  assert.equal(await inflow.getAttribute('target'), '_blank');
-  assert.match(await inflow.getAttribute('title'), /^Order win → Order Inflow\. A new order adds to order inflow/);
-  assert.match(await inflow.getAttribute('title'), /Capital Goods \(Capital Goods › Heavy Electrical Equipment\)/);
+  assert.equal(await page.locator('[data-ai-kpis], [data-ai-kpi], [data-ai-kpi-more]').count(), 0,
+    'classified cards render no KPI heading, chips or overflow count');
+  assert(!/KPIs in play/i.test(await text(page.locator('[data-ai-cards]'))), 'the removed heading is absent');
 
-  // FIVE KPIs, FOUR CHIPS: the fifth is a "+1" whose title names it, and search still finds it —
-  // the cap is the card's, the model keeps every KPI.
-  const sbi = await chips('SBIN');
-  const more = card('SBIN').locator('[data-ai-kpi-more]');
-  assert.equal(sbi.length, 4, `four chips: ${sbi.join(', ')}`);
-  assert.equal(await text(more), '+1');
-  const hidden = (await more.getAttribute('title')).replace(/^Also named by this card's evidence: /, '').replace(/\.$/, '').split(', ');
+  // All five bank KPIs remain searchable, including the one previously hidden behind +1.
   for (const name of ['Capital Adequacy Ratio', 'EPS', 'Book Value Per Share', 'Net Interest Margin', 'Cost to Income Ratio']) {
-    assert([...sbi, ...hidden].includes(name), `SBI names ${name}: ${[...sbi, ...hidden].join(', ')}`);
+    await page.locator('[data-ai-search]').fill(name.toLowerCase());
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-ai-card]')].some(el => el.dataset.ticker === 'SBIN'));
   }
-  assert(![...sbi, ...hidden].some((name) => /Order/.test(name)), 'a bank never shows an order KPI');
-  await page.locator('[data-ai-search]').fill(hidden[0].toLowerCase());
-  await page.waitForFunction(() => [...document.querySelectorAll('[data-ai-card]')].some((el) => el.dataset.ticker === 'SBIN'));
   await page.locator('[data-ai-search]').fill('');
   await page.waitForFunction(() => document.querySelectorAll('[data-ai-card]').length >= 4);
-  // NAMES, NOT FIGURES: the filed change is already the result row's own claim, so the chip names the
-  // KPI and carries the figure in its title rather than printing it a third time on one card.
-  assert.deepEqual(await chips('LUPIN'), ['Revenue', 'PAT', 'US Revenue', 'ANDA Filings'],
-    'the filed result names its KPIs first, then the approval');
-  assert.match(await card('LUPIN').locator('[data-ai-kpi="revenue"]').getAttribute('title'), /Revenue \+13%/, 'the figure is one hover away');
   assert.match(await text(card('LUPIN').locator('[data-ai-evidence]')), /Result filed \(YoY\) · net profit swung to profit, revenue \+13\.0%/,
     'and the row states it, from the event itself');
 
-  // WHERE IT SITS: directly under "What happened", above the list, drawn as that section is.
+  // The headline still leads directly into the dated evidence list.
   const order = await card('BHEL').evaluate((el) => {
     const pos = (sel) => [...el.querySelectorAll('*')].indexOf(el.querySelector(sel));
-    return { insight: pos('[data-ai-insight]'), kpis: pos('[data-ai-kpis]'), head: pos('[data-ai-list-head]'), evidence: pos('[data-ai-evidence]') };
+    return { insight: pos('[data-ai-insight]'), head: pos('[data-ai-list-head]'), evidence: pos('[data-ai-evidence]') };
   });
-  assert(order.insight < order.kpis && order.kpis < order.head && order.head < order.evidence, `section order: ${JSON.stringify(order)}`);
+  assert(order.insight < order.head && order.head < order.evidence, `section order: ${JSON.stringify(order)}`);
   // ONE PLACE FOR THE READING: the card carries no figure strip, no question paragraph and no bullet list.
   assert.equal(await page.locator('[data-ai-metrics], [data-ai-drivers], [data-ai-brief], [data-ai-impact-line]').count(), 0, 'the removed blocks stay removed');
   assert.equal(await card('ZZUNKNOWN').count(), 1, 'the unclassified company still has its card');
@@ -156,19 +129,16 @@ try {
 
   if (screenshot) await card('BHEL').screenshot({ path: screenshot });
 
-  // Phone width: the chips wrap inside the card and the page never scrolls sideways.
+  // Phone width: the simplified cards stay within the viewport.
   await page.setViewportSize({ width: 390, height: 1400 });
   await page.waitForTimeout(150);
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), 'no sideways scroll at 390px');
-  const row = await card('LUPIN').locator('[data-ai-kpis]').boundingBox();
-  const box = await card('LUPIN').boundingBox();
-  assert(row.x + row.width <= box.x + box.width + 1, 'the KPI row stays inside its card at 390px');
+  assert.equal(await page.locator('[data-ai-kpis], [data-ai-kpi]').count(), 0, 'phone cards omit the KPI row too');
   if (screenshot) await card('LUPIN').screenshot({ path: screenshot.replace(/\.png$/, '-390.png') });
 
   assert.deepEqual(errors, [], 'zero page errors');
 
-  // A SECTOR FILE THAT CANNOT BE READ IS SAID ON THE PAGE. Without the line, "no card names a KPI"
-  // and "the KPI file failed" would look identical.
+  // Failure status still explains incomplete KPI search and saved details.
   const broken = await browser.newPage({ viewport: { width: 1440, height: 1200 } });
   broken.on('pageerror', (error) => errors.push(error.message));
   await broken.route('**/*', (route) => {
@@ -179,11 +149,11 @@ try {
   await broken.goto(origin);
   await broken.locator('[data-ai-card][data-ticker="BHEL"]').waitFor({ timeout: 15000 });
   await broken.locator('[data-ai-kpi-status]').waitFor({ timeout: 15000 });
-  assert.match(await broken.locator('[data-ai-kpi-status]').innerText(), /KPIs in play unavailable · the sector file could not be read/);
+  assert.match(await broken.locator('[data-ai-kpi-status]').innerText(), /Sector KPI data unavailable · KPI search and bookmark details may be incomplete/);
   assert.equal(await broken.locator('[data-ai-kpis]').count(), 0, 'no card claims a KPI line it could not read');
   assert.deepEqual(errors, [], 'zero page errors with the sector file missing');
   await broken.close();
-  console.log('PASS KPI row: chips in evidence order linking to their sources, the mechanism in each tooltip, four chips and a "+N" that names the rest, search by any KPI, none for an unclassified company, a failed sector file said on the page, 390px layout, zero page errors.');
+  console.log('PASS simplified cards: no KPI heading or chips, complete KPI search, retained result figures, honest sector failure status, 390px layout, zero page errors.');
 } finally {
   await browser.close();
   server.close();

@@ -3154,12 +3154,12 @@ regulatory approval, equity raise, buyback, dividend, credit-rating action, plan
 acquisition, divestment, payment default, business update) crossed with the company's KPI GROUP from
 the desk's own sector → KPI ontology (`scripts/fixtures/sector-kpi-ontology.yaml` → `sector-kpis.json`,
 see `docs/DATA-CONTRACTS.md` → *Sector KPIs*), plus a filed result's measured change and the KPIs a
-con-call highlight names through the ontology's own aliases. The card gets one section directly under
-*What happened*, drawn exactly as that section is — *KPIs in play · Capital Goods: Order Inflow · Order
-Book · Book-to-Bill Ratio* — each chip a door to its source, the item and mechanism in the tooltip, at
-most four, the rest counted. It is the only block the card adds to its one sentence and one
-list, and it is absent where there is nothing to name. No model call, no request per card, no score,
-no alert. Nine rules, every one asserted by `verify-kpi-impact.mjs` or `verify-kpi-impact-ui.mjs`:
+con-call highlight names through the ontology's own aliases. As requested on 21 October 2026,
+AI Alerts cards no longer render the “KPIs in play” heading or chips. Keep the underlying KPI
+classification, search, bookmark details and export data. No model call, no request per card,
+no score and no alert are added by the KPI layer. The rules below govern its retained data;
+`verify-kpi-impact.mjs` checks classification and `verify-kpi-impact-ui.mjs` checks search,
+evidence, failure status and the absence of the removed card row.
 
 1. **A KPI is named only from the company's own sector list** (its group's KPIs or the 40 globals).
    The suite walks every (trigger, group) and fails on any other KPI; the engine drops it at run time.
@@ -3179,15 +3179,11 @@ no alert. Nine rules, every one asserted by `verify-kpi-impact.mjs` or `verify-k
 5. **A mention is a mention.** Aliases match only for the company's group, two-to-four-letter acronyms
    only in capitals ("NIM", not "nim"), never the stated generic words (sales, volume, yield, tariff,
    NAV, CFO, MoU), and never a highlight about what was NOT disclosed.
-6. **Names, not figures; no direction and no forecast.** The chips carry no colour and print no
-   number: a filed result's change is already the result row's own claim (*"Result filed (YOY) ·
-   revenue +13.0%"*), so the chip names *Revenue* and keeps the figure — sign changes in words, *PAT
-   to profit* — in its title. Saying it a third time on one card is the repetition the card was
-   rebuilt to remove.
-7. **Every KPI stays in the model; the four-chip cap is the card's.** Search, a bookmark and an export
-   read the whole list, and the `+N` chip's title names the ones it holds, so a fifth KPI is never
-   reduced to a count. A filed comparison from zero (`from-zero`, 78 lines in the shipped feed) is
-   still a KPI in play, worded *from zero*; one the source could not make (`na`) names nothing.
+6. **The evidence row retains its own figures.** Removing the KPI chips must not remove a filed
+   result's revenue/profit changes or its original source link.
+7. **Every KPI stays in the model.** Search, bookmarks and exports read the complete list even
+   though cards show no KPI chips. A filed comparison from zero (`from-zero`) remains in the
+   model; a comparison the source could not make (`na`) names nothing.
 8. **A failed read of the sector file is a state, not an absence — and the file is re-read while the
    page stays open.** `kpiImpact.status()` records idle, loading, ready or failed with the reason; a
    failure is said on the AI Alerts page and in the source registry, which also reads a classification
@@ -4233,7 +4229,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change what an AI Alerts card SAYS, or how many rows it shows | `plainInsight()` / `leadEvent()` / `plainHeadline()` / `filingClaim()` / `sourceStatement()` / `CLAIM_MAX` / `topEvidence()` / `MAX_PER_SOURCE` in `js/data/ai-alerts.js` (pure and exported) + `EVIDENCE_ROWS` / `byNewestFirst` / `listHeadMarkup` in `js/tabs/ai-alerts.js` — read *Time to insight is the product's only job* first: the sentence is ONE claim, the strongest event's own, so no pattern name, feed tally or filler belongs in it; no new number, and every figure comes from a collector's field; only sentences we wrote may be reworded, and a filing's claim is CHOSEN between its subject, the exchange's description and the exchange's sub-category rather than paraphrased; a clip keeps the untouched wording on the sentence's `title`; a volume reading takes no tone; and the rows are read newest first because the header says so. There is no figure strip and no per-question paragraph: `cardMetrics` is deleted and every figure it held has a place named in that section |
 | Change which investor question a topic bears on, or how a card states it | `js/data/alert-drivers.js` (the one mapping) + `driverReadings()` / `driverChipsMarkup()` in `js/tabs/ai-alerts.js` — read *Earnings assumption, valuation or thesis* first. A reading is a chip on the row whose own record backs it, never a block of its own; it is a TOPIC reading, so the wording stays "could change" and the chip never borrows a direction colour; a second reading on one row prints `+1`; and the layer adds no score |
 | Change archiving on AI Alerts | `js/core/ai-mute.js` (the store) + the `archived` filter and the Archive / Restore buttons in `js/tabs/ai-alerts.js` — a record is keyed to the evidence it was given for, so a card returns on its own when stronger evidence arrives |
-| Change which KPIs an alert names, or add a trigger | `TRIGGERS` in `js/data/kpi-impact.js` (+ `kpiMarkup()` in `js/tabs/ai-alerts.js`) — read *KPIs in play* first; a rule may name only its group's own KPIs, and every new trap it closes gets a case in `node scripts/verify-kpi-impact.mjs` |
+| Change which KPIs an alert names, or add a trigger | `TRIGGERS` in `js/data/kpi-impact.js` — read *KPIs in play* first; a rule may name only its group's own KPIs, and every new trap it closes gets a case in `node scripts/verify-kpi-impact.mjs` |
 | Refresh company sector classification, or change the KPI ontology | `.github/workflows/sector-kpis-refresh.yml` does it daily and fails naming any listed holding left without a KPI group; by hand, `node scripts/classify-companies.mjs` (Screener; `CLASSIFY_SCOPE=tracked` for the wider universe) then `node scripts/build-sector-kpis.mjs` (`--check-book` to list holdings with no group; `SECTOR_KPIS_CSV=<sector_kpis export>` to reconcile a new ontology); the ontology itself is `scripts/fixtures/sector-kpi-ontology.yaml`, reproduced unchanged |
 | Change what the precomputed alert pool carries, or how a period is reassembled from it | `public/js/data/alert-pool-shared.js` (the feeds, the captures each reads, the revision rule, the members) + `public/js/data/alert-pool-format.js` (the shard encoding and decoding, shared by the builder and the browser) — read *The collection is done once, on the runner* first; `node scripts/verify-alert-pool.mjs` is the test |
 | Change when a pooled feed is taken from the pool, or why it is declined | `read()` / `verifyFeed()` / `deviceExtras()` in `public/js/data/alert-pool.js`, and the `pool` branch of `collect()` in `js/data/daily-alerts.js` — every check is per feed, per read, and a declined feed loads as before |
