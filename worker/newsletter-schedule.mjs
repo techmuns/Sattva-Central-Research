@@ -129,7 +129,7 @@ export class NewsletterSchedule {
           const a = sources.announcements, n = sources.news;
           const ok = a.nseHistory.ok && a.bse.ok && n.source.ok && n.tradingview.ok;
           complete &&= ok;
-          sourceChecks.push({ ...window, nse: a.nse, nseHistory: a.nseHistory, bse: a.bse, news: n.source, tradingview: n.tradingview });
+          sourceChecks.push({ ...window, nse: a.nse, nseHistory: a.nseHistory, bse: a.bse, news: n.source, companyNews: n.company, tradingview: n.tradingview });
         }
         this.content.setMeta({ ...this.content.meta(), scannedTo: complete ? to : meta.scannedTo || start,
           sources: sourceChecks, reason: complete ? 'captured-sources-read' : 'partial-source-read',

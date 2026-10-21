@@ -330,12 +330,15 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
   // NSE's retained history: one committed file per IST day the hourly capture reached. The index is
   // read first so a day the capture never wrote is never asked for.
   const index = await readAsset(env, NSE_HISTORY_INDEX_PATH);
-  const nseHistory = { ok: Array.isArray(index?.days), capturedAt: index?.capturedAt || null, days: [], failedDays: [], matched: 0 };
+  const nseHistory = { ok: Array.isArray(index?.days), capturedAt: index?.capturedAt || null, days: [], failedDays: [], missingDays: [], matched: 0 };
   if (index) {
     const held = new Set((index.days || []).map((d) => d?.day).filter(Boolean));
     const resolver = buildResolver({ book: holdings });
     for (let day = istDay(from); day <= istDay(window.to - 1); day = istDay(istInstant(day) + 86400000)) {
-      if (!held.has(day)) continue;
+      if (!held.has(day)) {
+        if (expectedSession(istInstant(day, '16:00')) === day) nseHistory.missingDays.push(day);
+        continue;
+      }
       const file = await readAsset(env, nseHistoryDayPath(day));
       if (!Array.isArray(file?.rows)) { nseHistory.ok = false; nseHistory.failedDays.push(day); continue; }
       nseHistory.days.push(day);
@@ -354,7 +357,8 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
   const capture = await readAsset(env, BSE_PATH);
   let bse;
   if (capture?.byTicker && typeof capture.byTicker === 'object') {
-    bse = { ok: true, capturedAt: capture.capturedAt || null, from: capture.from || null, to: capture.to || null, matched: 0 };
+    bse = { ok: true, capturedAt: capture.capturedAt || null, from: capture.from || null, to: capture.to || null, matched: 0,
+      partial: !!(capture.failed?.length || capture.failedWindows?.length || capture.shortfall?.length || capture.categoryInventoryVerified === false) };
     for (const [ticker, list] of Object.entries(capture.byTicker)) {
       const key = upper(ticker);
       if (!byTicker.has(key) || !Array.isArray(list)) continue;
@@ -433,7 +437,7 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   const from = Math.min(lateFrom, window.from);
   const inSpan = article => { const at = Date.parse(article?.publishedAt || ''); return at >= from && at < window.to; };
   function admit(article, ticker, { via = null, attribution = null } = {}) {
-    ticker = upper(ticker); if (!byTicker.has(ticker) || !inSpan(article)) return false;
+    ticker = upper(ticker); if (!article?.title || !byTicker.has(ticker) || !inSpan(article)) return false;
     const at = Date.parse(article.publishedAt), url = article.url || article.tradingViewUrl;
     const key = article.tradingViewId ? `tv:${ticker}|${article.tradingViewId || url}` : `news:${ticker}|${url || article.id}`;
     const alias = `${ticker}|url:${articleUrlKey({ url })}`, keys = [key, alias];
@@ -464,7 +468,7 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   // company news, including companies whose TradingView symbol/page is unavailable.
   let index = null; try { index = await newsletterJson(env, '/data/company-news/index.json'); } catch { /* Report unavailable below. */ }
   for (const entity of index?.entities || []) if (identities.has(upper(entity.entityId)) || byTicker.has(upper(entity.ticker))) addIdentity(entity);
-  const company = { ok: !!index, capturedAt: index?.updatedAt || null, matched: 0, failedParts: [], files: [] };
+  const company = { ok: Array.isArray(index?.entities) && !!index?.queries, capturedAt: index?.updatedAt || null, matched: 0, failedParts: [], files: [] };
   const checks = entities.map(entity => {
     const queries = index?.queries?.[entity.entityId] || {};
     const current = identities.get(upper(entity.entityId)) || entity;
@@ -549,9 +553,10 @@ export async function readTrades({ env, window, lateFrom = window.from, reported
     if (!months.includes(m) && index.months[m] != null) months.push(m);
   }
   const seen = new Set();
-  const rows = [];
+  const rows = [], failedMonths = [];
   for (const month of months) {
     const file = await readAsset(env, insiderArchiveMonthPath(month));
+    if (!Array.isArray(file?.rows)) { failedMonths.push(month); continue; }
     for (const row of Array.isArray(file?.rows) ? file.rows : []) {
       const ticker = tickerOf(row);
       if (!ticker || !/^\d{4}-\d{2}-\d{2}$/.test(String(row?.date || ''))) continue;
@@ -584,7 +589,7 @@ export async function readTrades({ env, window, lateFrom = window.from, reported
       });
     }
   }
-  return { source: { ok: true, capturedAt: index.updatedAt || null, months, identities: !!identities }, ...group(rows.sort((a, b) => b.at - a.at), uncapped ? Infinity : TRADE_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
+  return { source: { ok: failedMonths.length === 0, capturedAt: index.updatedAt || null, months, failedMonths, identities: !!identities }, ...group(rows.sort((a, b) => b.at - a.at), uncapped ? Infinity : TRADE_LIMIT, uncapped ? Infinity : PER_COMPANY_LIMIT) };
 }
 
 // ---- 5. the session's quotes: price moves and the portfolio table ----------------------------------
@@ -1290,7 +1295,7 @@ export function briefSummary(brief) {
     nse: brief.announcements.nse.ok, nseHistory: brief.announcements.nseHistory?.ok ?? false, bse: brief.announcements.bse.ok,
     publishers: brief.news.source.ok, tradingview: brief.news.tradingview?.ok ?? false,
     companyNews: brief.news.company || null,
-    sourceCoverage: { publisherArchiveComplete: brief.news.source.archiveComplete ?? null, tradingview: brief.news.tradingview || null },
+    sourceCoverage: { nseHistory: brief.announcements.nseHistory, bse: brief.announcements.bse, trades: brief.trades?.source || null, publisherArchiveComplete: brief.news.source.archiveComplete ?? null, tradingview: brief.news.tradingview || null },
     eligibility: { includedSourceItems: briefStories(brief).length, omittedByCaps: brief.announcements.more + brief.news.more + (brief.trades?.more || 0) + (brief.moves?.more || 0) },
     tradesSource: brief.trades?.source?.ok ?? false, prices: brief.moves?.state || 'unavailable',
     calendar: brief.calendar?.count ?? 0, actions: brief.actions?.count ?? 0,
@@ -1570,6 +1575,8 @@ export function sourcesNote(brief) {
   bits.push(a.nseHistory?.ok
     ? `NSE history ${a.nseHistory.days.length ? `${a.nseHistory.days.length} day file${a.nseHistory.days.length === 1 ? '' : 's'} (${a.nseHistory.days.join(', ')})` : 'no day file for this window'}, captured ${capturedLabel(a.nseHistory.capturedAt)}`
     : 'NSE history unavailable');
+  if (a.nseHistory?.missingDays?.length) bits.push(`NSE retained history missing day files: ${a.nseHistory.missingDays.join(', ')}; live feed is a bounded latest window`);
+  if (a.bse.partial) bits.push('BSE category/page coverage is partial or not independently verified; retained filings are included');
   bits.push(a.bse.ok ? `BSE capture dated ${capturedLabel(a.bse.capturedAt)}${a.bse.capturedAt && Date.parse(a.bse.capturedAt) < brief.window.to ? ', so later BSE filings reach the next brief' : ''}` : 'BSE capture unavailable');
   bits.push(n.source.ok
     ? `publisher feeds (${n.source.publishers.join(', ') || 'four publishers'}) captured ${capturedLabel(n.source.capturedAt)}${n.source.capturedAt && Date.parse(n.source.capturedAt) < brief.window.to ? ', so later stories reach the next brief' : ''}${n.source.oldest != null && n.source.oldest > brief.window.from ? `; that capture starts at ${istLabel(n.source.oldest)}, so earlier publisher stories are not included` : ''}`
