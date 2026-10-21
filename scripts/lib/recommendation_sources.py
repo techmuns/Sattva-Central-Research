@@ -25,7 +25,9 @@ FAMILIES = [
 
 
 class SourceFailure(Exception):
-    pass
+    def __init__(self, message, status=None):
+        super().__init__(message)
+        self.status = status
 
 
 class BudgetExceeded(Exception):
@@ -83,7 +85,7 @@ class PublicReader:
             cooldown = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=24)).isoformat(timespec="seconds")
             if error.code in (401, 403, 429, 430):
                 self.store.check(key, now, "access-refused", {"httpStatus": error.code}, cooldown)
-            raise SourceFailure("Original source HTTP " + str(error.code)) from error
+            raise SourceFailure("Original source HTTP " + str(error.code), status=error.code) from error
         except (OSError, ValueError) as error:
             raise SourceFailure("Original source unavailable: " + type(error).__name__) from error
 
@@ -234,9 +236,21 @@ def read_document(store, reader, doc, at, scratch):
     if not company_row:
         return  # Unknown issuers remain in the catalogue for later exact-identity reconciliation.
     expected = json.loads(company_row[0])
-    body = reader.read(doc["url"])
+    urls = [doc["url"]] + [r[0] for r in store.db.execute(
+        "SELECT url FROM document_urls WHERE document=? AND url<>? ORDER BY last_seen DESC,url", (doc["id"], doc["url"]))]
+    for i, url in enumerate(urls):
+        try:
+            body = reader.read(url)
+            break
+        except SourceFailure as error:
+            # Only known aliases of this identical document may recover an archived/missing URL.
+            # An access refusal is never retried through another URL.
+            if error.status not in (404, 410) or i == len(urls) - 1:
+                raise
+    store.db.execute("UPDATE documents SET url=? WHERE id=?", (url, doc["id"]))
     if b"<" in body[:100] and not body.startswith(b"%PDF"):
         parsed = parse_financial_xml(body, expected)
+        parsed["retrievedFrom"] = url
         store.save_version(doc, body, "xbrl", parsed, at)
     elif body.startswith(b"%PDF"):
         # Poppler is free and local on this GitHub runner. Scans stay unreadable; no paid OCR fallback.
@@ -250,7 +264,8 @@ def read_document(store, reader, doc, at, scratch):
         issuer = expected["isin"] in text or any(re.search(r"\b(?:Symbol|Scrip\s*(?:Code|ID))\s*[:.-]?\s*" +
             re.escape(s) + r"\b", text, re.I) for s in expected["symbols"] + expected["bseCodes"])
         store.save_version(doc, body, "pdf", {"issuerMatches": issuer, "documentDate": evidence["date"],
-            "dateEvidence": evidence, "financialExtraction": "unavailable: PDF tables require a verified adapter"}, at)
+            "dateEvidence": evidence, "retrievedFrom": url,
+            "financialExtraction": "unavailable: PDF tables require a verified adapter"}, at)
     else:
         raise SourceFailure("Unsupported document format; retained URL needs a verified adapter")
 

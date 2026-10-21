@@ -287,6 +287,8 @@ class Store:
             error TEXT,cooldown_until TEXT,detail TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS event_dates(document TEXT PRIMARY KEY REFERENCES documents(id),assessment TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS catalogue(id TEXT PRIMARY KEY,source TEXT NOT NULL,first_seen TEXT NOT NULL,raw TEXT NOT NULL);
+          CREATE TABLE IF NOT EXISTS document_urls(document TEXT NOT NULL REFERENCES documents(id),url TEXT NOT NULL,
+            last_seen TEXT NOT NULL,PRIMARY KEY(document,url));
           CREATE INDEX IF NOT EXISTS document_queue ON documents(status,next_retry,checked_at);
           CREATE INDEX IF NOT EXISTS company_facts ON facts(company,metric,end);
           CREATE INDEX IF NOT EXISTS observation_document ON observations(document);
@@ -326,6 +328,7 @@ class Store:
             kind=CASE WHEN excluded.kind='financial' THEN 'financial'
               WHEN excluded.kind='catalyst' AND documents.kind='event' THEN 'catalyst' ELSE documents.kind END""",
             (key, url, identity, kind, at, at))
+        self.db.execute("INSERT OR REPLACE INTO document_urls VALUES(?,?,?)", (key, url, at))
         # Identical metadata observed again is not a new event or a new historical timestamp.
         oid = digest(canonical([key, source, raw, published_at]))
         inserted = self.db.execute("INSERT OR IGNORE INTO observations VALUES(?,?,?,?,?,?,?)",

@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts/lib"))
 from recommendation_foundation import Store, day, document_date, document_key, document_url, parse_financial_xml
-from recommendation_sources import BudgetExceeded, FAMILIES, PublicReader, SourceFailure, capture_window, collect, index_page, index_url
+from recommendation_sources import BudgetExceeded, FAMILIES, PublicReader, SourceFailure, capture_window, collect, index_page, index_url, read_document
 from recommendation_github import GithubState
 
 FIXTURES = ROOT / "scripts/fixtures/recommendation-foundation"
@@ -310,6 +310,30 @@ class EvidenceTests(unittest.TestCase):
             {"isin": "INE000A01010", "ticker": "ALPEXSOLAR", "url": URL, "sourceUrls": None}]}))
         ingest_captured_events(self.store, directory, {"ALPEXSOLAR": ALPEX}, AT)
         self.assertIsNone(self.store.db.execute("SELECT company FROM documents").fetchone()[0])
+
+    def test_known_bse_archive_alias_recovers_404_but_never_access_refusal(self):
+        name = "8e7253fb-1150-42d8-9764-bd3c39db7c33.pdf"
+        live = "https://www.bseindia.com/xml-data/corpfiling/AttachLive/" + name
+        history = "https://www.bseindia.com/xml-data/corpfiling/AttachHis/" + name
+        key = self.store.observe(live, PRECISION, "event", "bse", {}, AT)
+        self.store.observe(history, PRECISION, "event", "bse", {}, AT)
+        doc = self.store.db.execute("SELECT * FROM documents WHERE id=?", (key,)).fetchone()
+        class Reader:
+            calls = []
+            refusal = 404
+            def read(self, url):
+                self.calls.append(url)
+                if url == live: raise SourceFailure("fixture", status=self.refusal)
+                return b"%PDF-fixture"
+        reader = Reader()
+        with mock.patch("recommendation_sources.subprocess.run", return_value=SimpleNamespace(
+                stdout=b"Date: August 10, 2026\nSymbol: PRECWIRE")):
+            read_document(self.store, reader, doc, AT, self.tmp.name)
+        self.assertEqual(reader.calls, [live, history])
+        self.assertEqual(self.store.db.execute("SELECT url FROM documents WHERE id=?", (key,)).fetchone()[0], history)
+        reader.calls, reader.refusal = [], 403
+        with self.assertRaises(SourceFailure): read_document(self.store, reader, doc, AT, self.tmp.name)
+        self.assertEqual(reader.calls, [live])
 
     def test_bse_document_move_keeps_identity(self):
         name = "8e7253fb-1150-42d8-9764-bd3c39db7c33.pdf"
