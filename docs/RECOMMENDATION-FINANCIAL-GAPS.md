@@ -72,6 +72,10 @@ Exact latest audit rows are in `financial_gap_state`; appended summary observati
 `financial_gap_audits`; durable collection progress is in `financial_gap_walks`. The Actions job
 summary and optional reader `coverage.financialHistory` expose compact counts without changing
 the tab. Original source/history/decision tables are preserved.
+Global source checks remain in the reader. Its `coverage.sourceCheckInventory` explicitly counts
+per-company checks whose full details stay in the referenced archive; targeted failure/queue counts
+remain in `financialHistory.targetedCollection`. Expanding the company audit does not require
+downloading every company's check detail into the browser.
 
 Offline verification: `python3 scripts/verify-recommendation-financial-gaps.py`, plus the unchanged
 financial-foundation and catalyst-model regression suites.

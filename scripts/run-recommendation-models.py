@@ -24,6 +24,10 @@ def analyze(store, scratch, at=None, extract=True):
     scored = assess(store, at)
     tested = backtest(store, at)
     coverage = store.summary(at)
+    # Keep growing per-company evidence in SQLite, with an explicit public inventory.
+    public_checks = [c for c in coverage["sourceChecks"] if not c["key"].startswith("gap-source:")]
+    check_inventory = {"total": len(coverage["sourceChecks"]), "included": len(public_checks),
+        "archivedCompanyChecks": len(coverage["sourceChecks"])-len(public_checks), "fullDetails": "referenced foundationAsset: checks table"}
     failed_docs = store.db.execute("SELECT count(*) FROM documents WHERE status='failed'").fetchone()[0]
     pending_docs = store.db.execute("SELECT count(*) FROM documents WHERE status='pending'").fetchone()[0]
     report = {"version": 1, "modelVersion": MODEL_VERSION, "generatedAt": at, "repository": os.environ.get("GITHUB_REPOSITORY"),
@@ -31,7 +35,7 @@ def analyze(store, scratch, at=None, extract=True):
         "policy": POLICY, "models": MODEL_NAMES, "backtest": tested,
         "coverage": {"captureStartedAt": store.get("recommendationCaptureStart"), "financialCompanies": len({r['company'] for r in coverage['financialCoverage']}),
             "assessments": scored["assessments"], "missingRequirements": scored["missing"], "pendingDocuments": pending_docs, "failedDocuments": failed_docs,
-            "sourceChecks": coverage["sourceChecks"], "history": coverage["lastWalk"],
+            "sourceChecks": public_checks, "sourceCheckInventory": check_inventory, "history": coverage["lastWalk"],
             "financialHistory": store.get("financialGapSummary"),
             "limitations": ["Research evidence scores have not established an investment edge.", "Historical financial, contract and capacity coverage is incomplete.",
                 "PDF annexure adapter reads up to twelve pages and cannot certify a complete contract or project history.", "Quotes are official end-of-day closes, with their actual session dates."]}}
