@@ -27,6 +27,8 @@ import { installFilingReader } from './ui/xbrl-filing.js';
 // Add a file here and every tab can read it off `ctx.data.<key>` — no other wiring needed.
 //
 // Heavy or tab-specific feeds are NOT loaded here. js/data/technicals.js (~800KB),
+// Private Market News also loads through data/private-market-news.js only when opened;
+// its retained funding archive never joins the startup critical path.
 // js/data/chatter.js (~160KB) fetches and caches lazily the first time its tab mounts, so the
 // other tabs don't pay for data they never read. The Con-call tab loads nothing from here at all:
 // it is live off /api/concalls, cached on the device by js/core/store.js.

@@ -109,7 +109,7 @@ try {
   await page.locator(`${newsChildren} [data-tab-id="news"][aria-selected="true"]`).waitFor();
   assert.deepEqual(await page.locator(`${newsChildren} [data-tab-id]`).evaluateAll(tabs =>
     tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-    [['news', 'Market News'], ['public-chatter', 'Public Chatter']]);
+    [['news', 'Market News'], ['private-market-news', 'Private Market News'], ['public-chatter', 'Public Chatter']]);
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="public-chatter"]').count(), 0);
   await page.evaluate(selector => { window.newsList = document.querySelector(selector); }, newsChildren);
   await page.locator(`${newsChildren} [data-tab-id="news"]`).focus();

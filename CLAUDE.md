@@ -357,7 +357,10 @@ Corp Announcements shows its title alone, without the source/sorting description
 Bulk/Block Deal retains the `insider-trades` route and all four disclosure categories.
 Earnings contains Results (the existing Earnings Hub reader, selected by default) and Concall,
 in that order. Both keep their existing routes, reader controls and data lifecycles.
-News contains Market News (the existing News reader, selected by default) and Public Chatter.
+News contains Market News (the existing News reader, selected by default), Private Market News,
+and Public Chatter. Private Market News is explicitly scope-independent: Inc42 reports private
+Indian startup funding, which has no listed-equity portfolio/Watchlist mapping. Its archive loads
+only when opened and retains all captured public table fields, dates, source links and footnotes.
 Its `news-section` group ID stays distinct from the saved `news` reader route, so selecting
 Market News from Public Chatter changes readers normally. Both retain their existing routes,
 scope behavior, filters and independent data lifecycles.

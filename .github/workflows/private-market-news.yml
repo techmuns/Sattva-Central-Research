@@ -1,0 +1,36 @@
+name: Private market news
+
+on:
+  schedule:
+    # Best-effort scheduler. Durable six-hour gate bounds actual source walks.
+    - cron: "43 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/collect-private-market-news.mjs"
+      - "scripts/private-market-job.mjs"
+      - "scripts/lib/private-market-*.mjs"
+      - ".github/workflows/private-market-news.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: private-market-news
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Capture public funding tables and retain progress on GitHub
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/private-market-job.mjs

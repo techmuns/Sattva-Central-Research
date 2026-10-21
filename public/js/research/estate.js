@@ -46,6 +46,7 @@ import * as investors from '../data/super-investors.js';
 import * as institutions from '../data/institution-holdings.js';
 import { news, announcements, insider } from '../data/filings.js';
 import * as marketNews from '../data/market-news.js';
+import * as privateMarketNews from '../data/private-market-news.js';
 import * as corporateActions from '../data/corporate-actions.js';
 import { researchEvidenceChars } from './evidence-shared.js';
 import { withoutPublisherName } from '../core/source-copy.js';
@@ -74,6 +75,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'institutions', tab: 'Super Investors', route: '#/research/super-investors/institutions', description: 'Institutional shareholding patterns and AMC portfolio disclosures.' },
   { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Permanently retained company news, including portfolio companies without exchange symbols.' },
   { id: 'market-news', tab: 'News', route: '#/research/news', description: 'Market-wide Moneycontrol stories; intentionally not company-scopeable.' },
+  { id:'private-market-news', tab:'Private Market News', route:'#/research/private-market-news', description:'Inc42 weekly Indian startup funding tables. Source-wide coverage, independent of the listed portfolio; not exhaustive VC/PE coverage.' },
   { id: 'announcements', tab: 'Corp Announcements', route: '#/research/corp-announcements', description: 'BSE exchange-wide capture plus retained company/date lookups from BSE, NSE and DRHP.' },
   { id: 'nse-filings', tab: 'NSE Filings', route: '#/research/nse-filings', description: 'Retained NSE disclosure history, with publication dates, original document links and coverage gaps.' },
   { id: 'corporate-actions', tab: 'Corporate Actions', route: '#/research/corporate-actions', description: 'Retained NSE and Screener dividends, splits, bonuses and other actions, with distinct announcement and effective dates.' },
@@ -1166,6 +1168,20 @@ const BUILDERS = [
           publisher: row.source || null,
         }), byDateDesc('date')),
       });
+    },
+  },
+  {
+    id: 'private-market-news',
+    load: () => privateMarketNews.load(),
+    read({ scope, plan }) {
+      const all = privateMarketNews.rows(), rows = scope === 'universe' ? all : [], meta = privateMarketNews.meta(), health = privateMarketNews.health();
+      return sourcePacket(this.id, { source:'Inc42 Funding Galore — public Indian startup funding tables', asOf:meta.sourceCheckedAt || null,
+        rowCount:rows.length, dataQuality:health.failed || health.partial || health.stale ? 'partial' : 'source-reported',
+        coverage:{ pending:health.pending, unavailable:health.unavailable, archiveComplete:meta.archive?.complete || false, capturedRows:all.length,
+          scope:scope === 'universe' ? 'Source-wide Indian startup funding; not exhaustive VC/PE coverage.' : 'Excluded from narrowed research scopes: no mapping to listed holdings, watchlist companies or invested funds is established. The Private Market News reader shows the source-wide capture.' },
+        ...chooseRows(rows, plan, row => ({ company:row.company, date:row.date, sector:row.sector, amount:row.amount, round:row.round,
+          investors:clipped(row.investors,300), leadInvestor:row.leadInvestor, url:row.sourceUrl, sourceMissing:row.sourceMissing,
+          notes:meta.articles?.find(a => a.url === row.sourceUrl)?.notes?.join('\n') || '' }), byDateDesc('dateISO')) });
     },
   },
   {

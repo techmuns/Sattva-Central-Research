@@ -5871,3 +5871,68 @@ new evidence. `storyReports` keeps the underlying source events, `storyHistory` 
 checked developments, and `sourceEvents` remains the ungrouped searchable input on each card.
 The original capture/feed contracts and All Alerts exports are unchanged. The alert pool v3 adds
 company-news `storyText` so pooled and direct readers classify the same supplied facts.
+## Private Market News — Inc42 Funding Galore (21 October 2026)
+
+`data/private-market-news.json` is a lazy, public factual funding-table capture. News
+places Private Market News between Market News and Public Chatter. The reader is
+scope independent: private startups have no reliable listed-portfolio/Watchlist
+identity mapping. This is Inc42's Indian startup funding coverage, not an exhaustive
+global VC/PE transaction database. Newsletter delivery and invested-fund mapping are
+outside this implementation.
+
+Version 1 carries `source`, `createdAt`, `generatedAt`, `sourceCheckedAt`,
+`attemptedAt`, `cooldownUntil`, `error`, `lastRun`, `archive`, `articles`, `deals`.
+`sourceCheckedAt` records a successful source listing read, not completion of every
+roundup or a browser refresh. `articles` independently records each URL's status,
+publication time, successful table check, attempt, retry time, source footnotes and
+row count. Unsupported historical/image-only/paywalled tables remain explicitly
+unavailable and linked; there is no OCR inference or access-control bypass.
+
+Each deal retains the source strings `date`, `company`, `sector`, `subsector`,
+`businessModel`, `amount`, `round`, `investors`, `leadInvestor`, plus all original
+columns in `sourceFields`. Blank/undisclosed values remain blank or the source's
+dash. Amount currencies, units, equity/debt footnotes and investor wording are never
+converted or inferred. `dateISO` exists only for a fully parseable source date;
+source publication and first capture times stay separate. Source article URL/title,
+stable per-article company/occurrence ID, `firstSeenAt`, `updatedAt`, earlier
+`revisions`, and `sourceMissing` retain corrections and removed observations.
+Repeat rounds in other articles remain distinct source observations; cross-week
+roundups can repeat an announcement, so row counts are not unique transaction totals.
+
+`private-market-news.yml` wakes hourly on standard free GitHub Actions runners.
+A serialized, persisted six-hour reservation bounds source walks across triggers,
+including failed runs. Each walk has at most 32 sequential requests, separated by
+three seconds. The normal source loop also yields after five minutes, leaving
+time to publish its checkpoint before the runner timeout; pending articles resume
+in later walks. No immediate source retries occur. HTTP 401/403/429 or an access
+challenge stops the walk and records at least a 24-hour cooldown (honoring longer
+Retry-After up to seven days). New/latest roundups and resumable public Load More
+archive traversal share the budget; old checks rotate for corrections. Archive
+inventory is reconciled weekly. A failed page never advances its checkpoint, and
+failures never delete saved rows. Best-effort GitHub schedules can be delayed;
+the reader marks source checks overdue after 12 hours and exposes failed/partial
+coverage separately. Existing scheduled workflow health also inventories this job.
+
+Immutable, compressed, integrity-checked snapshots remain in the GitHub release
+`private-market-news-data`, including durable progress and all retained rows. There
+is no artifact expiry or data commit to main. Deployment planning reads a bounded
+reverse cursor of recent asset metadata, keeping older evidence without repeatedly
+downloading an ever-growing release inventory. Only this public snapshot enters
+Cloudflare static hosting, through the existing automatic Deploy workflow's prepared
+input comparison. A capture may be published even when collection reports a failure,
+so coverage can show the failure alongside the last good rows. Private-source data
+and encrypted background transports remain separate. A 24 MiB uncompressed limit
+fails closed before exceeding static asset limits; growth beyond it requires sharding.
+
+The initial view is the latest successfully captured roundup; All captured history
+and roundup publication-year filters retain access to older records without
+guessing missing funding dates. All captured history also includes undated records. Search covers
+company, investor and every normalized table field. Shared bounded table mounting,
+sorting, source links, complete filtered Excel export and source notes use the same
+row model. Opening, returning, reconnecting and visible five-minute checks revalidate
+published data without requesting Inc42 or dispatching a production workflow.
+The last verified public capture is also stored in IndexedDB, with the shared
+worker-backed memory budget. Offline reloads retain saved rows and disclose the
+failed publication check; older or incomplete replacements cannot delete reader history.
+Ask Research includes private funding rows in Universe research only; narrowed
+portfolio/Watchlist questions cannot imply an invested-fund or listed-holding mapping.

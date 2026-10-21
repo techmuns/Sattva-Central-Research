@@ -83,6 +83,7 @@ export const KEYS = {
   // Market-wide stocks news, the Universe half of the News tab. One committed capture, refreshed
   // by a scheduled Action — neither the browser nor the Worker can read the publisher directly.
   marketNews: 'market-news',
+  privateMarketNews: 'private-market-news',
   // One entry per ARCHIVE MONTH, not one for the whole archive. A reader who has scrolled back
   // three months holds three entries, and a story landing in the current month must not invalidate
   // the two below it — the same reasoning as the per-investor and per-company keys above.
@@ -113,7 +114,7 @@ const MEMORY_BUDGET = 24 * 1024 * 1024;
 const memory = createMemoryCache(MEMORY_BUDGET);
 // Unknown/user-authored keys and unsaved writes stay pinned. These public representations can
 // be read from the verified disk copy; no disk eviction or retention rule is introduced here.
-const reconstructible = key => /^(filings:news(?::|$)|news-history:|snapshot:tradingview-news$|market-news(?::|$)|(?:all-alerts:public-pool|ai-alerts:public-window):|news-query:|mf:|mf-detail:|mf-snapshot:)/.test(key);
+const reconstructible = key => /^(filings:news(?::|$)|news-history:|snapshot:tradingview-news$|market-news(?::|$)|private-market-news(?::|$)|(?:all-alerts:public-pool|ai-alerts:public-window):|news-query:|mf:|mf-detail:|mf-snapshot:)/.test(key);
 function remember(key, row, durable = false) {
   memory.set(key, row, reconstructible(key) ? estimateMemoryBytes(row, MEMORY_BUDGET) : 0,
     durable && reconstructible(key));

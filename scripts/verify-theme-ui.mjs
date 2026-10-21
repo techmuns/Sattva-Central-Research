@@ -148,7 +148,7 @@ try {
       const navigationTab = ['daily-alerts', 'ai-alerts'].includes(tab) ? 'alerts'
         : ['corp-announcements', 'corporate-actions', 'ipos', 'insider-trades'].includes(tab) ? 'announcements'
           : ['earnings-hub', 'concall'].includes(tab) ? 'earnings'
-            : ['news', 'public-chatter'].includes(tab) ? 'news-section' : tab;
+            : ['news', 'private-market-news', 'public-chatter'].includes(tab) ? 'news-section' : tab;
       await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, navigationTab);
       if (['alerts', 'announcements', 'earnings', 'news-section'].includes(navigationTab)) {
         assert.equal(await page.locator(`#subview-mount [data-tab-id="${tab}"]`).getAttribute('aria-selected'), 'true');

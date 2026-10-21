@@ -92,6 +92,8 @@ function fetchAndCache(...args) {
     } else if (pathname === '/js/tabs/registry.js') {
       const source = readFileSync(path, 'utf8');
       res.end(previousRelease ? `${source}\nconst previousTabOrder = ${JSON.stringify(previousTabOrder)};
+// Readers introduced by the new release did not exist in this cached version.
+researchTabs.splice(0, researchTabs.length, ...researchTabs.filter(tab => previousTabOrder.includes(tab.meta.id)));
 researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrder.indexOf(b.meta.id));` : source);
     } else if (pathname === '/js/core/workspace.js' && previousRelease) {
       // The old navigation predates shared ordering. It follows the catalog rather than
@@ -381,7 +383,7 @@ try {
   await page.locator('#subview-mount [data-tab-id="news"][aria-selected="true"]').waitFor();
   assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
     tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-    [['news', 'Market News'], ['public-chatter', 'Public Chatter']], 'the returning session receives Market News by default and Public Chatter beside it');
+    [['news', 'Market News'], ['private-market-news', 'Private Market News'], ['public-chatter', 'Public Chatter']], 'the returning session receives Market News by default and Public Chatter beside it');
   await page.locator('#subview-mount [data-tab-id="public-chatter"]').click();
   await page.locator('#subview-mount [data-tab-id="public-chatter"][aria-selected="true"]').waitFor();
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="news-section"]').getAttribute('aria-selected'), 'true');
