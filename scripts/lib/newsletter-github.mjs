@@ -15,7 +15,7 @@ import {renderBriefEmails} from '../../worker/newsletter-email.mjs';
 import {renderBriefPdf,pdfFilename} from '../../worker/newsletter-pdf.mjs';
 import {istDay} from '../../public/js/data/newsletter-shared.js';
 import {localNewsletter} from './newsletter-local.mjs';
-import {NewsletterDeliveryQueue} from './newsletter-delivery-queue.mjs';
+import {NewsletterDeliveryQueue,newsletterPendingDeliveries} from './newsletter-delivery-queue.mjs';
 import {newsletterWakePlan,newsletterRetryState} from './newsletter-wake-plan.mjs';
 
 export function decodeNewsletterColumn(value,table,column){
@@ -25,7 +25,7 @@ export function decodeNewsletterColumn(value,table,column){
 }
 export const newsletterRequestContext=repo=>`${repo}:github-newsletter-request:v1`;
 // Source-only copies cannot spend model credits or address the subscriber list.
-// Keep their signed intent valid through a bounded free-runner backlog; ordinary
+// Keep their sealed intent valid through a bounded free-runner backlog; ordinary
 // sends retain the one-hour window. The durable request ID still prevents replay.
 export function newsletterRequestIsFresh(input,now=Date.now()){
  const age=now-input?.at,maxAge=input?.to==='me'&&input?.sourceOnly===true?24*3600000:3600000;
@@ -44,6 +44,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   if(metered(url)){
    await refresh();await publish();
    if(url==='https://devde.muns.io/email/send/raw'){
+    if(activeRequest?.testExpiresAt&&(localOptions.now?.()??Date.now())>=activeRequest.testExpiresAt)throw Object.assign(Error('Requested test expired before provider I/O'),{code:'newsletter-request-expired'});
     if(privateMarketsJob?.senderHeld())throw Error('Newsletter sender is held after a provider refusal');
     const body=JSON.parse(options.body),privateMarkets=activeRequest?.edition==='private-markets',test=activeRequest?.to==='me'&&activeRequest.email===body.email;
     if(!privateMarkets&&activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
@@ -51,6 +52,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
     const documents=privateMarkets?[]:local.db.prepare("SELECT id,filename,body FROM newsletter_documents WHERE delivery_state='pending' ORDER BY created_at DESC").all();
     if(!privateMarkets)for(const document of documents)await verifyPdf(document,env);
     await refresh();
+    if(activeRequest?.testExpiresAt&&(localOptions.now?.()??Date.now())>=activeRequest.testExpiresAt)throw Object.assign(Error('Requested test expired before provider I/O'),{code:'newsletter-request-expired'});
     if(!privateMarkets&&activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
     if(!test&&!(privateMarkets?local.store.subscriberRows():local.store.recipients(activeRequest?.edition)).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
    }
@@ -78,7 +80,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
    for(const row of copy.db.prepare('SELECT id,state,result,at FROM newsletter_requests').iterate())records.set('request-'+row.id,{state:row.state,result:row.result?JSON.parse(row.result):null,at:row.at});
    for(const row of copy.db.prepare('SELECT id,payload FROM newsletter_views').iterate()){const value=JSON.parse(row.payload);if(value.binary&&value.body)savePdf(row.id,value,Buffer.from(value.body,'base64'));else records.set(row.id,value);}
    const keys=await readerKeys(env.BACKGROUND_STATE_KEY),schedule=await copy.schedule.status();
-   schedule.deliveryRecovery=newsletterRetryState(copy.db.prepare("SELECT edition,source,next_at FROM newsletter_delivery_queue WHERE payload IS NOT NULL AND source != 'test'").all());
+   schedule.deliveryRecovery=newsletterRetryState(newsletterPendingDeliveries(copy.db));
    const head={privateMarkets:privateMarketsJob?privateMarketsJob.status():null,version:1,repo:transport.repo,feature:'newsletter',createdAt:new Date(localOptions.now?.()??Date.now()).toISOString(),snapshot:copy.store.snapshot(),schedule:{...schedule,runtime:'github-actions',armed:false,alarmAt:null},requestKey:{kid:keys.kid,publicKey:encode64(keys.publicKey)},processingEnabled:env.NEWSLETTER_PROCESSING_ENABLED==='true',inputRevision:await copy.storage.get('newsletter-source-revision')??null};
    // Small pages bound edge decoding for streamed PDFs; an older large single
    // record retains its existing delivery limit and occupies a page on its own.
@@ -89,16 +91,35 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
  function publish(){const work=tail.then(()=>{if(blocked)throw Error('Newsletter publication is blocked');return checkpoint();});tail=work.catch(()=>{blocked=true;});return work;}
  const privateMarketsJob=env.PRIVATE_MARKETS_INTELLIGENCE_ENABLED==='true'&&privateMarketsSources?new PrivateMarketsJob(local,{readSources:privateMarketsSources,publish,refreshInputs:refresh,now:localOptions.now,fetcher:async(raw,options)=>{const previous=activeRequest;activeRequest={edition:'private-markets',automatic:true};try{return await guardedFetch(raw,options);}finally{activeRequest=previous;}}}):null;
  local.schedule.deliveryQueue=new NewsletterDeliveryQueue(local,{publish,now:localOptions.now,
-  context:async(plan,work)=>{const previous=activeRequest;activeRequest={edition:plan.edition,to:plan.source==='test'?'me':'all',email:plan.source==='test'?plan.recipients[0]?.email:null,automatic:plan.source==='timer'};try{return await work();}finally{activeRequest=previous;}}});
+  context:async(plan,work)=>{const previous=activeRequest;activeRequest={edition:plan.edition,to:plan.source==='test'?'me':'all',email:plan.source==='test'?plan.recipients[0]?.email:null,automatic:plan.source==='timer',testExpiresAt:plan.testRequest?.expiresAt||null};try{return await work();}finally{activeRequest=previous;}}});
  async function privateMarketsWork(work){try{await work();}catch(error){if(blocked)throw error;privateMarketsJob.fail();await publish();}}
  async function processRequest(envelope){
   const raw=await openForReader(envelope,env.BACKGROUND_STATE_KEY,newsletterRequestContext(transport.repo));if(raw.length>32768)throw Error('Newsletter request too large');const input=JSON.parse(new TextDecoder().decode(raw));
   if(!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(input.id||'')||!newsletterRequestIsFresh(input,localOptions.now?.()??Date.now())||!['morning','evening'].includes(input.edition)||!['me','all'].includes(input.to))throw Error('Invalid newsletter request');
   const previous=local.db.prepare('SELECT state,result FROM newsletter_requests WHERE id=?').get(input.id);if(previous)return previous.result?JSON.parse(previous.result):{ok:false,reason:'delivery-uncertain'};
-  await refresh();local.db.prepare('INSERT INTO newsletter_requests VALUES(?,?,NULL,?)').run(input.id,'claimed',input.at);await publish();
-  activeRequest=input;
-  try{const result=await local.schedule.sendNow({edition:input.edition,to:input.to,email:input.email,sourceOnly:input.sourceOnly===true},input.token||null);local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run('completed',JSON.stringify(result),input.id);await publish();return result;}finally{activeRequest=null;}
+  await refresh();
+  const recoverable=input.to==='me'&&input.sourceOnly===true;
+  local.db.exec('BEGIN');try{
+   local.db.prepare('INSERT INTO newsletter_requests VALUES(?,?,NULL,?)').run(input.id,recoverable?'queued':'claimed',input.at);
+   if(recoverable)local.db.prepare('INSERT INTO newsletter_request_intents VALUES(?,?)').run(input.id,JSON.stringify(input));
+   local.db.exec('COMMIT');
+  }catch(error){local.db.exec('ROLLBACK');throw error;}
+  await publish();return executeRequest(input);
  }
+ async function executeRequest(input){
+  if(input.to==='me'&&input.sourceOnly===true&&(localOptions.now?.()??Date.now())>=input.at+24*3600000){
+   const result={ok:false,reason:'request-expired',sent:0,failed:1,outcomes:[]};
+   local.db.prepare("UPDATE newsletter_requests SET state='completed',result=? WHERE id=?").run(JSON.stringify(result),input.id);
+   local.db.prepare('DELETE FROM newsletter_request_intents WHERE id=?').run(input.id);await publish();return result;
+  }
+  activeRequest=input;
+  try{const result=await local.schedule.sendNow({edition:input.edition,to:input.to,email:input.email,sourceOnly:input.sourceOnly===true,
+   testRequest:input.to==='me'&&input.sourceOnly===true?{id:input.id,email:input.email,expiresAt:input.at+24*3600000}:null},input.token||null);
+   const pending=local.schedule.deliveryQueue.pending().some(row=>row.key===result.key&&row.requestedTest);
+   local.db.prepare('UPDATE newsletter_requests SET state=?,result=? WHERE id=?').run(pending?'pending':'completed',JSON.stringify(result),input.id);
+   local.db.prepare('DELETE FROM newsletter_request_intents WHERE id=?').run(input.id);await publish();return result;}finally{activeRequest=null;}
+ }
+
  async function wake({onlyIfDue=false}={}){
   const prior=await local.storage.get('newsletter-source-revision');await refresh();
   if(onlyIfDue){
@@ -111,7 +132,9 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   const deliver=local.schedule.deliver.bind(local.schedule);local.schedule.deliver=async input=>{activeRequest={edition:input.edition,to:'all',automatic:true};try{return await deliver(input);}finally{activeRequest=null;}};
   try{if(privateMarketsJob)await privateMarketsWork(async()=>{await privateMarketsJob.prepare();await privateMarketsJob.wake();});
    if(privateMarketsJob?.senderHeld()){const at=localOptions.now?.()??Date.now(),reason=privateMarketsJob.senderHoldReason();await local.schedule.record({lastWakeAt:at,lastCheckedAt:at,lastResult:reason,reason:reason==='sender-unavailable'?'unauthorised':'rate-limited'});await publish();return {processed:true,reason};}
-   const recovered=await local.schedule.deliveryQueue.recover();await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
+   const recovered=await local.schedule.deliveryQueue.recover();
+   for(const row of local.db.prepare("SELECT i.payload FROM newsletter_request_intents i JOIN newsletter_requests r ON r.id=i.id WHERE r.state='queued' AND r.result IS NULL").all())recovered.push(await executeRequest(JSON.parse(row.payload)));
+   await local.schedule.wake();if(blocked)throw Error('Newsletter stopped before external work');
    if(recovered.length&&(await local.schedule.status()).lastResult==='nothing-due')await local.schedule.record({lastResult:recovered.at(-1).reason||'sent',reason:recovered.at(-1).reason||null});
    if(local.schedule.deliveryQueue.pending().length)await local.schedule.record({lastResult:'partial-send',reason:'delivery-retry-pending'});
    await publish();return {processed:true};}finally{local.schedule.deliver=deliver;activeRequest=null;}

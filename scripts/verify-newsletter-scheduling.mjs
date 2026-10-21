@@ -38,6 +38,11 @@ assert.equal(plan(retry,due+1000).due,false,'A disabled morning retry cannot mak
 retry.schedule.deliveryRecovery=newsletterRetryState([{edition:'morning',source:'timer',next_at:due},{edition:'morning',source:'button',next_at:due+1000},{edition:'morning',source:'test',next_at:due}]);
 assert.equal(retry.schedule.deliveryRecovery.pendingEditions,2);assert.equal(retry.schedule.deliveryRecovery.pending.length,2);
 assert.equal(plan(retry,due+1000).reason,'delivery-retry-due','Explicit subscriber sends retain their independent recovery');
+retry.schedule.deliveryRecovery=newsletterRetryState([{edition:'morning',source:'test',requestedTest:true,next_at:due+1000}]);
+assert.equal(retry.schedule.deliveryRecovery.pendingEditions,1);
+assert.equal(plan(retry,due+1000).reason,'delivery-retry-due','A requested source-only test recovers even when its subscriber edition is disabled');
+retry.schedule.deliveryRecovery=newsletterRetryState([{edition:'morning',source:'test',next_at:due}]);
+assert.equal(retry.schedule.deliveryRecovery.pendingEditions,0,'Legacy tests cannot acquire automatic recovery');
 const aggregate=structuredClone(checked);aggregate.schedule.deliveryRecovery={pendingEditions:1,nextRetryAt:new Date(due).toISOString()};
 assert.equal(plan(aggregate,due+1).due,false,'Older aggregate readers use the five-minute cadence instead of a stale retry deadline');
 assert.equal(plan(aggregate,due+NEWSLETTER_WAKE_MS).reason,'check-overdue');

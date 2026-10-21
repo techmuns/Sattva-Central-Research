@@ -60,9 +60,16 @@ An explicitly requested test can use `sourceOnly: true` with `to: "me"`. The enc
 preserves that flag and disables model processing for the test, while exercising the same
 source selection, prices, multipart planning, PDF, queue, transport and threading. Automatic
 subscriber editions keep their configured enrichment and budgets.
-These signed, source-only single-recipient test requests remain valid for at most 24 hours
+These sealed, source-only single-recipient test requests remain valid for at most 24 hours
 so a free-runner backlog does not silently expire the requested verification before it starts.
 The durable request ID prevents replay; ordinary sends keep their one-hour validity window.
+New requested source-only tests also retain a failed or uncertain part in the encrypted outbox.
+Existing automatic wakes recover only pending parts with their frozen HTML, subject, Message-ID
+and accepted root. The request status stays pending until delivery finishes or its original
+24-hour deadline expires. Recovery neither reserves another manual attempt nor advances the
+subscriber sent-item ledger. It keeps the original single test recipient even if subscriber
+editions are disabled. Legacy test queues and already completed tests are never replayed by
+this upgrade. SMTP I/O has a bounded 60-second allowance, after checkpoint/PDF work.
 
 Automatic wake admission coalesces against GitHub's actual queued/running processing
 jobs, instead of relying on a deployed status that can lag publication. The
@@ -71,3 +78,11 @@ inventory cannot certify an idle sender. Explicit encrypted send requests and re
 bootstrap requests retain their own queue. The sender checks its retained clock again
 for every automatic trigger after obtaining the account mutex. Existing timers, source
 cadences, retry state and delivery claims are preserved.
+
+Requested source-only tests retain their sealed input in a private encrypted intent row until
+the complete frozen outbox is acknowledged. A runner lost during preparation therefore resumes
+from the intent; a runner lost after preparation resumes the identical parts. Caller-only mail
+authorization stays inside encrypted state and is removed with the completed outbox, never placed
+in prepared request views. The original 24-hour issuance deadline includes the accepted one-hour
+future clock skew. Expiry preserves earlier provider outcomes; PDFs with no possible provider
+submission are deleted, while genuinely uncertain links remain usable.
