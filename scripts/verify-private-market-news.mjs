@@ -31,6 +31,10 @@ mergeArticle(state,state.articles[0],parseArticle(html(row('Fixture Company','$1
 const id=state.deals[0].id;
 mergeArticle(state,state.articles[0],parseArticle(html(row('Fixture Company','$12 Mn')),article),'2026-10-22T08:00:00Z');
 assert.equal(state.deals.length,2);assert.equal(state.deals[0].id,id);assert.equal(state.deals[0].revisions[0].sourceFields['Funding Round Size'],'$11.4 Mn *');assert.equal(state.deals[1].sourceMissing,true);
+const unavailableState=structuredClone(state), heldNotes=structuredClone(state.articles[0].notes), heldPublication=state.articles[0].publishedAt;
+mergeArticle(unavailableState,unavailableState.articles[0],parseArticle('<h1>Funding roundup</h1>',article),'2026-10-23T08:00:00Z');
+assert.deepEqual(unavailableState.deals,state.deals);assert.deepEqual(unavailableState.articles[0].notes,heldNotes,'An unavailable table retains the captured funding footnotes');
+assert.equal(unavailableState.articles[0].publishedAt,heldPublication);assert.equal(unavailableState.articles[0].status,'unavailable');
 const repeat = parseArticle(html(row('Same Company','$1 Mn')+row('Same Company','$2 Mn')),article);assert.notEqual(repeat.rows[0].id,repeat.rows[1].id);
 let calls=[],pauses=[];
 const older='https://inc42.com/buzz/older-funding-this-week/';

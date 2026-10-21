@@ -93,7 +93,8 @@ export function mergeArticle(state, article, parsed, now) {
   // A correction may remove a row; preserve the earlier observation explicitly.
   if (parsed.status === 'ok') for (const [id, row] of held) if (row.sourceUrl === article.url && !ids.has(id)) held.set(id, { ...row, sourceMissing: true });
   state.deals = [...held.values()];
-  Object.assign(article, { title: parsed.title, publishedAt: parsed.publishedAt, notes: parsed.notes, status: parsed.status, error: parsed.error || null, attemptedAt: now,
+  Object.assign(article, { title: parsed.title, publishedAt: parsed.publishedAt || article.publishedAt || null,
+    notes: parsed.status === 'ok' ? parsed.notes : article.notes || [], status: parsed.status, error: parsed.error || null, attemptedAt: now,
     ...(parsed.status === 'ok' ? { checkedAt: now, rows: parsed.rows.length } : {}), retryAfter: new Date(Date.parse(now) + (parsed.status === 'ok' ? 7 : 30) * 86400000).toISOString() });
 }
 export function emptyCapture() { return { version: 1, source: SOURCE, createdAt: new Date().toISOString(), generatedAt: null, sourceCheckedAt: null, attemptedAt: null, cooldownUntil: null, error: null, archive: { nextPage: 2, maxPage: null, complete: false }, articles: [], deals: [] }; }
