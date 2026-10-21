@@ -157,8 +157,8 @@ def extract_catalyst(text):
         found, contradicted = [], False
         for page, value in enumerate(pages, 1):
             for match in re.finditer(pattern, value, re.I | re.S):
-                prefix = re.split(r"[.!?\n]", value[max(0,match.start()-90):match.start()])[-1]
-                if asserted and re.search(r"\b(?:not|no|never|nor|will|would|may|might|proposed?|planned?|expects?|expected|pending|conditional)\b|subject\s+to", prefix, re.I):
+                prefix = re.split(r"[.!?]", value[max(0,match.start()-90):match.start()])[-1]
+                if asserted and re.search(r"\b(?:not|no|never|nor|will|would|may|might|propos(?:e[ds]?|al)|plan(?:ned|s)?|expect(?:ed|s)?|intend(?:ed|s)?|scheduled?|target(?:ed|s)?|pending|conditional)\b|subject\s+to|to\s+be", prefix, re.I):
                     contradicted = True
                     continue
                 found.append({"value": transform(match), "page": page, "offset": match.start(), "quote": match[0][:650]})
