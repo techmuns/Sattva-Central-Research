@@ -774,6 +774,7 @@ a.news-story-link:hover .news-story-title { color: var(--accent-600); }
 .news-story-company { overflow: hidden; text-overflow: ellipsis; max-width: 55%; color: var(--ink-600); }
 .news-story-meta { display: flex; align-items: center; gap: 6px; height: 12px; overflow: hidden; white-space: nowrap; color: var(--ink-400); font-size: 11px; line-height: 12px; }
 .news-story-meta > :not(.news-story-company) { flex: none; }
+.news-story-meta .rounded { padding-block: 0; line-height: 12px; }
 .news-story-bookmark { display: flex; align-items: center; gap: 4px; flex: none; }
 .news-story-bookmark .watch-star { min-width: 30px; min-height: 32px; }
 .news-card-table { table-layout: fixed; }
@@ -815,6 +816,7 @@ body:has(.news-toolbar) .beacon-root { bottom: 4px; }
   #app:has(.news-toolbar) #subview-mount .tab-btn { min-height: 32px; padding-block: 3px; }
 }
 @media (max-width: 639px) {
+  #app:has(.news-toolbar) .sattva-product-brand { flex-basis: auto; }
   .news-story-link { padding: 5px 10px; }
   .news-story-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; }
   .news-story-thumbnail { width: 88px; height: 62px; }
