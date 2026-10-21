@@ -19,6 +19,10 @@ export const TAB_META = Object.freeze({
     subtitle: `Important portfolio events from the last ${AI_ALERT_WINDOW_DAYS} days.`,
     subviews: [],
   },
+  'ai-recommendations': {
+    id: 'ai-recommendations', title: 'AI Recommendations', navigationGroup: 'alerts', layout: 'table',
+    subtitle: 'Prepared research candidates from verified catalyst evidence.', subviews: [], savedViewAvailable: false,
+  },
   'ask-research': {
     id: 'ask-research',
     title: 'Ask Research',

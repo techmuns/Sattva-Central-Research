@@ -38,6 +38,7 @@ on:
       - "News capture recovery"
       - "NSE announcements refresh"
       - "Price-move verification"
+      - "Recommendation evidence foundation"
       - "RSS news refresh"
       - "Screener access check"
       - "Screener concall collection"

@@ -31,6 +31,7 @@ import * as breakoutLive from '../data/breakout-live.js';
 import { announcements as annFeed } from '../data/filings.js';
 import * as marketNews from '../data/market-news.js';
 import * as privateMarketNews from '../data/private-market-news.js';
+import * as recommendations from '../data/ai-recommendations.js';
 import * as nseFeed from '../data/nse-filings.js';
 import * as twitterNews from '../data/twitter-news.js';
 import * as twitterHandles from '../core/twitter-handles.js';
@@ -762,6 +763,16 @@ export function sourceGroups() {
   groups.splice(groups.indexOf(flows), 0, { id: 'portfolio-news', title: 'News & company discovery', icon: '📰',
     tabs: 'News · All Alerts · AI Alerts', items: [companyNews, ...newsSourceItems(m)] });
   const funding = privateMarketNews.meta(), fundingHealth = privateMarketNews.health();
+  const recommendationState = recommendations.meta();
+  groups.splice(groups.indexOf(flows), 0, { id:'recommendation-evidence', title:'Recommendation evidence', icon:'🔎', tabs:'Alerts · AI Recommendations', items:[{
+    id:'recommendation-catalysts', name:'Original NSE/BSE catalyst evidence and NSE daily reports', url:'https://www.nseindia.com/all-reports', status:'live',
+    readState:sourceReadState({at:recommendationState.generatedAt,failed:!!recommendationState.error,partial:true,maxAgeMs:8*3600000}),
+    cadence:'GitHub Actions every six hours; browser publication checks every five minutes while visible and on return.',
+    feeds:'Three evidence-based catalyst hypotheses and an immutable forward outcome ledger.',
+    details:[`Prepared: ${recommendationState.generatedAt || 'not loaded; open AI Recommendations'}. Publication checked: ${recommendationState.browserCheckedAt || 'not checked'}.`,
+      'Financial and historical coverage remains partial. Scores are research rankings; investment performance is not established. Prices retain their actual official close dates.',
+      'No paid providers or model calls. Collection, calculations and retained state stay on GitHub; the website serves prepared public JSON.'],
+    file:'data/ai-recommendations.json · recommendation-foundation.yml' }] });
   groups.splice(groups.indexOf(flows), 0, { id:'private-market-news', title:'Private market funding', icon:'📰', tabs:'News · Private Market', items:[{
     id:'inc42-funding-galore', name:'Inc42 — Funding Galore', url:'https://inc42.com/tag/funding-galore/', status:'live', readState:fundingHealth.readState,
     cadence:'Source checks at least six hours apart; weekly roundups. Browser publication checks every five minutes while visible.',

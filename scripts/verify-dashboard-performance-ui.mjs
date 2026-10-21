@@ -354,7 +354,7 @@ try {
     currentTabOrder, 'automatic upgrade applies the requested order in the returning session');
   assert.equal((await page.locator('#tabbar-mount [data-tab-id="earnings"]').textContent()).trim(), 'Earnings', 'the Earnings parent reaches the returning session');
   assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
-    ['ai-alerts', 'daily-alerts'], 'the returning session receives both alert subtabs');
+    ['ai-alerts', 'ai-recommendations', 'daily-alerts'], 'the returning session receives all three alert subtabs');
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
   await page.locator('#subview-mount [data-tab-id="daily-alerts"]').click();
   await page.locator('[data-active-tab="daily-alerts"]').waitFor();

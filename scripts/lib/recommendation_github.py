@@ -194,3 +194,33 @@ class GithubState:
                 asset.get("digest") not in (None, "sha256:" + checksum)):
             raise ValueError("GitHub did not acknowledge the complete retained state")
         return asset
+
+    def publish_recommendations(self, path, foundation):
+        """Small public reader output, acknowledged only after its exact restart database upload."""
+        self.publisher_guard()
+        value = json.loads(Path(path).read_text())
+        if value.get("version") != 1 or value.get("repository") != self.repo or not isinstance(value.get("rows"), list):
+            raise ValueError("Invalid recommendation reader output")
+        prefix = "foundation-" + self.env["GITHUB_RUN_ID"] + "-" + self.env["GITHUB_RUN_ATTEMPT"] + "-"
+        if not foundation.get("name", "").startswith(prefix) or foundation.get("state") != "uploaded":
+            raise ValueError("Recommendation ledger archive was not acknowledged")
+        value["foundationAsset"] = {k: foundation[k] for k in ["id", "name"]}
+        value["sourceRun"] = self.env["GITHUB_RUN_ID"]
+        value["sourceSha"] = self.env["GITHUB_SHA"]
+        body = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+        if len(body) > 8 * 1024 * 1024:
+            raise ValueError("Recommendation reader output exceeds publication budget; no rows deleted")
+        checksum = hashlib.sha256(body).hexdigest()
+        name = "recommendations-" + self.env["GITHUB_RUN_ID"] + "-" + self.env["GITHUB_RUN_ATTEMPT"] + "-" + checksum + ".json"
+        tag = "recommendation-foundation-" + dt.datetime.now(dt.timezone.utc).strftime("%Y-%m")
+        release = self.request("/releases/tags/" + tag)
+        assets = self.assets(release)
+        previous = next((a for a in assets if a.get("name") == name), None)
+        if previous:
+            return previous
+        if len(assets) >= 990:
+            raise ValueError("Monthly release capacity reached; no history deleted")
+        asset = self.request("/releases/" + str(release["id"]) + "/assets?name=" + name, "POST", body, upload=True)
+        if asset.get("name") != name or asset.get("state") != "uploaded" or asset.get("size") != len(body) or asset.get("digest") not in (None, "sha256:" + checksum):
+            raise ValueError("Recommendation output was not acknowledged")
+        return asset

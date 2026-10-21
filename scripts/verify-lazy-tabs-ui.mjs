@@ -123,14 +123,17 @@ try {
     await page.locator('[data-active-tab="ai-alerts"]').waitFor();
     assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
       tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-      [['ai-alerts', 'AI Alerts'], ['daily-alerts', 'All Alerts']]);
+      [['ai-alerts', 'AI Alerts'], ['ai-recommendations', 'AI Recommendations'], ['daily-alerts', 'All Alerts']]);
     assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
     assert.equal(await page.locator('#subview-mount').getAttribute('data-navigation'), 'group');
-    assert(await page.locator('#subview-mount [data-tab-scroll-controls]').isHidden(), 'both alert subtabs fit without overflow controls');
+    assert(await page.locator('#subview-mount [data-tab-scroll-controls]').isHidden(), 'all three alert subtabs fit on the wide desktop without overflow controls');
     await page.evaluate(() => { window.alertSubtabs = document.querySelector('#subview-mount [data-tab-list]'); });
     await page.locator('#subview-mount [data-tab-id="ai-alerts"]').focus();
     await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#content-host').getAttribute('data-active-tab'), 'ai-alerts', 'arrows only move focus');
+    assert(await page.locator('#subview-mount [data-tab-id="ai-recommendations"]').evaluate(tab => document.activeElement === tab), 'the first arrow reaches AI Recommendations');
+    await page.keyboard.press('ArrowRight');
+    assert(await page.locator('#subview-mount [data-tab-id="daily-alerts"]').evaluate(tab => document.activeElement === tab), 'the second arrow reaches All Alerts');
     const aiFrame = await alertFrame(page);
     alignedAlerts(aiFrame);
     // Hold the first All Alerts renderer download: framing must already be correct

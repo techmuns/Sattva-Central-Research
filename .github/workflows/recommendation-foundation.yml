@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/recommendation-foundation.yml'
       - 'scripts/collect-recommendation-foundation.py'
+      - 'scripts/run-recommendation-models.py'
       - 'scripts/lib/recommendation_*.py'
   workflow_dispatch:
 
@@ -23,7 +24,7 @@ jobs:
     # Standard public-repository runners only. No large/private runner or billable storage fallback.
     if: github.ref == 'refs/heads/main' && github.event.repository.private == false
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       contents: write
     env:
@@ -45,7 +46,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Verify financial history and date contracts offline
-        run: python3 scripts/verify-recommendation-foundation.py
+        run: python3 scripts/verify-recommendation-foundation.py && python3 scripts/verify-recommendation-models.py
       - name: Prepare free local PDF text extraction
         run: |
           if ! command -v pdftotext >/dev/null; then
@@ -59,6 +60,14 @@ jobs:
         id: collect
         timeout-minutes: 12
         run: python3 scripts/collect-recommendation-foundation.py collect
+      - name: Retain free official prices, benchmark and corporate actions
+        if: always() && steps.restore.outcome == 'success'
+        timeout-minutes: 7
+        run: python3 scripts/run-recommendation-models.py market
+      - name: Score three catalyst models and record forward outcomes
+        if: always() && steps.restore.outcome == 'success'
+        timeout-minutes: 4
+        run: python3 scripts/run-recommendation-models.py analyze
       - name: Publish retained history even after an interrupted source walk
         if: always() && steps.restore.outcome == 'success'
         timeout-minutes: 4
