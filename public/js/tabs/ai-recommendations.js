@@ -39,7 +39,7 @@ function coverage() {
 function paint() {
   if(!ctxRef)return;
   const root=ctxRef.root,m=feed.meta(),rows=feed.forScope(ctxRef.scope);
-  const status=m.error?'Latest publication could not be confirmed; retained results remain visible.':!m.generatedAt?'Checking prepared recommendations…':(m.stale?'Capture overdue · ':'Partial coverage · ')+'Prepared '+time(m.generatedAt);
+  const status=m.error?'Latest publication could not be confirmed.'+(m.generatedAt?' Retained results remain visible.':' No verified list is available yet.'):!m.generatedAt?'Checking prepared recommendations…':(m.stale?'Capture overdue · ':'Partial coverage · ')+'Prepared '+time(m.generatedAt);
   if(table&&paintedScope===ctxRef.scope&&root.querySelector('[data-recommendation-status]')){
     root.querySelector('[data-recommendation-status]').textContent=status;table.updateData(rows);return;
   }
@@ -53,7 +53,7 @@ function paint() {
       {label:'Catalyst',html:true,get:r=>`<div style="max-width:620px;white-space:normal;overflow-wrap:anywhere">${esc(r.catalyst)}</div>`,sortable:false}],
     initialView:view,onRowClick:details,rowActionLabel:r=>'Read recommendation evidence for '+r.company,
     searchable:r=>[r.company,r.ticker,r.catalyst,r.modelName].join(' '),exportName:'ai-recommendations',
-    emptyMessage:()=>!feed.meta().generatedAt?'Recommendations are being prepared in the background.':feed.rows().length?`No recommendations match ${possessive||'this view'}.`:'No companies currently pass the evidence and price checks. Financial history and catalyst verification continue in the background.'});
+    emptyMessage:()=>!feed.meta().generatedAt?'Recommendations will appear after background preparation passes its checks.':feed.rows().length?`No recommendations match ${possessive||'this view'}.`:'No companies currently pass the evidence and price checks. Financial history and catalyst verification continue in the background.'});
   root.innerHTML=sectionHead({title:'AI Recommendations',description:'Research candidates · performance validation pending',meta:'<button class="text-sm text-brand-600 hover:underline" data-recommendation-coverage>Evidence & outcomes</button>'})+
     `<p data-recommendation-status class="mb-4 text-xs text-slate-500">${esc(status)}</p>`+table.html;
   paintedScope=ctxRef.scope;
