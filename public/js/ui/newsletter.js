@@ -412,7 +412,7 @@ function readyBody() {
       </form>
     </div>`;
 
-  const tokenNote = snapshot.schedule?.tokenConfigured === false ? '<p class="brief-soft brief-token">Email delivery is not configured. An administrator needs to restore the newsletter sender.</p>' : '';
+  const tokenNote = snapshot.schedule?.tokenConfigured === false ? '<p class="brief-soft brief-token">Emails won’t send until the MUNS_TOKEN secret is added on the Worker.</p>' : '';
   const noteBlock = note ? `<p class="brief-note" data-tone="${note.tone}" role="status">${escapeHtml(note.text)}</p>` : '';
   return `<div class="brief-body">
       <p class="brief-lede">Your portfolio companies by email at ${escapeHtml(times)} IST, weekdays.</p>

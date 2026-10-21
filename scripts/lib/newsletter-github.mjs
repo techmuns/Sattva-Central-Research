@@ -47,7 +47,7 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
     const body=JSON.parse(options.body),privateMarkets=activeRequest?.edition==='private-markets',test=activeRequest?.to==='me'&&activeRequest.email===body.email;
     if(!privateMarkets&&activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
     if(!test&&!(privateMarkets?local.store.subscriberRows():local.store.recipients(activeRequest?.edition)).some(row=>row.email===body.email))throw Error('Recipient removed before delivery');
-    const documents=local.db.prepare("SELECT id,filename,body FROM newsletter_documents WHERE delivery_state='pending' ORDER BY created_at DESC").all();
+    const documents=privateMarkets?[]:local.db.prepare("SELECT id,filename,body FROM newsletter_documents WHERE delivery_state='pending' ORDER BY created_at DESC").all();
     if(!privateMarkets)for(const document of documents)await verifyPdf(document,env);
     await refresh();
     if(!privateMarkets&&activeRequest?.automatic&&!local.store.settings()[activeRequest.edition]?.enabled)throw Error('Edition disabled before delivery');
