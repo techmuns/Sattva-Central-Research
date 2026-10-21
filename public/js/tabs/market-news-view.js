@@ -50,10 +50,11 @@ import { surfaceReading, feedbackItemFor, relevanceRevision } from '../data/surf
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel } from '../data/announcement-categories.js';
 import { newsFeedbackBar } from '../ui/relevance-feedback-ui.js';
-import { newsStoryHtml, newsLinkable } from '../ui/news-story.js';
+import { newsStoryHtml } from '../ui/news-story.js';
 import { createNewsMatcher, prepareNewsSearch } from '../data/news-search.js';
 import { newsSearchText } from '../data/company-news-attribution.js';
 import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
+import { fitTableViewport } from '../ui/table-viewport.js';
 
 // The shared relevance reading of a market-wide story or post. These carry no company, so size and
 // sector read as unknown for every one of them alike. This supplies category tags and feedback;
@@ -261,7 +262,7 @@ let lastArchiveCheckAt = null;
  */
 function moreFooter() {
   const arc = marketNews.archiveMeta(recentNewsWindow());
-  const base = 'flex items-center justify-center gap-3 border-t border-slate-100 px-5 py-4 text-sm';
+  const base = 'news-history-notice flex items-center justify-center gap-3 border-t border-slate-100 px-3 py-2 text-xs';
 
   if (moreInFlight || arc.loading) {
     return `<div data-news-more class="${base} text-slate-500">${SPINNER}<span>Loading the rest of the recent period…</span></div>`;
@@ -278,9 +279,7 @@ function moreFooter() {
       <button type="button" data-news-more-btn class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-slate-200 transition hover:bg-slate-50">Load remaining</button>
     </div>`;
   }
-  return `<div data-news-more class="${base} text-slate-400">
-    <span>Recent captured history loaded. Older news stays saved in All Alerts; Date not supplied shows undated stories.</span>
-  </div>`;
+  return '<div data-news-more data-news-history-state="loaded" hidden></div>';
 }
 
 /** Pull the next month in. Guarded so a flick of the wheel cannot start three of these at once. */
@@ -341,55 +340,13 @@ function visibleRows(rows) {
 // same rule the Deep Dive panel follows applies: external content may not decide what a click does.
 // A story that fails it still renders — with its headline and its standfirst — as a plain block
 // saying the link could not be used, because dropping the row would report a bad URL as no story.
-const linkable = newsLinkable;
 
 const sectionLabel = (value) => String(value || '').replace(/-/g, ' ');
-
-/**
- * A post's card. The same shell, the same thumbnail slot, the same meta row — the only additions
- * are the account line a publisher story has no use for and the source chip that names X.
- *
- * The text is the row and is reproduced whole in the markup: `line-clamp` shortens what is DRAWN,
- * so search and export still see every word and nothing is edited into a headline of ours.
- */
-function postBody(r, canLink) {
-  const when = istTime(r.publishedAt);
-  const thumb = r.image
-    ? `<img src="${escapeHtml(r.image)}" alt="" loading="lazy" decoding="async"
-           class="h-full w-full object-cover" onerror="this.style.display='none'">`
-    : `<span class="flex h-full w-full items-center justify-center text-slate-400" aria-hidden="true">
-         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.3l-4.9-6.4L6.2 22H3.1l7.3-8.3L2 2h6.4l4.4 5.9L18.9 2Zm-1.1 18h1.7L7.3 3.8H5.5L17.8 20Z"/></svg>
-       </span>`;
-  return `
-      <div class="h-[62px] w-[110px] flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 sm:h-[76px] sm:w-[135px]">${thumb}</div>
-      <div class="min-w-0 max-w-4xl flex-1">
-        <div class="flex flex-wrap items-baseline gap-x-1.5">
-          <span class="font-display text-sm font-bold text-slate-900">${escapeHtml(r.displayName)}</span>
-          <span class="text-xs font-medium text-slate-400">@${escapeHtml(r.handle)}</span>
-        </div>
-        <p class="mt-1 line-clamp-3 whitespace-pre-line text-[15px] leading-snug text-slate-700 ${canLink ? 'group-hover:text-indigo-700' : ''}">${escapeHtml(r.title) || '<span class="text-slate-400">(no text)</span>'}</p>
-        <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-          ${
-            when
-              ? `<span class="tabular-nums">${escapeHtml(when)}</span>`
-              : '<span class="text-slate-300" title="The capture carried no post time.">time not published</span>'
-          }
-          <span class="text-slate-300">·</span>
-          <!-- NOT \`uppercase\`, unlike the premium chip beside it in the publisher card: this is a
-               product name, and "TWITTER / X" is not how it is written. -->
-          <span class="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-600">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.3l-4.9-6.4L6.2 22H3.1l7.3-8.3L2 2h6.4l4.4 5.9L18.9 2Zm-1.1 18h1.7L7.3 3.8H5.5L17.8 20Z"/></svg>
-            Twitter / X
-          </span>
-        </div>
-      </div>`;
-}
 
 // Reviewed spellings share one filter/byline; original source strings remain in the capture/export.
 const publisherLabel = canonicalPublisherName;
 
 function cardHtml(r) {
-  const canLink = linkable(r.url);
   const when = istTime(r.publishedAt);
   const section = r.section ? sectionLabel(r.section) : null;
   // A story with no publisher time says so rather than showing the moment we captured it.
@@ -397,20 +354,18 @@ function cardHtml(r) {
     // THE BYLINE LEADS THE LINE, because this feed carries five publishers now. An unattributed
     // headline in a mixed list attributes itself to whichever masthead the reader assumes, and the
     // link out is not an answer — nobody reads a status bar before deciding whose reporting this is.
-    r.publisher ? `<span class="font-semibold text-slate-500">${escapeHtml(publisherLabel(r.publisher))}</span>` : '',
+    isPost(r) ? `<span class="font-semibold text-slate-500">${escapeHtml(r.displayName || r.handle)} · @${escapeHtml(r.handle)} · Twitter / X</span>` : r.publisher ? `<span class="font-semibold text-slate-500">${escapeHtml(publisherLabel(r.publisher))}</span>` : '',
     when
       ? `<span class="tabular-nums">${escapeHtml(when)}</span>`
       : `<span class="text-slate-300" title="This publisher’s feed carried no time for the story, and its own page was not read for one. It is not the time we saw it.">time not published</span>`,
-    section ? `<span>${escapeHtml(section)}</span>` : '',
     r.premium ? '<span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 ring-1 ring-amber-200">premium</span>' : '',
-    categoryChips(relevanceOf(r).categories, { weak: relevanceOf(r).weak, max: 3 }),
   ]
     .filter(Boolean)
     .join('<span class="text-slate-300">·</span>');
 
   return newsStoryHtml(r, {
     meta,
-    body: isPost(r) ? postBody(r, canLink) : null,
+    tags: categoryChips(relevanceOf(r).categories, { weak: relevanceOf(r).weak, max: 3 }) + (section ? `<span>${escapeHtml(section)}</span>` : ''),
     feedback: newsFeedbackBar(feedbackItemFor(relevanceOf(r), r)),
     bookmark: bookmarkButton(snapshotForRow(r, { section: 'news' })),
   });
@@ -510,7 +465,7 @@ function listHtml(rows) {
           </button>
         </div>
       </div>
-      <div data-news-scroll class="scrollbar-thin divide-y divide-slate-100 overflow-y-auto" style="max-height: max(360px, calc(100vh - 330px))">
+      <div data-news-scroll class="scrollbar-thin divide-y divide-slate-100 overflow-y-auto" style="max-height: max(120px, calc(100vh - 300px))">
         ${shown.map(cardHtml).join('') || '<p class="px-5 py-10 text-center text-sm text-slate-400">No story matches your search.</p>'}
       </div>
       ${moreFooter()}
@@ -529,14 +484,15 @@ function fillRest(root, rows, wantScroll) {
   section.removeAttribute('data-rows-pending');
   host.tabIndex = 0; host.setAttribute('role', 'region'); host.setAttribute('aria-label', 'Market news stories');
   const windowed = mountWindowedList({ scroller: host, content: host, items: rows,
-    key: r => String(r.id || r.url), rowSelector: '[data-news-key]', estimateHeight: 150,
+    key: r => String(r.id || r.url), rowSelector: '[data-news-key]', estimateHeight: 30,
     initialKey: wantScroll?.key || null,
     renderRows: (list, from, to) => list.slice(from, to).map(cardHtml).join(''),
     spacerHtml: (height, edge) => `<div data-window-spacer="${edge}" aria-hidden="true" style="height:${height}px;border:0;padding:0"></div>`,
     onWindow: (start, total) => { section.dataset.virtualStart = start; section.dataset.virtualTotal = total; },
   });
   if (wantScroll?.key) host.scrollTop -= wantScroll.offset || 0;
-  return () => windowed.destroy();
+  const unfit = fitTableViewport(root, { bottomGap: () => 44 + (root.querySelector('[data-news-more]')?.offsetHeight || 0), scrollerSelector: '[data-news-scroll]' });
+  return () => { unfit(); windowed.destroy(); };
 }
 
 /** "Mint 105, Business Standard 156, …" — for the export banner and the provenance panel. */
@@ -729,7 +685,7 @@ function paint(ctx) {
 
   if (!rows.length && !m.loaded) {
     ctx.root.innerHTML = `
-      ${sectionHead({ title: 'News', description: DESCRIPTION, meta: pill(m) })}
+      ${sectionHead({ title: 'News', meta: pill(m) })}
       <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100">
         <h3 class="font-display text-lg font-bold text-slate-900">No market-news capture yet</h3>
         <p class="mx-auto mt-2 max-w-xl text-sm text-slate-500">
@@ -748,7 +704,7 @@ function paint(ctx) {
   const keep = anchor ? { key: anchor.dataset.newsKey, offset: anchor.getBoundingClientRect().top - top } : null;
   const filtered = visibleRows(rows);
   ctx.root.innerHTML = `
-    ${sectionHead({ title: 'News', description: DESCRIPTION, meta: pill(m) })}
+    ${sectionHead({ title: 'News', meta: pill(m) })}
     ${listHtml(filtered)}`;
   wireHead(ctx);
   wireList(ctx.root);
@@ -996,10 +952,6 @@ function wireList(root) {
   );
 }
 
-const DESCRIPTION =
-  'Market-wide news, not limited to your portfolio. Opens on Today (IST); choose another period up to 30 days or This month. ' +
-  'Older news stays saved in All Alerts. Undated stories have their own filter.';
-
 /**
  * OPENING THIS TAB ON A STALE CAPTURE FETCHES ONE. A DELIBERATE REVERSAL, SO HERE IS THE REASONING.
  *
@@ -1085,7 +1037,7 @@ export function render(ctx) {
   if (!twitterNews.isLoaded()) twitterNews.load();
 
   if (!marketNews.isLoaded()) {
-    ctx.root.innerHTML = `${sectionHead({ title: 'News', description: DESCRIPTION })}
+    ctx.root.innerHTML = `${sectionHead({ title: 'News' })}
       ${loadingGrid({ columns: 3 })}`;
     marketNews.load().then(() => {
       if (!ctxRef) return;

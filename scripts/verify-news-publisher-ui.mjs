@@ -195,7 +195,7 @@ try {
   });
   await page.route('**/data/twitter-posts.json*', route => route.fulfill({contentType:'application/json',body:JSON.stringify({capturedAt:publisherAt,posts:[],byHandle:{},failed:{}})}));
   await page.evaluate(()=>window.fixture.universe());
-  await page.waitForFunction(()=>document.querySelector('[data-news-more]')?.textContent.includes('Recent captured history loaded'));
+  await page.waitForFunction(()=>document.querySelector('[data-news-more]')?.dataset.newsHistoryState === 'loaded');
   assert.equal(await period.inputValue(), 'today', 'Universe News also opens on Today');
   assert.equal(await page.locator('[data-news-key]').count(), 2);
   assert.match(await page.locator('[data-news-key]').first().textContent(), /Fixture story today/,
@@ -215,7 +215,7 @@ try {
   await page.getByRole('textbox').fill('unknown');
   publisherAt = '2026-09-08T08:01:00Z';
   await page.evaluate(async()=>{const market=await import('/js/data/market-news.js');await market.refresh()});
-  await page.waitForFunction(()=>document.querySelector('[data-news-more]')?.textContent.includes('Recent captured history loaded'));
+  await page.waitForFunction(()=>document.querySelector('[data-news-more]')?.dataset.newsHistoryState === 'loaded');
   assert.equal(await period.inputValue(), 'undated', 'Universe refresh preserves date filter');
   assert.equal(await page.locator('[data-news-search]').inputValue(), 'unknown');
   assert.equal(await page.locator('[data-news-key]').count(), 1);

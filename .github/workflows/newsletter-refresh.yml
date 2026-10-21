@@ -37,6 +37,10 @@ jobs:
     timeout-minutes: 3
     permissions:
       contents: read
+      actions: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      NEWSLETTER_QUEUE_COALESCE: 'true'
     outputs:
       run: ${{ steps.plan.outputs.run }}
     steps:

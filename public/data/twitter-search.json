@@ -1648,7 +1648,7 @@
       "pending": []
     },
     "isin:INE08U801020|SAMHI": {
-      "lastAttemptAt": "2026-10-16T12:15:16+00:00",
+      "lastAttemptAt": "2026-10-21T10:49:23+00:00",
       "error": "search-unavailable",
       "lastResultCount": 23,
       "lastSuccessAt": "2026-10-02T06:48:54+00:00",
@@ -1656,24 +1656,24 @@
       "pending": []
     },
     "isin:INE148I01020|Sammaan Capital": {
-      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T11:24:40+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 35,
       "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE148I01020|SAMMAANCAP": {
-      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T12:01:14+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 15,
       "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE860D01013|Sanjivani Paranteral": {
-      "lastAttemptAt": "2026-10-16T13:03:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-21T12:08:31+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-16T13:03:01+00:00",
       "targetThrough": null,
@@ -2669,8 +2669,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 10,
+    "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-21T09:58:18.146405+00:00"
+    "checkedAt": "2026-10-21T12:08:31.431877+00:00"
   }
 }

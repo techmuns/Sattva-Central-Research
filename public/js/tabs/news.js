@@ -114,6 +114,7 @@ function deliveryDetails(meta) {
 
 const tab = makeFilingsTab({
   ...TAB_META['news'],
+  subtitle: '',
   feed,
   prepareReading: view => feed.setWindow?.(() => newsPeriodBounds(view?.filters?.[3] || 'today')) || false,
   preserveReadingPosition: true,
@@ -150,11 +151,10 @@ const tab = makeFilingsTab({
     const meta = [
       `<span class="font-semibold">${escapeHtml(canonicalPublisherName(r.source))}</span>`,
       `<span class="tabular-nums">${escapeHtml(when)}</span>`,
-      categoryChips(entry.categories, { weak: entry.weak, max: 3 }),
-      ...readingFor(r).keywords.map(k => `<span title="${escapeHtml(`Matched in the ${k.where === 'title' ? 'headline' : 'standfirst only'}`)}">${escapeHtml(k.label)}</span>`),
     ].filter(Boolean).join('<span aria-hidden="true">·</span>');
     return newsStoryHtml(r, { ...controls, meta,
       company: [attributionLabel(r), r.company || r.ticker, r.company && r.ticker].filter(Boolean).join(' · '),
+      tags: categoryChips(entry.categories, { weak: entry.weak, max: 3 }) + readingFor(r).keywords.map(k => `<span>${escapeHtml(k.label)}</span>`).join(''),
       feedback: newsFeedbackBar(feedbackItemFor(entry, r)),
     });
   },

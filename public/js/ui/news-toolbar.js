@@ -1,3 +1,5 @@
+import { fitTableViewport } from './table-viewport.js';
+
 // Keep existing bound controls: search/date/actions first, the remaining filters beneath them.
 export function arrangeNewsToolbar(host) {
   const toolbar = host.querySelector('[data-news-toolbar], [data-table-toolbar]');
@@ -14,4 +16,6 @@ export function arrangeNewsToolbar(host) {
   search.classList.add('news-toolbar-search'); actions.classList.add('news-toolbar-actions');
   primary.append(search, period, actions); filters.append(...remaining);
   toolbar.replaceChildren(primary, filters);
+  // Company tables share the measured viewport; the market list owns its own lifecycle.
+  if (host.querySelector('.news-card-table')) return fitTableViewport(host, { bottomGap: 44 });
 }
