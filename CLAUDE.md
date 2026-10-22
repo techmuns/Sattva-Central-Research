@@ -877,6 +877,12 @@ match would quietly fail the day they reword it.
 
 ### The team brief — two editions a weekday, built at the edge
 
+**Owner correction, 22 October 2026:** daily emails and test copies must only carry reports
+published inside their printed edition window. Never send historical backlog, newly captured old
+reports or missed-edition catch-up. Preserve dashboard archives. Refuse more than six parts before
+any send and retire saved historical/oversized plans without further mail. Non-test retries expire
+three hours after the original edition time. This supersedes earlier email catch-up guidance.
+
 The Newsletter button manages Sattva Ventures' direct-portfolio briefs at 08:00 and 16:00 IST
 on weekdays. The authoritative reading, budget, migration and email contracts are in
 [Newsletter source evidence](docs/NEWSLETTER-SOURCE-EVIDENCE.md); market comparison rules are
