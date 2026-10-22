@@ -2211,8 +2211,8 @@
       "pending": []
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-22T10:56:26+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 5,
       "lastSuccessAt": "2026-10-17T05:23:01+00:00",
       "targetThrough": null,
@@ -2692,8 +2692,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 8,
+    "attempted": 1,
     "incomplete": 230,
-    "checkedAt": "2026-10-22T10:22:06.626810+00:00"
+    "checkedAt": "2026-10-22T10:56:26.827581+00:00"
   }
 }
