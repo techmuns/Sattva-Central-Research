@@ -1,3 +1,4 @@
+import {packedBreakoutResponse} from './breakout-packed-response.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {mfRepo} from './mutual-funds-github.mjs';
 import {openForReader,decode64,hash} from './mutual-funds-seal.mjs';
@@ -15,7 +16,7 @@ async function bytes(response,maximum){
 }
 // This is delivery of an already collected, encrypted file. Request-time code
 // never contacts Upstox, starts Actions, or reads/writes a capture database.
-export async function readLiveBreakouts(env,origin,{fetcher=fetch,edgeCache=globalThis.caches?.default,now=Date.now(),fallbackOnly=false}={}){
+export async function readLiveBreakouts(env,origin,{fetcher=fetch,edgeCache=globalThis.caches?.default,now=Date.now(),fallbackOnly=false,packedRequest=null}={}){
   if(env.BREAKOUT_LIVE_DELIVERY!=='github-release')return null;
   const repo=mfRepo(env),cacheKey=name=>new Request(new URL(`/_prepared-quotes/${name}`,origin)),deadline=Date.now()+10000;
   const signal=()=>AbortSignal.timeout(Math.max(1,deadline-Date.now()));
@@ -64,7 +65,9 @@ export async function readLiveBreakouts(env,origin,{fetcher=fetch,edgeCache=glob
     return Response.json(lines[1].envelope,{headers:{'cache-control':'public, max-age=86400'}});
   });
   const context=`${repo}:github-prepared:${FEATURE}:head.json:v1`;
-  const packed=await boundedJson(new Response(await openForReader(await envelopeResponse.json(),env.GH_DISPATCH_TOKEN,context)),MAX_VIEWS);
+  const plain=await openForReader(await envelopeResponse.json(),env.GH_DISPATCH_TOKEN,context);
+  if(packedRequest)return packedBreakoutResponse(plain,packedRequest);
+  const packed=await boundedJson(new Response(plain),MAX_VIEWS);
   if(packed.format!=='gzip-json'||typeof packed.gzip!=='string'||packed.gzip.length>MAX_VIEWS)throw Error('Invalid prepared quotes');
   const head=await boundedJson(new Response(new Response(decode64(packed.gzip)).body.pipeThrough(new DecompressionStream('gzip'))),5*1024*1024);
   if(head.version!==1||head.repo!==repo||head.feature!==FEATURE||!Array.isArray(head.fallback?.rows)||!Array.isArray(head.fallback.targets)||head.primary&&!Array.isArray(head.primary.rows))throw Error('Invalid live quote inventory');

@@ -1,8 +1,8 @@
-import { liveBreakout } from '../public/js/data/breakout-live-shared.js';
+import { liveBreakout, MINUTE_RETENTION_DAYS } from '../public/js/data/breakout-live-shared.js';
 import { contentTag } from './http.mjs';
 
 const DAY=86400000;
-export const MINUTE_RETENTION_DAYS=4;
+export {MINUTE_RETENTION_DAYS} from '../public/js/data/breakout-live-shared.js';
 export const MINUTE_RETENTION_MS=MINUTE_RETENTION_DAYS*DAY;
 export const primaryBucket=ticker=>[...ticker].reduce((n,c)=>(n*31+c.charCodeAt(0))%16,0);
 

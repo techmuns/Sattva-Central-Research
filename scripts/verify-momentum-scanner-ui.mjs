@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {gzipSync} from 'node:zlib';
+import {BREAKOUT_REPO} from '../public/js/data/breakout-live-shared.js';
 // scripts/verify-momentum-scanner-ui.mjs — the Momentum Scanner's layout check, headless.
 //
 //   node scripts/verify-momentum-scanner-ui.mjs
@@ -102,11 +104,20 @@ const server = createServer((req, res) => {
   // The fixture takes the place of the committed capture; the live route 304s nothing so the
   // module falls back to it. Every other /api/* answers a benign 200 so no same-origin 404 is logged.
   if (path === '/data/technicals.json') return json(fixture);
-  if (path === '/api/breakouts') return json({version:1,state:'complete',targets:companies.map(c=>c.ticker),failures:[],
+  if (path === '/api/breakouts' || path === '/api/breakouts/snapshot') {
+    const capture={version:1,state:'complete',targets:companies.map(c=>c.ticker),failures:[],
     completedAt:new Date(AT).toISOString(),rows:quoteUnavailable ? [] : companies.filter(c=>Number.isFinite(c.cmp)&&c.cmp>0).map(c=>({ticker:c.ticker,price:c.cmp+quoteDelta,volume:500,prevClose:c.cmp,
       sessionDate:'2026-10-09',quoteAt:new Date(AT).toISOString(),checkedAt:new Date(AT).toISOString(),provider:'Upstox',exchange:'NSE',
       ...oiFixture(c.ticker),
-      volumeBase:{average:1000,from:'2026-09-24',to:'2026-10-08',count:10,exchange:'NSE'}}))});
+      volumeBase:{average:1000,from:'2026-09-24',to:'2026-10-08',count:10,exchange:'NSE'}}))};
+    if(path==='/api/breakouts/snapshot') {
+      const head={version:1,feature:'breakouts-live',repo:BREAKOUT_REPO,createdAt:new Date(AT).toISOString(),fallback:capture,
+        primary:{...capture,at:AT,completedAt:AT},schedule:{started:true,lastAttemptAt:AT,overdue:false},
+        primarySchedule:{started:true,configured:true,lastAttemptAt:AT,nextAt:AT+60000,reason:'ok',overdue:false}};
+      return json({format:'gzip-json',gzip:gzipSync(JSON.stringify(head)).toString('base64')});
+    }
+    return json(capture);
+  }
   if (path.startsWith('/api/')) return json({ ok: false });
   if (path === '/sdk-fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end(''); return; }
   const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);

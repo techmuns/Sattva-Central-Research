@@ -1,11 +1,11 @@
 import { boundedJson } from '../public/js/data/family-book-contract.js';
-import { BREAKOUT_OBJECT, BREAKOUT_LIMIT, tickerValid, marketWindow, expectedSession, quoteFresh, istDate } from '../public/js/data/breakout-live-shared.js';
+import { BREAKOUT_OBJECT, BREAKOUT_LIMIT, tickerValid, marketWindow, expectedSession, quoteFresh, istDate, PRIMARY_MAX_AGE } from '../public/js/data/breakout-live-shared.js';
 import { mapUpstoxTargets, upstoxIdentity, upstoxRows, upstoxOpenInterest } from './upstox-market.mjs';
 
 export const PRIMARY_OBJECT = 'breakout-upstox:v1';
 export const PRIMARY_TIMER = 'upstox-minute-timer';
 export const PRIMARY_INTERVAL = 60000;
-export const PRIMARY_MAX_AGE = 120000;
+export {PRIMARY_MAX_AGE} from '../public/js/data/breakout-live-shared.js';
 const INVENTORY = 'upstox-inventory';
 const UPSTOX_CLIENT = 'SattvaCentralResearch/1.0';
 const MAPPING_VERSION = 3;

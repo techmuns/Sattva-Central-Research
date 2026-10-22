@@ -1,3 +1,4 @@
+import {snapshotCapture} from '../public/js/data/breakout-snapshot.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -50,6 +51,13 @@ try{
  const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,BREAKOUT_LIVE_DELIVERY:'github-release',ASSETS:{fetch(){throw Error('Current prices must not await a website deployment');}},CAPTURE_REGISTRY:{getByName(){throw Error('No Cloudflare capture work');}}};
  const read=pathname=>handleBreakouts(new Request('https://fixture.research'+pathname),worker,{fetcher,edgeCache:cache,now:()=>at});
  let response=await read('/api/breakouts'),capture=await response.json();assert.equal(response.status,200);assert.equal(capture.rows.length,600);assert.equal(capture.health.checked,600);assert.equal(capture.delivery,'github-release');assert.equal(capture.primarySchedule.overdue,false,'A GitHub runner does not need a retired Cloudflare alarm');
+ const NativeInflation=globalThis.DecompressionStream;let packet;
+ try {globalThis.DecompressionStream=class {constructor(){throw Error('The server must not inflate current quote evidence');}};
+  const packed=await read('/api/breakouts/snapshot');assert.equal(packed.status,200);packet=await packed.json();assert.equal(packet.format,'gzip-json');
+  const unchanged=await handleBreakouts(new Request('https://fixture.research/api/breakouts/snapshot',{headers:{'if-none-match':packed.headers.get('etag')}}),worker,{fetcher,edgeCache:cache,now:()=>at});assert.equal(unchanged.status,304);assert.equal(await unchanged.text(),'');
+ } finally {globalThis.DecompressionStream=NativeInflation;}
+ assert.deepEqual((await snapshotCapture(packet,at)).rows,capture.rows,'All 600 selected quotes survive compressed delivery');
+ assert.equal((await snapshotCapture(packet,at+3*60000)).primarySchedule.overdue,true,'Stored compressed evidence cannot invent source freshness');
  const after=metadataReads,downloaded=transferred;for(let i=0;i<10;i++)assert.equal((await read('/api/breakouts/health')).status,200);assert.equal(metadataReads,after);assert.equal(transferred,downloaded,'Visible readers share cached immutable prepared files');
  assert(transferred<150000,'A 600-company current read never downloads the complete restart/history database');
  response=await read('/api/breakouts/fallback');assert.equal((await response.json()).primary,undefined,'Fallback reads never mistake a primary success for a completed fallback');

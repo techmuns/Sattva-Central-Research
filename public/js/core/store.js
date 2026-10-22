@@ -456,7 +456,7 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   // read; the body copy is what survives a cross-origin response whose ETag is not exposed.
   const headerTag = res.headers.get('etag');
   if (headerTag && stored?.tag === headerTag && stored.value && (rawManifest || !Object.hasOwn(stored.value, '_jsonShards'))) {
-    validate?.(stored.value);
+    await validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
@@ -477,13 +477,14 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   // Same short-circuit, for the case where the ETag header was unreadable and the tag had to come
   // out of the body. The parse is already paid for, but the caller still learns nothing changed.
   if (tag && stored?.tag === tag && stored.value && (rawManifest || !Object.hasOwn(stored.value, '_jsonShards'))) {
-    validate?.(stored.value);
+    await validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
-  // Consumers with a strict contract must validate before malformed 200s can replace last-good
+  // Strict validators may asynchronously inflate and inspect a prepared snapshot.
+  // Await them on cache hits too, before any malformed 200 can replace last-good
   // bytes. Validation errors propagate to the consumer's existing stale/failure policy.
-  validate?.(value);
+  await validate?.(value);
   if (key) writeEntry(key, { tag, value, savedAt: checkedAt });
   return { status: 200, value, tag, savedAt: checkedAt, checkedAt, fromStore: false };
 

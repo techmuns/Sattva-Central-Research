@@ -49,6 +49,8 @@ try{
  await page.clock.install({time:AT});
  await page.goto(`${origin}/#/research/breakouts/strong-breakouts?scope=universe`);
  const cell=page.locator('[data-cmp="TEST"]');await cell.waitFor();
+ // The daily row can render before the automatic live read and compatibility fallback finish.
+ await page.waitForFunction(()=>document.querySelector('[data-cmp="TEST"]')?.textContent==='₹106.00');
  assert.equal(await cell.textContent(),'₹106.00');assert((await cell.locator('..').innerText()).includes('Muns API live price'));
  // A valid quote with missing candles retains the daily grade, with its real date.
  missingTestBase=true;
