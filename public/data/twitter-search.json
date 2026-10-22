@@ -2142,59 +2142,69 @@
       "pending": []
     },
     "isin:INE615H01020|TITAGARH": {
-      "lastAttemptAt": "2026-10-17T04:45:35+00:00",
-      "error": null,
-      "lastResultCount": 42,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
+      "targetThrough": "2026-10-22T10:22:06+00:00",
+      "pending": [
+        {
+          "from": "2026-09-22T08:08:20+00:00",
+          "to": "2026-10-07T09:15:13+00:00"
+        },
+        {
+          "from": "2026-10-07T09:15:13+00:00",
+          "to": "2026-10-22T10:22:06+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-17T04:45:35+00:00",
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0OC301013|Turtlemint Fintech Solutions": {
-      "lastAttemptAt": "2026-10-17T04:45:35+00:00",
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
       "error": null,
-      "lastResultCount": 20,
-      "lastSuccessAt": "2026-10-17T04:45:35+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-22T10:22:06+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0OC301013|TURTLEMINT": {
-      "lastAttemptAt": "2026-10-17T04:45:35+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 12,
-      "targetThrough": "2026-09-24T08:08:20+00:00",
-      "pending": [
-        {
-          "from": "2026-09-19T20:08:20.272051+00:00",
-          "to": "2026-09-24T08:08:20+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-09-29T01:13:29+00:00"
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
+      "error": null,
+      "lastResultCount": 35,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-22T10:22:06+00:00",
+      "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|Urban Company": {
-      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
       "error": null,
-      "lastResultCount": 44,
-      "targetThrough": "2026-09-24T08:08:20+00:00",
-      "pending": [
-        {
-          "from": "2026-09-19T20:08:20.272051+00:00",
-          "to": "2026-09-24T08:08:20+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-17T05:23:01+00:00"
+      "lastResultCount": 38,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-22T10:22:06+00:00",
+      "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|URBANCO": {
-      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
-      "error": null,
-      "lastResultCount": 87,
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 104,
       "lastSuccessAt": "2026-10-17T05:23:01+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-10-22T10:22:06+00:00",
+      "pending": [
+        {
+          "from": "2026-10-15T05:23:01+00:00",
+          "to": "2026-10-18T19:52:33.500000+00:00"
+        },
+        {
+          "from": "2026-10-18T19:52:33.500000+00:00",
+          "to": "2026-10-22T10:22:06+00:00"
+        }
+      ]
     },
     "isin:INE879I01012|Valor Estate": {
-      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 1,
       "lastSuccessAt": "2026-10-17T05:23:01+00:00",
       "targetThrough": null,
@@ -2332,15 +2342,11 @@
       "pending": []
     },
     "isin:INE18UN01038|GAJA": {
-      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 123,
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
+      "error": null,
+      "lastResultCount": 64,
       "targetThrough": "2026-09-20T00:19:51+00:00",
       "pending": [
-        {
-          "from": "2026-09-11T00:19:51.977725+00:00",
-          "to": "2026-09-13T06:19:51.733294+00:00"
-        },
         {
           "from": "2026-09-13T06:19:51.733294+00:00",
           "to": "2026-09-15T12:19:51.488863+00:00"
@@ -2354,7 +2360,7 @@
           "to": "2026-09-20T00:19:51+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-17T05:23:01+00:00"
+      "lastDiscoveryAt": "2026-10-22T10:22:06+00:00"
     },
     "isin:INE540H01012|Voltamp Transformers": {
       "lastAttemptAt": "2026-10-17T10:59:12+00:00",
@@ -2420,10 +2426,10 @@
       "pending": []
     },
     "isin:INE685T01010|HORIZONIND": {
-      "lastAttemptAt": "2026-10-17T05:23:01+00:00",
+      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
       "error": null,
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-10-22T10:22:06+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2686,8 +2692,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 232,
-    "checkedAt": "2026-10-22T09:37:01.867795+00:00"
+    "attempted": 8,
+    "incomplete": 230,
+    "checkedAt": "2026-10-22T10:22:06.626810+00:00"
   }
 }
