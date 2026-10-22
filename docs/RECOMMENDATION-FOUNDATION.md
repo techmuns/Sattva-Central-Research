@@ -66,6 +66,22 @@ Per-company windows, pagination, family order, retry dates and interrupted work 
 and calendar rollover. Current financials and recent dated catalyst disclosures receive collection
 priority; this priority never changes a model score. An index that ignores its symbol filter or
 returns a conflicting ISIN cannot close the company window. Financial XML still verifies the issuer.
+Collection order version 2 uses the most recent retained assessment cohort observed before the
+walk, rechecks the original disclosure date/identity, and recomputes the existing three model scores
+from current financial facts. Cases blocked mainly by missing financial evidence lead the queue;
+known losses, failed growth/quality/valuation checks and conflicting statements are not described as
+fillable absences. Missing contract/capacity terms, liquidity, prices and other nonfinancial gates
+remain separate requirements. This is collection priority, never a projected score or probability.
+Every fourth company turn serves the oldest waiting eligible company, so lower-ranked histories
+remain enrolled. Saved retry dates and host cooldowns still apply to both lanes.
+Already-discovered required-period filings are read before another index request. New/current
+revisions precede year-earlier and annual candidates, and every known relevant revision remains
+queued, including contradictory statements. A completed index family advances before document
+reads, avoiding repeat discovery after an interrupted document turn. Each company gets at most
+12 requests per turn, then yields with its exact window/family/page checkpoints retained. The old
+12-company walk cap is replaced by a bounded queue inside the unchanged 100-request/four-minute
+targeted slice. Walk summaries retain actual index requests, document attempts, lanes and per-company
+request ceilings; detailed priorities remain in the archived queue, without adding browser payloads.
 Known losses, negative cash flow, conflicting statements and unsupported BSE-only histories remain
 explicit failures/gaps; the collector never searches for an older profitable substitute.
 An interrupted HTTP body or a response shorter than its declared length is never parsed as
