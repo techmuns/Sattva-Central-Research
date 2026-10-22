@@ -2568,7 +2568,7 @@
       "pending": []
     },
     "isin:INE0DRI01029|ESDS": {
-      "lastAttemptAt": "2026-10-17T20:55:37+00:00",
+      "lastAttemptAt": "2026-10-22T22:30:47+00:00",
       "lastResultCount": 115,
       "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
@@ -2732,6 +2732,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 232,
-    "checkedAt": "2026-10-22T21:48:14.459634+00:00"
+    "checkedAt": "2026-10-22T22:30:47.603083+00:00"
   }
 }
