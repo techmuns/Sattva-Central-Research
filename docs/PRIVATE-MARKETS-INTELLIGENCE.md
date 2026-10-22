@@ -59,3 +59,11 @@ scheduled provider acceptance or inbox receipt.
 Sattva reads names-only funds from the authenticated Family holdings export
 (`?include=funds`), using the same complete private-workbook parser and source
 precedence as My Managers. No capital figures or raw sheets cross this interface.
+
+Private Market’s Round types filter groups spelling, hyphenation and footnote
+variants, series sub-rounds/extensions, Credit/Debt and mixed equity/debt labels.
+Pre-Series stages remain distinct from their Series stages. Missing, misplaced
+amounts and unrecognised values appear under Unspecified; All retains every
+source observation. Original round wording, monetary amounts, footnotes and
+source fields remain unchanged in the table, drilldown and filtered export.
+Saved raw round selections migrate to their display group during an upgrade.

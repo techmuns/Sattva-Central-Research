@@ -563,7 +563,9 @@ export function scoreTable(config) {
     watchOnly: false,
     sort: initialSort ? { ...initialSort } : null,
   };
-  if (activeView()?.preset) view.savedViewKey = activeView().key;
+  // Loading tables may not have their source-derived filter options yet. Restore
+  // the saved reading again when data arrives instead of consuming it as All.
+  if (activeView()?.preset && !loading) view.savedViewKey = activeView().key;
   if (initialView) {
     if (typeof initialView.q === 'string') view.q = initialView.q;
     if (typeof initialView.watchOnly === 'boolean') view.watchOnly = initialView.watchOnly;
@@ -572,7 +574,9 @@ export function scoreTable(config) {
     // tab that changes its filters between paints cannot resurrect a filter that no longer exists.
     if (Array.isArray(initialView.filters)) {
       initialView.filters.forEach((v, i) => {
-        if (i < view.filters.length && filterDefs[i].options.some((o) => o.value === v)) view.filters[i] = v;
+        if (i >= view.filters.length) return;
+        const filter = filterDefs[i], value = filter.normalizeValue ? filter.normalizeValue(v) : v;
+        if (filter.options.some((o) => o.value === value)) view.filters[i] = value;
       });
     }
   }
