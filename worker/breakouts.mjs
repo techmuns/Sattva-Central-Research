@@ -1,16 +1,21 @@
 import { BREAKOUT_ORIGIN, BREAKOUT_OBJECT, liveCoverage } from '../public/js/data/breakout-live-shared.js';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { breakoutCollectorIdentity } from './breakout-auth.mjs';
-import { withTag, tagged, revalidate } from './http.mjs';
+import { withTag, stableJson, tagged, revalidate } from './http.mjs';
 import {PRICE_LEVELS_OBJECT} from '../public/js/data/price-levels-shared.js';
 import { PRIMARY_OBJECT } from './breakout-primary.mjs';
 import {preparedBreakouts} from './breakouts-github.mjs';
 import {readLiveBreakouts} from './breakout-live-delivery.mjs';
 
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
-function conditional(request, payload, age = 0) {
-  const { body, tag } = withTag(payload);
-  return revalidate(request, tagged(body, tag, age), 'capture');
+async function conditional(request, payload, age = 0) {
+  // Current captures are hundreds of KB. Native hashing avoids walking that
+  // entire response in JavaScript under the free Worker's request CPU limit.
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(stableJson(payload)));
+  const tag=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+  if(payload.meta&&typeof payload.meta==='object')payload.meta.contentTag=tag;
+  else payload.contentTag=tag;
+  return revalidate(request, tagged(JSON.stringify(payload), tag, age), 'capture');
 }
 
 export async function handleBreakouts(request, env, { fetcher = fetch, now = Date.now, identity = breakoutCollectorIdentity, edgeCache = globalThis.caches?.default } = {}) {
