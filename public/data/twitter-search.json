@@ -1931,87 +1931,100 @@
       "error": "search-unavailable"
     },
     "isin:INE089C01029|Sterlite Technologies": {
-      "lastAttemptAt": "2026-10-16T20:09:45+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 105,
+      "targetThrough": "2026-10-22T03:30:38+00:00",
+      "pending": [
+        {
+          "from": "2026-10-13T03:30:38.563921+00:00",
+          "to": "2026-10-17T15:30:38.281961+00:00"
+        },
+        {
+          "from": "2026-10-17T15:30:38.281961+00:00",
+          "to": "2026-10-22T03:30:38+00:00"
+        }
+      ]
     },
     "isin:INE089C01029|SterliteTech": {
-      "lastAttemptAt": "2026-10-16T20:51:30+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
+      "lastResultCount": 14,
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE089C01029|Sterlite analyst day": {
-      "lastAttemptAt": "2026-10-16T21:25:59+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE089C01029|STL analyst day": {
-      "lastAttemptAt": "2026-10-16T21:50:52+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE089C01029|STLTECH": {
-      "lastAttemptAt": "2026-10-16T22:31:55+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 116,
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
+      "lastResultCount": 26,
       "targetThrough": "2026-10-02T12:58:36+00:00",
       "pending": [
-        {
-          "from": "2026-09-23T12:58:36.150794+00:00",
-          "to": "2026-09-28T00:58:36.075397+00:00"
-        },
         {
           "from": "2026-09-28T00:58:36.075397+00:00",
           "to": "2026-10-02T12:58:36+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-22T03:30:38+00:00"
     },
     "isin:INE958L01034|String Metaverse": {
-      "lastAttemptAt": "2026-10-16T23:16:49+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 10,
-      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
+      "lastResultCount": 6,
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE239C01020|Stylam Industries": {
-      "lastAttemptAt": "2026-10-16T23:51:11+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 9,
-      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
+      "lastResultCount": 13,
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE239C01020|STYLAMIND": {
-      "lastAttemptAt": "2026-10-17T00:04:02+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE659A01023|Sudarshan Chemical Industries": {
-      "lastAttemptAt": "2026-10-17T00:37:50+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 32,
-      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
+      "lastResultCount": 18,
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE659A01023|SUDARSCHEM": {
-      "lastAttemptAt": "2026-10-17T01:46:43+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 13,
-      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
+      "error": null,
+      "lastResultCount": 24,
+      "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE07RO01027|Supriya Lifescience": {
-      "lastAttemptAt": "2026-10-17T02:18:04+00:00",
+      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
       "error": "search-unavailable",
       "lastResultCount": 19,
       "lastSuccessAt": "2026-10-02T12:58:36+00:00",
@@ -2673,8 +2686,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 234,
-    "checkedAt": "2026-10-22T02:30:19.196376+00:00"
+    "attempted": 11,
+    "incomplete": 226,
+    "checkedAt": "2026-10-22T03:30:38.563921+00:00"
   }
 }
