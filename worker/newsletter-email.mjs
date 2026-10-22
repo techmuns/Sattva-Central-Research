@@ -5,6 +5,14 @@ import { briefStats, briefSubject, renderBriefHtml } from './newsletter-brief.mj
 // body is checked again at the transport boundary. No text, evidence or AI notes are truncated.
 // https://mailchimp.com/help/gmail-is-clipping-my-email/
 export const EMAIL_HTML_BYTES = 90_000;
+// Stop before provider I/O if an edition exceeds the earlier normal delivery range.
+// This is a delivery circuit breaker, never a source-record or rendering truncation.
+export const MAX_DELIVERY_EMAIL_PARTS = 6;
+export function newsletterDeliveryPolicy({ partCount, lateCount = 0 }) {
+  if (lateCount > 0) return 'historical-backlog-stopped';
+  if (!Number.isSafeInteger(partCount) || partCount < 1 || partCount > MAX_DELIVERY_EMAIL_PARTS) return 'email-part-limit';
+  return null;
+}
 export const emailBytes = html => new TextEncoder().encode(html).byteLength;
 const PACKING_RESERVE = 1024;
 const MAX_PARTS = 99;

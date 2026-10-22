@@ -80,9 +80,9 @@ brief's operational coverage; missing budgets or credentials preserve source-onl
 ## History, migration and sending
 
 `newsletter_reported` retains acknowledged item identities for ten days independently of the
-pruned delivery log. The brief checks two previous edition windows for late captures, bounded by
-the ledger's known start and retention. This does not claim indefinite send suppression or complete
-source capture. Test copies and previews never mark an item reported. Each confirmed multipart
+pruned delivery log. Daily emails and test copies use only their printed publication window;
+older, late-captured and previously unsent reports remain in dashboard history and are never
+replayed as email catch-up. This does not claim indefinite send suppression or complete source capture. Test copies and previews never mark an item reported. Each confirmed multipart
 acknowledgement updates the ledger atomically; a rejected or uncertain part cannot suppress its
 unconfirmed items. An already-claimed edition is never automatically replayed.
 
@@ -92,7 +92,9 @@ Subscribers, settings, edition claims, manual-attempt reservations and immutable
 No data reset, namespace change or manual production action is required.
 
 HTML is measured after escaping, personalisation and links. Each part stays within 90,000 UTF-8
-bytes; whole companies stay together when possible. Complete updates and supplementary-section
+bytes; whole companies stay together when possible. Delivery refuses the complete edition before
+any send if it needs more than six parts. Frozen historical/oversized plans are retired, and
+non-test retries expire three hours after the original edition time. Complete updates and supplementary-section
 rows form additional boundaries. All sources and AI notes survive splitting. A single unfit item
 fails before a PDF is saved or an email sent. The final part carries markets; every part links the
 same complete immutable PDF. Delivery progress persists before and after each send. Unknown
@@ -120,3 +122,6 @@ Layout tests use long names, calendar sources and multiple action dates at 1440,
 320 pixels. `verify-alert-stories-ui.mjs` exercises the real service-worker upgrade from a cached
 old newsletter module alongside Sattva's archive/resurfacing behavior. External model replies
 and email delivery are stubbed: no live send or private-data collection is part of these tests.
+
+The morning brief retains explicitly dated quotes and explanations for the latest completed
+trading session. This price context cannot admit old news, filings, trades or arbitrary older sessions.

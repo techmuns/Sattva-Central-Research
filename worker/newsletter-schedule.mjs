@@ -1,6 +1,6 @@
 import {newsletterRequest} from './newsletter-request.mjs';
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
-import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys } from './newsletter-email.mjs';
+import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys, newsletterDeliveryPolicy } from './newsletter-email.mjs';
 import { buildBrief, briefStats, briefStories, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
 import { newsletterNewsReadComplete } from './newsletter-sources.mjs';
 import { contentIdentity, contentItems } from './newsletter-content.mjs';
@@ -272,6 +272,8 @@ export class NewsletterSchedule {
     let messages;
     try {
       messages = renderBriefEmails(brief, { ...this.renderOptions(footerRecipient), pdfUrl: placeholder });
+      const policyReason = newsletterDeliveryPolicy({ partCount: messages.length, lateCount: briefStats(brief).late });
+      if (policyReason) throw Object.assign(new Error('Newsletter delivery policy refused this edition'), { code: policyReason });
       const plannedKeys = new Set(messages.flatMap(message => message.keys));
       if (briefStories(brief).some(item => !item.keys?.length || item.keys.some(key => !plannedKeys.has(key)))) {
         throw Error('Eligible alert missing from email plan');
@@ -284,7 +286,7 @@ export class NewsletterSchedule {
         }
       }
     } catch (error) {
-      const reason = error?.code === 'email-too-large' ? 'email-too-large' : 'build-failed';
+      const reason = ['email-too-large', 'email-part-limit', 'historical-backlog-stopped'].includes(error?.code) ? error.code : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map(r => ({ email: r.email, ok: false, reason })) });
     }
     const renderStats = briefStats(brief);

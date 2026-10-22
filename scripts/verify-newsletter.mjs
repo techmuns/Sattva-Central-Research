@@ -436,39 +436,18 @@ const BOOK_ROW = (overrides = {}) => ({
 const bseWith = (rows) => ({ capturedAt: '2026-09-17T02:20:00.000Z', from: '2026-09-15', to: '2026-09-17', byTicker: { AARTIDRUGS: rows } });
 const findStory = (brief, test) => briefStories(brief).find(test) || null;
 
-await test('a filing captured after the previous brief went out reaches the next brief once, marked, and never twice', async () => {
-  // 15:50 on the 16th is inside the previous (evening) window; the 08:00 brief on the 17th is the next send.
-  const build = (reported) => buildBrief({ edition: 'morning', day: '2026-09-17', settings: DEFAULT_SETTINGS, env: { ASSETS: assetsWith({ '/data/corp-announcements.json': bseWith([BOOK_ROW()]), '/data/nse-filings/index.json': { days: [] } }) }, fetcher: makeFetcher({ nse: 'blocked' }), now: MORNING, reported });
-  const isLate = (s) => s.kind === 'filing' && s.ticker === 'AARTIDRUGS' && /overseas customer/.test(s.headline);
-
-  const unknown = await build(null);
-  assert.equal(findStory(unknown, isLate), null, 'with no ledger at all nothing outside the window is read: "unknown" is not "not sent"');
-  assert.equal(unknown.lateFrom, null);
-
-  const unsent = await build(ledger([]));
-  const late = findStory(unsent, isLate);
-  assert.ok(late, 'against a ledger that does not hold it, the filing is carried');
-  assert.equal(late.late, true);
-  assert.equal(late.keys[0], 'bse:late-order-1', 'the ledger key is the exchange\'s own stable id');
-  assert.equal(istLabel(unsent.lateFrom), istLabel(lateArrivalsFrom('morning', '2026-09-17', DEFAULT_SETTINGS)), 'the lookback reaches two windows back');
-  assert.equal(briefStats(unsent).late, briefStories(unsent).filter((s) => s.late).length);
-  assert.ok(briefStats(unsent).late >= 1);
-  const html = renderBriefHtml(unsent, { dashboardUrl: 'https://example.test' });
-  assert.ok(html.includes('not in the previous brief'), 'a late arrival says so on its row');
-  assert.ok(html.includes(`${briefStats(unsent).late} not in the previous brief`), 'and the summary line counts them');
-  assert.ok(/16 Sept, 15:50 IST/.test(html), 'it keeps its own publication time, never the brief\'s');
-  assert.ok(unsent.reported.some((r) => r.key === 'bse:late-order-1' && r.publishedAt === istInstant('2026-09-16', '15:50')), 'a send of this brief would put the filing in the ledger');
-
-  const sent = await build(ledger(['bse:late-order-1']));
-  assert.equal(findStory(sent, isLate), null, 'once the desk has been sent it, it is not sent again');
-
-  const before = await build(ledger([], istInstant('2026-09-16', '16:00')));
-  assert.equal(findStory(before, isLate), null, 'nothing published before the ledger began is judged unsent — an earlier brief carried it');
-  assert.equal(before.lateFrom, null, 'a lookback the ledger cannot vouch for collapses to the window');
-
-  const monday = editionWindow('morning', '2026-09-21', DEFAULT_SETTINGS);
-  assert.equal(istLabel(lateArrivalsFrom('morning', '2026-09-21', DEFAULT_SETTINGS)), 'Thu 17 Sep, 16:00 IST', 'Monday looks back over Friday\'s two windows');
-  assert.ok(lateArrivalsFrom('morning', '2026-09-21', DEFAULT_SETTINGS) < monday.from);
+await test('old unsent filings never enter a daily email, regardless of ledger or capture time', async () => {
+  const row = BOOK_ROW();
+  const env = { ASSETS: assetsWith({ '/data/corp-announcements.json': bseWith([row]), '/data/nse-filings/index.json': { days: [] } }) };
+  for (const reported of [null, ledger([]), ledger(['bse:late-order-1']), ledger([], MORNING - 10 * 86400000)]) {
+    const brief = await buildBrief({ edition: 'morning', day: '2026-09-17', settings: DEFAULT_SETTINGS, env, fetcher: makeFetcher({ nse: 'blocked' }), now: MORNING, reported });
+    assert.equal(findStory(brief, s => /overseas customer/.test(s.headline)), null);
+    assert.equal(brief.lateFrom, null);
+    assert.equal(briefStats(brief).late, 0);
+    assert.ok(!brief.reported.some(r => r.key === 'bse:late-order-1'));
+    assert.ok(briefStories(brief).every(s => s.at < brief.window.to && (s.at >= brief.window.from || s.kind === 'move' && istDay(s.at) === brief.moves.session)));
+  }
+  assert.equal(row.date, '2026-09-16', 'the original archived source record is unchanged');
 });
 
 await test('a filing inside the window is carried whether or not the ledger holds it, and the ledger never suppresses the window', async () => {
@@ -554,10 +533,10 @@ await test('trades on a holding come from the insider archive, dated day-only, r
   const html = renderBriefHtml(evening);
   assert.ok(html.includes('17 Sept, day only'), 'no clock is invented for a broadcast day');
   assert.ok(html.includes('trades (bulk, block, SAST, insider) captured Thu 17 Sep, 16:00 IST, dated by broadcast day'));
-  // The 16th's bulk deal belongs to the 16th's evening brief; captured late, it reaches the next one through the ledger.
+  // A previous-day trade stays on the dashboard; a late capture cannot reopen its email window.
   const morning = await buildBrief({ edition: 'morning', day: '2026-09-17', settings: DEFAULT_SETTINGS, env, fetcher: makeFetcher(), now: MORNING, reported: ledger([]) });
   const bulk = findStory(morning, (s) => s.kind === 'trade' && /Bulk deal/.test(s.headline));
-  assert.ok(bulk && bulk.late, 'the bulk deal of the 16th is carried as not in the previous brief');
+  assert.equal(bulk, null, 'the previous edition’s trade is retained in its archive, never replayed by email');
   const real = await buildBrief({ edition: 'evening', day: '2026-09-17', settings: DEFAULT_SETTINGS, env: { ASSETS: assets }, fetcher: makeFetcher(), now: EVENING });
   assert.equal(real.trades.source.ok, true, 'the committed archive reads');
   assert.ok(real.trades.source.months.includes('2026-09'));
@@ -592,20 +571,18 @@ await test('price moves: the evening brief reads the closing quotes, the morning
   assert.equal(none.moves.count, 0);
   assert.ok(renderBriefHtml(none).includes('price moves unavailable (capture-unavailable; daily-behind; daily bars end 2026-09-16)'), 'an unread price feed is named, never drawn as no moves');
 
-  // The next morning: the completed daily bars carry the same session, keyed the same way, so a move the
-  // evening brief sent is not sent again — and one it could not send is.
+  // The completed session still supplies the dated price table, without replaying old move alerts.
   const daily = JSON.parse(asset('/data/technicals.json'));
   const nextMorning = istInstant(daily.price_date, '08:00') + 86400000;
   const morning = await buildBrief({ edition: 'morning', day: istDay(nextMorning), settings: DEFAULT_SETTINGS, env: { ASSETS: assets }, fetcher: makeFetcher(), now: nextMorning, reported: ledger([], istInstant(daily.price_date, '08:00')) });
   assert.equal(morning.moves.state, 'daily');
   assert.equal(morning.moves.session, daily.price_date);
-  const book = new Set(JSON.parse(asset('/data/portfolio-companies.json')).holdings.map((h) => h.ticker).filter(Boolean));
-  // The file's list is `companies` (the resolver reads `rows || companies` too), and a row with no bar
-  // date belongs to the file's own session, the fallback General Alerts make.
-  const expected = (daily.rows || daily.companies || []).filter((r) => book.has(r.ticker) && (r.bar_date || daily.price_date) === daily.price_date && Math.abs(Number(r.pct_change_today)) >= MOVE_PCT).length;
   const dailyMoves = briefStories(morning).filter((s) => s.kind === 'move');
-  assert.equal(dailyMoves.length, Math.min(expected, 30), 'every holding past the bar, and nothing under it');
-  for (const m of dailyMoves) { assert.ok(Math.abs(m.pct) >= MOVE_PCT); assert.equal(m.late, true, 'a close before the window opened is a late arrival'); }
+  const book = new Set(JSON.parse(asset('/data/portfolio-companies.json')).holdings.map(h => h.ticker).filter(Boolean));
+  const expected = (daily.rows || daily.companies || []).filter(r => book.has(r.ticker) && (r.bar_date || daily.price_date) === daily.price_date && Math.abs(Number(r.pct_change_today)) >= MOVE_PCT).length;
+  assert.equal(dailyMoves.length, expected, 'the latest completed session remains explicitly dated morning price context');
+  assert.ok(dailyMoves.every(m => !m.late && istDay(m.at) === morning.moves.session));
+  assert.equal(morning.performance.state, 'daily', 'the explicitly dated previous-session price table remains available');
   const alreadySent = await buildBrief({ edition: 'morning', day: istDay(nextMorning), settings: DEFAULT_SETTINGS, env: { ASSETS: assets }, fetcher: makeFetcher(), now: nextMorning, reported: ledger(dailyMoves.map((m) => m.keys[0]), istInstant(daily.price_date, '08:00')) });
   assert.equal(briefStories(alreadySent).filter((s) => s.kind === 'move').length, 0, 'what the evening brief sent is not sent again');
 });

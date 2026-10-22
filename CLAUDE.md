@@ -877,6 +877,12 @@ match would quietly fail the day they reword it.
 
 ### The team brief — two editions a weekday, built at the edge
 
+**Owner correction, 22 October 2026:** daily emails and test copies must only carry reports
+published inside their printed edition window. Never send historical backlog, newly captured old
+reports or missed-edition catch-up. Preserve dashboard archives. Refuse more than six parts before
+any send and retire saved historical/oversized plans without further mail. Non-test retries expire
+three hours after the original edition time. This supersedes earlier email catch-up guidance.
+
 The Newsletter button manages Sattva Ventures' direct-portfolio briefs at 08:00 and 16:00 IST
 on weekdays. The authoritative reading, budget, migration and email contracts are in
 [Newsletter source evidence](docs/NEWSLETTER-SOURCE-EVIDENCE.md); market comparison rules are
@@ -4233,7 +4239,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Add or change a scope | `js/data/scope.js` — the whole vocabulary is there, and every `forScope()` asks it. Read *Three scopes, not two* first; never reintroduce `scope !== 'portfolio'` |
 | Change what the Watchlist scope tracks | `js/core/watchlist.js` (the device mirror + sync) + `watchKey` on the table that stars it — read *The star marks a COMPANY* and *The watchlist is a list of COMPANIES, and ONE list for the whole desk* first |
 | Change the SHARED watchlist itself — its shape, its conflict rules or its route | `public/js/data/watchlist-shared.js` (the one definition, imported by the Worker too) + `worker/watchlist-store.mjs` + `worker/watchlist.mjs`. Edits are INTENTS, never a whole list; an `add` must name its contributor; a `seed` may not apply over any row that already exists. `node scripts/verify-shared-watchlist.mjs` and `node scripts/verify-shared-watchlist-ui.mjs` are the tests |
-| Change the team brief — what is in it, how it reads, when it sends | `worker/newsletter-brief.mjs` (the scan, the stories, the fold, the late-arrival look-back, the filing particulars and the broadsheet), `worker/newsletter-schedule.mjs` (the alarm and the send), `worker/newsletter-store.mjs` (subscribers, settings, deliveries and the sent-story ledger), `public/js/data/newsletter-shared.js` (editions, windows, addresses — imported by both sides) and `public/js/ui/newsletter.js` (the header control). Read *The team brief* first. `node scripts/verify-newsletter.mjs` and `node scripts/verify-newsletter-ui.mjs` are the tests |
+| Change the team brief — what is in it, how it reads, when it sends | `worker/newsletter-brief.mjs` (the scan, the stories, the fold, the strict publication window, the filing particulars and the broadsheet), `worker/newsletter-schedule.mjs` (the alarm and the send), `worker/newsletter-store.mjs` (subscribers, settings, deliveries and the sent-story ledger), `public/js/data/newsletter-shared.js` (editions, windows, addresses — imported by both sides) and `public/js/ui/newsletter.js` (the header control). Read *The team brief* first. `node scripts/verify-newsletter.mjs` and `node scripts/verify-newsletter-ui.mjs` are the tests |
 | Set up the team brief on a deployment | `MUNS_TOKEN` on the Worker sends it; `DASHBOARD_ORIGIN` and `NEWSLETTER_PRODUCT_NAME` are vars in `wrangler.jsonc`; the `NEWSLETTER` binding and `NEWSLETTER_LIMITER` are there too. Subscribe from the header and the alarm arms itself |
 | Change who is asked, or how the contributor dropdown behaves | `js/ui/watchlist-attribution.js` (the prompt) + `js/core/watchlist-people.js` (the roster and this device's own name) — read *An addition carries the name of whoever made it* first. Never preselect a name on a device nobody has identified themselves on |
 | Change AI Alerts ranking or thresholds | `js/data/ai-alerts.js` — keep it deterministic, retain every contribution for verification without rendering the arithmetic, use the real `coverage.js` book, and test `rankReport()` directly |

@@ -20,13 +20,18 @@ records; it never silently removes the holding or invents an exchange ticker.
 
 An eligible alert is a dated, company-attributed news report, non-routine exchange filing,
 trade disclosure, or qualifying price move on a listed direct portfolio holding, including BSE-only and suspended lines, inside the
-edition window or not yet reported within the retained ten-day ledger interval. Unrelated,
+edition window. Older reports are never emailed as historical catch-up, even when newly captured
+or absent from the sent ledger. Unrelated,
 uncertain, future and undated reports remain outside this dated brief. Routine filings remain
 on the dashboard. Related coverage is grouped with its sources; it is not silently discarded.
 
 No per-company or section alert cap applies to a built email. Multipart rendering must carry
 every eligible source identity and supplemental row. A pre-send invariant refuses an incomplete
-plan. Delivery summaries retain included source-item counts, cap omissions (must be zero),
+plan. Delivery refuses the entire edition before provider I/O if it requires more than six emails;
+no eligible current report is silently cut to meet that limit. Frozen recovery plans containing
+late reports or more than six parts are retired without further sends, preserving receipts,
+accepted identities, PDF links and frozen bodies. Non-test delivery recovery expires three
+hours after its original edition time; the original clock is never renewed by retries. Delivery summaries retain included source-item counts, cap omissions (must be zero),
 company archive reads and source coverage. Only accepted parts advance the scheduled sent-item
 ledger. A test copy never advances that ledger or sends to other subscribers.
 
@@ -52,9 +57,13 @@ records into every chunk read. Legacy individual records retain their existing a
 The static reader uses native byte/base64 conversion when available and a bounded two-page
 request-local memo. Download verification compares complete PDF bytes and hash, not HTTP 200.
 
-`verify-newsletter-retained.mjs` checks the real committed ten-day recovery with no mail,
+`verify-newsletter-retained.mjs` checks the real committed edition window with no mail,
 network or model requests. It verifies archive descriptors/parts, all eligible identities across
-all parts, and the complete PDF transport budget on free standard GitHub Actions.
+all parts, exclusion of old unsent reports, and the complete PDF transport budget on free standard GitHub Actions.
+
+`verify-newsletter-policy.mjs` checks refusal before any send, retirement of an interrupted
+86-part historical plan across restart, preservation of accepted outcomes and archived evidence,
+and normal bounded delivery. This supersedes the earlier ten-day email catch-up behaviour.
 
 An explicitly requested test can use `sourceOnly: true` with `to: "me"`. The encrypted request
 preserves that flag and disables model processing for the test, while exercising the same
@@ -86,3 +95,6 @@ authorization stays inside encrypted state and is removed with the completed out
 in prepared request views. The original 24-hour issuance deadline includes the accepted one-hour
 future clock skew. Expiry preserves earlier provider outcomes; PDFs with no possible provider
 submission are deleted, while genuinely uncertain links remain usable.
+
+The morning brief retains explicitly dated quotes and explanations for the latest completed
+trading session. This price context cannot admit old news, filings, trades or arbitrary older sessions.

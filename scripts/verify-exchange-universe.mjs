@@ -8,7 +8,10 @@ import { filterByScope } from '../public/js/data/scope.js';
 import { writeEntry } from '../public/js/core/store.js';
 
 const read = path => JSON.parse(readFileSync(new URL(`../public/data/${path}`, import.meta.url)));
-const bse = read('announcement-identities.json'), nse = read('filing-capture/nse-identities.json');
+const bse = read('announcement-identities.json'), nseCapture = read('filing-capture/nse-identities.json');
+// Real directory identities are retained, but the successful-read fixture must not inherit
+// a transient collector error. Failure/revalidation states are injected explicitly below.
+const nse = { ...nseCapture, directories: Object.fromEntries(Object.entries(nseCapture.directories).map(([kind, directory]) => [kind, { ...directory, error: null }])) };
 const built = buildExchangeUniverse(bse, nse);
 let yields = 0;
 assert.deepEqual(await buildExchangeUniverseAsync(bse, nse, {
@@ -163,4 +166,11 @@ assert.equal(overlapReads, 6, 'each overlapping return burst adds one subsequent
 assert.deepEqual(overlapping.all(), buildExchangeUniverse(deliveredBse, nse).companies,
   'the return check includes a listing published after the previous source request began');
 assert.equal(overlapping.meta().sources.find(s => s.label === 'BSE').checkedAt, deliveredBse.capturedAt);
+const failedNse = { ...nse, directories: { ...nse.directories,
+  equity: { ...nse.directories.equity, error: 'Fixture source check failed; verified entries retained.' } } };
+await overlapping.load({ read: async path => ({ value: path.includes('nse-identities') ? failedNse : deliveredBse, stale: false }) });
+assert.deepEqual(overlapping.all(), buildExchangeUniverse(deliveredBse, nse).companies, 'a source-check error preserves every verified identity');
+assert(overlapping.meta().errors.some(error => error.includes('NSE main board directory has not been fully checked')), 'retained source failures remain visible');
+await overlapping.load({ read: async path => ({ value: path.includes('nse-identities') ? nse : deliveredBse, stale: false }) });
+assert.deepEqual(overlapping.meta().errors, [], 'an explicitly successful source fixture clears its earlier check failure');
 console.log(`PASS ${expected.size} exchange equity identities: complete union, BSE/NSE collisions, automatic enrollment, persisted exclusions and failure retention.`);

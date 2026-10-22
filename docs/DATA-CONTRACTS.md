@@ -4766,9 +4766,11 @@ notes; blocked or incomplete reading leaves original source text available. Publ
 saved facts only and call no model. Routine filing categories omitted from the short email are
 counted and remain available on the dashboard.
 
-The durable reported-item ledger covers ten days, independently of delivery-log pruning. A brief
-looks back across two previous edition windows, limited by the ledger's known start, to include
-late captures not previously acknowledged. Preview/test copies mark nothing; a confirmed email
+The durable reported-item ledger covers ten days, independently of delivery-log pruning. As of
+22 October 2026, daily emails and test copies include only reports published inside the printed
+edition window. Never replay old, late-captured or previously unsent history by email. That history
+remains on the dashboard. Refuse delivery before any send above six parts, and retire frozen
+historical/oversized recovery plans without sending more parts. Preview/test copies mark nothing; a confirmed email
 part records its items even if a later part fails. Legacy delivery keys are migrated in place and
 remain identity aliases. This is not indefinite suppression or proof of complete source capture.
 
@@ -4950,8 +4952,9 @@ one send per key, replay-safe, `no-token`, refused, missed, test copy, cooldown,
 asserts the retained NSE history joins and folds (one filing on both exchanges is one story, a
 document-identity twin folds, two same-prefix filings stay two), the TradingView headlines join only where
 attribution confirms the company, a 5% session move is on the sheet with its verification state and
-`MOVE_PCT` equals `daily-alerts.js`'s, and late arrivals: carried once, marked, suppressed once sent,
-and a missed morning's window reaching the evening brief.
+`MOVE_PCT` equals `daily-alerts.js`'s, and old reports remain excluded even with an empty sent
+ledger, a missed edition or an upgrade. `node scripts/verify-newsletter-policy.mjs` also checks
+the six-part delivery ceiling and permanent retirement of unsafe or expired frozen queues.
 `node scripts/verify-newsletter-ui.mjs` drives the real button and panel against the real route,
 store and schedule over an in-process server with stubbed upstreams — the email endpoint records
 what it was asked to send.

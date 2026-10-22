@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { NewsletterStore } from '../worker/newsletter-store.mjs';
-import { buildBrief, briefStories, readPerformance, readAiNotes, readableUrl, renderBriefHtml, renderBriefText } from '../worker/newsletter-brief.mjs';
+import { buildBrief, briefStories, readAnnouncements, readPerformance, readAiNotes, readableUrl, renderBriefHtml, renderBriefText } from '../worker/newsletter-brief.mjs';
 import { renderBriefPdf } from '../worker/newsletter-pdf.mjs';
 import { DEFAULT_SETTINGS, istInstant } from '../public/js/data/newsletter-shared.js';
 
@@ -38,7 +38,7 @@ for (let i=0; i<4; i++) assert.equal(restarted.claimManualDelivery(now+i).ok, tr
 assert.equal(restarted.claimManualDelivery(now+5).ok, false);
 assert.equal(restarted.claimManualDelivery(now+3600000).ok, false, 'keep Sattva’s daily manual-send limit');
 
-// An old sent-key alias still suppresses a late source after the in-place ledger migration.
+// Migration preserves sent-key aliases; daily mail never replays retained historical sources.
 const paths = {
   '/data/portfolio-companies.json': { holdings:[{ticker:'CEAT',name:'CEAT Limited'}] },
   '/data/nse-filings/index.json': { days:[{day:'2026-09-23'}] },
@@ -55,8 +55,16 @@ const env = { ASSETS:{ async fetch(request) {
 const args = { env, edition:'morning',day:'2026-09-24',settings:DEFAULT_SETTINGS,now,includeAi:false,fetcher:async()=>new Response('',{status:503}) };
 const sent = await buildBrief({...args,reported:store.reportedLookup()});
 assert.equal(briefStories(sent).length, 0);
-const pending = await buildBrief({...args,reported:{empty:false,since:now-2*86400000,has:()=>false}});
-assert.equal(briefStories(pending).length, 1);
+const unknownLedger = {empty:false,since:now-10*86400000,has:()=>false};
+const historical = await buildBrief({...args,reported:unknownLedger});
+assert.equal(briefStories(historical).length, 0, 'Migration cannot turn an unsent historical filing into daily email');
+const adapterArgs = {env,holdings:paths['/data/portfolio-companies.json'].holdings,window:historical.window,lateFrom:now-2*86400000};
+assert.equal((await readAnnouncements({...adapterArgs,reported:store.reportedLookup()})).count, 0, 'Migrated aliases still identify previously sent source records');
+assert.equal((await readAnnouncements({...adapterArgs,reported:unknownLedger})).count, 1, 'Retained source adapters keep the historical filing available');
+const retainedRow = paths['/data/nse-filings/2026-09-23.json'].rows[0];
+retainedRow.publishedAt = '2026-09-23T11:00:00Z';
+const pending = await buildBrief({...args,reported:unknownLedger});
+assert.equal(briefStories(pending).length, 1, 'Current-window filings still reach daily email');
 const wrapper = readableUrl(legacyKey.split('|NSE:')[1]);
 assert.ok(wrapper.includes('/filing?src='));
 assert.ok(wrapper.endsWith('&view=2'), 'preserve the released readable-filing version');
