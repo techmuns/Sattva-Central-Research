@@ -75,8 +75,8 @@ try{
   const rounds=page.getByRole('combobox',{name:'Round types',exact:true});
   await rounds.selectOption('Seed');assert.equal(await page.locator('tbody tr[data-row-key]').count(),2);
   await rounds.selectOption('Unspecified');assert.equal(await page.locator('tbody tr[data-row-key]').count(),2,'Misplaced amount and investor text remain reachable without invalid options');
-  await rounds.selectOption('Series A');assert.match(await page.locator('[data-table-count]').innerText(),/491 of 500/,'Series sub-rounds and footnotes match one canonical group');
-  await rounds.selectOption('all');assert.match(await page.locator('[data-table-count]').innerText(),/499 of 500/,'All keeps every observation in the selected period');
+  await rounds.selectOption('Series A');assert.match(await page.locator('main').innerText(),/491 of 500/,'Series sub-rounds and footnotes match one canonical group');
+  await rounds.selectOption('all');assert.match(await page.locator('main').innerText(),/499 of 500/,'All keeps every observation in the selected period');
   await page.getByText('Fixture Company 0',{exact:true}).click();assert((await page.locator('#drill-content').textContent()).includes('Mix of equity and debt'));
   await page.keyboard.press('Escape');
   const period=page.getByRole('combobox',{name:'Funding period',exact:true});await period.selectOption('all');
