@@ -221,6 +221,8 @@ class BSETests(unittest.TestCase):
         gap=company_gap(self.store,ISSUER["isin"],ISSUER,AT)
         walks={ISSUER["isin"]:{"lastAttempt":"2026-10-21T00:00:00+00:00","nextRetry":"2026-10-28T00:00:00+00:00","status":"bse-response-read-gaps-remain"}}
         self.assertTrue(collection_queue(self.store,{"companies":[gap]},walks,AT))
+        # A same-period revision must also wake a company whose previous fields were complete.
+        self.assertTrue(collection_queue(self.store,{"companies":[{**gap,"needsBackfill":False}]},walks,AT))
         walks[ISSUER["isin"]]["status"]="source-failed"
         self.assertEqual(collection_queue(self.store,{"companies":[gap]},walks,AT),[])
     def test_bse_priority_keeps_nearest_first_fairness_and_global_limits(self):

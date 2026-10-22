@@ -266,7 +266,7 @@ def collection_queue(store, audit, walks, at):
         GROUP BY d.company""", (at,recent,at)) if r["observed"] > walks.get(r["company"],{}).get("lastAttempt", "")}
     attention.update(new_bse)
     refresh_before = (dt.datetime.fromisoformat(at)-dt.timedelta(days=7)).isoformat(timespec="seconds")
-    candidates = {r["company"]: r for r in audit["companies"] if (r["needsBackfill"] or r.get("bseCode") and
+    candidates = {r["company"]: r for r in audit["companies"] if (r["needsBackfill"] or r["company"] in new_bse or r.get("bseCode") and
         walks.get(r["company"],{}).get("lastSuccess", "") <= refresh_before) and
         (r["symbol"] or r.get("bseCode") or r["company"] in known_pending) and
         (walks.get(r["company"],{}).get("nextRetry", "") <= at or r["company"] in new_bse and
