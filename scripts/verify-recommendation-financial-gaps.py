@@ -15,15 +15,15 @@ from urllib.parse import parse_qs, urlsplit
 
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'scripts/lib'))
-from recommendation_foundation import Store,canonical,parse_financial_xml
+from recommendation_foundation import Store,canonical,parse_financial_xml,identities
 from recommendation_sources import FAMILIES,PublicReader,SourceFailure,BudgetExceeded,capture_window,index_url,index_page
-from recommendation_models import financials,score_models,POLICY
-from recommendation_financial_gaps import audit_financial_gaps,company_gap,fill_financial_gaps,relevant_documents
+from recommendation_models import financials,score_models,evidence_date,schema as model_schema,MODEL_VERSION,POLICY
+from recommendation_financial_gaps import audit_financial_gaps,company_gap,fill_financial_gaps,relevant_documents,collection_profiles,collection_queue
 
 FIX=ROOT/'scripts/fixtures/recommendation-financial-gaps'
 AT='2026-10-22T00:00:00+00:00'
 BEFORE='2026-10-21T17:00:00+00:00'
-ISSUER={'isin':'INE010V01017','name':'L&T Technology Services Ltd','symbols':['LTTS'],'bseCodes':['540115']}
+ISSUER={'isin':'INE010V01017','name':'L&T Technology Services Ltd','symbols':['LTTS'],'bseCodes':['540115'],'nseSymbols':['LTTS']}
 ORIGINAL=json.loads((FIX/'integrated-ltts.json').read_text())
 METADATA=json.loads((FIX/'fixture-sources.json').read_text())
 
@@ -143,11 +143,36 @@ class GapTests(unittest.TestCase):
         self.assertLess(reader.used,reader.maximum)
     def test_bse_only_and_ambiguous_symbols_stay_explicit(self):
         for symbols,expected in [([], 'bse-only-adapter-unavailable'),(['OLD','NEW'],'ambiguous-symbol')]:
-            identity={**ISSUER,'symbols':symbols}
+            identity={**ISSUER,'symbols':symbols,'nseSymbols':symbols}
             self.store.db.execute('UPDATE companies SET identity=?',(canonical(identity),));self.store.db.commit()
             row=audit_financial_gaps(self.store,AT)['companies'][0]
             self.assertEqual(row['sourceSupport'],expected);self.assertTrue(row['needsBackfill'])
             self.assertEqual(self.fill().used,0)
+    def test_exchange_provenance_keeps_bse_only_tickers_out_of_nse_requests(self):
+        directory=Path(self.tmp.name)/'directory';(directory/'filing-capture').mkdir(parents=True)
+        bse_only={'isin':'INE000000000','name':'BSE only','ticker':'BSEONLY','bseSymbol':'BSEONLY','bseCode':'500001'}
+        dual={'isin':ISSUER['isin'],'ticker':'BSE-ALIAS','bseSymbol':'BSE-ALIAS','bseCode':'540115'}
+        (directory/'announcement-identities.json').write_text(canonical({'entries':[bse_only,dual]}))
+        (directory/'filing-capture/nse-identities.json').write_text(canonical({'directories':{
+            'sme':{'entries':[{'isin':ISSUER['isin'],'ticker':'LTTS','aliases':['OLDLTTS','LTTS-SM']}]}}}))
+        companies,lookup=identities(directory)
+        self.assertEqual(len(companies),2);self.assertEqual(companies[ISSUER['isin']]['nseSymbols'],['LTTS'])
+        self.assertIn('BSE-ALIAS',companies[ISSUER['isin']]['symbols']);self.assertIn('OLDLTTS',companies[ISSUER['isin']]['symbols'])
+        gap=company_gap(self.store,ISSUER['isin'],companies[ISSUER['isin']],AT)
+        self.assertEqual(gap['symbol'],'LTTS');self.assertTrue(gap['sme'])
+        only=company_gap(self.store,bse_only['isin'],companies[bse_only['isin']],AT,known=False)
+        self.assertIsNone(only['symbol']);self.assertEqual(only['sourceSupport'],'bse-only-adapter-unavailable')
+        legacy={k:v for k,v in ISSUER.items() if k!='nseSymbols'}
+        self.assertEqual(company_gap(self.store,ISSUER['isin'],legacy,AT)['sourceSupport'],'exchange-provenance-unavailable')
+        self.store.db.execute('UPDATE companies SET identity=?',(canonical(legacy),));self.store.db.commit()
+        self.assertEqual(self.fill().used,0)
+    def test_known_original_history_is_still_filled_without_a_verified_nse_symbol(self):
+        self.discover('ltts-30-sep-2025.xml');self.discover('ltts-31-mar-2026.xml')
+        self.store.db.execute('UPDATE companies SET identity=?',(canonical({**ISSUER,'nseSymbols':[]}),));self.store.db.commit()
+        reader=self.fill()
+        self.assertEqual(reader.used,2);self.assertFalse(any('/api/' in u for u in reader.urls))
+        gap=company_gap(self.store,ISSUER['isin'],{**ISSUER,'nseSymbols':[]},AT)
+        self.assertFalse(gap['needsBackfill']);self.assertEqual(gap['sourceSupport'],'bse-only-adapter-unavailable')
     def test_source_refusal_retains_cooldown_and_does_not_spend_requests(self):
         self.store.check('host:www.nseindia.com',BEFORE,'access-refused',{},'2026-10-23T00:00:00+00:00')
         opener=mock.Mock();reader=PublicReader(self.store,maximum=200,opener=opener,sleep=lambda n:None)
@@ -159,6 +184,113 @@ class GapTests(unittest.TestCase):
         self.fill(reader,maximum=1,seconds=1)
         self.assertEqual(reader.maximum,maximum);self.assertEqual(reader.deadline,deadline);self.assertEqual(reader.used,1)
         walk=self.store.get('financialGapLastWalk');self.assertEqual(walk['requestCeiling'],1)
+    def discover(self,file):
+        m=next(m for m in METADATA if m['file']==file);row=next(r for r in ORIGINAL['data'] if r['xbrl']==m['url'])
+        return self.store.observe(m['url'],ISSUER,'financial','fixture',row,BEFORE)
+    def assessment(self,model='earnings',at=BEFORE,**changes):
+        model_schema(self.store)
+        doc=self.store.db.execute("SELECT * FROM documents WHERE status='read' LIMIT 1").fetchone()
+        self.store.db.execute('UPDATE observations SET published_at=? WHERE document=?',('2026-10-19T04:33:50+00:00',doc['id']))
+        version=self.store.db.execute('SELECT id FROM versions WHERE document=?',(doc['id'],)).fetchone()[0]
+        result={'company':ISSUER['isin'],'model':model,'at':at,'modelVersion':MODEL_VERSION,'document':doc['id'],
+            'version':version,'timing':{'publishedAt':'2026-10-19T04:33:50+00:00'},'fieldEvidence':{},
+            'score':99,'missing':['Positive verified TTM/annual diluted EPS and P/E no greater than 40']}
+        result.update(changes)
+        self.store.db.execute('INSERT INTO recommendation_assessments VALUES(?,?,?,?,?)',
+            (model+at+str(changes),ISSUER['isin'],model,at,canonical(result)));self.store.db.commit()
+        return result
+    def test_known_filings_close_gaps_with_two_reads_and_no_index_rediscovery(self):
+        self.discover('ltts-30-sep-2025.xml');self.discover('ltts-31-mar-2026.xml')
+        reader=self.fill(maximum=2)
+        self.assertEqual(reader.used,2);self.assertFalse(any('/api/' in u for u in reader.urls))
+        self.assertFalse(company_gap(self.store,ISSUER['isin'],ISSUER,AT)['needsBackfill'])
+    def test_completed_index_family_is_not_spent_again_after_document_interruption(self):
+        self.fill(FixtureReader(maximum=2))
+        walk=json.loads(self.store.db.execute('SELECT state FROM financial_gap_walks').fetchone()[0])
+        self.assertEqual(walk['family'],1);self.assertEqual(walk['status'],'budget-pending')
+        reader=self.fill()
+        self.assertEqual(reader.used,1);self.assertFalse(any('/api/' in u for u in reader.urls))
+    def test_profile_uses_current_facts_and_does_not_accept_stored_or_future_scores(self):
+        self.assessment();self.assessment(at='2026-10-23T00:00:00+00:00',score=100,missing=[])
+        gaps={ISSUER['isin']:company_gap(self.store,ISSUER['isin'],ISSUER,AT)}
+        before=[tuple(r) for r in self.store.db.execute('SELECT * FROM recommendation_assessments')]
+        p=collection_profiles(self.store,gaps,AT)[ISSUER['isin']]
+        self.assertEqual(p['verifiedScore'],score_models(financials(self.store,ISSUER['isin'],AT))['earnings']['score'])
+        self.assertNotEqual(p['verifiedScore'],99);self.assertEqual(p['assessmentAt'],BEFORE)
+        self.assertFalse(p['knownBlockers']);self.assertFalse(p['otherRequirements'])
+        self.assertEqual(before,[tuple(r) for r in self.store.db.execute('SELECT * FROM recommendation_assessments')])
+        self.store.set('identityConflict:'+p['document'],['different-issuer']);self.store.db.commit()
+        self.assertEqual(collection_profiles(self.store,gaps,AT),{})
+    def test_known_losses_and_high_pe_are_not_treated_as_fillable_absences(self):
+        self.assessment()
+        self.store.db.execute("UPDATE facts SET value='-1' WHERE metric='net_profit'")
+        gaps={ISSUER['isin']:company_gap(self.store,ISSUER['isin'],ISSUER,AT)}
+        p=collection_profiles(self.store,gaps,AT)[ISSUER['isin']]
+        self.assertIn('Reported quarterly loss/nonpositive metric',p['knownBlockers'])
+        self.seed('ltts-31-mar-2026.xml',BEFORE)
+        self.store.db.execute('DELETE FROM recommendation_assessments')
+        self.assessment(priceAtAssessment={'close':'100000'})
+        gaps={ISSUER['isin']:company_gap(self.store,ISSUER['isin'],ISSUER,AT)}
+        self.assertIn('Verified P/E exceeds policy',collection_profiles(self.store,gaps,AT)[ISSUER['isin']]['knownBlockers'])
+    def test_changed_original_requires_reassessment_before_old_terms_rank_collection(self):
+        result=self.assessment()
+        version=self.store.db.execute('SELECT * FROM versions WHERE id=?',(result['version'],)).fetchone()
+        doc=self.store.db.execute('SELECT * FROM documents WHERE id=?',(result['document'],)).fetchone()
+        self.store.save_version(doc,b'changed original regression',version['format'],json.loads(version['parsed']),AT)
+        gap=company_gap(self.store,ISSUER['isin'],ISSUER,AT)
+        statements=[];self.store.db.set_trace_callback(statements.append)
+        self.assertEqual(collection_profiles(self.store,{ISSUER['isin']:gap},AT),{})
+        self.store.db.set_trace_callback(None)
+        self.assertFalse(any('recommendation_outcomes' in sql for sql in statements))
+    def test_all_three_models_rank_real_financial_gaps_and_keep_nonfinancial_gates(self):
+        gap=company_gap(self.store,ISSUER['isin'],ISSUER,AT)
+        for model in ('earnings','orders','capacity'):
+            with self.subTest(model=model):
+                model_schema(self.store);self.store.db.execute('DELETE FROM recommendation_assessments')
+                self.assessment(model=model,fieldEvidence={'orderValue':{'value':'1000000','page':1,'offset':10}})
+                p=collection_profiles(self.store,{ISSUER['isin']:gap},AT)[ISSUER['isin']]
+                self.assertEqual(p['model'],model);self.assertTrue(p['financialRequirements'])
+                if model!='earnings':self.assertTrue(p['otherRequirements'])
+    def test_newest_failing_catalyst_takes_priority_over_an_older_apparent_pass(self):
+        fields={k:{'value':v,'page':1,'offset':10} for k,v in [('firmOrder',True),('orderValue','10000000'),('executionMonths',6)]}
+        self.assessment(model='orders',fieldEvidence=fields)
+        self.assessment(model='orders',fieldEvidence={},timing={'publishedAt':'2026-10-20T00:00:00+00:00'})
+        gap=company_gap(self.store,ISSUER['isin'],ISSUER,AT)
+        p=collection_profiles(self.store,{ISSUER['isin']:gap},AT)[ISSUER['isin']]
+        self.assertIn('Unambiguous firm order; LOIs and framework agreements excluded',p['otherRequirements'])
+        self.assertLess(p['verifiedScore'],40)
+    def test_a_second_required_filing_is_read_even_after_the_first_fills_the_gap(self):
+        self.seed('ltts-30-sep-2025.xml',BEFORE)
+        self.discover('ltts-31-mar-2026.xml')
+        m=next(m for m in METADATA if m['file']=='ltts-31-mar-2026.xml')
+        row=next(r for r in ORIGINAL['data'] if r['xbrl']==m['url'])
+        url='https://nsearchives.nseindia.com/corporate/another-annual.xml'
+        self.store.observe(url,ISSUER,'financial','fixture',row,BEFORE)
+        body=(FIX/'ltts-31-mar-2026.xml').read_bytes()
+        reader=FixtureReader(bodies={m['url']:body,url:body})
+        self.fill(reader)
+        self.assertEqual(set(reader.urls),{m['url'],url});self.assertEqual(reader.used,2)
+    def test_every_fourth_turn_serves_oldest_waiting_and_cooldowns_are_respected(self):
+        base=company_gap(self.store,ISSUER['isin'],ISSUER,AT)
+        rows=[{**base,'company':str(i),'missing':['one'] if i else ['many']*9} for i in range(10)]
+        profiles={str(i):{'knownBlockers':[],'otherRequirements':[],'verifiedScore':i} for i in range(1,9)}
+        walks={'9':{'nextRetry':'2026-10-23T00:00:00+00:00'}}
+        with mock.patch('recommendation_financial_gaps.collection_profiles',return_value=profiles):
+            queue=collection_queue(self.store,{'companies':rows},walks,AT)
+        self.assertEqual([g['company'] for g,_,_ in queue[:4]],['8','7','6','0'])
+        self.assertEqual(queue[3][2],'oldest-waiting');self.assertEqual(len(queue),9)
+        self.assertEqual(len({g['company'] for g,_,_ in queue}),9)
+    def test_one_company_yields_its_request_turn_without_losing_its_cursor(self):
+        empty={**company_gap(self.store,ISSUER['isin'],ISSUER,AT),'company':'INE000000000','symbol':'OTHER'}
+        self.store.db.execute('INSERT INTO companies VALUES(?,?)',(empty['company'],canonical({'isin':empty['company'],'symbols':['OTHER']})))
+        gap=company_gap(self.store,ISSUER['isin'],ISSUER,AT)
+        reader=FixtureReader(rows=[])
+        with mock.patch('recommendation_financial_gaps.collection_queue',return_value=[(gap,None,'priority'),(empty,None,'oldest-waiting')]):
+            self.fill(reader,maximum=4,company_maximum=2)
+        self.assertEqual(reader.used,4)
+        walks=[json.loads(r[0]) for r in self.store.db.execute('SELECT state FROM financial_gap_walks')]
+        self.assertEqual(len(walks),2);self.assertTrue(all(w['family']==2 and w['status']=='budget-pending' for w in walks))
+        self.assertEqual(self.store.get('financialGapLastWalk')['companyRequestCeiling'],2)
     def test_audit_is_separate_from_recommendation_scores_and_includes_whole_directory(self):
         self.store.db.execute('INSERT INTO companies VALUES(?,?)',('INE000000000',canonical({'isin':'INE000000000','name':'Uncaptured','symbols':[]})))
         audit=audit_financial_gaps(self.store,AT)

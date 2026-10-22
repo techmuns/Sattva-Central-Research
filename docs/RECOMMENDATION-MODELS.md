@@ -19,6 +19,10 @@ Within that ceiling, a persistent company/period gap audit now directs free orig
 reads to missing quarterly comparisons, reported annual/TTM baselines and cash statements. It
 does not change `catalysts-1`, scores, valuation/liquidity/quality gates or required positive values.
 See [the evidence collector](RECOMMENDATION-FOUNDATION.md) for allocation and remaining source gaps.
+The collection queue now prioritizes verified cases with financial evidence gaps, reusing the frozen
+models and their latest retained assessments without creating a signal, revising a decision or reading
+forward outcomes. Known failing financial values stay failures. Bounded company turns, an oldest-waiting
+lane and reading already-known filings before rediscovery improve progress inside the same budgets.
 
 All original source versions, observations, extraction quotes, decisions, reviews and outcome
 versions remain on GitHub Releases inside the financial-history archive. Collection does not
