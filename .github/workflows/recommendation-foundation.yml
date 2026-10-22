@@ -10,6 +10,7 @@ on:
       - 'scripts/collect-recommendation-foundation.py'
       - 'scripts/run-recommendation-models.py'
       - 'scripts/lib/recommendation_*.py'
+      - 'worker/bse-ann.mjs'
   workflow_dispatch:
 
 permissions:
@@ -36,6 +37,7 @@ jobs:
           sparse-checkout: |
             .github/workflows/recommendation-foundation.yml
             scripts
+            worker/bse-ann.mjs
             public/data/announcement-identities.json
             public/data/nse-announcements.json
             public/data/corp-announcements.json
@@ -45,8 +47,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
       - name: Verify financial history and date contracts offline
-        run: python3 scripts/verify-recommendation-foundation.py && python3 scripts/verify-recommendation-models.py && python3 scripts/verify-recommendation-financial-gaps.py
+        run: python3 scripts/verify-recommendation-foundation.py && python3 scripts/verify-recommendation-models.py && python3 scripts/verify-recommendation-financial-gaps.py && python3 scripts/verify-recommendation-bse.py
       - name: Prepare free local PDF text extraction
         run: |
           if ! command -v pdftotext >/dev/null; then

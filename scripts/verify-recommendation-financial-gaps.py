@@ -142,7 +142,7 @@ class GapTests(unittest.TestCase):
         self.assertEqual(len(source_urls),len(set(source_urls)))
         self.assertLess(reader.used,reader.maximum)
     def test_bse_only_and_ambiguous_symbols_stay_explicit(self):
-        for symbols,expected in [([], 'bse-only-adapter-unavailable'),(['OLD','NEW'],'ambiguous-symbol')]:
+        for symbols,expected in [([], 'bse-company-index'),(['OLD','NEW'],'ambiguous-symbol')]:
             identity={**ISSUER,'symbols':symbols,'nseSymbols':symbols}
             self.store.db.execute('UPDATE companies SET identity=?',(canonical(identity),));self.store.db.commit()
             row=audit_financial_gaps(self.store,AT)['companies'][0]
@@ -161,7 +161,7 @@ class GapTests(unittest.TestCase):
         gap=company_gap(self.store,ISSUER['isin'],companies[ISSUER['isin']],AT)
         self.assertEqual(gap['symbol'],'LTTS');self.assertTrue(gap['sme'])
         only=company_gap(self.store,bse_only['isin'],companies[bse_only['isin']],AT,known=False)
-        self.assertIsNone(only['symbol']);self.assertEqual(only['sourceSupport'],'bse-only-adapter-unavailable')
+        self.assertIsNone(only['symbol']);self.assertEqual(only['sourceSupport'],'bse-company-index');self.assertEqual(only['bseCode'],'500001')
         legacy={k:v for k,v in ISSUER.items() if k!='nseSymbols'}
         self.assertEqual(company_gap(self.store,ISSUER['isin'],legacy,AT)['sourceSupport'],'exchange-provenance-unavailable')
         self.store.db.execute('UPDATE companies SET identity=?',(canonical(legacy),));self.store.db.commit()
@@ -172,7 +172,7 @@ class GapTests(unittest.TestCase):
         reader=self.fill()
         self.assertEqual(reader.used,2);self.assertFalse(any('/api/' in u for u in reader.urls))
         gap=company_gap(self.store,ISSUER['isin'],{**ISSUER,'nseSymbols':[]},AT)
-        self.assertFalse(gap['needsBackfill']);self.assertEqual(gap['sourceSupport'],'bse-only-adapter-unavailable')
+        self.assertFalse(gap['needsBackfill']);self.assertEqual(gap['sourceSupport'],'bse-company-index')
     def test_source_refusal_retains_cooldown_and_does_not_spend_requests(self):
         self.store.check('host:www.nseindia.com',BEFORE,'access-refused',{},'2026-10-23T00:00:00+00:00')
         opener=mock.Mock();reader=PublicReader(self.store,maximum=200,opener=opener,sleep=lambda n:None)

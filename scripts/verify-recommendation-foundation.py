@@ -457,6 +457,8 @@ class EvidenceTests(unittest.TestCase):
         class Opener:
             urls = []
             def open(self, request, timeout):
+                if urlsplit(request.full_url).hostname == "api.bseindia.com":
+                    return Response(b'{"Table":[]}')
                 self.urls.append(request.full_url)
                 if len(self.urls) == 1:
                     return Response(error=http.client.IncompleteRead(b'{"data":[{"symbol":"PRECWIRE"'))

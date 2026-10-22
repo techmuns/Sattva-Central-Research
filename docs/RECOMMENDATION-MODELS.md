@@ -15,7 +15,7 @@ the three hypotheses and records outcomes. The job is bounded to thirty minutes.
 uses at most 100 requests/six minutes, at least two seconds apart and at most 42 calendar dates.
 Financial collection retains its existing independent 200-request/ten-minute ceiling. Access
 refusals retain the existing host cooldown; there is no proxy/cookie/provider fallback.
-Within that ceiling, a persistent company/period gap audit now directs free original NSE filing
+Within that ceiling, a persistent company/period gap audit now directs free original NSE and supported BSE-only filing
 reads to missing quarterly comparisons, reported annual/TTM baselines and cash statements. It
 does not change `catalysts-1`, scores, valuation/liquidity/quality gates or required positive values.
 See [the evidence collector](RECOMMENDATION-FOUNDATION.md) for allocation and remaining source gaps.
@@ -23,6 +23,10 @@ The collection queue now prioritizes verified cases with financial evidence gaps
 models and their latest retained assessments without creating a signal, revising a decision or reading
 forward outcomes. Known failing financial values stay failures. Bounded company turns, an oldest-waiting
 lane and reading already-known filings before rediscovery improve progress inside the same budgets.
+BSE-only company history and current-results discovery now use BSE's free public index and supported
+structured Inline XBRL originals. A reserved BSE company turn shares the existing budget. Unknown
+publication clocks, identity changes, unsupported financial formats and BSE-only market-data gaps
+remain explicit; additional financial history does not waive any recommendation requirement.
 
 All original source versions, observations, extraction quotes, decisions, reviews and outcome
 versions remain on GitHub Releases inside the financial-history archive. Collection does not

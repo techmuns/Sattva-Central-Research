@@ -1,0 +1,992 @@
+[
+  {
+    "identity": {
+      "isin": "INE088E01019",
+      "name": "Golden Legand Leasing & finance Ltd",
+      "symbols": [
+        "GOLDLEG"
+      ],
+      "bseCodes": [
+        "509024"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 509024,
+      "scrip_name": "Golden Legand Leasing & finance Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T22:51:46.773",
+      "DT_TM": "Oct 21 2026 10:51PM",
+      "Industry_name": "Financial Services",
+      "company_name": "Golden Legand Leasing & finance Ltd",
+      "XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_509024_21102026225146_IFNBFC.xml",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/golden-legand-leasing--finance-ltd/goldleg/509024/",
+      "Consol_XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_509024_2110202622520_IFNBFC.xml",
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE691C01022",
+      "name": "Swastika Investmart Ltd",
+      "symbols": [
+        "SWASTIKA"
+      ],
+      "bseCodes": [
+        "530585"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 530585,
+      "scrip_name": "Swastika Investmart Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T21:50:27.56",
+      "DT_TM": "Oct 21 2026  9:50PM",
+      "Industry_name": "Financial Services",
+      "company_name": "Swastika Investmart Ltd",
+      "XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_530585_21102026215027_IFNBFC.xml",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/swastika-investmart-ltd/swastika/530585/",
+      "Consol_XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_530585_2110202621514_IFNBFC.xml",
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE276N01011",
+      "name": "Tulasee Bio Ethanol Ltd",
+      "symbols": [
+        "TULASEEBIOE"
+      ],
+      "bseCodes": [
+        "524514"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 524514,
+      "scrip_name": "Tulasee Bio Ethanol Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T21:00:04.203",
+      "DT_TM": "Oct 21 2026  9:00PM",
+      "Industry_name": "Chemicals",
+      "company_name": "Tulasee Bio Ethanol Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_524514_2110202620591_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/tulasee-bio-ethanol-ltd/tulaseebioe/524514/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE628Y01010",
+      "name": "Andhra Pradesh Tanneries Ltd",
+      "symbols": [
+        "APTANN"
+      ],
+      "bseCodes": [
+        "509367"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 509367,
+      "scrip_name": "Andhra Pradesh Tanneries Ltd",
+      "quarter_code": "SH2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 379.0,
+      "Fld_CreateDate": "2026-10-21T20:48:25.673",
+      "DT_TM": "Oct 21 2026  8:48PM",
+      "Industry_name": "Consumer Durables",
+      "company_name": "Andhra Pradesh Tanneries Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_509367_21102026204825_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/andhra-pradesh-tanneries-ltd/aptann/509367/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE408F01024",
+      "name": "Shantai Industries Ltd",
+      "symbols": [
+        "SHANTAI"
+      ],
+      "bseCodes": [
+        "512297"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 512297,
+      "scrip_name": "Shantai Industries Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T19:47:35.46",
+      "DT_TM": "Oct 21 2026  7:47PM",
+      "Industry_name": "Capital Goods",
+      "company_name": "Shantai Industries Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_512297_21102026194735_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/shantai-industries-ltd/shantai/512297/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE117K01013",
+      "name": "RR MetalMakers India Ltd",
+      "symbols": [
+        "RRMETAL"
+      ],
+      "bseCodes": [
+        "531667"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 531667,
+      "scrip_name": "RR MetalMakers India Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T18:47:53.337",
+      "DT_TM": "Oct 21 2026  6:47PM",
+      "Industry_name": "Metals & Mining",
+      "company_name": "RR MetalMakers India Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_531667_21102026184610_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/rr-metalmakers-india-ltd/rrmetal/531667/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE00GK01023",
+      "name": "Yash Highvoltage Ltd",
+      "symbols": [
+        "YASHHV"
+      ],
+      "bseCodes": [
+        "544310"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 544310,
+      "scrip_name": "Yash Highvoltage Ltd",
+      "quarter_code": "SH2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 131.2,
+      "Fld_CreateDate": "2026-10-21T18:21:12.533",
+      "DT_TM": "Oct 21 2026  6:21PM",
+      "Industry_name": "Capital Goods",
+      "company_name": "Yash Highvoltage Ltd",
+      "XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_544310_21102026182112.xml",
+      "Fld_NatureOfReport": null,
+      "URL": "https://www.bseindia.com/stock-share-price/yash-highvoltage-ltd/yashhv/544310/",
+      "Consol_XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_544310_21102026182158.xml",
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE16XA01017",
+      "name": "Infinity Infoway Ltd",
+      "symbols": [
+        "INFINITY"
+      ],
+      "bseCodes": [
+        "544567"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 544567,
+      "scrip_name": "Infinity Infoway Ltd",
+      "quarter_code": "SH2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 131.2,
+      "Fld_CreateDate": "2026-10-21T18:13:48.307",
+      "DT_TM": "Oct 21 2026  6:13PM",
+      "Industry_name": "Information Technology",
+      "company_name": "Infinity Infoway Ltd",
+      "XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_544567_21102026181348.xml",
+      "Fld_NatureOfReport": null,
+      "URL": "https://www.bseindia.com/stock-share-price/infinity-infoway-ltd/infinity/544567/",
+      "Consol_XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_544567_2110202618149.xml",
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE987E01012",
+      "name": "Jeet Machine Tools Ltd",
+      "symbols": [
+        "ZJEETMAC"
+      ],
+      "bseCodes": [
+        "513012"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 513012,
+      "scrip_name": "Jeet Machine Tools Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 130.0,
+      "Fld_CreateDate": "2026-10-21T17:46:20.14",
+      "DT_TM": "Oct 21 2026  5:46PM",
+      "Industry_name": "Services",
+      "company_name": "Jeet Machine Tools Ltd",
+      "XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_513012_21102026174350.xml",
+      "Fld_NatureOfReport": null,
+      "URL": "https://www.bseindia.com/stock-share-price/jeet-machine-tools-ltd/zjeetmac/513012/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE0NY101012",
+      "name": "Automobile Products of India Ltd",
+      "symbols": [
+        "AUTOPRD"
+      ],
+      "bseCodes": [
+        "505032"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 505032,
+      "scrip_name": "Automobile Products of India Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T17:26:11.51",
+      "DT_TM": "Oct 21 2026  5:26PM",
+      "Industry_name": "Automobile and Auto Components",
+      "company_name": "Automobile Products of India Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_505032_21102026171811_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/automobile-products-of-india-ltd/autoprd/505032/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE654H01011",
+      "name": "National General Industries Ltd",
+      "symbols": [
+        "NATGENI"
+      ],
+      "bseCodes": [
+        "531651"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 531651,
+      "scrip_name": "National General Industries Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T17:07:43.61",
+      "DT_TM": "Oct 21 2026  5:07PM",
+      "Industry_name": "Capital Goods",
+      "company_name": "National General Industries Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_531651_2110202617644_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/national-general-industries-ltd/natgeni/531651/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE897B01019",
+      "name": "Krishna Capital and Securities Ltd",
+      "symbols": [
+        "KRISHNACAP"
+      ],
+      "bseCodes": [
+        "539384"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 539384,
+      "scrip_name": "Krishna Capital and Securities Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T16:34:08.05",
+      "DT_TM": "Oct 21 2026  4:34PM",
+      "Industry_name": "Financial Services",
+      "company_name": "Krishna Capital and Securities Ltd",
+      "XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_539384_2110202616347_IFNBFC.xml",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/krishna-capital-and-securities-ltd/krishnacap/539384/",
+      "Consol_XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_539384_21102026163416_IFNBFC.xml",
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE15XJ01010",
+      "name": "Aptus Pharma Ltd",
+      "symbols": [
+        "APPL"
+      ],
+      "bseCodes": [
+        "544529"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 544529,
+      "scrip_name": "Aptus Pharma Ltd",
+      "quarter_code": "SH2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 379.0,
+      "Fld_CreateDate": "2026-10-21T16:33:14.833",
+      "DT_TM": "Oct 21 2026  4:33PM",
+      "Industry_name": "Healthcare",
+      "company_name": "Aptus Pharma Ltd",
+      "XMLName": "IFOtherthanDuplicateUploadDocument/IFOtherthan_544529_21102026163314_IFOtherthan.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/aptus-pharma-ltd/appl/544529/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE094R01019",
+      "name": "E & E Enterprises Ltd",
+      "symbols": [
+        "EENTER"
+      ],
+      "bseCodes": [
+        "501386"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 501386,
+      "scrip_name": "E & E Enterprises Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T16:21:12.787",
+      "DT_TM": "Oct 21 2026  4:21PM",
+      "Industry_name": "Financial Services",
+      "company_name": "E & E Enterprises Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_501386_21102026162112_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/e--e-enterprises-ltd/eenter/501386/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE367E01033",
+      "name": "Sanathnagar Enterprises Ltd",
+      "symbols": [
+        "SEL"
+      ],
+      "bseCodes": [
+        "509423"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 509423,
+      "scrip_name": "Sanathnagar Enterprises Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T16:05:02.923",
+      "DT_TM": "Oct 21 2026  4:05PM",
+      "Industry_name": "Realty",
+      "company_name": "Sanathnagar Enterprises Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_509423_211020261652_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/sanathnagar-enterprises-ltd/sel/509423/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE367A01015",
+      "name": "Morarka Finance Ltd",
+      "symbols": [
+        "MORARKFI"
+      ],
+      "bseCodes": [
+        "511549"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 511549,
+      "scrip_name": "Morarka Finance Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T15:45:04.77",
+      "DT_TM": "Oct 21 2026  3:45PM",
+      "Industry_name": "Financial Services",
+      "company_name": "Morarka Finance Ltd",
+      "XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_511549_2110202615454_IFNBFC.xml",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/morarka-finance-ltd/morarkfi/511549/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE195Y01010",
+      "name": "SecUR Credentials Ltd",
+      "symbols": [
+        "SECURCRED"
+      ],
+      "bseCodes": [
+        "543625"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 543625,
+      "scrip_name": "SecUR Credentials Ltd",
+      "quarter_code": "MQ2025-2026",
+      "audited": "Audited",
+      "Qtr": 370.0,
+      "Fld_CreateDate": "2026-10-21T14:53:01.493",
+      "DT_TM": "Oct 21 2026  2:53PM",
+      "Industry_name": "Services",
+      "company_name": "SecUR Credentials Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_543625_2110202614531_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/secur-credentials-ltd/securcred/543625/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE534D01014",
+      "name": "Ritesh International Ltd",
+      "symbols": [
+        "RITESHIN"
+      ],
+      "bseCodes": [
+        "519097"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 519097,
+      "scrip_name": "Ritesh International Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 131.0,
+      "Fld_CreateDate": "2026-10-21T14:41:10.813",
+      "DT_TM": "Oct 21 2026  2:41PM",
+      "Industry_name": "Chemicals",
+      "company_name": "Ritesh International Ltd",
+      "XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_519097_21102026144110.xml",
+      "Fld_NatureOfReport": null,
+      "URL": "https://www.bseindia.com/stock-share-price/ritesh-international-ltd/riteshin/519097/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE805R01018",
+      "name": "Atma Industries Ltd",
+      "symbols": [
+        "ATMAIND"
+      ],
+      "bseCodes": [
+        "539246"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 539246,
+      "scrip_name": "Atma Industries Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T14:40:59.027",
+      "DT_TM": "Oct 21 2026  2:40PM",
+      "Industry_name": "Services",
+      "company_name": "Atma Industries Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_539246_21102026143947_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/atma-industries-ltd/atmaind/539246/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE01BT01015",
+      "name": "Machhar Industries Ltd",
+      "symbols": [
+        "MACIND"
+      ],
+      "bseCodes": [
+        "543934"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 543934,
+      "scrip_name": "Machhar Industries Ltd",
+      "quarter_code": "MQ2024-2025",
+      "audited": "Audited",
+      "Qtr": 125.0,
+      "Fld_CreateDate": "2026-10-21T14:26:48.163",
+      "DT_TM": "Oct 21 2026  2:26PM",
+      "Industry_name": "Chemicals",
+      "company_name": "Machhar Industries Ltd",
+      "XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_543934_21102026142558.xml",
+      "Fld_NatureOfReport": null,
+      "URL": "https://www.bseindia.com/stock-share-price/machhar-industries-ltd/macind/543934/",
+      "Consol_XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_543934_1262025204536.xml",
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE439N01031",
+      "name": "Blue Pearl Agriventures Ltd",
+      "symbols": [
+        "BPAGRI"
+      ],
+      "bseCodes": [
+        "514440"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 514440,
+      "scrip_name": "Blue Pearl Agriventures Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T14:14:55.14",
+      "DT_TM": "Oct 21 2026  2:14PM",
+      "Industry_name": "Chemicals",
+      "company_name": "Blue Pearl Agriventures Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_514440_21102026141455_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/blue-pearl-agriventures-ltd/bpagri/514440/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE664X01025",
+      "name": "TTL Enterprises Ltd",
+      "symbols": [
+        "TTLEL"
+      ],
+      "bseCodes": [
+        "514236"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 514236,
+      "scrip_name": "TTL Enterprises Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T13:30:15.233",
+      "DT_TM": "Oct 21 2026  1:30PM",
+      "Industry_name": "Services",
+      "company_name": "TTL Enterprises Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_514236_21102026133015_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/ttl-enterprises-ltd/ttlel/514236/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE274I01016",
+      "name": "Suryachakra Power Corporation Ltd",
+      "symbols": [
+        "SURYACHAKRA"
+      ],
+      "bseCodes": [
+        "532874"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 532874,
+      "scrip_name": "Suryachakra Power Corporation Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T13:27:07.63",
+      "DT_TM": "Oct 21 2026  1:27PM",
+      "Industry_name": "Power",
+      "company_name": "Suryachakra Power Corporation Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_532874_21102026132451_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/suryachakra-power-corporation-ltd/suryachakra/532874/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE664N01018",
+      "name": "Magnanimous Trade & finance Ltd",
+      "symbols": [
+        "MAGANTR"
+      ],
+      "bseCodes": [
+        "512377"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 512377,
+      "scrip_name": "Magnanimous Trade & finance Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T13:22:59.293",
+      "DT_TM": "Oct 21 2026  1:22PM",
+      "Industry_name": "Services",
+      "company_name": "Magnanimous Trade & finance Ltd",
+      "XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_512377_21102026132259_IFNBFC.xml",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/magnanimous-trade--finance-ltd/magantr/512377/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE2L3M01012",
+      "name": "Typhoon Holdings Ltd",
+      "symbols": [
+        "TYPHOON"
+      ],
+      "bseCodes": [
+        "512307"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 512307,
+      "scrip_name": "Typhoon Holdings Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T13:12:42.45",
+      "DT_TM": "Oct 21 2026  1:12PM",
+      "Industry_name": "Textiles",
+      "company_name": "Typhoon Holdings Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_512307_21102026131242_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/typhoon-holdings-ltd/typhoon/512307/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE0QZQ01019",
+      "name": "Shanti Spintex Ltd",
+      "symbols": [
+        "SHANTIDENM"
+      ],
+      "bseCodes": [
+        "544059"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 544059,
+      "scrip_name": "Shanti Spintex Ltd",
+      "quarter_code": "MH2024-2025",
+      "audited": "Audited",
+      "Qtr": 355.0,
+      "Fld_CreateDate": "2026-10-21T12:59:34.41",
+      "DT_TM": "Oct 21 2026 12:59PM",
+      "Industry_name": "Textiles",
+      "company_name": "Shanti Spintex Ltd",
+      "XMLName": "IFOtherthanDuplicateUploadDocument/IFOtherthan_544059_21102026125829_IFOtherthan.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/shanti-spintex-ltd/shantidenm/544059/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE550D01010",
+      "name": "Worldwide Aluminium Ltd",
+      "symbols": [
+        "WWALUM"
+      ],
+      "bseCodes": [
+        "526525"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 526525,
+      "scrip_name": "Worldwide Aluminium Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T12:44:57.093",
+      "DT_TM": "Oct 21 2026 12:44PM",
+      "Industry_name": "Services",
+      "company_name": "Worldwide Aluminium Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_526525_21102026124444_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/worldwide-aluminium-ltd/wwalum/526525/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE661K01010",
+      "name": "Virya Resources Ltd",
+      "symbols": [
+        "VIRYA"
+      ],
+      "bseCodes": [
+        "512479"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 512479,
+      "scrip_name": "Virya Resources Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 130.0,
+      "Fld_CreateDate": "2026-10-21T12:33:20.613",
+      "DT_TM": "Oct 21 2026 12:33PM",
+      "Industry_name": "Realty",
+      "company_name": "Virya Resources Ltd",
+      "XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_512479_21102026123227.xml",
+      "Fld_NatureOfReport": null,
+      "URL": "https://www.bseindia.com/stock-share-price/virya-resources-ltd/virya/512479/",
+      "Consol_XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_512479_1382026172910.xml",
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE234G01022",
+      "name": "Trio Mercantile & Trading Ltd",
+      "symbols": [
+        "TRIOMERC"
+      ],
+      "bseCodes": [
+        "534755"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 534755,
+      "scrip_name": "Trio Mercantile & Trading Ltd",
+      "quarter_code": "MQ2025-2026",
+      "audited": "Audited",
+      "Qtr": 370.0,
+      "Fld_CreateDate": "2026-10-21T12:16:34.28",
+      "DT_TM": "Oct 21 2026 12:16PM",
+      "Industry_name": "Financial Services",
+      "company_name": "Trio Mercantile & Trading Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_534755_21102026121415_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/trio-mercantile--trading-ltd/triomerc/534755/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE655I01032",
+      "name": "Birla Cotsyn (India) Ltd",
+      "symbols": [
+        "BIRLACOT"
+      ],
+      "bseCodes": [
+        "533006"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 533006,
+      "scrip_name": "Birla Cotsyn (India) Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 130.0,
+      "Fld_CreateDate": "2026-10-21T12:11:34.507",
+      "DT_TM": "Oct 21 2026 12:11PM",
+      "Industry_name": "Textiles",
+      "company_name": "Birla Cotsyn (India) Ltd",
+      "XMLName": "FourOneUploadDocument/Integrated_Finance_Ind_As_533006_2110202612106.xml",
+      "Fld_NatureOfReport": null,
+      "URL": "https://www.bseindia.com/stock-share-price/birla-cotsyn-(india)-ltd/birlacot/533006/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE008M01044",
+      "name": "Veronica Production Ltd",
+      "symbols": [
+        "VERONICAPRO"
+      ],
+      "bseCodes": [
+        "531695"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 531695,
+      "scrip_name": "Veronica Production Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T12:06:56.533",
+      "DT_TM": "Oct 21 2026 12:06PM",
+      "Industry_name": "Media, Entertainment & Publication",
+      "company_name": "Veronica Production Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_531695_2110202612656_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/veronica-production-ltd/veronicapro/531695/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE130F01016",
+      "name": "Key Corporation Ltd",
+      "symbols": [
+        "KEYCORP"
+      ],
+      "bseCodes": [
+        "507948"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 507948,
+      "scrip_name": "Key Corporation Ltd",
+      "quarter_code": "SQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 378.0,
+      "Fld_CreateDate": "2026-10-21T11:54:38.49",
+      "DT_TM": "Oct 21 2026 11:54AM",
+      "Industry_name": "Financial Services",
+      "company_name": "Key Corporation Ltd",
+      "XMLName": "IFNBFCDuplicateUploadDocument/Integrated_Finance_NBFC_507948_21102026115438_IFNBFC.xml",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/key-corporation-ltd/keycorp/507948/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  },
+  {
+    "identity": {
+      "isin": "INE448F01012",
+      "name": "Unipro Technologies Ltd",
+      "symbols": [
+        "UPROTECH"
+      ],
+      "bseCodes": [
+        "540189"
+      ],
+      "nseSymbols": [],
+      "nseSME": false
+    },
+    "sourceRow": {
+      "Scrip_cd": 540189,
+      "scrip_name": "Unipro Technologies Ltd",
+      "quarter_code": "JQ2026-2027",
+      "audited": "Unaudited",
+      "Qtr": 374.0,
+      "Fld_CreateDate": "2026-10-21T10:19:26.45",
+      "DT_TM": "Oct 21 2026 10:19AM",
+      "Industry_name": "Information Technology",
+      "company_name": "Unipro Technologies Ltd",
+      "XMLName": "IFIndasDuplicateUploadDocument/Integrated_Finance_Ind_As_540189_21102026101631_IFIndAs.html",
+      "Fld_NatureOfReport": "Standalone",
+      "URL": "https://www.bseindia.com/stock-share-price/unipro-technologies-ltd/uprotech/540189/",
+      "Consol_XMLName": null,
+      "Resultpageurl": null
+    }
+  }
+]
