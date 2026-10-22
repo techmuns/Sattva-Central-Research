@@ -102,11 +102,15 @@ def identities(data_dir):
     bse = json.loads((p / "announcement-identities.json").read_text())["entries"]
     nse = json.loads((p / "filing-capture/nse-identities.json").read_text())["directories"]
     by_isin = {}
-    for entry in bse + [e for d in nse.values() for e in d.get("entries", [])]:
+    for market, entry in [(None, e) for e in bse] + [(market, e) for market, d in nse.items() for e in d.get("entries", [])]:
         isin = entry.get("isin", "")
         if not re.fullmatch(r"IN[A-Z0-9]{10}", isin):
             continue
-        c = by_isin.setdefault(isin, {"isin": isin, "name": entry.get("name"), "symbols": [], "bseCodes": []})
+        c = by_isin.setdefault(isin, {"isin": isin, "name": entry.get("name"), "symbols": [], "bseCodes": [],
+            "nseSymbols": [], "nseSME": False})
+        if market is not None and entry.get("ticker"):
+            if entry["ticker"] not in c["nseSymbols"]: c["nseSymbols"].append(entry["ticker"])
+            if market == "sme": c["nseSME"] = True
         for symbol in [entry.get("ticker"), entry.get("bseSymbol"), *entry.get("aliases", [])]:
             if symbol and symbol not in c["symbols"]:
                 c["symbols"].append(symbol)

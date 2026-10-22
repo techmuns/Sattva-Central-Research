@@ -82,6 +82,12 @@ reads, avoiding repeat discovery after an interrupted document turn. Each compan
 12-company walk cap is replaced by a bounded queue inside the unchanged 100-request/four-minute
 targeted slice. Walk summaries retain actual index requests, document attempts, lanes and per-company
 request ceilings; detailed priorities remain in the archived queue, without adding browser payloads.
+Public identities now retain NSE-directory symbols separately from BSE tickers and historical aliases.
+Only a verified unambiguous NSE-directory symbol may start an NSE company-index request. BSE-only
+listings and older identities lacking exchange provenance stay explicit adapter/identity gaps; their
+already-discovered original financial filings still receive targeted reads and ordinary discovery
+remains enrolled. No company or captured history is removed. Source support is separate from listing
+membership and does not claim a certified direct BSE history adapter.
 Known losses, negative cash flow, conflicting statements and unsupported BSE-only histories remain
 explicit failures/gaps; the collector never searches for an older profitable substitute.
 An interrupted HTTP body or a response shorter than its declared length is never parsed as

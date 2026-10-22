@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, urlsplit
 
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'scripts/lib'))
-from recommendation_foundation import Store,canonical,parse_financial_xml
+from recommendation_foundation import Store,canonical,parse_financial_xml,identities
 from recommendation_sources import FAMILIES,PublicReader,SourceFailure,BudgetExceeded,capture_window,index_url,index_page
 from recommendation_models import financials,score_models,evidence_date,schema as model_schema,MODEL_VERSION,POLICY
 from recommendation_financial_gaps import audit_financial_gaps,company_gap,fill_financial_gaps,relevant_documents,collection_profiles,collection_queue
@@ -23,7 +23,7 @@ from recommendation_financial_gaps import audit_financial_gaps,company_gap,fill_
 FIX=ROOT/'scripts/fixtures/recommendation-financial-gaps'
 AT='2026-10-22T00:00:00+00:00'
 BEFORE='2026-10-21T17:00:00+00:00'
-ISSUER={'isin':'INE010V01017','name':'L&T Technology Services Ltd','symbols':['LTTS'],'bseCodes':['540115']}
+ISSUER={'isin':'INE010V01017','name':'L&T Technology Services Ltd','symbols':['LTTS'],'bseCodes':['540115'],'nseSymbols':['LTTS']}
 ORIGINAL=json.loads((FIX/'integrated-ltts.json').read_text())
 METADATA=json.loads((FIX/'fixture-sources.json').read_text())
 
@@ -143,11 +143,36 @@ class GapTests(unittest.TestCase):
         self.assertLess(reader.used,reader.maximum)
     def test_bse_only_and_ambiguous_symbols_stay_explicit(self):
         for symbols,expected in [([], 'bse-only-adapter-unavailable'),(['OLD','NEW'],'ambiguous-symbol')]:
-            identity={**ISSUER,'symbols':symbols}
+            identity={**ISSUER,'symbols':symbols,'nseSymbols':symbols}
             self.store.db.execute('UPDATE companies SET identity=?',(canonical(identity),));self.store.db.commit()
             row=audit_financial_gaps(self.store,AT)['companies'][0]
             self.assertEqual(row['sourceSupport'],expected);self.assertTrue(row['needsBackfill'])
             self.assertEqual(self.fill().used,0)
+    def test_exchange_provenance_keeps_bse_only_tickers_out_of_nse_requests(self):
+        directory=Path(self.tmp.name)/'directory';(directory/'filing-capture').mkdir(parents=True)
+        bse_only={'isin':'INE000000000','name':'BSE only','ticker':'BSEONLY','bseSymbol':'BSEONLY','bseCode':'500001'}
+        dual={'isin':ISSUER['isin'],'ticker':'BSE-ALIAS','bseSymbol':'BSE-ALIAS','bseCode':'540115'}
+        (directory/'announcement-identities.json').write_text(canonical({'entries':[bse_only,dual]}))
+        (directory/'filing-capture/nse-identities.json').write_text(canonical({'directories':{
+            'sme':{'entries':[{'isin':ISSUER['isin'],'ticker':'LTTS','aliases':['OLDLTTS','LTTS-SM']}]}}}))
+        companies,lookup=identities(directory)
+        self.assertEqual(len(companies),2);self.assertEqual(companies[ISSUER['isin']]['nseSymbols'],['LTTS'])
+        self.assertIn('BSE-ALIAS',companies[ISSUER['isin']]['symbols']);self.assertIn('OLDLTTS',companies[ISSUER['isin']]['symbols'])
+        gap=company_gap(self.store,ISSUER['isin'],companies[ISSUER['isin']],AT)
+        self.assertEqual(gap['symbol'],'LTTS');self.assertTrue(gap['sme'])
+        only=company_gap(self.store,bse_only['isin'],companies[bse_only['isin']],AT,known=False)
+        self.assertIsNone(only['symbol']);self.assertEqual(only['sourceSupport'],'bse-only-adapter-unavailable')
+        legacy={k:v for k,v in ISSUER.items() if k!='nseSymbols'}
+        self.assertEqual(company_gap(self.store,ISSUER['isin'],legacy,AT)['sourceSupport'],'exchange-provenance-unavailable')
+        self.store.db.execute('UPDATE companies SET identity=?',(canonical(legacy),));self.store.db.commit()
+        self.assertEqual(self.fill().used,0)
+    def test_known_original_history_is_still_filled_without_a_verified_nse_symbol(self):
+        self.discover('ltts-30-sep-2025.xml');self.discover('ltts-31-mar-2026.xml')
+        self.store.db.execute('UPDATE companies SET identity=?',(canonical({**ISSUER,'nseSymbols':[]}),));self.store.db.commit()
+        reader=self.fill()
+        self.assertEqual(reader.used,2);self.assertFalse(any('/api/' in u for u in reader.urls))
+        gap=company_gap(self.store,ISSUER['isin'],{**ISSUER,'nseSymbols':[]},AT)
+        self.assertFalse(gap['needsBackfill']);self.assertEqual(gap['sourceSupport'],'bse-only-adapter-unavailable')
     def test_source_refusal_retains_cooldown_and_does_not_spend_requests(self):
         self.store.check('host:www.nseindia.com',BEFORE,'access-refused',{},'2026-10-23T00:00:00+00:00')
         opener=mock.Mock();reader=PublicReader(self.store,maximum=200,opener=opener,sleep=lambda n:None)

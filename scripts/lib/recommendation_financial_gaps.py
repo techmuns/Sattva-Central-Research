@@ -94,7 +94,8 @@ def company_gap(store, company, identity, at, known=True):
         missing.append("annual-or-TTM:revenue")
     if cash_state == "missing":
         missing.append("annual-or-half-year:operating-cash-flow")
-    symbols = {s[:-3] if s.endswith("-SM") else s for s in identity.get("symbols", []) if isinstance(s,str) and s}
+    # BSE tickers and historical aliases are useful identities, but are not proof of an NSE listing.
+    symbols = {s for s in identity.get("nseSymbols", []) if isinstance(s,str) and s}
     symbol = next(iter(symbols)) if len(symbols) == 1 else None
     return {"company": company, "name": identity.get("name"), "at": at, "basis": fin["basis"], "quarter": quarter,
         "yearEarlierQuarter": prior, "expectedYearEarlierQuarter": expected_prior,
@@ -107,8 +108,9 @@ def company_gap(store, company, identity, at, known=True):
         "cashFlow": {"state": cash_state, "statements": [{"start": c[1], "end": c[0], "value": str(c[2]["value"]),
             "versions": c[2]["versions"]} for c in latest_cash]}, "conflicts": fin["conflicts"],
         "missing": missing, "needsBackfill": bool(missing), "symbol": symbol,
-        "sourceSupport": "nse-company-index" if symbol else "ambiguous-symbol" if symbols else "bse-only-adapter-unavailable",
-        "sme": any(s.endswith("-SM") for s in identity.get("symbols", []))}
+        "sourceSupport": "nse-company-index" if symbol else "ambiguous-symbol" if symbols else
+            "bse-only-adapter-unavailable" if "nseSymbols" in identity else "exchange-provenance-unavailable",
+        "sme": bool(identity.get("nseSME"))}
 
 
 def audit_financial_gaps(store, at, persist=True):
@@ -129,6 +131,7 @@ def audit_financial_gaps(store, at, persist=True):
         "currentQuarterCompanies": counts([r for r in rows if r["quarter"] and
             (dt.date.fromisoformat(indian_day(at))-dt.date.fromisoformat(r["quarter"][1])).days <= POLICY["maximumFinancialAgeDays"]]),
         "unsupportedBSEOnly": sum(r["sourceSupport"] == "bse-only-adapter-unavailable" for r in rows),
+        "unverifiedExchangeIdentity": sum(r["sourceSupport"] == "exchange-provenance-unavailable" for r in rows),
         "ambiguousSymbols": sum(r["sourceSupport"] == "ambiguous-symbol" for r in rows),
         "modelRulesChanged": False, "status": "partial", "details": "Exact field/period/value/provenance rows are retained in financial_gap_state; missing differs from nonpositive and conflicting."}
     states = {}
@@ -245,7 +248,10 @@ def collection_queue(store, audit, walks, at):
     recent = (dt.date.fromisoformat(indian_day(at))-dt.timedelta(days=45)).isoformat()
     attention = {r[0] for r in store.db.execute("""SELECT DISTINCT d.company FROM documents d JOIN observations o ON o.document=d.id
         WHERE d.kind='catalyst' AND o.published_at>=? AND o.published_at<=? AND o.observed_at<=?""", (recent,at,at))}
-    candidates = {r["company"]: r for r in audit["companies"] if r["needsBackfill"] and r["symbol"] and
+    known_pending = {r[0] for r in store.db.execute("""SELECT DISTINCT company FROM documents
+        WHERE kind='financial' AND status!='read' AND (next_retry IS NULL OR next_retry<=?)""", (at,))}
+    candidates = {r["company"]: r for r in audit["companies"] if r["needsBackfill"] and
+        (r["symbol"] or r["company"] in known_pending) and
         walks.get(r["company"],{}).get("nextRetry", "") <= at}
     profiles = collection_profiles(store, candidates, at)
     def priority(company):
@@ -323,6 +329,9 @@ def fill_financial_gaps(store, reader, lookup, scratch, audit, maximum=100, seco
                     if not current["needsBackfill"]:
                         walk.update(inProgress=False,nextRetry="",status="source-conflicts-remain" if current["conflicts"] else "required-data-present",lastSuccess=iso_now())
                         break
+                    if not gap["symbol"]:
+                        walk.update(inProgress=False,status="source-adapter-unavailable",nextRetry="")
+                        break  # Known original filings remain usable; an exchange ticker is never guessed.
                     if walk["family"] == len(families):
                         walk.update(inProgress=False,status="source-windows-read-gaps-remain",nextRetry=(dt.datetime.fromisoformat(at)+dt.timedelta(days=7)).isoformat(timespec="seconds"))
                         break
