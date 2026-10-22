@@ -72,7 +72,7 @@ export function mapUpstoxTargets(targets, instruments, now = Date.now()) {
   });
 }
 
-export function upstoxOpenInterest(payload, targets, now = Date.now()) {
+export function upstoxOpenInterest(payload, targets, now = Date.now(), coverage = {}) {
   if (payload?.status !== 'success' || !payload.data) throw Error('unavailable');
   const requested = new Map();
   for (const target of targets.filter(t => t.oiInstrument)) {
@@ -83,12 +83,13 @@ export function upstoxOpenInterest(payload, targets, now = Date.now()) {
   for (const data of Object.values(payload.data)) {
     for (const target of requested.get(data.instrument_token) || []) {
     const instrument = target.oiInstrument;
-    if (data.symbol !== instrument.symbol) continue;
+    if (data.symbol !== instrument.symbol) {coverage.symbolMismatch=(coverage.symbolMismatch||0)+1;continue;}
     const at = sourceTime(data.timestamp);
-    if (!Number.isFinite(at)) continue;
+    if (!Number.isFinite(at)) {coverage.invalidClock=(coverage.invalidClock||0)+1;continue;}
     const reading = normalizeOpenInterest({current:data.oi,previous:data.previous_oi,
       ...instrument,quoteAt:new Date(at).toISOString(),checkedAt:new Date(now).toISOString(),sessionDate:istDate(at)},now);
     if (reading) readings.set(target.ticker,reading);
+    else coverage.invalidReading=(coverage.invalidReading||0)+1;
     }
   }
   return readings;
