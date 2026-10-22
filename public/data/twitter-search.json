@@ -2544,7 +2544,7 @@
       "lastDiscoveryAt": "2026-10-22T20:54:29+00:00"
     },
     "isin:INE255Z01027|E2E Networks": {
-      "lastAttemptAt": "2026-10-17T19:25:52+00:00",
+      "lastAttemptAt": "2026-10-22T21:40:35+00:00",
       "lastResultCount": 117,
       "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
@@ -2730,8 +2730,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 8,
+    "attempted": 1,
     "incomplete": 232,
-    "checkedAt": "2026-10-22T20:54:29.963576+00:00"
+    "checkedAt": "2026-10-22T21:40:35.972477+00:00"
   }
 }
