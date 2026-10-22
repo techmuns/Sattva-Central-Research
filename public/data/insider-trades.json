@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-22T17:58:44.365Z",
-  "oldestDataAt": "2026-10-22T17:58:44.365Z",
-  "from": "2025-10-22",
-  "to": "2026-10-22",
+  "capturedAt": "2026-10-22T21:35:31.839Z",
+  "oldestDataAt": "2026-10-22T21:35:31.839Z",
+  "from": "2025-10-23",
+  "to": "2026-10-23",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T17:58:44.365Z",
+      "capturedAt": "2026-10-22T21:35:31.839Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T17:58:44.365Z",
+      "capturedAt": "2026-10-22T21:35:31.839Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T17:58:44.365Z",
+      "capturedAt": "2026-10-22T21:35:31.839Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T17:58:44.365Z",
+      "capturedAt": "2026-10-22T21:35:31.839Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2003,
   "emptyCount": 0,
-  "rowCount": 22202,
+  "rowCount": 22194,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -85357,28 +85357,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "SHILCTECH",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "Shilchar Technologies Ltd",
-          "Insider": "ALAY JITENDRA SHAH",
-          "Category": "Promoter & Director",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "117000",
-          "Trade %": "1.02",
-          "Trade Value": "508027437",
-          "Post Holding Shares": "2809548",
-          "Post Holding %": "24.56",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-21",
-          "To Date": "2025-10-21",
-          "Broadcast Date": "2025-10-22",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "ENRIN": [
@@ -130001,138 +129979,6 @@
           "From Date": "2025-10-20",
           "To Date": "2025-10-21",
           "Broadcast Date": "2025-10-27",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Ashish Kumar Gupta",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "11903",
-          "Trade %": "0",
-          "Trade Value": "17853310",
-          "Post Holding Shares": "106430",
-          "Post Holding %": "0",
-          "Mode": "ESOS",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-22",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "HCL Technologies Stock Options Trust",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "26754",
-          "Trade %": "0",
-          "Trade Value": "40128325",
-          "Post Holding Shares": "8107134",
-          "Post Holding %": "0.3",
-          "Mode": "ESOS",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-22",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Kevin Mcgee",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "3650",
-          "Trade %": "0",
-          "Trade Value": "5474635",
-          "Post Holding Shares": "3650",
-          "Post Holding %": "0",
-          "Mode": "ESOS",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-22",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Manish Anand",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "1987",
-          "Trade %": "0",
-          "Trade Value": "2980301",
-          "Post Holding Shares": "41760",
-          "Post Holding %": "0",
-          "Mode": "ESOS",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-22",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Niraj Kumar Nirbhay Narayan Das",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4948",
-          "Trade %": "0",
-          "Trade Value": "7421505",
-          "Post Holding Shares": "13816",
-          "Post Holding %": "0",
-          "Mode": "ESOS",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-22",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Priyadarshi Ashok Das",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "3319",
-          "Trade %": "0",
-          "Trade Value": "4978168",
-          "Post Holding Shares": "70890",
-          "Post Holding %": "0",
-          "Mode": "ESOS",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-22",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -207907,28 +207753,6 @@
           "From Date": "2025-10-28",
           "To Date": "2025-10-28",
           "Broadcast Date": "2025-10-29",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAUKRI",
-        "date": "2025-10-22",
-        "cells": {
-          "Company": "NAUKRI",
-          "Insider": "Info Edge Employees Stock Option Plan Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1005",
-          "Trade %": "0",
-          "Trade Value": "2010",
-          "Post Holding Shares": "979149",
-          "Post Holding %": "0.15",
-          "Mode": "ESOP",
-          "From Date": "2025-10-16",
-          "To Date": "2025-10-16",
-          "Broadcast Date": "2025-10-22",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
