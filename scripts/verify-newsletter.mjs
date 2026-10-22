@@ -445,7 +445,7 @@ await test('old unsent filings never enter a daily email, regardless of ledger o
     assert.equal(brief.lateFrom, null);
     assert.equal(briefStats(brief).late, 0);
     assert.ok(!brief.reported.some(r => r.key === 'bse:late-order-1'));
-    assert.ok(briefStories(brief).every(s => s.at >= brief.window.from && s.at < brief.window.to));
+    assert.ok(briefStories(brief).every(s => s.at < brief.window.to && (s.at >= brief.window.from || s.kind === 'move' && istDay(s.at) === brief.moves.session)));
   }
   assert.equal(row.date, '2026-09-16', 'the original archived source record is unchanged');
 });

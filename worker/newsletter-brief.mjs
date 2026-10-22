@@ -911,7 +911,7 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   const news = await readNews(common);
   const trades = await readTrades(common);
   const quotes = await readSessionQuotes({ env, now, edition, day, holdings });
-  const moves = readMoves({ ...common, quotes, sessionContext: edition === 'morning' });
+  const moves = readMoves({ ...common, quotes, sessionContext: edition === 'morning' && !!reported && !reported.empty });
   const performance = await readPerformance({ env, quotes, holdings });
   const calendar = await readCalendar({ env, day, holdings, fetcher, now, screener, uncapped: true });
   // The corporate-actions capture is the largest file the brief reads, so it goes last, with
