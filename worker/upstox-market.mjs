@@ -83,7 +83,9 @@ export function upstoxOpenInterest(payload, targets, now = Date.now(), coverage 
   for (const data of Object.values(payload.data)) {
     for (const target of requested.get(data.instrument_token) || []) {
     const instrument = target.oiInstrument;
-    if (data.symbol !== instrument.symbol) {coverage.symbolMismatch=(coverage.symbolMismatch||0)+1;continue;}
+    // The exact instrument_token identifies the mapped contract. Quote display
+    // labels may differ from the catalogue; retain its verified contract label.
+    if (data.symbol !== instrument.symbol) coverage.symbolMismatch=(coverage.symbolMismatch||0)+1;
     const at = sourceTime(data.timestamp);
     if (!Number.isFinite(at)) {coverage.invalidClock=(coverage.invalidClock||0)+1;continue;}
     const reading = normalizeOpenInterest({current:data.oi,previous:data.previous_oi,
