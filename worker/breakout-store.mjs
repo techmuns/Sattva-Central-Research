@@ -1,4 +1,4 @@
-import { BREAKOUT_BATCH, BREAKOUT_LIMIT, validateQuote, tickerValid, recoverySlots, quoteFresh, marketWindow } from '../public/js/data/breakout-live-shared.js';
+import { BREAKOUT_BATCH, BREAKOUT_LIMIT, validateQuote, tickerValid, recoverySlots, quoteFreshAt, marketWindow } from '../public/js/data/breakout-live-shared.js';
 import { PRIMARY_MAX_AGE } from './breakout-primary.mjs';
 import { MinuteArchive, primaryBucket, MINUTE_RETENTION_DAYS, MINUTE_RETENTION_MS } from './breakout-archive.mjs';
 export { primaryBucket } from './breakout-archive.mjs';
@@ -20,11 +20,12 @@ export function mergePrimary(fallback, primary, now=Date.now()) {
   const fallbackFailures=new Map((fallback.failures || []).map(r=>[r.ticker,r.reason]));
   const rows=[], failures=[];
   let primaryUsed=0, fallbackUsed=0;
+  const fresh=quoteFreshAt(now),open=marketWindow(now).open;
   for (const ticker of targets) {
     let p=current.get(ticker), f=old.get(ticker);
-    const timely=p && (!marketWindow(now).open || now-Date.parse(p.checkedAt)<=PRIMARY_MAX_AGE);
-    const goodPrimary=timely && !primaryFailures.has(ticker) && quoteFresh(p,now);
-    const goodFallback=f && !fallbackFailures.has(ticker) && quoteFresh(f,now);
+    const timely=p && (!open || now-Date.parse(p.checkedAt)<=PRIMARY_MAX_AGE);
+    const goodPrimary=timely && !primaryFailures.has(ticker) && fresh(p);
+    const goodFallback=f && !fallbackFailures.has(ticker) && fresh(f);
     // Daily history may finish after the minute's quote, without changing its price/source time.
     if (p && !p.base && f?.base && f.sessionDate===p.sessionDate && f.exchange===p.exchange) p={...p,base:f.base};
     if (p && !p.volumeBase && f?.volumeBase && f.sessionDate===p.sessionDate && f.exchange===p.exchange) p={...p,volumeBase:f.volumeBase};

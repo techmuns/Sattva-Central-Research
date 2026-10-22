@@ -199,7 +199,8 @@ class BSETests(unittest.TestCase):
             url="https://www.bseindia.com/XBRLFILES/"+row["Consol_XMLName"]
             key=self.store.observe(url,issuer,"financial","bse:financial-results",row,AT)
             doc=self.store.db.execute("SELECT * FROM documents WHERE id=?",(key,)).fetchone()
-            read_document(self.store,FixtureReader(bodies={url:(FIX/file).read_bytes()}),doc,AT,Path(self.tmp.name))
+            with mock.patch("recommendation_sources.iso_now", return_value=AT):
+                read_document(self.store,FixtureReader(bodies={url:(FIX/file).read_bytes()}),doc,AT,Path(self.tmp.name))
         fin=financials(self.store,issuer["isin"],AT)
         self.assertEqual(fin["quarter"],("2026-07-01","2026-09-30","Consolidated"))
         self.assertTrue(fin["prior"]);self.assertIsNotNone(fin["valuationEPS"])

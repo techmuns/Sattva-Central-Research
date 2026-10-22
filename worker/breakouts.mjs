@@ -8,9 +8,14 @@ import {preparedBreakouts} from './breakouts-github.mjs';
 import {readLiveBreakouts} from './breakout-live-delivery.mjs';
 
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
-function conditional(request, payload, age = 0) {
-  const { body, tag } = withTag(payload);
-  return revalidate(request, tagged(body, tag, age), 'capture');
+async function conditional(request, payload, age = 0) {
+  // Prepared snapshots carry source clocks, not request receipt times. Serialize
+  // this complete response once; a JSON replacer plus a second serialization
+  // spends most of the free Worker's CPU allowance on a 600-company capture.
+  const body=JSON.stringify({...payload,contentTag:undefined});
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(body));
+  const tag=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+  return revalidate(request, tagged(body.slice(0,-1)+',"contentTag":"'+tag+'"}', tag, age), 'capture');
 }
 
 export async function handleBreakouts(request, env, { fetcher = fetch, now = Date.now, identity = breakoutCollectorIdentity, edgeCache = globalThis.caches?.default } = {}) {

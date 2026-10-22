@@ -75,12 +75,21 @@ export function openInterestForQuote(row, now = Date.now(), unavailable = false)
   const current = !unavailable && row.openInterestUnavailable !== true && reading.sessionDate === row.sessionDate && quoteFresh(reading,now);
   return {...reading,stale:!current,changePercent:current && reading.previous > 0 ? (reading.current / reading.previous - 1) * 100 : null};
 }
+// One request evaluates hundreds of rows at the same instant. Resolve the
+// exchange session once per batch, while each row keeps its own source clock.
+export function quoteFreshAt(now = Date.now()) {
+  const session=expectedSession(now),open=marketWindow(now).open;
+  const close=Date.parse(`${session}T15:10:00+05:30`),checkedClose=Date.parse(`${session}T15:30:00+05:30`);
+  return row => {
+    if (!row || row.sessionDate !== session) return false;
+    const sourceAt=Date.parse(row.feedAt || row.quoteAt);
+    if (open) return now-sourceAt <= BREAKOUT_MAX_AGE_MS;
+    // Earlier intraday observations cannot become completed-session closes.
+    return sourceAt >= close && Date.parse(row.checkedAt) >= checkedClose;
+  };
+}
 export function quoteFresh(row, now = Date.now()) {
-  if (!row || row.sessionDate !== expectedSession(now)) return false;
-  const sourceAt = row.feedAt || row.quoteAt;
-  if (marketWindow(now).open) return now - Date.parse(sourceAt) <= BREAKOUT_MAX_AGE_MS;
-  // After the session, an earlier intraday quote is not a closing observation.
-  return Date.parse(sourceAt) >= Date.parse(`${row.sessionDate}T15:10:00+05:30`) && Date.parse(row.checkedAt) >= Date.parse(`${row.sessionDate}T15:30:00+05:30`);
+  return !!row && quoteFreshAt(now)(row);
 }
 // On the same date, a completed daily close wins over a stale intraday observation.
 // With no daily price, retain the last available observation with its original time.
@@ -100,7 +109,8 @@ export function liveBreakout(row) {
 export function liveCoverage(capture, tickers, now = Date.now()) {
   const rows = new Map((capture?.rows || []).map(row => [row.ticker, row]));
   const failed = new Set((capture?.failures || []).map(item => item.ticker));
-  const missing = tickers.filter(ticker => failed.has(ticker) || !quoteFresh(rows.get(ticker), now) || !rows.get(ticker)?.base);
+  const fresh=quoteFreshAt(now);
+  const missing = tickers.filter(ticker => failed.has(ticker) || !fresh(rows.get(ticker)) || !rows.get(ticker)?.base);
   const pending = capture?.state !== 'complete';
   const primary=capture?.primarySchedule;
   const primaryPartial=!!primary && (primary.configured!==true || !primary.started || primary.overdue===true ||
