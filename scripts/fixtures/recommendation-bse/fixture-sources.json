@@ -1,0 +1,73 @@
+{
+  "capturedAt": "2026-10-22",
+  "sourcePage": "https://www.bseindia.com/corporates/Comp_ResultsNew?Code=532742",
+  "indexEndpoint": "https://api.bseindia.com/BseIndiaAPI/api/Corp_FinanceResult_ng_new/w",
+  "parameters": {
+    "SCRIP_CD": "<exact security code>",
+    "FlagDur": "7",
+    "HFQ": "",
+    "ISUBGROUP_CODE": "",
+    "segment": "C"
+  },
+  "originalLinks": "All HTML fixture links occur verbatim in the companion BSE index XMLName or Consol_XMLName fields under https://www.bseindia.com/XBRLFILES/.",
+  "sourceFormatQuirk": "BSE binds legacy numdotdecimalin to the 2020 registry URI. The adapter explicitly validates this observed pair and strict Indian grouping; it does not claim general registry conformance.",
+  "files": [
+    {
+      "file": "bse-company-results.json",
+      "sha256": "d2fdf97f5bdea22d3b3a3cf7fa45cbcf772c3c4edcc1b7e35bba9245e48b842d",
+      "bytes": 51712
+    },
+    {
+      "file": "melstar-results.json",
+      "sha256": "d26eb54a2563b5f694a2bd8a0d3402ee60e09644754b41c70b93ddc52c78b208",
+      "bytes": 75522
+    },
+    {
+      "file": "paushak-sep-2026.html",
+      "sha256": "992bcbe5d502041c59bf2a67bd1c0e1faf716c50b563f3264c8e08e0328d2c98",
+      "bytes": 446925
+    },
+    {
+      "file": "paushak-sq2025-2026.html",
+      "sha256": "03a50ad928ad2454720a9e78a1d3b36887260b1c9630a03e704510c21bf22b0f",
+      "bytes": 456412
+    },
+    {
+      "file": "paushak-mc2025-2026.html",
+      "sha256": "55012045a9e2d92e7fa6bf484fb5ba1d75995ea3c0b99ec3c3be72d3f69c0458",
+      "bytes": 403372
+    },
+    {
+      "file": "melstar-consolidated.html",
+      "sha256": "45ce67763fae01065010e1e6e3fb9dc36232dda4637a04171c0444cc64951855",
+      "bytes": 246419
+    },
+    {
+      "file": "bse-today-results.json",
+      "sha256": "890d221ceb38af1941c20db083ba8d1ad33b86624e69276f183f3987bb56e767",
+      "bytes": 123274
+    },
+    {
+      "file": "recent-bse-only-identities.json",
+      "sha256": "0dcbf220ba02a2219e03b6ef3f12a3986f85a229fb85cef7bb9e05eb5843d619",
+      "bytes": 30697
+    },
+    {
+      "file": "melstar-sq2025-2026.html",
+      "sha256": "d7f9b9b84946d2013b99db1fd244426033f32c331635cc0ecc7289574168f0a4",
+      "bytes": 212233
+    },
+    {
+      "file": "melstar-mc2025-2026.html",
+      "sha256": "c211f9f225ae30c63bfa8d6a06e901195aea66c607aa173e28a4d5516a0d5c76",
+      "bytes": 256368
+    }
+  ],
+  "currentResultsParameters": {
+    "SCRIP_CD": "",
+    "FlagDur": "1",
+    "HFQ": "",
+    "ISUBGROUP_CODE": "",
+    "segment": "C"
+  }
+}

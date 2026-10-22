@@ -66,7 +66,7 @@ Per-company windows, pagination, family order, retry dates and interrupted work 
 and calendar rollover. Current financials and recent dated catalyst disclosures receive collection
 priority; this priority never changes a model score. An index that ignores its symbol filter or
 returns a conflicting ISIN cannot close the company window. Financial XML still verifies the issuer.
-Collection order version 2 uses the most recent retained assessment cohort observed before the
+Collection order version 3 uses the most recent retained assessment cohort observed before the
 walk, rechecks the original disclosure date/identity, and recomputes the existing three model scores
 from current financial facts. Cases blocked mainly by missing financial evidence lead the queue;
 known losses, failed growth/quality/valuation checks and conflicting statements are not described as
@@ -84,12 +84,62 @@ targeted slice. Walk summaries retain actual index requests, document attempts, 
 request ceilings; detailed priorities remain in the archived queue, without adding browser payloads.
 Public identities now retain NSE-directory symbols separately from BSE tickers and historical aliases.
 Only a verified unambiguous NSE-directory symbol may start an NSE company-index request. BSE-only
-listings and older identities lacking exchange provenance stay explicit adapter/identity gaps; their
+listings use the separate code-filtered BSE adapter below. Older identities lacking exchange provenance stay explicit identity gaps; their
 already-discovered original financial filings still receive targeted reads and ordinary discovery
 remains enrolled. No company or captured history is removed. Source support is separate from listing
-membership and does not claim a certified direct BSE history adapter.
-Known losses, negative cash flow, conflicting statements and unsupported BSE-only histories remain
+membership. Known losses, negative cash flow, conflicting statements and unsupported BSE formats remain
 explicit failures/gaps; the collector never searches for an older profitable substitute.
+
+### BSE-only company history (22 October 2026)
+
+The public [BSE financial-results page](https://www.bseindia.com/corporates/Comp_ResultsNew)
+uses `Corp_FinanceResult_ng_new/w` on `api.bseindia.com`. Its company history request supplies the
+exact six-digit `SCRIP_CD`, `FlagDur=7`, blank `HFQ`/`ISUBGROUP_CODE`, and `segment=C`.
+The current-results request uses blank `SCRIP_CD` and `FlagDur=1`. Every scheduled walk reads that
+current response within the existing discovery budget, catalogues all rows, and enrolls originals
+for verified BSE-only identities. Unknown/ambiguous codes remain unresolved; NSE membership is
+never guessed from a BSE ticker. Company responses must match the requested code on every row.
+Every returned historical row and observed standalone/consolidated original link is retained.
+Neither unpaginated response supplies an independently verified archive total: receipts explicitly
+say archive completeness and publication timing are unverified. An empty response is not proof of
+an empty archive. The rotating company-history lane reconciles source history missed between walks;
+it does not certify complete coverage or promise every company a weekly visit within the budget.
+
+One company turn per four is reserved for supported BSE-only issuers, closest qualifying evidence
+first, alongside the unchanged oldest-waiting turn. All lanes share 100 targeted requests/four
+minutes, the 12-request company quantum and the existing global ceiling. Required current,
+year-earlier and annual/half-year originals precede older history. A saved BSE index receipt is not
+re-requested after an interrupted original read. Finished company walks become eligible for
+rotation after seven days; newly discovered originals can wake them earlier. Source failures keep
+their separate cooldowns. Current-result discovery and rotating history continue after known gaps
+close. Per-company source checks and retained receipts expose when a company was actually checked.
+
+The `bse-inline-1` adapter parses structured XHTML Inline XBRL resources/facts, never visible HTML
+tables. Actual source fixtures cover Paushak and Melstar, current/year-earlier/annual statements,
+standalone/consolidated basis, signed cash flow, explicit money scaling and unscaled per-share EPS.
+Original bytes, Inline XBRL attributes/text, contexts, units and every source version remain retained.
+Namespace-scoped fact names, exact code/ISIN, context entity, period, basis, units, nil and duplicate
+facts are checked before normalization. Explicit `scale` is a power of ten; `decimals` remains
+precision. Unsupported relevant transforms, compound facts, taxonomies or entity/unit namespaces
+fail closed. Ordinary XML links are also retained; some actual BSE XML links return 404 while the
+observed XHTML original works. No unobserved substitute URL is constructed.
+
+BSE's current renderer binds the legacy `numdotdecimalin` spelling to the 2020 transformation URI,
+where the standard renamed it `num-dot-decimal`. The narrow source adapter explicitly recognizes
+only that observed pair, validates Indian digit grouping, and applies the original sign/scale.
+This is documented source-format compatibility, not a claim of general Inline XBRL conformance.
+See the [original registry](https://www.xbrl.org/Specification/inlineXBRL-transformationRegistry/REC-2020-02-12/inlineXBRL-transformationRegistry-REC-2020-02-12.html).
+Other unknown namespace/transform combinations stay unusable. Existing shared BSE browser headers
+are loaded from `worker/bse-ann.mjs`; no profile rotation, cookies, proxies or paid fallback is added.
+
+`Fld_CreateDate`, the quarter-code queue hint and filename dates never become verified publication
+clocks. An older filing with a conflicting ISIN stays excluded, even when its BSE code matches.
+Financial-history improvements cannot bypass event-date, price, liquidity, corporate-action or
+quality gates. BSE-only price/liquidity support remains separate work; this change need not produce
+new BSE recommendations. The UI and `catalysts-1` rules are unchanged.
+
+Offline verification: `python3 scripts/verify-recommendation-bse.py`, plus the existing foundation,
+financial-gap and model suites. Both PR CI and the scheduled public Actions job run these tests.
 An interrupted HTTP body or a response shorter than its declared length is never parsed as
 complete evidence. It records a source failure, keeps the window pending and allows other
 families and document extraction to continue. The initial recent-window start is durable, so
@@ -141,9 +191,9 @@ become company totals. Nil/absent values are not zero. Inconsistent contexts, am
 basis, conflicting aliases, future periods and issuer mismatches are excluded from usable facts.
 Actual quarterly durations are counted separately from annual/year-to-date/half-year periods.
 
-The first adapters normalize original BSE-financial/SEBI financial XBRL taxonomies served by NSE.
+The adapters normalize original BSE-financial/SEBI financial XBRL taxonomies served by NSE and the supported BSE Inline XBRL subset below.
 Other fields remain in raw evidence. PDF financial-table extraction, general HTML/iXBRL tables,
-specialist bank/insurance metrics and a direct BSE-only financial-history adapter are not certified.
+specialist bank/insurance metrics and other unsupported BSE formats are not certified.
 An unavailable statement or field remains unavailable. Revenue history alone does not establish
 earnings quality: cash flow, balance sheets, dilution and exceptional-item coverage need checking.
 No quarterly cash flow, consensus estimate, underlying profit or EBITDA is invented.

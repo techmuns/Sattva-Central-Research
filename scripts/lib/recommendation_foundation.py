@@ -436,6 +436,6 @@ class Store:
             "dateChecks": {"assessedDocuments": self.db.execute("SELECT count(*) FROM event_dates").fetchone()[0],
                 "eligibleForNewCatalyst": self.db.execute("SELECT count(*) FROM event_dates WHERE json_extract(assessment,'$.eligibleForNewCatalyst')=1").fetchone()[0]},
             "limits": ["Background evidence foundation; no recommendation or return score.",
-                "NSE financial XBRL supported. PDF financial tables, bank/insurance adapters and BSE-only financial history may be unavailable.",
+                "NSE XBRL and supported BSE-only Inline XBRL history are collected. PDF tables, unsupported taxonomies, bank/insurance adapters and unverified BSE archive completeness remain gaps.",
                 "Periods, statement completeness, issuer identity and event dates require separate eligibility checks.",
                 "First observation is this collector's actual observation; historical publication does not establish prior capture."]}

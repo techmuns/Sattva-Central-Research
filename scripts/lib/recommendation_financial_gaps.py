@@ -13,7 +13,7 @@ from xml.etree.ElementTree import ParseError
 
 from recommendation_foundation import canonical, day, iso_now
 from recommendation_models import financials, score_models, evidence_date, MODEL_VERSION, POLICY, indian_day
-from recommendation_sources import FAMILIES, BudgetExceeded, SourceFailure, capture_window, read_document
+from recommendation_sources import FAMILIES, BudgetExceeded, SourceFailure, capture_window, capture_bse_company, read_document
 
 POSITIVE = ("revenue", "net_profit", "pbt_before_exceptional", "eps_diluted_total")
 QUALITY = ("other_income", "exceptional_before_tax")
@@ -82,7 +82,7 @@ def company_gap(store, company, identity, at, known=True):
     if quarter:
         for observation in store.db.execute("""SELECT o.raw FROM documents d JOIN observations o ON o.document=d.id
                 WHERE d.company=? AND d.kind='financial' AND o.observed_at<=?""", (company,at)):
-            raw=json.loads(observation[0]);end=day(raw.get("qe_Date") or raw.get("toDate"))
+            raw=json.loads(observation[0]);end=day(raw.get("qe_Date") or raw.get("toDate") or raw.get("bseReportingEndHint"))
             if end and end <= indian_day(at):known_ends.append(end)
         if (dt.date.fromisoformat(indian_day(at))-dt.date.fromisoformat(quarter[1])).days > POLICY["maximumFinancialAgeDays"]:
             missing.append("current:recent-quarter")
@@ -97,6 +97,8 @@ def company_gap(store, company, identity, at, known=True):
     # BSE tickers and historical aliases are useful identities, but are not proof of an NSE listing.
     symbols = {s for s in identity.get("nseSymbols", []) if isinstance(s,str) and s}
     symbol = next(iter(symbols)) if len(symbols) == 1 else None
+    codes = {c for c in identity.get("bseCodes", []) if isinstance(c,str) and len(c) == 6 and c.isascii() and c.isdigit()}
+    bse_code = next(iter(codes)) if len(codes) == 1 and not symbols and "nseSymbols" in identity else None
     return {"company": company, "name": identity.get("name"), "at": at, "basis": fin["basis"], "quarter": quarter,
         "yearEarlierQuarter": prior, "expectedYearEarlierQuarter": expected_prior,
         "annualPeriod": fin.get("annual"), "reportedQuarters": fin.get("quarters", []), "fields": fields,
@@ -107,8 +109,10 @@ def company_gap(store, company, identity, at, known=True):
             "period": fin.get("baselinePeriod")},
         "cashFlow": {"state": cash_state, "statements": [{"start": c[1], "end": c[0], "value": str(c[2]["value"]),
             "versions": c[2]["versions"]} for c in latest_cash]}, "conflicts": fin["conflicts"],
-        "missing": missing, "needsBackfill": bool(missing), "symbol": symbol,
+        "missing": missing, "needsBackfill": bool(missing), "symbol": symbol, "bseCode": bse_code,
         "sourceSupport": "nse-company-index" if symbol else "ambiguous-symbol" if symbols else
+            "exchange-provenance-unavailable" if "nseSymbols" not in identity else
+            "bse-company-index" if bse_code else "ambiguous-bse-code" if codes else
             "bse-only-adapter-unavailable" if "nseSymbols" in identity else "exchange-provenance-unavailable",
         "sme": bool(identity.get("nseSME"))}
 
@@ -131,6 +135,8 @@ def audit_financial_gaps(store, at, persist=True):
         "currentQuarterCompanies": counts([r for r in rows if r["quarter"] and
             (dt.date.fromisoformat(indian_day(at))-dt.date.fromisoformat(r["quarter"][1])).days <= POLICY["maximumFinancialAgeDays"]]),
         "unsupportedBSEOnly": sum(r["sourceSupport"] == "bse-only-adapter-unavailable" for r in rows),
+        "supportedBSEOnly": sum(r["sourceSupport"] == "bse-company-index" for r in rows),
+        "ambiguousBSECodes": sum(r["sourceSupport"] == "ambiguous-bse-code" for r in rows),
         "unverifiedExchangeIdentity": sum(r["sourceSupport"] == "exchange-provenance-unavailable" for r in rows),
         "ambiguousSymbols": sum(r["sourceSupport"] == "ambiguous-symbol" for r in rows),
         "modelRulesChanged": False, "status": "partial", "details": "Exact field/period/value/provenance rows are retained in financial_gap_state; missing differs from nonpositive and conflicting."}
@@ -159,9 +165,11 @@ def relevant_documents(store, gap):
             continue
         observations = store.db.execute("SELECT raw FROM observations WHERE document=?", (doc["id"],)).fetchall()
         metadata = [json.loads(r[0]) for r in observations]
-        ends = {day(m.get("qe_Date") or m.get("toDate")) for m in metadata}
+        ends = {day(m.get("qe_Date") or m.get("toDate") or m.get("bseReportingEndHint")) for m in metadata}
         audited = any(str(m.get("audited", "")).strip().lower() == "audited" or m.get("period") == "Annual" for m in metadata)
         fresh_ends = {e for e in ends if e and e >= (dt.date.fromisoformat(indian_day(gap["at"]))-dt.timedelta(days=550)).isoformat()}
+        if any(m.get("bseReportingEndHint") for m in metadata) and not fresh_ends and not ends & required:
+            continue  # Older original links remain retained; targeted reads serve required periods first.
         if (not gap["quarter"] or ends & required or audited and fresh_ends or
                 any(e >= gap["quarter"][1] for e in ends if e) or not any(ends)):
             # New/current revisions come first; all required revisions still get read, even
@@ -169,9 +177,11 @@ def relevant_documents(store, gap):
             role = 0 if gap["quarter"] and any(e >= gap["quarter"][1] for e in ends if e) else (
                 1 if gap["expectedYearEarlierQuarter"] and gap["expectedYearEarlierQuarter"][1] in ends else
                 2 if audited and fresh_ends else 3)
-            selected.append((role, doc))
-    return [d for _, d in sorted(selected, key=lambda item: (item[1]["status"] == "issuer-unverified", item[0], item[1]["status"] == "failed",
-        item[1]["first_seen"], item[1]["id"]))]
+            selected.append((role, max((e for e in ends if e), default=""), doc))
+    return [d for _, _, d in sorted(selected, key=lambda item: (item[2]["status"] == "issuer-unverified", item[0],
+        -dt.date.fromisoformat(item[1]).toordinal() if item[1] else 0,
+        item[2]["url"].endswith(".xml") and "/XBRLFILES/" in item[2]["url"], item[2]["status"] == "failed",
+        item[2]["first_seen"], item[2]["id"]))]
 
 
 def collection_profiles(store, gaps, at):
@@ -250,9 +260,17 @@ def collection_queue(store, audit, walks, at):
         WHERE d.kind='catalyst' AND o.published_at>=? AND o.published_at<=? AND o.observed_at<=?""", (recent,at,at))}
     known_pending = {r[0] for r in store.db.execute("""SELECT DISTINCT company FROM documents
         WHERE kind='financial' AND status!='read' AND (next_retry IS NULL OR next_retry<=?)""", (at,))}
-    candidates = {r["company"]: r for r in audit["companies"] if r["needsBackfill"] and
-        (r["symbol"] or r["company"] in known_pending) and
-        walks.get(r["company"],{}).get("nextRetry", "") <= at}
+    new_bse = {r["company"] for r in store.db.execute("""SELECT d.company,max(d.first_seen) AS observed FROM documents d
+        JOIN observations o ON o.document=d.id WHERE d.kind='financial' AND o.source='bse:financial-results:recent'
+        AND d.first_seen<=? AND d.first_seen>=? AND d.status!='read' AND (d.next_retry IS NULL OR d.next_retry<=?)
+        GROUP BY d.company""", (at,recent,at)) if r["observed"] > walks.get(r["company"],{}).get("lastAttempt", "")}
+    attention.update(new_bse)
+    refresh_before = (dt.datetime.fromisoformat(at)-dt.timedelta(days=7)).isoformat(timespec="seconds")
+    candidates = {r["company"]: r for r in audit["companies"] if (r["needsBackfill"] or r["company"] in new_bse or r.get("bseCode") and
+        walks.get(r["company"],{}).get("lastSuccess", "") <= refresh_before) and
+        (r["symbol"] or r.get("bseCode") or r["company"] in known_pending) and
+        (walks.get(r["company"],{}).get("nextRetry", "") <= at or r["company"] in new_bse and
+            walks.get(r["company"],{}).get("status") in {"required-data-present", "bse-response-read-gaps-remain", "source-conflicts-remain"})}
     profiles = collection_profiles(store, candidates, at)
     def priority(company):
         gap, p = candidates[company], profiles.get(company)
@@ -262,11 +280,18 @@ def collection_queue(store, audit, walks, at):
         return (tier, bool(p["knownBlockers"]) if p else bad, len(p["otherRequirements"]) if p else 0,
             not bool(current), -p["verifiedScore"] if p else 0, len(gap["missing"]), walks.get(company,{}).get("lastAttempt", ""), company)
     ranked = sorted(candidates, key=priority)
+    bse = iter(c for c in ranked if candidates[c].get("bseCode"))
     oldest = iter(sorted(candidates, key=lambda c: (walks.get(c,{}).get("lastAttempt", ""), c)))
     queue, selected = [], set()
     for company in ranked:
         if company in selected: continue
         queue.append((candidates[company], profiles.get(company), "priority"));selected.add(company)
+        if len(queue) % 4 == 1:
+            # Reserve one company turn per four for supported BSE-only issuers, closest first.
+            # This does not raise the shared request ceiling or displace the oldest-waiting turn.
+            next_bse = next((c for c in bse if c not in selected), None)
+            if next_bse:
+                queue.append((candidates[next_bse], profiles.get(next_bse), "bse-priority")); selected.add(next_bse)
         if len(queue) % 4 == 3:
             fair = next((c for c in oldest if c not in selected), None)
             if fair:
@@ -326,8 +351,26 @@ def fill_financial_gaps(store, reader, lookup, scratch, audit, maximum=100, seco
                                 store.db.commit()
                         current = company_gap(store,company,identity,iso_now())
                         pending = [d for d in relevant_documents(store,current) if d["id"] not in attempted_docs]
+                    if gap.get("bseCode") and not walk.get("bseIndexRead") and (current["needsBackfill"] or not gap["needsBackfill"]):
+                        before_index = reader.used
+                        try:
+                            complete = capture_bse_company(store,reader,gap["bseCode"],company,lookup)
+                        finally:
+                            index_requests += reader.used-before_index
+                        if not complete:
+                            walk.update(status="source-failed", nextRetry=(dt.datetime.fromisoformat(at)+dt.timedelta(days=1)).isoformat(timespec="seconds"))
+                            break
+                        walk["bseIndexRead"] = True
+                        store.db.execute("INSERT OR REPLACE INTO financial_gap_walks VALUES(?,?)",(company,canonical(walk)))
+                        store.db.commit()  # Resume original reads without re-spending the index request.
+                        continue
                     if not current["needsBackfill"]:
-                        walk.update(inProgress=False,nextRetry="",status="source-conflicts-remain" if current["conflicts"] else "required-data-present",lastSuccess=iso_now())
+                        walk.update(inProgress=False,nextRetry=(dt.datetime.fromisoformat(at)+dt.timedelta(days=7)).isoformat(timespec="seconds") if gap.get("bseCode") else "",
+                            status="source-conflicts-remain" if current["conflicts"] else "required-data-present",lastSuccess=iso_now())
+                        break
+                    if gap.get("bseCode"):
+                        walk.update(inProgress=False,status="bse-response-read-gaps-remain",lastSuccess=iso_now(),
+                            nextRetry=(dt.datetime.fromisoformat(at)+dt.timedelta(days=7)).isoformat(timespec="seconds"))
                         break
                     if not gap["symbol"]:
                         walk.update(inProgress=False,status="source-adapter-unavailable",nextRetry="")
@@ -365,6 +408,6 @@ def fill_financial_gaps(store, reader, lookup, scratch, audit, maximum=100, seco
             reader.deadline = original_deadline
         store.set("financialGapLastWalk",{"at":at,"finishedAt":iso_now(),"companiesAttempted":attempted,
             "requests":reader.used-used_start,"requestCeiling":maximum,"secondsCeiling":seconds,
-            "collectionOrderVersion":2,"companyRequestCeiling":company_maximum,"lanes":lanes,
+            "collectionOrderVersion":3,"companyRequestCeiling":company_maximum,"lanes":lanes,
             "documentReadAttempts":document_reads,"indexRequests":index_requests})
         store.db.commit()

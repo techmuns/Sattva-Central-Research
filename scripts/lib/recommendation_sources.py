@@ -13,6 +13,7 @@ from urllib.parse import urlencode, urlsplit, urljoin
 
 from recommendation_foundation import (canonical, day, document_date, document_url,
     exchange_time, iso_now, parse_financial_xml)
+from recommendation_bse import BSE_RESULTS_PATH, bse_index_url, bse_recent_url, result_links, reporting_end_hint, parse_bse_ixbrl
 
 FAMILIES = [
     ("integrated-equity", "equities", None), ("integrated-sme", "sme", None),
@@ -46,6 +47,7 @@ class PublicReader:
         self.deadline, self.last = time.monotonic() + seconds, 0
         self.opener = opener or urllib.request.build_opener(NoRedirect())
         self.sleep = sleep
+        self.bse_headers = None
 
     def read(self, url, limit=4 * 1024 * 1024, redirects=0):
         u = urlsplit(url)
@@ -54,7 +56,8 @@ class PublicReader:
             "/api/corporates-corporateActions", "/api/holiday-master"}
         market = u.hostname == "nsearchives.nseindia.com" and bool(re.fullmatch(
             r"/content/(?:cm/BhavCopy_NSE_CM_0_0_0_\d{8}_F_0000\.csv\.zip|indices/ind_close_all_\d{8}\.csv)", u.path))
-        if not index and not market and not document_url(url):
+        bse_index = u.hostname == "api.bseindia.com" and u.path == BSE_RESULTS_PATH
+        if not index and not market and not bse_index and not document_url(url):
             raise SourceFailure("Source is not an allowed free exchange endpoint")
         if u.scheme != "https" or u.username or u.password or u.port:
             raise SourceFailure("Invalid source destination")
@@ -67,9 +70,23 @@ class PublicReader:
         self.sleep(max(0, 2 - (time.monotonic() - self.last)))
         self.used += 1
         self.last = time.monotonic()
-        request = urllib.request.Request(url, headers={
+        headers = {
             "User-Agent": "SattvaResearchFinancialHistory/1.0 (public exchange evidence)",
-            "Accept": "application/json, application/xml, application/pdf, text/html;q=0.8"})
+            "Accept": "application/json, application/xml, application/pdf, text/html;q=0.8"}
+        if u.hostname in {"api.bseindia.com", "www.bseindia.com"}:
+            if self.bse_headers is None:
+                # One faithful shared browser profile, never rotation after a source refusal.
+                module = (Path(__file__).resolve().parents[2] / "worker/bse-ann.mjs").as_uri()
+                try:
+                    result = subprocess.run(["node", "--input-type=module", "-e",
+                        "import { bseRequestHeaders } from " + json.dumps(module) +
+                        "; process.stdout.write(JSON.stringify(bseRequestHeaders()));"],
+                        capture_output=True, timeout=10, check=True)
+                    self.bse_headers = json.loads(result.stdout)
+                except (OSError, ValueError, subprocess.SubprocessError) as error:
+                    raise SourceFailure("Shared BSE request profile unavailable") from error
+            headers = self.bse_headers
+        request = urllib.request.Request(url, headers=headers)
         try:
             with self.opener.open(request, timeout=20) as response:
                 # No credential, proxy, cookie rotation or alternative host on an access refusal.
@@ -202,6 +219,66 @@ def capture_window(store, reader, family, start, end, lookup, phase="recent", sy
             raise
 
 
+def capture_bse_company(store, reader, code, company, lookup):
+    """Retain all returned history and links; the source supplies no archive total/pagination proof."""
+    if bool(code) != bool(company):
+        raise ValueError("BSE company discovery requires its security code and expected ISIN together")
+    recent = code is None
+    key, at = "source:bse-financial-results:recent" if recent else "gap-source:" + company + ":bse-results:" + code, iso_now()
+    try:
+        identity = lookup.get(code) if code else None
+        if not recent and (not identity or identity["isin"] != company or code not in identity["bseCodes"]):
+            raise SourceFailure("BSE security code is ambiguous or conflicts with the directory ISIN")
+        body = reader.read(bse_recent_url() if recent else bse_index_url(code))
+        at = iso_now()
+        try:
+            response = json.loads(body)
+        except (ValueError, UnicodeError) as error:
+            raise SourceFailure("BSE financial index is not JSON") from error
+        rows = response.get("Table") if isinstance(response, dict) else None
+        if not isinstance(rows, list) or len(rows) > 5000 or any(not isinstance(r, dict) for r in rows):
+            raise SourceFailure("Unsupported BSE financial index schema")
+        links, unsupported, unresolved, other_exchange = set(), 0, 0, 0
+        # Catalogue before validation, so unexpected original source rows survive diagnosis.
+        for row in rows:
+            store.catalogue("bse:financial-results", row, at)
+        store.db.commit()
+        if any(not re.fullmatch(r"\d{6}", str(r.get("Scrip_cd"))) or not recent and str(r.get("Scrip_cd")) != code for r in rows):
+            raise SourceFailure("BSE financial index ignored the requested security code")
+        for row in rows:
+            row_identity = lookup.get(str(row["Scrip_cd"])) if recent else identity
+            if not row_identity or str(row["Scrip_cd"]) not in row_identity["bseCodes"]:
+                unresolved += 1
+                continue
+            if recent and row_identity.get("nseSymbols") != []:
+                other_exchange += 1
+                continue  # This lane serves verified BSE-only issuers; all source rows remain catalogued.
+            try:
+                originals = result_links(row)
+            except ValueError as error:
+                raise SourceFailure(str(error)) from error
+            unsupported += not bool(originals)
+            for url in originals:
+                # Fld_CreateDate is retained verbatim, but its publication semantics are not
+                # established. Neither it, the quarter hint nor the filename verifies an event date.
+                store.observe(url, row_identity, "financial", "bse:financial-results:recent" if recent else "bse:financial-results",
+                    {**row, "bseReportingEndHint": reporting_end_hint(row)}, at)
+                links.add(url)
+        detail = {"code": code, "rows": len(rows), "originalLinks": len(links),
+            "rowsWithoutSupportedOriginal": unsupported, "archiveCompleteness": "unverified",
+            "unresolvedRows": unresolved, "otherExchangeRows": other_exchange,
+            "publicationClock": "unverified", "historyOption": 1 if recent else 7}
+        store.set("bseRecentResultsReceipt" if recent else "bseResultsReceipt:" + company + ":" + code, {"checkedAt": at, **detail})
+        store.check(key, at, detail=detail)
+        return True
+    except SourceFailure as error:
+        store.check(key, at, str(error), {"code": code, "archiveCompleteness": "unverified"})
+        return False
+    except BudgetExceeded:
+        store.check(key, at, "BSE result walk interrupted; work retained", {"code": code})
+        raise
+
+
 def ingest_captured_events(store, data_dir, lookup, at):
     """Retain input metadata as observations, not verified event dates. No original rows are edited."""
     p = Path(data_dir)
@@ -283,9 +360,10 @@ def read_document(store, reader, doc, at, scratch):
                 raise
     store.db.execute("UPDATE documents SET url=? WHERE id=?", (url, doc["id"]))
     if b"<" in body[:100] and not body.startswith(b"%PDF"):
-        parsed = parse_financial_xml(body, expected)
+        inline = urlsplit(url).hostname == "www.bseindia.com" and urlsplit(url).path.startswith("/XBRLFILES/") and urlsplit(url).path.lower().endswith(".html")
+        parsed = parse_bse_ixbrl(body, expected) if inline else parse_financial_xml(body, expected)
         parsed["retrievedFrom"] = url
-        store.save_version(doc, body, "xbrl", parsed, iso_now())
+        store.save_version(doc, body, "ixbrl" if inline else "xbrl", parsed, iso_now())
     elif body.startswith(b"%PDF"):
         # Poppler is free and local on this GitHub runner. Scans stay unreadable; no paid OCR fallback.
         with tempfile.TemporaryDirectory(dir=scratch) as tmp:
@@ -318,6 +396,10 @@ def collect(store, data_dir, reader, lookup, scratch):
     total_budget = getattr(reader, "maximum", 200)
     reader.maximum = min(total_budget, reader.used + 60)
     try:
+        # Every scheduled walk discovers newly returned BSE-only originals independently
+        # of open browsers. The rotating company history lane reconciles missed intervals;
+        # neither unpaginated response is labelled an exhaustive archive.
+        capture_bse_company(store, reader, None, None, lookup)
         for family in FAMILIES:
             key = "recentThrough:" + family[0]
             previous = store.get(key)
