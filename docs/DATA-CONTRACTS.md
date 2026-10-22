@@ -4952,8 +4952,9 @@ one send per key, replay-safe, `no-token`, refused, missed, test copy, cooldown,
 asserts the retained NSE history joins and folds (one filing on both exchanges is one story, a
 document-identity twin folds, two same-prefix filings stay two), the TradingView headlines join only where
 attribution confirms the company, a 5% session move is on the sheet with its verification state and
-`MOVE_PCT` equals `daily-alerts.js`'s, and late arrivals: carried once, marked, suppressed once sent,
-and a missed morning's window reaching the evening brief.
+`MOVE_PCT` equals `daily-alerts.js`'s, and old reports remain excluded even with an empty sent
+ledger, a missed edition or an upgrade. `node scripts/verify-newsletter-policy.mjs` also checks
+the six-part delivery ceiling and permanent retirement of unsafe or expired frozen queues.
 `node scripts/verify-newsletter-ui.mjs` drives the real button and panel against the real route,
 store and schedule over an in-process server with stubbed upstreams — the email endpoint records
 what it was asked to send.
