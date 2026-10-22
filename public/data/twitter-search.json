@@ -2101,8 +2101,8 @@
       ]
     },
     "isin:INE142M01025|TATATECH": {
-      "lastAttemptAt": "2026-10-17T04:45:35+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-22T07:54:15+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 107,
       "lastSuccessAt": "2026-09-24T08:08:20+00:00",
       "targetThrough": "2026-10-17T04:45:35+00:00",
@@ -2687,7 +2687,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 226,
-    "checkedAt": "2026-10-22T07:29:36.832378+00:00"
+    "incomplete": 232,
+    "checkedAt": "2026-10-22T07:54:15.055054+00:00"
   }
 }
