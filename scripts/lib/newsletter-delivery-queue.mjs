@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {sendEmail,CATCH_UP_MS} from '../../worker/newsletter-schedule.mjs';
 import {renderBriefHtml,briefStats} from '../../worker/newsletter-brief.mjs';
 import {acceptedStoryKeys,emailBytes,EMAIL_HTML_BYTES,newsletterDeliveryPolicy} from '../../worker/newsletter-email.mjs';
-import {normaliseEmail} from '../../public/js/data/newsletter-shared.js';
+import {normaliseEmail,istDay} from '../../public/js/data/newsletter-shared.js';
 
 function requestedTest(plan){
   const request=plan.testRequest;if(!request)return null;
@@ -58,7 +58,7 @@ export class NewsletterDeliveryQueue {
     try {
     const saveBody=this.local.db.prepare('INSERT INTO newsletter_delivery_bodies(delivery,email,part,html) VALUES(?,?,?,?)');
     plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),createdAt:this.now(),editionAt:brief.at,...(testRequest?{testRequest,credential}:{}),
-      messages:messages.map(m=>({keys:m.keys})),reported:brief.reported,windowFrom:brief.window.from,
+      messages:messages.map(m=>({keys:m.keys})),reported:brief.reported,windowFrom:brief.window.from,priceSession:brief.moves?.session,
       recipients:list.map(recipient=>({email:recipient.email,ok:false,status:null,reason:'not-attempted',
         parts:messages.map((message,i)=>{
           const html=renderBriefHtml(brief,{...this.local.schedule.renderOptions(recipient),stats,pdfUrl,part:message.part});
@@ -98,7 +98,9 @@ export class NewsletterDeliveryQueue {
     return this.context(plan,async()=>{
       // Check frozen plans as well as new builds: upgrading must not resume the old
       // 86-part backlog. Preserve accepted outcomes, PDF links and incident bodies.
-      const outsideWindow = Number.isFinite(plan.windowFrom) && plan.reported.some(item => item.publishedAt < plan.windowFrom);
+      const priorSessionPrice = item => plan.priceSession && item.key?.startsWith('move:') &&
+        item.key.endsWith('|'+plan.priceSession) && Number.isFinite(item.publishedAt) && istDay(item.publishedAt) === plan.priceSession;
+      const outsideWindow = Number.isFinite(plan.windowFrom) && plan.reported.some(item => item.publishedAt < plan.windowFrom && !priorSessionPrice(item));
       const editionAt = plan.editionAt ?? Date.parse(this.local.store.delivery(plan.key)?.scheduledAt || '');
       const expiredEdition = plan.source !== 'test' && this.now() - (Number.isFinite(editionAt) ? editionAt : plan.createdAt) > CATCH_UP_MS;
       const policyReason = newsletterDeliveryPolicy({

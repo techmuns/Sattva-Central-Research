@@ -58,7 +58,7 @@ const brief=await buildBrief({edition:'morning',day:'2026-10-21',settings:{morni
 assert.equal(brief.announcements.count,85);assert.equal(brief.announcements.more,0,'No 80-filing or eight-per-company cap');
 assert.equal(brief.news.count,95,'An old source arrival must stay outside the daily email even when never reported');
 assert.equal(brief.lateFrom,null);
-assert(briefStories(brief).every(s=>s.at>=brief.window.from&&s.at<brief.window.to&&!s.late));
+assert(briefStories(brief).every(s=>!s.late&&s.at<brief.window.to&&(s.at>=brief.window.from||s.kind==='move'&&s.keys[0].endsWith('|'+brief.moves.session))));
 assert.equal(brief.news.more,0);assert.equal(briefSummary(brief).eligibility.omittedByCaps,0);
 assert.equal(brief.calendar.rows.length,51);assert.equal(brief.actions.rows.length,51,'Supplemental events cannot disappear at a forty-row cap');
 const dealWindow={from:Date.parse('2026-10-19T00:00:00Z'),to:Date.parse('2026-10-20T00:00:00Z')};

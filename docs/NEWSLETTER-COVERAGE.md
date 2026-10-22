@@ -95,3 +95,6 @@ authorization stays inside encrypted state and is removed with the completed out
 in prepared request views. The original 24-hour issuance deadline includes the accepted one-hour
 future clock skew. Expiry preserves earlier provider outcomes; PDFs with no possible provider
 submission are deleted, while genuinely uncertain links remain usable.
+
+The morning brief retains explicitly dated quotes and explanations for the latest completed
+trading session. This price context cannot admit old news, filings, trades or arbitrary older sessions.

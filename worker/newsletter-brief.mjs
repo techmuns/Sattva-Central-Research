@@ -709,7 +709,7 @@ export async function readSessionQuotes({ env, now = Date.now(), edition, day = 
 }
 
 /** The holdings that moved at least MOVE_PCT on the session, as stories, from the session's quotes. */
-export function readMoves({ quotes, window, lateFrom = window.from, reported = null, holdings, uncapped = false }) {
+export function readMoves({ quotes, window, lateFrom = window.from, reported = null, holdings, uncapped = false, sessionContext = false }) {
   const byTicker = bookIndex(holdings);
   const place = placementFor({ window, lateFrom, reported });
   const out = { state: quotes.state, session: quotes.session, asOf: quotes.asOf, reason: quotes.reason, priceDate: quotes.priceDate, groups: [], count: 0, more: 0 };
@@ -718,7 +718,13 @@ export function readMoves({ quotes, window, lateFrom = window.from, reported = n
   for (const r of quotes.rows) {
     if (Math.abs(r.pct) < MOVE_PCT) continue;
     const key = `move:${r.ticker}|${quotes.session}`;
-    const where = place(r.at, [key, `${r.ticker}|move:${quotes.session}`]);
+    const keys = [key, `${r.ticker}|move:${quotes.session}`];
+    // The morning overview still describes the latest completed trading session, with its
+    // own displayed date. This admits no older news or arbitrary historical price sessions.
+    const currentSession = sessionContext && Number.isFinite(r.at) && istDay(r.at) === quotes.session && r.at < window.to;
+    const where = currentSession
+      ? keys.some(k => reported?.has(k)) ? null : { late: false }
+      : place(r.at, keys);
     if (!where) continue;
     rows.push({
       ...r, company: byTicker.get(r.ticker).name, late: where.late, keys: [key], dayOnly: false,
@@ -905,7 +911,7 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   const news = await readNews(common);
   const trades = await readTrades(common);
   const quotes = await readSessionQuotes({ env, now, edition, day, holdings });
-  const moves = readMoves({ ...common, quotes });
+  const moves = readMoves({ ...common, quotes, sessionContext: edition === 'morning' });
   const performance = await readPerformance({ env, quotes, holdings });
   const calendar = await readCalendar({ env, day, holdings, fetcher, now, screener, uncapped: true });
   // The corporate-actions capture is the largest file the brief reads, so it goes last, with

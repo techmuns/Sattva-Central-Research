@@ -16,7 +16,7 @@ const brief=await buildBrief({edition:'morning',day,now,settings:DEFAULT_SETTING
   fetcher:async()=>{throw Error('No network, mail or model in retained-input verification');}});
 assert.equal(brief.announcements.more+brief.news.more+brief.trades.more+brief.moves.more+brief.calendar.more+brief.actions.more,0);
 assert.equal(brief.lateFrom,null,'A ten-day empty ledger cannot reopen historical email eligibility');
-assert(briefStories(brief).every(item=>item.at>=brief.window.from&&item.at<brief.window.to&&!item.late),'Every emailed report belongs to the printed publication window');
+assert(briefStories(brief).every(item=>!item.late&&item.at<brief.window.to&&(item.at>=brief.window.from||item.kind==='move'&&item.keys[0].endsWith('|'+brief.moves.session))),'Every emailed report belongs to the printed publication window');
 assert(brief.news.company.ok&&brief.news.source.archiveComplete&&brief.news.tradingview.archiveComplete,'All relevant committed archive descriptors and parts must verify');
 const messages=renderBriefEmails(brief),keys=new Set(messages.flatMap(m=>m.keys));
 for(const item of briefStories(brief))assert(item.keys.every(key=>keys.has(key)),'A committed eligible alert disappeared from multipart delivery');

@@ -578,7 +578,10 @@ await test('price moves: the evening brief reads the closing quotes, the morning
   assert.equal(morning.moves.state, 'daily');
   assert.equal(morning.moves.session, daily.price_date);
   const dailyMoves = briefStories(morning).filter((s) => s.kind === 'move');
-  assert.equal(dailyMoves.length, 0, 'previous-session moves before the edition window are not replayed as new alerts');
+  const book = new Set(JSON.parse(asset('/data/portfolio-companies.json')).holdings.map(h => h.ticker).filter(Boolean));
+  const expected = (daily.rows || daily.companies || []).filter(r => book.has(r.ticker) && (r.bar_date || daily.price_date) === daily.price_date && Math.abs(Number(r.pct_change_today)) >= MOVE_PCT).length;
+  assert.equal(dailyMoves.length, expected, 'the latest completed session remains explicitly dated morning price context');
+  assert.ok(dailyMoves.every(m => !m.late && istDay(m.at) === morning.moves.session));
   assert.equal(morning.performance.state, 'daily', 'the explicitly dated previous-session price table remains available');
   const alreadySent = await buildBrief({ edition: 'morning', day: istDay(nextMorning), settings: DEFAULT_SETTINGS, env: { ASSETS: assets }, fetcher: makeFetcher(), now: nextMorning, reported: ledger(dailyMoves.map((m) => m.keys[0]), istInstant(daily.price_date, '08:00')) });
   assert.equal(briefStories(alreadySent).filter((s) => s.kind === 'move').length, 0, 'what the evening brief sent is not sent again');

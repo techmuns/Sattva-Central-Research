@@ -110,3 +110,6 @@ durable request budget, source cooldowns and saved history. Pending summary popu
 ## Background processing budget — 15 October 2026
 
 Keep static hosting on Cloudflare. The user requires scheduled collection, calculations and retained background-job state on GitHub, using standard free public-repository Actions runners. Do not move these jobs or storage back into Cloudflare Workers, Durable Objects, D1, R2 or paid Workers Builds. Preserve private-source authorization and encryption; public repository artifacts are not private storage. Do not introduce another paid service or runner. See docs/GITHUB-MUTUAL-FUNDS.md for the implemented MF transfer and its operational boundaries.
+
+The morning brief retains explicitly dated quotes and explanations for the latest completed
+trading session. This price context cannot admit old news, filings, trades or arbitrary older sessions.

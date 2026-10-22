@@ -122,3 +122,6 @@ Layout tests use long names, calendar sources and multiple action dates at 1440,
 320 pixels. `verify-alert-stories-ui.mjs` exercises the real service-worker upgrade from a cached
 old newsletter module alongside Sattva's archive/resurfacing behavior. External model replies
 and email delivery are stubbed: no live send or private-data collection is part of these tests.
+
+The morning brief retains explicitly dated quotes and explanations for the latest completed
+trading session. This price context cannot admit old news, filings, trades or arbitrary older sessions.
