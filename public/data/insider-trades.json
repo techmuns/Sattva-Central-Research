@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-22T01:52:32.088Z",
-  "oldestDataAt": "2026-10-22T01:52:32.088Z",
+  "capturedAt": "2026-10-22T05:19:42.251Z",
+  "oldestDataAt": "2026-10-22T05:19:42.251Z",
   "from": "2025-10-22",
   "to": "2026-10-22",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T01:52:32.088Z",
+      "capturedAt": "2026-10-22T05:19:42.251Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T01:52:32.088Z",
+      "capturedAt": "2026-10-22T05:19:42.251Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-15",
+      "latestDate": "2026-10-21",
       "oldestDate": "2026-10-05",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T01:52:32.088Z",
+      "capturedAt": "2026-10-22T05:19:42.251Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -63,19 +63,19 @@
       "url": "https://www.screener.in/trades/insiders/?o=-2",
       "pagesRead": 2,
       "latestDate": "2026-10-21",
-      "oldestDate": "2026-10-09",
+      "oldestDate": "2026-10-12",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-22T01:52:32.088Z",
+      "capturedAt": "2026-10-22T05:19:42.251Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 1986,
+  "withRows": 1989,
   "emptyCount": 0,
-  "rowCount": 22024,
+  "rowCount": 22031,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -394731,6 +394731,42 @@
     "BLUEWATER": [
       {
         "ticker": "BLUEWATER",
+        "date": "2026-10-14",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Blue Water",
+          "Insider": "Lalit Panda, Laxmi Narayan Mishra",
+          "Category": "Promoter And Director (2)",
+          "Security Type": "Warrant",
+          "Transaction": "Allotment",
+          "Trade Shares": "400000",
+          "Trade Value": "16.4 crore",
+          "Broadcast Date": "2026-10-14",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "BLUEWATER",
+        "date": "2026-10-14",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Blue Water",
+          "Insider": "Sarojini Panda, Sandip Kumar Dwibedy, Satya Narayan Mishra",
+          "Category": "Promoter Group (3)",
+          "Security Type": "Warrant",
+          "Transaction": "Allotment",
+          "Trade Shares": "600000",
+          "Trade Value": "24.6 crore",
+          "Broadcast Date": "2026-10-14",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "BLUEWATER",
         "date": "2026-09-24",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
         "sourceId": "bulk",
@@ -417416,6 +417452,21 @@
     "PRITI": [
       {
         "ticker": "PRITI",
+        "date": "2026-10-21",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Priti Internati.",
+          "Insider": "Ritesh Lohia",
+          "Transaction": "Acquisition",
+          "Trade Shares": "3600000",
+          "Broadcast Date": "2026-10-21",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PRITI",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -421240,6 +421291,84 @@
           "Trade Value": "112 crore",
           "Price": "366",
           "Broadcast Date": "2026-10-21",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "UNIHEALTH": [
+      {
+        "ticker": "UNIHEALTH",
+        "date": "2026-10-15",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Unihealth Hosp",
+          "Insider": "Dr.Akshay M.Parmar, Dr.Anurag Shah",
+          "Category": "Promoter And Director (2)",
+          "Security Type": "Equity",
+          "Transaction": "Allotment",
+          "Trade Shares": "200000",
+          "Trade Value": "3.02 crore",
+          "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "SHAIVAL": [
+      {
+        "ticker": "SHAIVAL",
+        "date": "2026-10-15",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Shaival Reality",
+          "Insider": "Bharat K. Desai",
+          "Category": "Promoter",
+          "Security Type": "Equity",
+          "Transaction": "Inter-se-Transfer",
+          "Trade Shares": "600",
+          "Trade Value": "19,800",
+          "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHAIVAL",
+        "date": "2026-10-15",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Shaival Reality",
+          "Insider": "Mayur M. Desai",
+          "Category": "Promoter And Director",
+          "Security Type": "Equity",
+          "Transaction": "Inter-se-Transfer",
+          "Trade Shares": "600",
+          "Trade Value": "19,800",
+          "Broadcast Date": "2026-10-15",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "SHEETAL": [
+      {
+        "ticker": "SHEETAL",
+        "date": "2026-10-14",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Sheetal Univer.",
+          "Insider": "Urmilaben Vallabhbha Vasoya",
+          "Category": "Promoter Group",
+          "Security Type": "Equity",
+          "Transaction": "Others",
+          "Trade Shares": "22000",
+          "Trade Value": "46.2 lacs",
+          "Broadcast Date": "2026-10-14",
           "Source": "Screener.in"
         }
       }
