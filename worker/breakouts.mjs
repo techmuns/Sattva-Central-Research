@@ -40,9 +40,10 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
   }
   if (request.method !== 'GET') return reply({ ok: false, reason: 'method' }, 405);
   try {
-    const history=url.pathname==='/api/breakouts/history';
+    const history=url.pathname==='/api/breakouts/history',packed=url.pathname==='/api/breakouts/snapshot';
     let deliveryFailed=false,live=null;
-    if(!history)try{live=await readLiveBreakouts(env,request.url,{fetcher,edgeCache,now:now(),fallbackOnly:url.pathname==='/api/breakouts/fallback'});}catch{deliveryFailed=true;}
+    if(!history)try{live=await readLiveBreakouts(env,request.url,{fetcher,edgeCache,now:now(),fallbackOnly:url.pathname==='/api/breakouts/fallback',packedRequest:packed?request:null});}catch{deliveryFailed=true;}
+    if(packed)return live instanceof Response?live:reply({ok:false,reason:'snapshot-unavailable'},503);
     let prepared=live||await preparedBreakouts(request,env,{now:now()});
     if(prepared&&deliveryFailed)prepared={...prepared,deliveryFailed:true,primarySchedule:{...prepared.primarySchedule,overdue:true,deliveryFailed:true}};
     if(prepared){

@@ -2,7 +2,9 @@
 import { conditionalJson, readEntry } from '../core/store.js';
 import { validateQuote, quoteFresh, preferQuote, liveBreakout, liveCoverage } from './breakout-live-shared.js';
 import { scoreCompany } from '../scoring/tech-scoring.js';
+import {snapshotCapture} from './breakout-snapshot.js';
 const KEY = 'sattva:breakout-capture:v1';
+const SNAPSHOT_KEY = 'sattva:breakout-snapshot:v1';
 let capture = null, pending = null, failed = false;
 let byTicker = new Map();
 const subscribers = new Set();
@@ -13,16 +15,31 @@ function validate(value) {
   if (value?.version !== 1 || !Array.isArray(value.rows) || !Array.isArray(value.targets) || !Array.isArray(value.failures)) throw Error('Invalid saved prices');
   value.rows.forEach(row => validateQuote(row));
 }
+async function readSnapshot() {
+  let selected;
+  await conditionalJson('/api/breakouts/snapshot',{key:SNAPSHOT_KEY,signal:AbortSignal.timeout(15000),
+    validate:async value=>{selected=await snapshotCapture(value);}});
+  return selected;
+}
+async function restoreCapture() {
+  try {const packet=(await readEntry(SNAPSHOT_KEY))?.value;if(packet)return await snapshotCapture(packet);}catch{/* Try the preceding reader's last good capture. */}
+  const stored=(await readEntry(KEY))?.value;validate(stored);return stored;
+}
 export function refresh() {
   if (pending) return pending;
   pending = (async () => {
     try {
-      const result = await conditionalJson('/api/breakouts', { key: KEY, signal: AbortSignal.timeout(15000), validate });
-      capture = result.value; failed = false;
+      try {capture=await readSnapshot();}
+      catch {
+        // Older deployments and paged generations keep their existing reader.
+        const result=await conditionalJson('/api/breakouts',{key:KEY,signal:AbortSignal.timeout(15000),validate});
+        capture=result.value;
+      }
+      failed = false;
     } catch {
       failed = true;
       if (!capture) {
-        try { const stored = (await readEntry(KEY))?.value; validate(stored); capture = stored; } catch { /* No saved capture. */ }
+        try {capture=await restoreCapture();} catch { /* No saved capture. */ }
       }
     }
     byTicker = new Map((capture?.rows || []).map(row => [row.ticker,row]));
