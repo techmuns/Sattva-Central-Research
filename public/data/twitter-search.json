@@ -2450,47 +2450,84 @@
       "error": "search-unavailable"
     },
     "isin:INE0UIZ01018|BlackBuck": {
-      "lastAttemptAt": "2026-10-17T14:18:38+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 105,
+      "targetThrough": "2026-10-22T20:54:29+00:00",
+      "pending": [
+        {
+          "from": "2026-10-13T20:54:29.963576+00:00",
+          "to": "2026-10-18T08:54:29.481788+00:00"
+        },
+        {
+          "from": "2026-10-18T08:54:29.481788+00:00",
+          "to": "2026-10-22T20:54:29+00:00"
+        }
+      ]
     },
     "isin:INE0UIZ01018|BLACKBUCK": {
-      "lastAttemptAt": "2026-10-17T14:55:49+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 105,
+      "targetThrough": "2026-10-22T20:54:29+00:00",
+      "pending": [
+        {
+          "from": "2026-10-13T20:54:29.963576+00:00",
+          "to": "2026-10-18T08:54:29.481788+00:00"
+        },
+        {
+          "from": "2026-10-18T08:54:29.481788+00:00",
+          "to": "2026-10-22T20:54:29+00:00"
+        }
+      ]
     },
     "isin:INE120A01034|Carborundum Universal": {
-      "lastAttemptAt": "2026-10-17T15:45:44+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
+      "error": null,
+      "lastResultCount": 11,
+      "lastSuccessAt": "2026-10-22T20:54:29+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE120A01034|CARBORUNIV": {
-      "lastAttemptAt": "2026-10-17T16:03:07+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
+      "error": null,
+      "lastResultCount": 6,
+      "lastSuccessAt": "2026-10-22T20:54:29+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE488A01050|Chemplast Sanmar": {
-      "lastAttemptAt": "2026-10-17T16:55:38+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
+      "error": null,
+      "lastResultCount": 6,
+      "lastSuccessAt": "2026-10-22T20:54:29+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE488A01050|CHEMPLASTS": {
-      "lastAttemptAt": "2026-10-17T17:38:31+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
+      "error": null,
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-10-22T20:54:29+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE007A01025|Crisil": {
-      "lastAttemptAt": "2026-10-17T18:15:39+00:00",
-      "lastResultCount": 101,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
+      "lastResultCount": 60,
+      "error": null,
       "targetThrough": "2026-10-07T17:08:22+00:00",
       "pending": [
-        {
-          "from": "2026-09-28T17:08:22.473354+00:00",
-          "to": "2026-10-03T05:08:22.236677+00:00"
-        },
         {
           "from": "2026-10-03T05:08:22.236677+00:00",
           "to": "2026-10-07T17:08:22+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-22T20:54:29+00:00"
     },
     "isin:INE007A01025|CRISIL": {
-      "lastAttemptAt": "2026-10-17T18:39:54+00:00",
+      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
       "lastResultCount": 101,
       "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
@@ -2503,7 +2540,8 @@
           "from": "2026-10-03T05:08:22.236677+00:00",
           "to": "2026-10-07T17:08:22+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-22T20:54:29+00:00"
     },
     "isin:INE255Z01027|E2E Networks": {
       "lastAttemptAt": "2026-10-17T19:25:52+00:00",
@@ -2692,8 +2730,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 236,
-    "checkedAt": "2026-10-22T20:01:32.743879+00:00"
+    "attempted": 8,
+    "incomplete": 232,
+    "checkedAt": "2026-10-22T20:54:29.963576+00:00"
   }
 }
