@@ -28,7 +28,7 @@
       "lastSuccessAt": "2026-09-15T20:36:48+00:00"
     },
     "isin:INE674K01013|Aditya Birla Capital": {
-      "lastAttemptAt": "2026-10-17T09:40:24+00:00",
+      "lastAttemptAt": "2026-10-22T16:47:57+00:00",
       "error": "search-unavailable",
       "lastResultCount": 13,
       "targetThrough": "2026-09-15T20:36:48+00:00",
@@ -2694,6 +2694,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-22T16:11:18.141226+00:00"
+    "checkedAt": "2026-10-22T16:47:57.039288+00:00"
   }
 }
