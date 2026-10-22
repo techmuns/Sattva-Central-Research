@@ -1,8 +1,8 @@
 import {gzipSync,gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
-import {sendEmail} from '../../worker/newsletter-schedule.mjs';
+import {sendEmail,CATCH_UP_MS} from '../../worker/newsletter-schedule.mjs';
 import {renderBriefHtml,briefStats} from '../../worker/newsletter-brief.mjs';
-import {acceptedStoryKeys,emailBytes,EMAIL_HTML_BYTES} from '../../worker/newsletter-email.mjs';
+import {acceptedStoryKeys,emailBytes,EMAIL_HTML_BYTES,newsletterDeliveryPolicy} from '../../worker/newsletter-email.mjs';
 import {normaliseEmail} from '../../public/js/data/newsletter-shared.js';
 
 function requestedTest(plan){
@@ -57,7 +57,7 @@ export class NewsletterDeliveryQueue {
     let plan;this.local.db.exec('BEGIN');
     try {
     const saveBody=this.local.db.prepare('INSERT INTO newsletter_delivery_bodies(delivery,email,part,html) VALUES(?,?,?,?)');
-    plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),createdAt:this.now(),...(testRequest?{testRequest,credential}:{}),
+    plan={key,edition,source,documentId,subject,summary,nextAt:this.now(),createdAt:this.now(),editionAt:brief.at,...(testRequest?{testRequest,credential}:{}),
       messages:messages.map(m=>({keys:m.keys})),reported:brief.reported,windowFrom:brief.window.from,
       recipients:list.map(recipient=>({email:recipient.email,ok:false,status:null,reason:'not-attempted',
         parts:messages.map((message,i)=>{
@@ -96,6 +96,30 @@ export class NewsletterDeliveryQueue {
 
   async run(plan,credential=plan.credential||this.local.schedule.env.MUNS_TOKEN) {
     return this.context(plan,async()=>{
+      // Check frozen plans as well as new builds: upgrading must not resume the old
+      // 86-part backlog. Preserve accepted outcomes, PDF links and incident bodies.
+      const outsideWindow = Number.isFinite(plan.windowFrom) && plan.reported.some(item => item.publishedAt < plan.windowFrom);
+      const editionAt = plan.editionAt ?? Date.parse(this.local.store.delivery(plan.key)?.scheduledAt || '');
+      const expiredEdition = plan.source !== 'test' && this.now() - (Number.isFinite(editionAt) ? editionAt : plan.createdAt) > CATCH_UP_MS;
+      const policyReason = newsletterDeliveryPolicy({
+        partCount: Math.max(plan.messages.length, ...plan.recipients.map(r => r.parts.length)),
+        lateCount: plan.summary?.late || (outsideWindow ? 1 : 0),
+      }) || (expiredEdition ? 'edition-expired' : null);
+      if (policyReason) {
+        for (const recipient of plan.recipients) {
+          if (recipient.ok) continue;
+          recipient.cancelled = true;
+          recipient.reason = policyReason;
+          for (const part of recipient.parts) if (!part.ok && !part.attempts) part.reason = policyReason;
+        }
+        const result = this.progress(plan, { finished: true, terminalReason: policyReason });
+        const parts = plan.recipients.flatMap(r => r.parts);
+        const documentState = parts.some(p => p.ok) ? 'sent' : parts.some(p => p.attempts > 0 && p.providerAttempted !== false) ? 'delivery-uncertain' : 'cancelled';
+        this.local.db.prepare('UPDATE newsletter_documents SET delivery_state=? WHERE id=?').run(documentState,plan.documentId);
+        this.local.db.prepare('UPDATE newsletter_delivery_queue SET payload=NULL,receipt=? WHERE key=?').run(JSON.stringify(result),plan.key);
+        await this.publish();
+        return result;
+      }
       const request=requestedTest(plan),expired=()=>!!request&&this.now()>=request.expiresAt;
       if(request){
         const claim=this.local.db.prepare('SELECT state,result FROM newsletter_requests WHERE id=?').get(request.id);

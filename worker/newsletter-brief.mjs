@@ -53,12 +53,9 @@ import {newsletterRequest} from './newsletter-request.mjs';
 // NSE symbol, the same file the Portfolio scope means on every tab. Fund units, AIFs and the
 // ring-fenced holding are outside it there and outside it here.
 //
-// NOTHING FALLS BETWEEN TWO BRIEFS. Every source here is a capture with a lag, so a brief also reads
-// back over the two windows before its own (`lateArrivalsFrom`) and carries anything the ledger of
-// sent items (`newsletter-store.mjs`) does not hold, printed as "not in the previous brief" with its
-// own publication time. A missed edition's window is therefore carried by the next one rather than
-// lost. The ledger is consulted, never written, here: the schedule writes it after a send reaches
-// somebody.
+// DAILY MAIL IS NOT A HISTORY BACKFILL. Reports must fall inside the printed edition window.
+// Newly captured older records and missed editions stay in the dashboard archive; the sent-item
+// ledger is retained for delivery evidence and cannot broaden email eligibility.
 //
 // NOTHING IS SCORED, SUMMARISED OR RANKED BEYOND THE DASHBOARD'S OWN STATED RULES. Headlines and
 // filing subjects are the publishers' and the exchanges' own words; a tracked-keyword tag says what
@@ -93,7 +90,7 @@ import { attachPriceReasons, priceEvidenceItems, priceReasonWindow, priceReasonT
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { assessTradingViewCoverage } from '../public/js/data/tradingview-news-health.js';
 import { newsletterJson, newsletterRows, newsletterMonths, newsletterHoldings } from './newsletter-sources.mjs';
-import { EDITIONS, addDays, dayOnlyInstant, editionWindow, istDay, istDateLong, istInstant, istLabel, istTime, lateArrivalsFrom } from '../public/js/data/newsletter-shared.js';
+import { EDITIONS, addDays, dayOnlyInstant, editionWindow, istDay, istDateLong, istInstant, istLabel, istTime } from '../public/js/data/newsletter-shared.js';
 
 export const PRODUCTION_ORIGIN = 'https://sattva-central-research.tech-441.workers.dev';
 export const YAHOO_CHART_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/';
@@ -887,8 +884,8 @@ export async function readActions({ env, day, holdings, uncapped = false }) {
 /**
  * Build one edition. Throws only when the BOOK cannot be read — an email about "direct holdings"
  * with no book behind it would be about nothing. Every other source reports its own failure on
- * the page instead. `reported` is the ledger of items a brief sent to the desk has carried; without
- * one, or with an empty one, no late arrivals are read.
+ * the page instead. `reported` preserves delivery evidence; its contents never widen
+ * the publication window used by daily mail.
  */
 export async function buildBrief({ edition, day, settings, env, fetcher = fetch, now = Date.now(), to = null, reported = null, screener = null, includeAi = true, contentService = null }) {
   if (!EDITIONS[edition]) throw Object.assign(new Error('Unknown edition'), { code: 'invalid-edition' });
@@ -896,12 +893,10 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   if (!Array.isArray(book?.holdings)) throw Object.assign(new Error('The portfolio book could not be read'), { code: 'book-unavailable' });
   const holdings = await newsletterHoldings(book, env);
   const window = editionWindow(edition, day, settings, { to });
-  // Late arrivals use the ledger's ten-day retention, including multi-day source outages,
-  // but never reach before the ledger
-  // began: an earlier brief carried those and the ledger cannot vouch either way.
-  const lateFrom = reported && !reported.empty
-    ? Math.min(window.from, Math.max(window.to - 10 * 86400000, Number.isFinite(reported.since) ? reported.since : lateArrivalsFrom(edition, day, settings)))
-    : window.from;
+  // Daily mail covers its printed publication window only. A newly captured old report,
+  // an empty sent ledger or a recovery run must never turn this into a historical backfill.
+  // Retained archives remain available to the dashboard and source-reading queue.
+  const lateFrom = window.from;
   const common = { env, window, lateFrom, reported, holdings, uncapped: true, now };
   // The quotes are network-bound and run alongside; the committed files are read one after another
   // so the object never holds more than one large capture in memory at a time.
@@ -1628,9 +1623,9 @@ export function sourcesNote(brief) {
     : 'NSE history unavailable');
   if (a.nseHistory?.missingDays?.length) bits.push(`NSE retained history missing day files: ${a.nseHistory.missingDays.join(', ')}; live feed is a bounded latest window`);
   if (a.bse.partial) bits.push('BSE category/page coverage is partial or not independently verified; retained filings are included');
-  bits.push(a.bse.ok ? `BSE capture dated ${capturedLabel(a.bse.capturedAt)}${a.bse.capturedAt && Date.parse(a.bse.capturedAt) < brief.window.to ? ', so later BSE filings reach the next brief' : ''}` : 'BSE capture unavailable');
+  bits.push(a.bse.ok ? `BSE capture dated ${capturedLabel(a.bse.capturedAt)}${a.bse.capturedAt && Date.parse(a.bse.capturedAt) < brief.window.to ? ', before the edition cutoff; later captures remain in dashboard history' : ''}` : 'BSE capture unavailable');
   bits.push(n.source.ok
-    ? `publisher feeds (${n.source.publishers.join(', ') || 'four publishers'}) captured ${capturedLabel(n.source.capturedAt)}${n.source.capturedAt && Date.parse(n.source.capturedAt) < brief.window.to ? ', so later stories reach the next brief' : ''}${n.source.oldest != null && n.source.oldest > brief.window.from ? `; that capture starts at ${istLabel(n.source.oldest)}, so earlier publisher stories are not included` : ''}`
+    ? `publisher feeds (${n.source.publishers.join(', ') || 'four publishers'}) captured ${capturedLabel(n.source.capturedAt)}${n.source.capturedAt && Date.parse(n.source.capturedAt) < brief.window.to ? ', before the edition cutoff; later captures remain in dashboard history' : ''}${n.source.oldest != null && n.source.oldest > brief.window.from ? `; that capture starts at ${istLabel(n.source.oldest)}, so earlier publisher stories are not included` : ''}`
     : 'publisher capture unavailable');
   const differingPublisherChecks = (n.source.checks || []).filter(s => s.checkedAt !== n.source.capturedAt || s.ok === false || s.feedsOk != null && s.feedsOk < s.feeds);
   if (differingPublisherChecks.length) bits.push(`Publisher-specific checks: ${differingPublisherChecks.map(s => `${s.name || 'Publisher'} ${s.ok === false ? 'failed' : s.checkedAt ? 'last successful read' : 'check time unknown'}${s.checkedAt ? ' ' + capturedLabel(s.checkedAt) : ''}`).join('; ')}; each provider can have a different coverage gap`);
@@ -1785,7 +1780,7 @@ export function renderBriefHtml(brief, { dashboardUrl = PRODUCTION_ORIGIN, recip
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${companies.map((c) => companyBlock(c, dashboardUrl, brief.ai)).join('')}</table>
     </td></tr>`);
     const more = brief.announcements.more + brief.news.more + (brief.trades?.more || 0) + (brief.moves?.more || 0);
-    if (more > 0 && (!part || part.index === part.total)) parts.push(`<tr><td style="padding:14px 24px 0;font-family:${SANS};font-size:11px;line-height:1.6;color:${META};">${more} more in this window on the <a href="${esc(`${dashboardUrl}/#/research/daily-alerts?scope=portfolio`)}" ${NEW_TAB} style="color:${GOLD};font-weight:bold;text-decoration:none;">dashboard →</a>; whatever is not shown here reaches the next brief.</td></tr>`);
+    if (more > 0 && (!part || part.index === part.total)) parts.push(`<tr><td style="padding:14px 24px 0;font-family:${SANS};font-size:11px;line-height:1.6;color:${META};">${more} more in this window on the <a href="${esc(`${dashboardUrl}/#/research/daily-alerts?scope=portfolio`)}" ${NEW_TAB} style="color:${GOLD};font-weight:bold;text-decoration:none;">dashboard →</a>; older updates are not replayed in later emails.</td></tr>`);
   }
   if (brief.announcements.routineHidden) {
     parts.push(`<tr><td style="padding:${stats.stories ? 8 : 14}px 24px 0;font-family:${SANS};font-size:11px;line-height:1.6;color:${META};">${esc(routineNote(brief.announcements.routineHidden))}</td></tr>`);

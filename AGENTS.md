@@ -55,6 +55,20 @@ normal month. The owner's requirements:
   hours (two walks); a Refresh click starts a walk only when the capture is over 2 hours old. Do not add schedules or loosen the gate
   unless the owner agrees.
 
+## Standing newsletter requirement (22 October 2026)
+
+- Daily portfolio emails must contain only reports published within the edition's stated
+  reporting window. Never email historical backlog, including newly captured old records,
+  unsent records from earlier editions, migration recovery or test sends.
+- Keep older records and source-reading work in the dashboard archive. Collection/history
+  completeness is not permission to resend history by email.
+- Refuse an edition before any email if it requires more than six parts. Never send a
+  truncated plan or silently omit current eligible records to meet that limit.
+- Recheck retained delivery plans against these rules before recovery. Retire historical
+  or oversized plans without sending more parts; preserve prior outcomes and evidence.
+  Scheduled recovery also expires three hours after the original edition time, so a
+  failed current edition cannot be replayed as old email on a later day.
+
 ## Repository workflow
 
 Standing universe requirement, recorded on 9 October 2026: Universe covers all BSE and NSE

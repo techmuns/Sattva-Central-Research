@@ -56,7 +56,9 @@ tv.tradingViewCoverage={...tv.tradingViewCoverage,restrictedHeadlines:0,blockedU
 assert.equal((await readNews({...common,uncapped:true})).tradingview.partial,true,'Active provider backoff alone remains explicit partial coverage');tv.tradingViewCoverage=previousHealth;
 const brief=await buildBrief({edition:'morning',day:'2026-10-21',settings:{morning:{time:'08:00'},evening:{time:'16:00'}},env,now,reported:common.reported,includeAi:false,fetcher:async()=>{throw Error('offline fixture')}});
 assert.equal(brief.announcements.count,85);assert.equal(brief.announcements.more,0,'No 80-filing or eight-per-company cap');
-assert.equal(brief.news.count,96,'A late source arrival older than two windows is included within the retained ledger interval');
+assert.equal(brief.news.count,95,'An old source arrival must stay outside the daily email even when never reported');
+assert.equal(brief.lateFrom,null);
+assert(briefStories(brief).every(s=>s.at>=brief.window.from&&s.at<brief.window.to&&!s.late));
 assert.equal(brief.news.more,0);assert.equal(briefSummary(brief).eligibility.omittedByCaps,0);
 assert.equal(brief.calendar.rows.length,51);assert.equal(brief.actions.rows.length,51,'Supplemental events cannot disappear at a forty-row cap');
 const dealWindow={from:Date.parse('2026-10-19T00:00:00Z'),to:Date.parse('2026-10-20T00:00:00Z')};
@@ -144,4 +146,4 @@ const corruptFilings=await readAnnouncements(filingOptions);
 assert.equal(corruptFilings.count,85,'A bad history part never discards the usable latest head');assert.equal(corruptFilings.filingArchive.ok,false);assert(corruptFilings.filingArchive.failedParts.length>0);
 assert.equal((await newsletterRows({...env,NEWSLETTER_GITHUB_ARCHIVES:false},'/data/announcements-archive/2026-10.json')).ok,false,'Retained filing calculations stay on GitHub, not the Worker');
 
-console.log(`PASS newsletter coverage: late holiday morning prices, closing fallback, verified sharded company/publisher archives, independent-source recovery, 85 filings, 96 news items, 45 trades, 51 movers and 51 calendar/action rows without caps, ten-day catch-up, ${messages.length} complete multipart messages, corrupt-part status, exact-ISIN provider alias, retained multi-provider filing history and independent failures`);
+console.log(`PASS newsletter coverage: late holiday morning prices, closing fallback, verified sharded company/publisher archives, independent-source recovery, 85 filings, 95 current news items, 45 trades, 51 movers and 51 calendar/action rows without caps, historical catch-up excluded, ${messages.length} complete multipart messages, corrupt-part status, exact-ISIN provider alias, retained multi-provider filing history and independent failures`);
