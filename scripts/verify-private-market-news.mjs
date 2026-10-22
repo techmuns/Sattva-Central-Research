@@ -7,6 +7,46 @@ import { collect } from './collect-private-market-news.mjs';
 import { privateMarketRelease } from './lib/private-market-release.mjs';
 import { runPrivateMarketJob } from './private-market-job.mjs';
 import { health, bindLifecycle } from '../public/js/data/private-market-news.js';
+import { fundingRoundType, fundingRoundFilter } from '../public/js/data/funding-round-types.js';
+const roundGroups = [
+  ['Pre-Seed',['Pre-Seed','Pre Seed','pre-seed','pre-Seed']],
+  ['Seed',['Seed','Seed**','Seed Funding','Seed funding','Seed Round','Seed round']],
+  ['Pre-Series A',['Pre-Series A','pre Series A','pre-Series-A','Pre-Series A2','Pre-Series A*']],
+  ['Series A',['Series A','series A','Series A1','Series A2','Series A**','Series A1 funding round']],
+  ['Series B',['Series B','Series B1','Series B*','Extended Series B']],
+  ['Series C',['Series C','Series C1','Series C3','Series C Extension']],
+  ['Series D',['Series D','Series D2','Series D, D1 round']],
+  ['Pre-Series B',['Pre- Series B','Pre Series B','pre-Series B']],
+  ['Pre-IPO',['Pre-IPO','Pre IPO','pre-IPO']], ['Bridge',['Bridge','Bridge Round']],
+  ['Secondary',['Secondary','Secondary Round']], ['Debt',['Debt','Credit']],
+  ['Equity & Debt',['Equity and Debt','Equity, Debt','Equity & Debt']],
+  ['Unspecified',['','–','_','undisclosed','$1 Mn','$599K','123','bp Ventures','Series A, B']]
+];
+const roundRows=roundGroups.flatMap(([group,values])=>values.map(round=>Object.freeze({round,group,amount:'$11.4 Mn *'})));
+const roundFilter=fundingRoundFilter(roundRows), beforeRounds=JSON.stringify(roundRows);
+for(const [group,values] of roundGroups){
+  for(const value of values)assert.equal(fundingRoundType(value),group,value);
+  assert.deepEqual(roundRows.filter(r=>roundFilter.match(r,group)),roundRows.filter(r=>r.group===group));
+}
+assert(roundRows.every(row=>roundFilter.match(row,'all')),'All round types retains every original observation');
+assert.equal(roundFilter.normalizeValue('Seed Funding'),'Seed','An older saved selection follows its new group');
+assert.equal(roundFilter.normalizeValue('$1 Mn'),'Unspecified');
+assert.equal(roundFilter.options[0].label,'All round types');
+assert(roundFilter.options.every(option=>!/[\d$₹£€]/.test(option.label)),'Amounts and series sub-round numbers never become options');
+assert.equal(new Set(roundFilter.options.map(o=>o.label)).size,roundFilter.options.length);
+assert.equal(JSON.stringify(roundRows),beforeRounds,'Display grouping cannot rewrite source fields or amounts');
+// Source-derived options arrive after the initial loading table on a warm reload.
+const { scoreTable } = await import('../public/js/ui/screener.js');
+const { enterView } = await import('../public/js/core/view-reading.js');
+enterView({root:{},key:'funding-fixture',preset:{reading:{q:'',filters:[{label:'Round types',value:'Seed Funding'}],tableKey:'funding-fixture'}}});
+const tableConfig={exportName:'funding-fixture',key:r=>r.round,name:r=>r.round,columns:[],showAvatar:false,showWatchFilter:false,watchKey:()=>null};
+const waiting=scoreTable({...tableConfig,rows:[],filters:[fundingRoundFilter([])],loading:true});
+const restored=scoreTable({...tableConfig,rows:roundRows,filters:[roundFilter],initialView:waiting.view});
+assert.equal(restored.view.filters[0],'Seed','A saved raw selection migrates after async source options arrive');
+restored.view.filters[0]='Debt';
+const repainted=scoreTable({...tableConfig,rows:roundRows,filters:[roundFilter],initialView:restored.view});
+assert.equal(repainted.view.filters[0],'Debt','Later source paints retain the reader’s newer selection');
+enterView(null);
 const at = '2026-10-21T08:00:00Z', url = 'https://inc42.com/buzz/from-fixture-to-fixture-this-week/';
 const article = { url,title:'Fixture funding this week' };
 const row = (name,amount) => `<tr><td>16 Oct 2026</td><td>${name}</td><td>AI</td><td>Software</td><td>B2B</td><td>${amount}</td><td>Series A</td><td>One &amp; Two, Three (Investor)</td><td>One &amp; Two</td></tr>`;
