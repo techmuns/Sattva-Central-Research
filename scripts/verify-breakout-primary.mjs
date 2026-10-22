@@ -69,9 +69,13 @@ test('OI uses bounded V3 futures requests and its own source clock; source error
   }});
   assert.equal(calls,2);assert.equal(result.rows[0].price,108);assert.equal(result.reason,null);
   assert.equal(result.rows[0].openInterestUnavailable,fail);
+  assert.equal(result.openInterest.reason,fail?'rate-limited':'ok');assert.equal(result.openInterest.accepted,fail?0:1);assert.equal(result.openInterest.requested,1);
   assert.equal(result.rows[0].openInterest?.quoteAt,fail?undefined:iso(AT-60000));
  }
- assert.equal(upstoxOpenInterest({status:'success',data:{TEST:{...derivative,symbol:'WRONG'}}},mapped,AT).size,0);
+ const coverage={};const nativeSymbol=upstoxOpenInterest({status:'success',data:{TEST:{...derivative,symbol:'TEST26SEPFUT'}}},mapped,AT,coverage);assert.equal(nativeSymbol.size,1);assert.equal(coverage.symbolMismatch,1);assert.equal(nativeSymbol.get('TEST').symbol,future.trading_symbol);
+ assert.equal(upstoxOpenInterest({status:'success',data:{TEST:{...derivative,instrument_token:'NSE_FO|99999'}}},mapped,AT).size,0,'A label cannot substitute for the exact mapped contract key');
+ const invalid={};upstoxOpenInterest({status:'success',data:{TEST:{...derivative,previous_oi:null}}},mapped,AT,invalid);assert.equal(invalid.invalidReading,1);assert.equal(invalid.invalidPrevious,1);
+ assert(!JSON.stringify(coverage).includes('secret-fixture'),'Coverage contains counts, never credentials or upstream bodies');
  assert.equal(upstoxOpenInterest({status:'success',data:{TEST:{...derivative,previous_oi:undefined}}},mapped,AT).size,0);
  assert.equal(upstoxOpenInterest({status:'success',data:{TEST:derivative}},[...mapped,{...mapped[0],ticker:'ALIAS'}],AT).size,2);
 });

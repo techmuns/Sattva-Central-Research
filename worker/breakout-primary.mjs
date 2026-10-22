@@ -82,19 +82,26 @@ export async function minuteQuotes(mapped, bases, token, {fetcher = fetch, now =
   }
   // OI failure stays independent of cash-price success; preserve prices and leave
   // missing futures observations unavailable. These are bounded, read-only batches.
+  const openInterest={mapped:mapped.filter(t=>t.oiInstrument).length,requested:0,received:0,accepted:0,reason:null};
   for (const row of rows) row.openInterestUnavailable=true;
   const futures = mapped.filter(t=>t.oiInstrument && rows.some(r=>r.ticker===t.ticker));
   for (let offset=0; offset<futures.length; offset+=500) {
     const batch=futures.slice(offset,offset+500), url=new URL('https://api.upstox.com/v3/market-quote/quotes');
     url.searchParams.set('instrument_key',[...new Set(batch.map(t=>t.oiInstrument.instrumentKey))].join(','));
+    openInterest.requested+=batch.length;
     try {
       const response=await fetcher(url,{headers:{authorization:`Bearer ${token}`,accept:'application/json','user-agent':UPSTOX_CLIENT},redirect:'manual',signal:AbortSignal.timeout(10000)});
-      if (!response.ok) {await response.body?.cancel();break;}
-      const readings=upstoxOpenInterest(await boundedJson(response,4*1024*1024),batch,now());
+      openInterest.httpStatus=response.status;
+      if (!response.ok) {openInterest.reason=[401,403].includes(response.status)?'authentication':response.status===429?'rate-limited':'unavailable';await response.body?.cancel();break;}
+      const payload=await boundedJson(response,4*1024*1024);
+      openInterest.received+=Object.keys(payload?.data||{}).length;
+      const readings=upstoxOpenInterest(payload,batch,now(),openInterest);
+      openInterest.accepted+=readings.size;
       for (const row of rows) if(readings.has(row.ticker)) {row.openInterest=readings.get(row.ticker);row.openInterestUnavailable=false;}
-    } catch {break;}
+    } catch {openInterest.reason='unavailable';break;}
   }
-  return {rows,reason};
+  openInterest.reason ||= !openInterest.mapped ? 'no-contracts' : !openInterest.requested ? 'cash-unavailable' : openInterest.accepted===openInterest.requested ? 'ok' : 'partial';
+  return {rows,reason,openInterest};
 }
 
 // A distinct object owns this alarm. The existing 15-minute GitHub watchdog keeps its own alarm.
@@ -175,7 +182,7 @@ export class BreakoutPrimary {
       await tx.setAlarm(nextAt); return true;
     });
     if (!claimed) return;
-    let reason='closed', saved=0, failed=0;
+    let reason='closed', saved=0, failed=0,openInterest=null;
     try {
       await this.store().breakoutPrimaryPrune();
       if (marketWindow(at).collect) {
@@ -190,6 +197,7 @@ export class BreakoutPrimary {
           const exchanges=new Map(mapping.mapped.map(t=>[t.ticker,t.exchange]));
           const bases=new Map((fallback.rows || []).filter(r=>r.sessionDate===session && r.base?.to===previousSession && r.exchange===exchanges.get(r.ticker)).map(r=>[r.ticker,r.base]));
           const result=await this.quotes(mapping.mapped,bases,this.env.UPSTOX_ACCESS_TOKEN,{fetcher:this.fetcher,now:this.now});
+          openInterest=result.openInterest||null;
           const valid=result.rows.filter(r=>quoteFresh(r,this.now())), success=new Set(valid.map(r=>r.ticker)), mapped=new Set(mapping.mapped.map(r=>r.ticker));
           const failures=targets.filter(t=>!success.has(t.ticker)).map(t=>({ticker:t.ticker,reason:mapping.suspended.includes(t.ticker)?'suspended':!mapped.has(t.ticker)?'unmapped':result.reason || 'stale'}));
           await store.breakoutPrimarySave({at,completedAt:this.now(),targets:targets.map(t=>t.ticker),rows:valid,failures,
@@ -201,7 +209,7 @@ export class BreakoutPrimary {
     } catch { reason='unavailable'; }
     await this.storage.transaction(async tx=>{
       const state=await tx.get(PRIMARY_TIMER);
-      if (state?.lastAttemptAt===at) await tx.put(PRIMARY_TIMER,{...state,reason,saved,failed,completedAt:this.now()});
+      if (state?.lastAttemptAt===at) await tx.put(PRIMARY_TIMER,{...state,reason,saved,failed,openInterest,completedAt:this.now()});
     });
   }
 }
