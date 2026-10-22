@@ -89,7 +89,11 @@ export function upstoxOpenInterest(payload, targets, now = Date.now(), coverage 
     const reading = normalizeOpenInterest({current:data.oi,previous:data.previous_oi,
       ...instrument,quoteAt:new Date(at).toISOString(),checkedAt:new Date(now).toISOString(),sessionDate:istDate(at)},now);
     if (reading) readings.set(target.ticker,reading);
-    else coverage.invalidReading=(coverage.invalidReading||0)+1;
+    else {
+      coverage.invalidReading=(coverage.invalidReading||0)+1;
+      if(!Number.isSafeInteger(data.oi)||data.oi<0)coverage.invalidCurrent=(coverage.invalidCurrent||0)+1;
+      if(!Number.isSafeInteger(data.previous_oi)||data.previous_oi<0)coverage.invalidPrevious=(coverage.invalidPrevious||0)+1;
+    }
     }
   }
   return readings;

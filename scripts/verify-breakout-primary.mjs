@@ -73,7 +73,7 @@ test('OI uses bounded V3 futures requests and its own source clock; source error
   assert.equal(result.rows[0].openInterest?.quoteAt,fail?undefined:iso(AT-60000));
  }
  const coverage={};assert.equal(upstoxOpenInterest({status:'success',data:{TEST:{...derivative,symbol:'WRONG'}}},mapped,AT,coverage).size,0);assert.equal(coverage.symbolMismatch,1);
- const invalid={};upstoxOpenInterest({status:'success',data:{TEST:{...derivative,previous_oi:null}}},mapped,AT,invalid);assert.equal(invalid.invalidReading,1);
+ const invalid={};upstoxOpenInterest({status:'success',data:{TEST:{...derivative,previous_oi:null}}},mapped,AT,invalid);assert.equal(invalid.invalidReading,1);assert.equal(invalid.invalidPrevious,1);
  assert(!JSON.stringify(coverage).includes('secret-fixture'),'Coverage contains counts, never credentials or upstream bodies');
  assert.equal(upstoxOpenInterest({status:'success',data:{TEST:{...derivative,previous_oi:undefined}}},mapped,AT).size,0);
  assert.equal(upstoxOpenInterest({status:'success',data:{TEST:derivative}},[...mapped,{...mapped[0],ticker:'ALIAS'}],AT).size,2);
