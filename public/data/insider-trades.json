@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-23T00:52:12.089Z",
-  "oldestDataAt": "2026-10-23T00:52:12.089Z",
+  "capturedAt": "2026-10-23T04:48:44.602Z",
+  "oldestDataAt": "2026-10-23T04:48:44.602Z",
   "from": "2025-10-23",
   "to": "2026-10-23",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-23T00:52:12.089Z",
+      "capturedAt": "2026-10-23T04:48:44.602Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-23T00:52:12.089Z",
+      "capturedAt": "2026-10-23T04:48:44.602Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-21",
+      "latestDate": "2026-10-22",
       "oldestDate": "2026-10-05",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-23T00:52:12.089Z",
+      "capturedAt": "2026-10-23T04:48:44.602Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -63,19 +63,19 @@
       "url": "https://www.screener.in/trades/insiders/?o=-2",
       "pagesRead": 2,
       "latestDate": "2026-10-22",
-      "oldestDate": "2026-10-13",
+      "oldestDate": "2026-10-14",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-23T00:52:12.089Z",
+      "capturedAt": "2026-10-23T04:48:44.602Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2003,
+  "withRows": 2004,
   "emptyCount": 0,
-  "rowCount": 22194,
+  "rowCount": 22202,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -246952,6 +246952,24 @@
     "AHIMSA": [
       {
         "ticker": "AHIMSA",
+        "date": "2026-10-19",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Ahimsa Industrie",
+          "Insider": "Ashutosh Gandhi, Sneha Ashutosh Gandhi, Saloni Ash...",
+          "Category": "Promoter (4)",
+          "Security Type": "Equity",
+          "Transaction": "Off Market",
+          "Trade Shares": "2793522",
+          "Trade Value": "6.98 crore",
+          "Broadcast Date": "2026-10-19",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "AHIMSA",
         "date": "2026-09-04",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=4",
         "sourceId": "bulk",
@@ -322044,6 +322062,24 @@
     "MAGSON": [
       {
         "ticker": "MAGSON",
+        "date": "2026-10-19",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Magson Retail",
+          "Insider": "United Friends Ventures Llp, Angel Rajesh Francis",
+          "Category": "Promoter Group (2)",
+          "Security Type": "Equity",
+          "Transaction": "Allotment",
+          "Trade Shares": "2819366",
+          "Trade Value": "26.29 crore",
+          "Broadcast Date": "2026-10-19",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAGSON",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -335532,6 +335568,36 @@
       }
     ],
     "MCL": [
+      {
+        "ticker": "MCL",
+        "date": "2026-10-22",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "Mr,. Divya Arvindbhai Monpara",
+          "Transaction": "Sell",
+          "Trade Shares": "8500",
+          "Broadcast Date": "2026-10-22",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MCL",
+        "date": "2026-10-22",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "MR. RAJESH ODHAVJIBHAI PATEL",
+          "Transaction": "Sell",
+          "Trade Shares": "8500",
+          "Broadcast Date": "2026-10-22",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MCL",
         "date": "2026-10-15",
@@ -387926,6 +387992,21 @@
     "KORE": [
       {
         "ticker": "KORE",
+        "date": "2026-10-22",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Jay Jalaram Tech",
+          "Insider": "Mukeshkumar Navnitray Bhatt",
+          "Transaction": "Sell",
+          "Trade Shares": "870750",
+          "Broadcast Date": "2026-10-22",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "KORE",
         "date": "2026-10-08",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -388033,6 +388114,21 @@
       }
     ],
     "AIROLAM": [
+      {
+        "ticker": "AIROLAM",
+        "date": "2026-10-22",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Airo Lam",
+          "Insider": "Sureshbhai Hansarajbhai Patel",
+          "Transaction": "Acquisition",
+          "Trade Shares": "3700",
+          "Broadcast Date": "2026-10-22",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "AIROLAM",
         "date": "2026-09-30",
@@ -416957,6 +417053,21 @@
     "JAIPURKURT": [
       {
         "ticker": "JAIPURKURT",
+        "date": "2026-10-22",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Nandani Creation",
+          "Insider": "Anuj Mundhra",
+          "Transaction": "Acquisition",
+          "Trade Shares": "525000",
+          "Broadcast Date": "2026-10-22",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "JAIPURKURT",
         "date": "2026-10-08",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=6",
         "sourceId": "bulk",
@@ -424299,6 +424410,26 @@
           "Trade Value": "71.98 crore",
           "Price": "343",
           "Broadcast Date": "2026-10-22",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "PRITIKA": [
+      {
+        "ticker": "PRITIKA",
+        "date": "2026-10-21",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Pritika Engineer",
+          "Insider": "Pritika Auto Industries Limited",
+          "Category": "Promoter",
+          "Security Type": "Equity",
+          "Transaction": "Preferential Offer",
+          "Trade Shares": "5000000",
+          "Trade Value": "32.0 crore",
+          "Broadcast Date": "2026-10-21",
           "Source": "Screener.in"
         }
       }
