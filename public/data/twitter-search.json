@@ -2704,7 +2704,7 @@
       "error": "search-unavailable"
     },
     "isin:INE721I01024|National Stock Exchange of India": {
-      "lastAttemptAt": "2026-10-18T05:11:05+00:00",
+      "lastAttemptAt": "2026-10-23T00:52:19+00:00",
       "error": "search-unavailable"
     },
     "isin:INE658D01029|Simplex Casting": {
@@ -2780,6 +2780,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-10-23T00:15:51.427765+00:00"
+    "checkedAt": "2026-10-23T00:52:19.986925+00:00"
   }
 }
