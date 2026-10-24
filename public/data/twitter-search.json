@@ -568,7 +568,7 @@
       "pending": []
     },
     "isin:INE220J01025|Future Consumer": {
-      "lastAttemptAt": "2026-10-19T17:16:13+00:00",
+      "lastAttemptAt": "2026-10-24T21:22:48+00:00",
       "error": "search-unavailable",
       "lastResultCount": 19,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -2779,7 +2779,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 239,
-    "checkedAt": "2026-10-24T20:26:51.464106+00:00"
+    "incomplete": 243,
+    "checkedAt": "2026-10-24T21:22:48.985748+00:00"
   }
 }
