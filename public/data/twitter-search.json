@@ -412,7 +412,7 @@
       "error": "search-unavailable"
     },
     "isin:INE338H01029|CONCORDBIO": {
-      "lastAttemptAt": "2026-10-19T08:12:03+00:00",
+      "lastAttemptAt": "2026-10-24T12:48:53+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0N0J01014|Concord Control Systems": {
@@ -2780,6 +2780,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-10-24T12:13:00.389916+00:00"
+    "checkedAt": "2026-10-24T12:48:53.073789+00:00"
   }
 }
