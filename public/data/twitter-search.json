@@ -485,7 +485,7 @@
       "lastDiscoveryAt": "2026-10-04T00:14:44+00:00"
     },
     "isin:INE1C6T01020|Emmvee Photovoltaic Power": {
-      "lastAttemptAt": "2026-10-19T13:25:09+00:00",
+      "lastAttemptAt": "2026-10-24T17:45:06+00:00",
       "error": "search-unavailable",
       "lastResultCount": 17,
       "lastSuccessAt": "2026-10-04T00:14:44+00:00",
@@ -2780,6 +2780,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-10-24T17:06:21.407847+00:00"
+    "checkedAt": "2026-10-24T17:45:06.250388+00:00"
   }
 }
