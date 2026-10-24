@@ -259,7 +259,7 @@
       ]
     },
     "isin:INE476A01022|CANBK": {
-      "lastAttemptAt": "2026-10-19T04:26:15+00:00",
+      "lastAttemptAt": "2026-10-24T00:53:32+00:00",
       "error": "search-unavailable",
       "lastResultCount": 29,
       "lastSuccessAt": "2026-09-30T00:48:50+00:00",
@@ -2780,6 +2780,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-10-24T00:40:54.756285+00:00"
+    "checkedAt": "2026-10-24T00:53:32.855619+00:00"
   }
 }
