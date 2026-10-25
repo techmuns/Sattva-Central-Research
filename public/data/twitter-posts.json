@@ -1,10 +1,734 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-10-23T12:25:38+00:00",
+  "capturedAt": "2026-10-25T14:44:58+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2114357397124980989",
+      "handle": "chartwhisp60202",
+      "display_name": "Chart Whisperer",
+      "text": "52 Stocks With Over 100% YoY Quarterly Profit Growth\n\n1  BANK +384%\n2. SWANDEF +1,03,089%\n3. NETWEB +334%\n4. HFCL +434%\n5. KABRAEXTRU +1,103%\n6. UJJIVANSFB +199%\n7. STLTECH +12,825%\n8. SOLARA +426%\n9. JSWSTEEL +225%\n10. ANANTAM +3,397%\n11. POONAWALLA +405%\n12. YASHHV +165%\n13. E2E +640%\n14. MAHLOG +353%\n15. SSWL +208%\n16. HIIL +2,451%\n17. INDORAMA +201%\n18. TRUALT +191%\n19. IXIGO +981%\n20. MRPL +217%\n21. CREDIACC +298%\n22. HYPERSOFT +232%\n23. RBLBANK +169%\n24. PANACHE DIGI +450%\n25. GAEL +246%\n26. CHENNPETRO +212%\n27. ADANIENSOL +147%\n28. ONIX SOLAR +301%\n29. JPPOWER +198%\n30. VARMORA +172%\n31. WATERWAYS +222%\n32. IDFCFIRSTB +196%\n33. NAVKARCORP +170%\n34. KROSS +143%\n35. PNBGILTS +197%\n36. AURUMPROP +156%\n37. HINDZINC +140%\n38. SAKAR +149%\n39. TARIL +135%\n40. AYE +151%\n41. ADANIPOWER +134%\n42. MONOLITH +144%\n43. JSFB +127%\n44. INDIACEM +162%\n45. ORIENTELEC +124%\n46. BHEL +118%\n47. JAYASWAL NECO +118%\n48. TATVA +116%\n49. SOPPERST",
+      "created_at": "2026-10-25T14:04:20+00:00",
+      "url": "https://x.com/chartwhisp60202/status/2114357397124980989",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114356698596970927",
+      "handle": "tsbratzdolly",
+      "display_name": "tsbratzdoll🏳️‍⚧️",
+      "text": "🚀 There’s a WhatsApp group specifically for #LXCHEM #JUBLPHARMA #MOLBIO holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/cl6ceBhToA https://t.co/MPnG6odc9F",
+      "created_at": "2026-10-25T14:01:34+00:00",
+      "url": "https://x.com/tsbratzdolly/status/2114356698596970927",
+      "image": "https://pbs.twimg.com/media/HVezuHNaoAA-P9n.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114348646133297520",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Prime Minister Narendra Modi inaugurated the Reserve Bank of India's Rs 169-crore data centre and Cybersecurity Training Institute in Bhubaneswar.\n\nThe data centre will host mission-critical payment and settlement systems, along with other flagship initiatives, the government said in a statement.\n\nIt will contribute to widening the reach, efficiency and reliability of digital financial services, and will form the secure digital foundation on which India's increasingly technology-driven financial economy can grow, the statement read.\n\nPM Modi opens the event with a light-hearted joke, asking why the atmosphere feels so tense and quipping that banking professionals must be under pressure. \n\n#PMModi #RBI #DataCentre",
+      "created_at": "2026-10-25T13:29:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114348646133297520",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114346508476882956",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | 'We have built momentum; effort is on to mobilise additional resources in a difficult year': DIPAM chief\n\n- DIPAM to push asset monetisation and stake sales.\n- Centre expects to beat FY27 disinvestment target.\n- Three public sector firms lined up for listing.\n\n@N_Mahalakshmi_ writes: https://t.co/CeaF5FT2iF",
+      "created_at": "2026-10-25T13:21:04+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114346508476882956",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114343291458343396",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "EAM Jaishankar's big warning amid global unrest: ‘Terrorism as statecraft is unacceptable’\n\n-S Jaishankar said terrorism is not an instrument of statecraft.\n-He urged global nations to adopt a zero-tolerance approach.\n-Dialogue and diplomacy are key to resolving global conflicts.\n\nRead More:\nhttps://t.co/XdK8CoXw8v",
+      "created_at": "2026-10-25T13:08:17+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114343291458343396",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114340579014566034",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Three PSU listings, second public InvIT this fiscal, says Dipam Secretary\n\n- Govt plans to list three state-owned firms this fiscal.\n- Listings include IIFCL, Mahanadi, and SECL.\n- A second public highway InvIT is planned for FY27.\n\n@N_Mahalakshmi_ writes: \nhttps://t.co/k4C3Q7ijOo",
+      "created_at": "2026-10-25T12:57:31+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114340579014566034",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114333198142628013",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "From digital influence to real-world impact, the next generation of entrepreneurs is finding new ways to turn knowledge, creativity, and communities into thriving ventures.\n\nAnushka Rathod, Finance & Money Education Creator, will feature at the News18 Rising Bharat Summit – West Edition, and discuss how creators can build sustainable businesses beyond content, diversify their revenue streams, and turn audience trust into long-term entrepreneurial opportunities.\n\n📍 Mumbai | October 28, 2026 | 10 AM onwards\nRegister now!\n\nBeyond content. Beyond clicks. Building ventures that last.\n\n#RisingBharatSummit #WestEdition #BuildingAnEnterpriseNation @HDFC_Bank @PhonePe @SattvaGroup @Spinny @thebajajgroup @ITCCorpCom @MSRDC_official @midc_india @srabrihanmumbai",
+      "created_at": "2026-10-25T12:28:11+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114333198142628013",
+      "image": "https://pbs.twimg.com/media/HVeeIyJbAAA8rTN.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114330589427880050",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Rahul Gandhi ‘thanks’ BJP for rally publicity, calls for November 1 ‘Save the Vote, Save the Country’ rally\n\n- Rahul Gandhi thanked BJP for publicizing the INDIA bloc rally.\n- The Nov 1 mega rally at Ramlila Maidan protests vote theft.\n- BJP MP Rao criticized the opposition's lack of a clear agenda.\n\nRead more:\nhttps://t.co/NXUQ1hQlH6",
+      "created_at": "2026-10-25T12:17:49+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114330589427880050",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114328130001272897",
+      "handle": "Sue97655710",
+      "display_name": "Just Sue",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #CMPDI #ATLANTAELE shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/hMPdEb64P0 https://t.co/u2LR81bwJm",
+      "created_at": "2026-10-25T12:08:03+00:00",
+      "url": "https://x.com/Sue97655710/status/2114328130001272897",
+      "image": "https://pbs.twimg.com/media/HVeZwALaEAAi8tg.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114326988186079592",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Every city holds the promise of progress, and every investment can open doors to new possibilities.\n\nAbhinandan Lodha, Founder, Chairman & MD of The House of Abhinandan Lodha, will be sharing perspectives on how urban development, capital, and changing aspirations are influencing the way India lives, grows, and invests at the News18 Rising Bharat Summit – West Edition.\n\n📍 Mumbai | October 28, 2026 | 10 AM onwards\nRegister now!\n\nEvolving cities. Expanding opportunities. Aspirations shaping India’s future.\n\n#RisingBharatSummit #WestEdition #BuildingAnEnterpriseNation\n\n #RisingBharatSummit #WestEdition #BuildingAnEnterpriseNation @HDFC_Bank @PhonePe @SattvaGroup @Spinny\n@thebajajgroup @ITCCorpCom @MSRDC_official\n@midc_india @srabrihanmumbai",
+      "created_at": "2026-10-25T12:03:30+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114326988186079592",
+      "image": "https://pbs.twimg.com/media/HVeZEk-aoAAgPxQ.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114326103330607477",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Every city holds the promise of progress, and every investment can open doors to new possibilities.\n\nAbhinandan Lodha, Founder, Chairman & MD of The House of Abhinandan Lodha, will be sharing perspectives on how urban development, capital, and changing aspirations are influencing the way India lives, grows, and invests at the News18 Rising Bharat Summit – West Edition.\n\n📍 Mumbai | October 28, 2026 | 10 AM onwards\nRegister now!\n\nEvolving cities. Expanding opportunities. Aspirations shaping India’s future.\n\n#RisingBharatSummit #WestEdition #BuildingAnEnterpriseNation @HDFC_Bank  @PhonePe @SattvaGroup @myspinny \n@thebajajgroup @ITCCorpCom @MSRDC_official \n@midc_india @srabrihanmumbai",
+      "created_at": "2026-10-25T11:59:59+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114326103330607477",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114325625049899011",
+      "handle": "eduinvestingin",
+      "display_name": "Eduinvesting.in",
+      "text": "Jayaswal Neco Industries Limited https://t.co/h7OPP3KksV",
+      "created_at": "2026-10-25T11:58:05+00:00",
+      "url": "https://x.com/eduinvestingin/status/2114325625049899011",
+      "image": "https://pbs.twimg.com/media/HVeX8m5bIAEcHks.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco Industries\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114325568783347951",
+      "handle": "Monktrader001",
+      "display_name": "The Market Monk",
+      "text": "52 Stocks With Over 100% YoY Quarterly Profit Growth\n\n1. INDUSIND BANK +384%\n2. SWANDEF +1,03,089%\n3. NETWEB +334%\n4. HFCL +434%\n5. KABRAEXTRU +1,103%\n6. UJJIVANSFB +199%\n7. STLTECH +12,825%\n8. SOLARA +426%\n9. JSWSTEEL +225%\n10. ANANTAM +3,397%\n11. POONAWALLA +405%\n12. YASHHV +165%\n13. E2E +640%\n14. MAHLOG +353%\n15. SSWL +208%\n16. HIIL +2,451%\n17. INDORAMA +201%\n18. TRUALT +191%\n19. IXIGO +981%\n20. MRPL +217%\n21. CREDIACC +298%\n22. HYPERSOFT +232%\n23. RBLBANK +169%\n24. PANACHE DIGI +450%\n25. GAEL +246%\n26. CHENNPETRO +212%\n27. ADANIENSOL +147%\n28. ONIX SOLAR +301%\n29. JPPOWER +198%\n30. VARMORA +172%\n31. WATERWAYS +222%\n32. IDFCFIRSTB +196%\n33. NAVKARCORP +170%\n34. KROSS +143%\n35. PNBGILTS +197%\n36. AURUMPROP +156%\n37. HINDZINC +140%\n38. SAKAR +149%\n39. TARIL +135%\n40. AYE +151%\n41. ADANIPOWER +134%\n42. MONOLITH +144%\n43. JSFB +127%\n44. INDIACEM +162%\n45. ORIENTELEC +124%\n46. BHEL +118%\n47. JAYASWAL NECO +118%\n48. TATVA +116%\n49. SOPPERST",
+      "created_at": "2026-10-25T11:57:52+00:00",
+      "url": "https://x.com/Monktrader001/status/2114325568783347951",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114324091209458032",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "IndiGo, Air India Express to shift flights to Navi Mumbai airport from December\n\n-IndiGo to serve 12 international destinations\n-Air India Express shifts West Asia flights\n-Mumbai airport T1 redevelopment drives transition\n\nRead More:\nhttps://t.co/fqSSJ2U2dM",
+      "created_at": "2026-10-25T11:52:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114324091209458032",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114322395884556638",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "DK Shivakumar warns of action if IT firms sideline Kannadigas in Bengaluru\n\n- Karnataka warns IT firms over sidelining Kannadigas.\n- Govt vows to protect local employment rights.\n- Debate continues over private sector job quotas.\n\nRead more:\nhttps://t.co/jaQhMh2Squ",
+      "created_at": "2026-10-25T11:45:16+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114322395884556638",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114318303195709946",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Operation Sindoor features in US midterm campaign as Trump repeats India-Pakistan war claim\n\n-Trump claims credit for stopping India-Pakistan war.\n-He threatened both nations with heavy trade tariffs.\n-India has repeatedly rejected Trump's assertions.\n\nRead More:\nhttps://t.co/eSDJZsG3mc",
+      "created_at": "2026-10-25T11:29:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114318303195709946",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114313319582470610",
+      "handle": "YONr_Affiil_io",
+      "display_name": "YCiM.io",
+      "text": "🚀 There’s a WhatsApp group specifically for #JUBLPHARMA #CIEINDIA #MOLBIO holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/2KNfiKXRpj https://t.co/DGIAqDlhBU",
+      "created_at": "2026-10-25T11:09:12+00:00",
+      "url": "https://x.com/YONr_Affiil_io/status/2114313319582470610",
+      "image": "https://pbs.twimg.com/media/HVeMRHDbwAAbRFv.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114303915776971216",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Nepal to receive $21.6 million from UN climate loss and damage fund after deadly August floods\n\nThe decision was taken during an extraordinary meeting of the fund’s board this week, following sustained pressure for emergency assistance.\n\nRead here👇\n\nhttps://t.co/0OC4RMBczg",
+      "created_at": "2026-10-25T10:31:50+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114303915776971216",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114301065675911293",
+      "handle": "tsbratzdolly",
+      "display_name": "tsbratzdoll🏳️‍⚧️",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #HONASA #USHAMART shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/ZRJxQr7a8j https://t.co/oZHlJ41TiC",
+      "created_at": "2026-10-25T10:20:30+00:00",
+      "url": "https://x.com/tsbratzdolly/status/2114301065675911293",
+      "image": "https://pbs.twimg.com/media/HVeBI58bcAAMLNg.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114300939305635844",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Godrej Properties pre-sales may rise 22% to Rs 41,500 crore in FY27, surpassing guidance on strong demand\n\nChairperson Pirojsha Godrej noted that consumer demand has been \"quite strong\" in the company's new as well as ongoing residential projects across all markets where it has a presence.\n\nRead more:\nhttps://t.co/J1AG89WGjh",
+      "created_at": "2026-10-25T10:20:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114300939305635844",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114298879646539812",
+      "handle": "Vosimenfan09",
+      "display_name": "Victor Osimhen to the world",
+      "text": "🚀 There’s a WhatsApp group specifically for #MAHSCOOTER #JUBLPHARMA #RAJRATAN holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/FE2iRqEIMh https://t.co/LeWX3VJcML",
+      "created_at": "2026-10-25T10:11:49+00:00",
+      "url": "https://x.com/Vosimenfan09/status/2114298879646539812",
+      "image": "https://pbs.twimg.com/media/HVd_JZwaMAAbh3h.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114297616704135678",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "India’s growth story extends far beyond its biggest cities, where new opportunities can transform communities and create pathways to progress.\n\nShri Shrikant Shinde, Member of Parliament, Lok Sabha, will be part of the conversation at the News18 Rising Bharat Summit – West Edition. He will share his vision on how job creation, regional development, and economic opportunities need to go beyond urban centres for an inclusive growth story of India.\n\n📍 Mumbai | October 28, 2026 | 10 AM onwards\nRegister now!\n\nBeyond city limits. Beyond conventional growth. Towards a future of wider opportunities.\n\n#RisingBharatSummit #WestEdition #BuildingAnEnterpriseNation @HDFC_Bank @PhonePe @SattvaGroup @Spinny @thebajajgroup @ITCCorpCom @MSRDC_official @midc_india\n@srabrihanmumbai",
+      "created_at": "2026-10-25T10:06:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114297616704135678",
+      "image": "https://pbs.twimg.com/media/HVd-O7ZbgAAOCLf.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114296031181713571",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Prime Minister Narendra Modi witnesses IAF air show in Varanasi.\n\nPM Modi watched the Indian Air Force's aerial display, 'Wings Over Ganges', at Varanasi's Namo Ghat, as fighter jets and helicopters performed manoeuvres on the concluding day of the event.\n\nDefence Minister Rajnath Singh, Uttar Pradesh Governor Anandiben Patel and Chief Minister Yogi Adityanath joined Modi at the three-day show, organised to mark the Indian Air Force's 94th anniversary.\n\nAir Force officials said the programme featured displays by fighter aircraft, including the Sukhoi-30 MKI, indigenous Tejas and LCH Prachand, alongside helicopter performances.\n\n#PMModi #IndiaAirForce #Varanasi",
+      "created_at": "2026-10-25T10:00:30+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114296031181713571",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114292696772989378",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Dalal Street Week Ahead: FOMC meeting, Q2 earnings among 10 key factors to watch\n\nAnalysts said until a meaningful recovery emerges, traders are advised to remain cautious and selective, with the overall bias remaining sideways to bearish.\n\nRead More:\nhttps://t.co/ONTVX0X4h9",
+      "created_at": "2026-10-25T09:47:15+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114292696772989378",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114288103883997400",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Five IPOs to open next week; companies eye close to Rs 2,600 crore\n\nAs many as 104 companies have raised over Rs 1.4 lakh crore through IPOs in 2026 so far, suggesting continued activity in the primary market.\n\nRead More:\nhttps://t.co/DmD0RJO8ey",
+      "created_at": "2026-10-25T09:29:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114288103883997400",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114288082107453930",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "India warns nationals in Saudi Arabia against filming missile, drone interceptions\n\nIndia has urged its nationals in Saudi Arabia not to film or share information about missile and drone interceptions as flight suspensions and security concerns disrupt travel across the region.\n\nRead more: \nhttps://t.co/vJMsH8r52q",
+      "created_at": "2026-10-25T09:28:55+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114288082107453930",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114282819417723158",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "‘Indians don’t indulge in vandalism’: Piyush Goyal contrasts diaspora with Europe unrest\n\nSpeaking in Berlin, Piyush Goyal praised the Indian diaspora's conduct amid unrest in parts of Europe and urged community members to support Indian students moving to Germany.\n\nRead More:\nhttps://t.co/qqPzm5Khxb",
+      "created_at": "2026-10-25T09:08:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114282819417723158",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114278037793427757",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "FPIs withdraw Rs 48,056 crore from equities in Oct so far amid elevated crude oil prices\n\nFPIs had invested Rs 20,200 crore in Indian equities in July and Rs 29,631 crore in August, according to data from the Central Depository Services Ltd (CDSL).\n\nRead More:\nhttps://t.co/rfrccuVKOe",
+      "created_at": "2026-10-25T08:49:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2114278037793427757",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2114259883541565691",
+      "handle": "AgastyaTHE007",
+      "display_name": "Agastya",
+      "text": "@VMolodkov @vtchakarova Datasel) recently bought by a private Indian firm. Estonia’s own National Audit Office blamed their own officials for a total lack of due diligence. Meanwhile, actual Indian state defense factories routinely export high-quality 155mm shells that European buyers successfully-",
+      "created_at": "2026-10-25T07:36:51+00:00",
+      "url": "https://x.com/AgastyaTHE007/status/2114259883541565691",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Datasel\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114256239257432233",
+      "handle": "finjits",
+      "display_name": "finjits",
+      "text": "📊 Q2 FY27 Earnings Watchlist: 17 stocks I’m tracking for improving results 👀\nIndia Cements, Jayaswal Neco, Indo Rama Synthetics, Aye Finance, Hindustan Zinc, HFCL, Sterlite Technologies, Chennai Petroleum, Eternal, SG Finserve, Adani Energy Solutions, Jana SFB, Tatva Chintan Pharma Chem, L&T Technology Services, M&M Financial Services, SSWL & Sakar Healthcare.\n🔥 Notable reported YoY PAT growth:\n• HFCL: +448%\n• Indo Rama: +202%\n• Hindustan Zinc: +142%\n• Jayaswal Neco: +119%\n• Adani Energy Solutions: +145%\n• LTTS: +66.8% (includes a one-off gain)\nBut here’s the real question: Are earnings improving sustainably—or is the market already pricing in the growth?\nI’m watching revenue, margins, debt, cash flow, valuation & management outlook—not profit growth alone.\n👇 Which stock deserves a deeper dive next?\nWatchlist, not a buy recommendation. Verify the full results before investing.\n#Q2Results #Stocks #EarningsGrowth",
+      "created_at": "2026-10-25T07:22:23+00:00",
+      "url": "https://x.com/finjits/status/2114256239257432233",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114226587965194494",
+      "handle": "tenfingoals",
+      "display_name": "TENFIN GOALS",
+      "text": "YOY Qrt Profit Growth > 100%\nMarket Cap > 1000 crore\nSep 2026 Q2 Results 👇\n\nSWANDEF  📈 +1,03,089%\n\nSTLTECH 📈 +12,825%\n\nANANTAM 📈 +3397%\n\nHIIL 📈 +2451%\n\nKABRAEXTRU 📈 +1103%\n\nIXIGO 📈 +981%\n\nE2E 📈 +640%\n\nPANACHE DIGI 📈 +450%\n\nHFCL 📈 +434%\n\nSOLARA 📈 +426%\n\nPOONAWALLA 📈 +405%\n\nINDUSIND BANK 📈 +384%\n\nMAHLOG 📈 +353%\n\nNETWEB 📈 +334%\n\nONIX SOLAR 📈 +301%\n\nCREDIACC 📈 +298%\n\nGAEL 📈 +246%\n\nHYPERSOFT 📈 +232%\n\nJSWSTEEL 📈 +225%\n\nWATERWAYS 📈 +222%\n\nMRPL 📈 +217%\n\nCHENNPETRO 📈 +212%\n\nSSWL 📈 +208%\n\nINDORAMA 📈 +201%\n\nUJJIVANSFB 📈 +199%\n\nJPPOWER 📈 +198%\n\nPNBGILTS 📈 +197%\n\nIDFCFIRSTB 📈 +196%\n\nTRUALT 📈 +191%\n\nVARMORA 📈 +172%\n\nNAVKARCORP 📈 +170%\n\nRBLBANK 📈 +169%\n\nYASHHV 📈 +165%\n\nINDIACEM 📈 +162%\n\nAURUMPROP  📈 +156%\n\nAYE 📈 +151%\n\nSAKAR 📈 +149%\n\nADANIENSOL 📈 +147%\n\nMONOLITH 📈 +144%\n\nKROSS 📈 +143%\n\nHINDZINC 📈 +140%\n\nTARIL 📈 +135%\n\nADANIPOWER 📈 +134%\n\nJSFB 📈 +127%\n\nORIENTELEC 📈 +124%\n\nBHEL 📈 +118%\n\nJAYASWAL NECO 📈 +118%\n\nTATVA 📈 +116%\n\nSOPPERSTOP 📈 +115%\n\nSG FINSERVE 📈 +107%\n\nIIFL 📈 +103%\n\nWENDT 📈 +103%\n\nsource : screener\n⚠️Note : info only / DYOR\n#ProfitGrowth #GrowthStocks\n#Q2Results",
+      "created_at": "2026-10-25T05:24:33+00:00",
+      "url": "https://x.com/tenfingoals/status/2114226587965194494",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114143316505731119",
+      "handle": "Vosimenfan09",
+      "display_name": "Victor Osimhen to the world",
+      "text": "🚀 There’s a WhatsApp group specifically for #VTL #JUBLPHARMA #GRAPHITE holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/FE2iRqEIMh https://t.co/Pw8IduElkB",
+      "created_at": "2026-10-24T23:53:40+00:00",
+      "url": "https://x.com/Vosimenfan09/status/2114143316505731119",
+      "image": "https://pbs.twimg.com/media/HVbxq9FbYAABE4v.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114123130495176716",
+      "handle": "Sue97655710",
+      "display_name": "Just Sue",
+      "text": "🚀 There’s a WhatsApp group specifically for #SHAILY #ATLANTAELE #JUBLPHARMA holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/hMPdEb6CEy https://t.co/cNLOcepkUn",
+      "created_at": "2026-10-24T22:33:27+00:00",
+      "url": "https://x.com/Sue97655710/status/2114123130495176716",
+      "image": "https://pbs.twimg.com/media/HVbfTsEaAAAxMfc.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114122034498142230",
+      "handle": "YONr_Affiil_io",
+      "display_name": "YCiM.io",
+      "text": "🚀 Came across a private WhatsApp group for #INDGN #JUBLPHARMA #PRAKASH shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/2KNfiKXRpj https://t.co/zWh4PgaBBH",
+      "created_at": "2026-10-24T22:29:06+00:00",
+      "url": "https://x.com/YONr_Affiil_io/status/2114122034498142230",
+      "image": "https://pbs.twimg.com/media/HVbeS-MbYAACKF8.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114077024872702072",
+      "handle": "tsbratzdolly",
+      "display_name": "tsbratzdoll🏳️‍⚧️",
+      "text": "🚀 There’s a WhatsApp group specifically for #SUPRIYA #PGEL #JUBLPHARMA holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/ZRJxQr7HXR https://t.co/5YnDta4Po6",
+      "created_at": "2026-10-24T19:30:15+00:00",
+      "url": "https://x.com/tsbratzdolly/status/2114077024872702072",
+      "image": "https://pbs.twimg.com/media/HVa1YKibQAABhHw.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114062695741931677",
+      "handle": "cjwasright",
+      "display_name": "CJ Was Right 🇮🇳",
+      "text": "@spdverbot @vtchakarova Estonia's RKIK wired €70M to an Italian-registered middleman (Datasel SRL) without basic vetting instead of buying from Munitions India or Bharat Forge. Blaming our €3.6B global defence export record for Estonian paperwork is wild!",
+      "created_at": "2026-10-24T18:33:18+00:00",
+      "url": "https://x.com/cjwasright/status/2114062695741931677",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Datasel\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114060610501746967",
+      "handle": "tsbratzdolly",
+      "display_name": "tsbratzdoll🏳️‍⚧️",
+      "text": "🚀 There’s a WhatsApp group specifically for #INDSWFTLAB #HUBTOWN #JUBLPHARMA holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/ZRJxQr7HXR https://t.co/vf3xW9ncCZ",
+      "created_at": "2026-10-24T18:25:01+00:00",
+      "url": "https://x.com/tsbratzdolly/status/2114060610501746967",
+      "image": "https://pbs.twimg.com/media/HVambDObIAASo3j.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114052400570859810",
+      "handle": "tsbratzdolly",
+      "display_name": "tsbratzdoll🏳️‍⚧️",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #PRAKASH #CEATLTD shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/ZRJxQr7a8j https://t.co/UAOSvnziUf",
+      "created_at": "2026-10-24T17:52:24+00:00",
+      "url": "https://x.com/tsbratzdolly/status/2114052400570859810",
+      "image": "https://pbs.twimg.com/media/HVae-7JaAAE9pJL.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114022635235426622",
+      "handle": "Vosimenfan09",
+      "display_name": "Victor Osimhen to the world",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #SUPRIYA #VIJAYA shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/FE2iRqEIMh https://t.co/JrNv8thQlP",
+      "created_at": "2026-10-24T15:54:07+00:00",
+      "url": "https://x.com/Vosimenfan09/status/2114022635235426622",
+      "image": "https://pbs.twimg.com/media/HVaD6lWbEAANhmP.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114021574017712278",
+      "handle": "Sue97655710",
+      "display_name": "Just Sue",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #SPLPETRO #SHAILY shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/hMPdEb64P0 https://t.co/K1iZfQzogm",
+      "created_at": "2026-10-24T15:49:54+00:00",
+      "url": "https://x.com/Sue97655710/status/2114021574017712278",
+      "image": "https://pbs.twimg.com/media/HVaC9DsawAEPCOA.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2114005076633137584",
+      "handle": "Sue97655710",
+      "display_name": "Just Sue",
+      "text": "🚀 There’s a WhatsApp group specifically for #MOLBIO #SOUTHBANK #JUBLPHARMA holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/hMPdEb64P0 https://t.co/rJGpHjKilG",
+      "created_at": "2026-10-24T14:44:21+00:00",
+      "url": "https://x.com/Sue97655710/status/2114005076633137584",
+      "image": "https://pbs.twimg.com/media/HVZz80DaAAAxJFh.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113999462297468966",
+      "handle": "Sue97655710",
+      "display_name": "Just Sue",
+      "text": "🚀 There’s a WhatsApp group specifically for #ASTRAMICRO #JUBLPHARMA #ATLANTAELE holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/hMPdEb6CEy https://t.co/kL3OEJvN06",
+      "created_at": "2026-10-24T14:22:02+00:00",
+      "url": "https://x.com/Sue97655710/status/2113999462297468966",
+      "image": "https://pbs.twimg.com/media/HVZu19IaMAAaeMV.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113983945234583874",
+      "handle": "Vosimenfan09",
+      "display_name": "Victor Osimhen to the world",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #THEJO #USHAMART shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/FE2iRqEIMh https://t.co/TeugFLUDtj",
+      "created_at": "2026-10-24T13:20:23+00:00",
+      "url": "https://x.com/Vosimenfan09/status/2113983945234583874",
+      "image": "https://pbs.twimg.com/media/HVZgtlwaoAEgmwO.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113981186418905270",
+      "handle": "Vosimenfan09",
+      "display_name": "Victor Osimhen to the world",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #CENTURYPLY #NIVABUPA shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/FE2iRqFgBP https://t.co/c3PtErs8A2",
+      "created_at": "2026-10-24T13:09:25+00:00",
+      "url": "https://x.com/Vosimenfan09/status/2113981186418905270",
+      "image": "https://pbs.twimg.com/media/HVZeNbVaAAAnL-p.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113962013097365810",
+      "handle": "Vosimenfan09",
+      "display_name": "Victor Osimhen to the world",
+      "text": "🚀 There’s a WhatsApp group specifically for #MAHSCOOTER #JUBLPHARMA #KRN holders and active traders where people exchange views every day.  \n \nClick the link to join: https://t.co/FE2iRqEIMh https://t.co/xJg52tAFrn",
+      "created_at": "2026-10-24T11:53:14+00:00",
+      "url": "https://x.com/Vosimenfan09/status/2113962013097365810",
+      "image": "https://pbs.twimg.com/media/HVZMxeuaAAAcwEd.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113955374759870776",
+      "handle": "Sue97655710",
+      "display_name": "Just Sue",
+      "text": "🚀 Came across a private WhatsApp group for #USHAMART #JUBLPHARMA #GALLANTT shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/hMPdEb64P0 https://t.co/b4XUs5G8ZE",
+      "created_at": "2026-10-24T11:26:51+00:00",
+      "url": "https://x.com/Sue97655710/status/2113955374759870776",
+      "image": "https://pbs.twimg.com/media/HVZGvFXbUAAvpZa.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113926821863711162",
+      "handle": "YONr_Affiil_io",
+      "display_name": "YCiM.io",
+      "text": "🚀 Came across a private WhatsApp group for #JUBLPHARMA #ASTRAMICRO #VENTIVE shareholders and traders. Lots of daily discussion going on inside.  \n \nJoin here: https://t.co/2KNfiKYpeR https://t.co/dMeGkOg3ce",
+      "created_at": "2026-10-24T09:33:23+00:00",
+      "url": "https://x.com/YONr_Affiil_io/status/2113926821863711162",
+      "image": "https://pbs.twimg.com/media/HVYsvjybwAEe_dc.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113919927002485021",
+      "handle": "campchoudhary",
+      "display_name": "CA. Mahendra Chaudhary",
+      "text": "@protraderharsh Cords cable\nJayaswal Neco",
+      "created_at": "2026-10-24T09:05:59+00:00",
+      "url": "https://x.com/campchoudhary/status/2113919927002485021",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113891637436805610",
+      "handle": "tenfingoals",
+      "display_name": "TENFIN GOALS",
+      "text": "#Q2RESULTS | JUN 2026 TO SEP 2026 (#OPM) — HUGE MARGIN EXPANSION STOCKS\n\nSTLTECH — 20% to 32%\n\nHFCL — 22% to 25%\n\nCHENNPETRO — 6% to 16%\n\nTIPSMUSIC — 50% to 71%\n\nANGELONE — 34% to 45%\n\nNEWGEN — 16% to 26%\n\nMAHEPC — -2.51% to +6.37%\n\nICICIGI — 7% to 15%\n\nACCENTMIC — 16% to 24%\n\nVIJIFIN — 64.89% to 72.56%\n\nVARMORA — 9% to 16%\n\nTHELEELA — 36% to 43%\n\nMRPL — 3.4% to 10%\n\nCUBEXTUB — 2.17% to 8.62%\n\nSUPREME POWER —\n 10.11% to 15.47%\n\nMHRIL — 15% to 20%\n\nBHEL — 7% to 11%\n\nBANSALWIRE — 4.8% to 8%\n\nHINDZINC — 58% to 61%\n\nBUTTERFLY — 7% to 10%\n\nKABRAEXTRU — \n4.98% to 7.87%\n\nPSB — 4% to 6%\n\nHAVELLS — 7% to 9%\n\nLMW — 7% to 9%\n\nNAMINDIA — 66% to 68%\n\nORIENTHOT — \n21.03% to 23.03%\n\nICICIAMC — 72% to 73%\n\nHIIL — 38% to 44%\n\nPIRAMALFIN — 62% to 65%\n\nSAGILITY — 22% to 25%\n\nIIFL — 25% to 27%\n\nFEDFINA — 25% to 27%\n\nHDFCAMC — 78% to 80%\n\nIRFC — 22% to 24%\n\nLOTUSDEV — 36% to 40%\n\nE2E — 75% to 77%\n\nBAJAJHCARE — 17% to 18%\n\nCOFORGE — 19% to 20%\n\nSBICARD — 15% to 18%\n\nCGPOWER — 12% to 14%\n\nGNA — 15% to 16%\n\nSHRIRAMFIN — 36% to 37%\n\nSUKHJITS — 8% to 9%\n\nSSWL — 11% to 12%\n\nTRISHAKTI — \n58.83% to 60.86%\n\nCYIENT — 13% to 14%\n\nATGL — 15% to 17%\n\nANANTAM — 80% to 83%\n\nPCJEWELLER — 28% to 29%\n\nIGIL — 60% to 61%\n\nSWASTIKAIN — 15% to 18%\n\nYASHHV — 26% to 28%\n\nORIRAIL — 15% to 16%\n\nNURECA — 8.48% to 8.94%\n\nAYE — 19% to 21%\n\nKAPSTON — 6.53% to 6.75%\n\nAPTUS PHARMA — \n13.98% to 16.11%\n\nNELCO — 10.40% to 11.59%\n\nBEPL — 17% to 20%\n\nUNIONBANK — 7% to 8%\n\nKROSS — 12% to 13%\n\nPNB — 8% to 11%\n\nJAYNECOIND — 19% to 20%\n\nSOLARA — 16% to 18%\n\nUJJIVANSFB — 8% to 9%\n\nONWARDTEC — 12% to 16%\n\nCCL — 16% to 18%\n\nLTF — 24% to 25%\n\nMWL — 9% to 11%\n\nTECHM — 17% to 18%\n\nKARURVYSYA — 18% to 19%\n\nTATACOMM — 19% to 21%\n\nBAJAJCON — 24% to 25%\n\nELECON — 21% to 23%\n\nSEJALLTD — 14% to 17%\n\nTATAELXSI — 21% to 22%\n\nTARIL — 16% to 17%\n\nEIMCOELECO — \n18.38% to 18.91%\n\nHCLTECH — 20% to 21%\n\nSWARAJENG — 13% to 14%\n\nPOONAWALLA — 19% to 20%\n\nPAISALO — 33% to 34%\n\nETERNAL — 2.9% to 3.1%\n\nICICIILIFE — 1% to 3.2%\n\nsource : screener\n⚠️ Note : info only / DYOR\n#OPM #GROWTHSTOCKS\n#Q2RESULTS",
+      "created_at": "2026-10-24T07:13:35+00:00",
+      "url": "https://x.com/tenfingoals/status/2113891637436805610",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113639081401807029",
+      "handle": "Momentuminvestr",
+      "display_name": "Vishal Dhamija",
+      "text": "🔴 Prudent Corporate Advisory\n🔴 Jayaswal Neco\n🔴 Graphite India\n🔴 Data Patterns\n🔴 Tega Industries\n🔴 Gail\n🔴 Asahi India Glass\n🔴 Pricol\n🔴 Windsor Machines\n🔴 GNFC\n🔴 Groww\n🔴 Concord Biotech\n🔴 Laxmi Organic Industries\n🔴 Paradeep Phosphates\n🔴 Mahindra Logistics",
+      "created_at": "2026-10-23T14:30:01+00:00",
+      "url": "https://x.com/Momentuminvestr/status/2113639081401807029",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113639081057906957",
+      "handle": "Momentuminvestr",
+      "display_name": "Vishal Dhamija",
+      "text": "🚨 55 Stocks Gave a Fresh Closing Below 200 DMA on 23rd October 2026:\n\nMarket cap &gt; 2000 Cr\n\n🔴 Bharti Airtel\n🔴 Usha Martin\n🔴 Suprajit Engineering\n🔴 Aditya Vision\n🔴 EPL\n🔴 Mangalam Cement\n🔴 Alembic Pharma\n🔴 ISGEC Heavy Engineering\n🔴 Vrl Logistics\n🔴 Zota Health Care",
+      "created_at": "2026-10-23T14:30:01+00:00",
+      "url": "https://x.com/Momentuminvestr/status/2113639081057906957",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE858B01029",
+          "query": "\"ISGEC Heavy Engineering\""
+        },
+        {
+          "entityId": "isin:INE858B01029",
+          "query": "\"ISGEC\""
+        }
+      ]
+    },
     {
       "tweet_id": "2113607172462641481",
       "handle": "babu_anmol77584",
@@ -372,6 +1096,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2113596656327553168",
+      "handle": "Isgec_engg",
+      "display_name": "Isgec Heavy Engineering Ltd.",
+      "text": "Great conversations, valuable industry connections, and innovative engineering solutions at FABTECH Expo 2026 in Las Vegas! \n\nWe’re here until 23 October! Visit us to connect with our experts and explore solutions for your next metal forming project.\n📍 Booth S21034 https://t.co/BfaOJp9pSt",
+      "created_at": "2026-10-23T11:41:26+00:00",
+      "url": "https://x.com/Isgec_engg/status/2113596656327553168",
+      "image": "https://pbs.twimg.com/media/HVUA1_DbgAA1km8.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE858B01029",
+          "query": "\"ISGEC Heavy Engineering\""
+        },
+        {
+          "entityId": "isin:INE858B01029",
+          "query": "\"ISGEC\""
+        }
+      ]
     },
     {
       "tweet_id": "2113596261656129627",
@@ -1508,6 +2252,26 @@
       ]
     },
     {
+      "tweet_id": "2113572368564326828",
+      "handle": "Gagan1004",
+      "display_name": "Gagandeep Bedi",
+      "text": "@iam_Preesha EfCil, Isgec heavy engineering and Balu Forge. Any thoughts on all these.",
+      "created_at": "2026-10-23T10:04:55+00:00",
+      "url": "https://x.com/Gagan1004/status/2113572368564326828",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE858B01029",
+          "query": "\"ISGEC Heavy Engineering\""
+        },
+        {
+          "entityId": "isin:INE858B01029",
+          "query": "\"ISGEC\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2113572235944313293",
       "handle": "AdityaBirlaGrp",
       "display_name": "Aditya Birla Group",
@@ -1867,6 +2631,22 @@
         {
           "entityId": "isin:INE674K01013",
           "query": "\"ABCAPITAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113541869225255100",
+      "handle": "InvestorTimes",
+      "display_name": "InvestorTimes",
+      "text": "#RatnaVeer up 70% plus in just 5 months\n\n💰Booked partial profits and holding balance \n\n♥️Like\n💯Follow\n✅Share\n\n#TradePlan #SwingTrading #WELCORP #SHYAMMETL #APLAPOLLO #JAYNECOIND #JINDALSAW #USHAMART #Gallantt https://t.co/7tRwOKIbUV",
+      "created_at": "2026-10-23T08:03:43+00:00",
+      "url": "https://x.com/InvestorTimes/status/2113541869225255100",
+      "image": "https://pbs.twimg.com/media/HVTPHhLb0AA4jio.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
         }
       ]
     },
@@ -3019,6 +3799,22 @@
         {
           "entityId": "isin:INE674K01013",
           "query": "\"ABCAPITAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113472469671809165",
+      "handle": "anilgupta9950",
+      "display_name": "Anil Gupta",
+      "text": "India is developing very fast. TBM are being imported from China. India should start mfg these machines in India. Heavy Engg company such as ISGEC , BHEL, Texmaco hv infrastructure to manufacture the same. GOI should give incentive.@AshwiniVaishnaw @nitin_gadkari @PMOIndia",
+      "created_at": "2026-10-23T03:27:57+00:00",
+      "url": "https://x.com/anilgupta9950/status/2113472469671809165",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE858B01029",
+          "query": "\"ISGEC\""
         }
       ]
     },
@@ -6189,6 +6985,26 @@
       ]
     },
     {
+      "tweet_id": "2113273694235849026",
+      "handle": "Monktrader001",
+      "display_name": "The Market Monk",
+      "text": "15 STOCKS WITH STRONG YoY PROFIT GROWTH!\n\n🔹 E2E Networks — +640%\n🔹 Poonawalla Fincorp — +405%\n🔹 MRPL — +207%\n🔹 Ujjivan Small Finance Bank — +200%\n🔹 RBL Bank — +170%\n🔹 Kross — +144%\n🔹 TARIL — +135%\n🔹 Orient Electric — +124%\n🔹 BHEL — +119%\n🔹 Jayaswal Neco Industries — +119%\n🔹 SG Finserve — +107%\n🔹 IIFL Finance — +104%\n🔹 Modison — +89%\n🔹 Sejal Glass — +78%\n🔹 Accent Microcell — +72%",
+      "created_at": "2026-10-22T14:18:06+00:00",
+      "url": "https://x.com/Monktrader001/status/2113273694235849026",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco Industries\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2113273598077280277",
       "handle": "OfficialAnmi",
       "display_name": "ANMI",
@@ -7514,6 +8330,46 @@
       ]
     },
     {
+      "tweet_id": "2113222420073259059",
+      "handle": "blinkcharts_",
+      "display_name": "blinkcharts.com",
+      "text": "Jayaswal Neco Industries Ltd: Capacity & Operations\n\nCapacity & Operations\n\n- Factories and capacity\n- Captive operations\n- Ratios and price review\n\nJayaswal Neco Industries Ltd\n\nFull video: https://t.co/VDk5icbBii\n\nDisclaimer: This video is for education and information only. Nothing here is investment advice or a buy/sell recommendation. Markets carry risk. Do your own research, or consult a SEBI-registered advisor, before investing.\n\n#JayaswalNecoIndustriesLtd #Shorts #IndianStockMarket #Nifty #Sensex #StockMarketIndia #SmallCap #ShareMarket #StockAnalysis #TechnicalAnalysis #Investing #BlinkCharts\n\nJayaswal Neco Industries Ltd share price",
+      "created_at": "2026-10-22T10:54:21+00:00",
+      "url": "https://x.com/blinkcharts_/status/2113222420073259059",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco Industries\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2113222204532142251",
+      "handle": "blinkcharts_",
+      "display_name": "blinkcharts.com",
+      "text": "Jayaswal Neco Industries Ltd: Steel & Funding Review | PTC India Financial Services Ltd\n\nSteel & Funding Review\n\n- Results and funding\n- Company history\n- Operations-map discussion\n\nJayaswal Neco Industries Ltd\nPTC India Financial Services Ltd\n\nFull video: https://t.co/VDk5icbBii\n\nDisclaimer: This video is for education and information only. Nothing here is investment advice or a buy/sell recommendation. Markets carry risk. Do your own research, or consult a SEBI-registered advisor, before investing.\n\n#JayaswalNecoIndustriesLtd #PTCIndiaFinancialServicesLtd #Shorts #IndianStockMarket #Nifty #Sensex #StockMarketIndia #SmallCap #ShareMarket #StockAnalysis #TechnicalAnalysis #Investing #BlinkCharts\n\nJayaswal Neco Industries Ltd share price\nPTC India Financial Services Ltd share price",
+      "created_at": "2026-10-22T10:53:29+00:00",
+      "url": "https://x.com/blinkcharts_/status/2113222204532142251",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco Industries\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2113221256590021016",
       "handle": "nosilverv",
       "display_name": "Guy",
@@ -8450,928 +9306,14 @@
           "query": "\"HDFCBANK\""
         }
       ]
-    },
-    {
-      "tweet_id": "2113193100134973813",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Torrent Pharma: Nomura maintains 'Neutral' with Rs 4,670 target price ahead of Q2 results\n\nNomura expects US revenue to decline sequentially by $4 million to $40 million, as sales in the previous quarter benefited from one-time factors.\n\nRead More:\nhttps://t.co/Y1EvZ4xGxf",
-      "created_at": "2026-10-22T08:57:50+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2113193100134973813",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2113192669094551857",
-      "handle": "CNBC_Awaaz",
-      "display_name": "CNBC-AWAAZ",
-      "text": "#EditorsTake |  HDFC बैंक का चार्ट काफी कमजोर\n\nHDFC बैंक में FIIs की लगातार बिकवाली जारी\n\n@_anujsinghal @shreyaworld100 @virendraonNifty  #Nifty #Investment #ShareMarket #Stocks #HDFCBank https://t.co/ckoRLws6If",
-      "created_at": "2026-10-22T08:56:08+00:00",
-      "url": "https://x.com/CNBC_Awaaz/status/2113192669094551857",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113192189258088899",
-      "handle": "meownishhh",
-      "display_name": "Billu Barber",
-      "text": "Blackbuck ki maut ka badla tiger maarke kaun leta hai",
-      "created_at": "2026-10-22T08:54:13+00:00",
-      "url": "https://x.com/meownishhh/status/2113192189258088899",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113192124208631995",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#India | Rubio wraps up India visit after key meetings with top industrialists, EAM Jaishankar\n\n- US Secretary of State Marco Rubio concluded his India visit.\n- He met with top industrialists including Mukesh Ambani and Adani.\n- Discussions focused on energy security and economic partnership.\n\nRead More:\nhttps://t.co/4X7vw50HEq",
-      "created_at": "2026-10-22T08:53:58+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2113192124208631995",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2113191880682791058",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCProOpinion | Hormuz is flowing again, but Brent just hit $111.99. Why? The market is paying for fear, not barrels.\n\nRead: \nhttps://t.co/DOktW7RKaD",
-      "created_at": "2026-10-22T08:53:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2113191880682791058",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2113191289072296274",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Trends | Laid off Uber employees in India further hurt by 1 month garden leave, US got 2: Blind CEO\n\nIndia-based employees wrote on Blind that the 'double standard' hurt more than losing their jobs, co-founder and CEO Sunguk Moon said. 'If employees believe the rules are different for them, a global ethics policy won't convince them that their complaint will be handled fairly.'\n\nRead More:\nhttps://t.co/dMUYtmVTd9",
-      "created_at": "2026-10-22T08:50:39+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2113191289072296274",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2113191258437116382",
-      "handle": "iamwithbnia",
-      "display_name": "Nia",
-      "text": "Me to tee he should leave that 190 cm tall guy and It's alright uri jibeuro gaja 💃",
-      "created_at": "2026-10-22T08:50:31+00:00",
-      "url": "https://x.com/iamwithbnia/status/2113191258437116382",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113190672274784330",
-      "handle": "SumitResearch",
-      "display_name": "Sumit Mehrotra",
-      "text": "Stocks in Bear market \n\nFIIs in Bull market",
-      "created_at": "2026-10-22T08:48:12+00:00",
-      "url": "https://x.com/SumitResearch/status/2113190672274784330",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113190119083741200",
-      "handle": "CapitalTrends",
-      "display_name": "Capital Trends",
-      "text": "Nifty Pharma – 3-Year performance:\n\nWOCKPHARMA leads with an exceptional +668.87%\nLAURUSLABS follows at +401.93%\nGLENMARK +180.88%\n\nSelect pharma names deliver massive multi-year returns. https://t.co/kikHi72ae9",
-      "created_at": "2026-10-22T08:46:00+00:00",
-      "url": "https://x.com/CapitalTrends/status/2113190119083741200",
-      "image": "https://pbs.twimg.com/media/HVNg7whbwAAx7Us.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"WOCKPHARMA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113189925181063357",
-      "handle": "Dixitagg",
-      "display_name": "DIXIT AGGARWAL",
-      "text": "NIFTY 50 के 50% से ज़्यादा STOCKS BEAR MARKET में!\n\nList of stocks in Bear Market \n\n1. Asian Paints\n2. TCS\n3. Wipro\n4. TCS\n5. HUL\n6. ITC\n7. Trent\n8. M&M\n9. RIL\n10. TMPV\n11. Adani Enterprises\n12. HDFC Bank\n13. Maruti Suzuki\n14. HCL Tech\n15. InterGlobe Aviation\n16. Max Healthcare\n17. SBI Life\n18. BSE\n19. Jio Financial \n20. NTPC\n21. ONGC\n22. Power Grid\n23. Cipla\n24. Nestle \n25. Tata Steel \n26. SBI \n27. HDFC Insurance \n\n@SumitResearch \n\n#StockMarket #stockmarketcrash",
-      "created_at": "2026-10-22T08:45:13+00:00",
-      "url": "https://x.com/Dixitagg/status/2113189925181063357",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113189543444898300",
-      "handle": "skpande9",
-      "display_name": "Subhash Pande",
-      "text": "@aajtak @VivekSrivastav_ Tihad mein mehman nawazi karne ke liye remand leni padti hai.\nJo emmergency mein nahi li gayi.\nVivek shrivastava ko China ,korea,Iran gaja  jana chahiye democracy aur logon ki sewa 8ke liye.\nWhy wasting time in India .\nBharat mein communst party hi khatam ho gayi.",
-      "created_at": "2026-10-22T08:43:42+00:00",
-      "url": "https://x.com/skpande9/status/2113189543444898300",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113189537421967515",
-      "handle": "arminali786",
-      "display_name": "arminali",
-      "text": "@TheMuslimMatter Not gaja",
-      "created_at": "2026-10-22T08:43:41+00:00",
-      "url": "https://x.com/arminali786/status/2113189537421967515",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113188996096635109",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Huawei gets $2.3 billion offshore loan as chip spending soars\n\nThe telecom titan has emerged as China’s de facto national chipmaking champion and is one of a handful of firms central to Beijing’s goal of dominating AI and replacing American software and circuitry with local equivalents.\n\nRead More:\nhttps://t.co/jWLLZxxE5o",
-      "created_at": "2026-10-22T08:41:32+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2113188996096635109",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2113188745872826624",
-      "handle": "VisionAditya",
-      "display_name": "Aditya Vision",
-      "text": "Make every celebration move with Bosch!\n\nBring home Bosch appliances and make every moment more special with exciting festive offers, easy EMI options, cashback up to ₹30,000, and exchange benefits up to ₹10,000.\n\nCelebrate more, enjoy more, and make the Bosch move today!\n\nVisit Aditya Vision for more exciting offers.\n\n📞 Aditya Seva: 99555 55544\n\n#AdityaVision #Bosch #MakeTheBoschMove #FestiveOffers #HomeAppliances #SmartLiving #FestiveShopping",
-      "created_at": "2026-10-22T08:40:32+00:00",
-      "url": "https://x.com/VisionAditya/status/2113188745872826624",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE679V01027",
-          "query": "\"Aditya Vision\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113188609108955549",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCPro | Indian Hotels has raised its FY27 growth guidance and expects strong growth to continue in FY28. \n\nA robust expansion pipeline and a strong balance sheet support the outlook, but how much upside remains in the stock?\n\nhttps://t.co/f7bYUP5cio https://t.co/PgIJqLaIgC",
-      "created_at": "2026-10-22T08:40:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2113188609108955549",
-      "image": "https://pbs.twimg.com/media/HVOINVjaUAEvQjT.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2113188465315913976",
-      "handle": "Cash_Traderr",
-      "display_name": "TRADE WIZARD",
-      "text": "#HDFCBank is reaching a critical level; if it breaks the 680–685 range, the next target will be 650 🚨🚨",
-      "created_at": "2026-10-22T08:39:25+00:00",
-      "url": "https://x.com/Cash_Traderr/status/2113188465315913976",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113188412627026403",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@bluenoireion Ke semarang sini\nEh maret sepertinya ke jogja ada 510 😁",
-      "created_at": "2026-10-22T08:39:13+00:00",
-      "url": "https://x.com/Tapi33x/status/2113188412627026403",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113188117406712000",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@bluenoireion Loh kemaren unfest ada 510 sama barasuara masak dilewatin",
-      "created_at": "2026-10-22T08:38:02+00:00",
-      "url": "https://x.com/Tapi33x/status/2113188117406712000",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113187784429391963",
-      "handle": "FlyingAahana",
-      "display_name": "Aahana",
-      "text": "Does 3X Holding for our Target  668 #HDFCBank PE",
-      "created_at": "2026-10-22T08:36:43+00:00",
-      "url": "https://x.com/FlyingAahana/status/2113187784429391963",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113187656125595750",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@ayaacrazyy Boleh, aku jastip kak",
-      "created_at": "2026-10-22T08:36:13+00:00",
-      "url": "https://x.com/Tapi33x/status/2113187656125595750",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113187549812330544",
-      "handle": "Hitchcockkkkk",
-      "display_name": "Alfred Hitchcock",
-      "text": "Madha Gaja Raaja",
-      "created_at": "2026-10-22T08:35:47+00:00",
-      "url": "https://x.com/Hitchcockkkkk/status/2113187549812330544",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113187272984351173",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@JustHumanErorrr Waduh",
-      "created_at": "2026-10-22T08:34:41+00:00",
-      "url": "https://x.com/Tapi33x/status/2113187272984351173",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113187222421995763",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@jawafess Loh enak minnn",
-      "created_at": "2026-10-22T08:34:29+00:00",
-      "url": "https://x.com/Tapi33x/status/2113187222421995763",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113187050111529154",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@bluenoireion Tpi udah lama juga sih\nKemaren di unfest udah dengerin dikit",
-      "created_at": "2026-10-22T08:33:48+00:00",
-      "url": "https://x.com/Tapi33x/status/2113187050111529154",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113186550024737049",
-      "handle": "save_atul",
-      "display_name": "Atul Save",
-      "text": "एचडीएफसी बँकेच्या वतीने आयोजित ‘EV कार लोन मेळावा व टेस्ट ड्राईव्ह कॅम्प’मध्ये नागरिकांना इलेक्ट्रिक वाहनांची अनुभूती घेण्याची आणि आकर्षक कर्ज सुविधांची माहिती उपलब्ध करून देण्यात आली.. \n\n#EVCarLoanMela #ElectricVehicles #GreenFuture #HDFCBank https://t.co/NzLCoYEOBx",
-      "created_at": "2026-10-22T08:31:49+00:00",
-      "url": "https://x.com/save_atul/status/2113186550024737049",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113186402972348682",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@biskuitmatcha Wkwkwkw",
-      "created_at": "2026-10-22T08:31:14+00:00",
-      "url": "https://x.com/Tapi33x/status/2113186402972348682",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113186268829872297",
-      "handle": "Tapi33x",
-      "display_name": "Gaja",
-      "text": "@bluenoireion Iya tau seru dulu dah pernah jadi ga tertarik",
-      "created_at": "2026-10-22T08:30:42+00:00",
-      "url": "https://x.com/Tapi33x/status/2113186268829872297",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113185552447209941",
-      "handle": "SumitResearch",
-      "display_name": "Sumit Mehrotra",
-      "text": "25% Down in 1 Month\n\nFew Good Name, Few Big Names \n\nKore Digital: -65%\nTurtlemint: -55%\neMundhra: -50%\nSpencer Retail: -45%\nPB Fintech: -45%\nSAR Products: -40%\nDanlaw Tech: -30%\nGenesys Intl: -30%\nIndostar Cap: -27%\nKPEL: -26%\nFusion Finance: -25%\nKRN Heat: -25%\nMax Healthcare: -25%\nHimadri Chem: -25%\nSML Mahindra: -25%",
-      "created_at": "2026-10-22T08:27:51+00:00",
-      "url": "https://x.com/SumitResearch/status/2113185552447209941",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0OC301013",
-          "query": "\"TURTLEMINT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113184139298193612",
-      "handle": "myAlerts_in",
-      "display_name": "myAlerts.in",
-      "text": "#HDFCBANK\n📢 HDFC Bank Allots 9.14M Equity Shares Under ESOP and RSU Schemes\n\n📌 Update: HDFC Bank allotted 91,38,522 equity shares on 22nd Oct'26 to employees following the exercise of options and RSUs under its Employees Stock Options Schemes and Employee Stock Incentive Scheme. Consequently, the bank's paid-up equity share capital expanded from 15,41,85,97,348 shares (face value Re. 1 each) to 15,42,77,35,870 shares (face value Re. 1 each).\n\n📰 Source: Exchange Filings\n\nDisc: AI generated, please verify",
-      "created_at": "2026-10-22T08:22:14+00:00",
-      "url": "https://x.com/myAlerts_in/status/2113184139298193612",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113183997769695674",
-      "handle": "alarnath",
-      "display_name": "Alarnath Sahu",
-      "text": "#CARBORUNIV 1055\n\nFurther Update..\n\nNo surprise!!! A drop towards 950-1000 in (ii) of 5  was expected and that is playing now.\n\n(Check the tagged tweet)\n\n(iii) of 5 next but let it complete the correction first.\n\nWhole 5th can do 2000-2200.\n\n*Keep an open eye on this. https://t.co/dFe7Hub14u",
-      "created_at": "2026-10-22T08:21:40+00:00",
-      "url": "https://x.com/alarnath/status/2113183997769695674",
-      "image": "https://pbs.twimg.com/media/HVOIJaObQAAMyMO.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE120A01034",
-          "query": "\"CARBORUNIV\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113183799471460430",
-      "handle": "TheResilix",
-      "display_name": "The Resilix",
-      "text": "Going with 73000 CE at 260\n\nCurrent price : 73200 \n\nTarget 73800\n\nLet’s see.\n\n#Banknifty #Nifty50 #Giftnifty #stockmarketsindia #HDFCBank #ICICIBank #Axisbank #Kotakbank #NSE #optionbuying #Reliance #Infosys #TCS #trading #Sensex",
-      "created_at": "2026-10-22T08:20:53+00:00",
-      "url": "https://x.com/TheResilix/status/2113183799471460430",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113183111039377489",
-      "handle": "TheResilix",
-      "display_name": "The Resilix",
-      "text": "Closed this position at 810.\n\n#Banknifty #Nifty50 #Giftnifty #stockmarketsindia #HDFCBank #ICICIBank #Axisbank #Kotakbank #NSE #optionbuying #Reliance #Infosys #TCS #trading #Sensex",
-      "created_at": "2026-10-22T08:18:09+00:00",
-      "url": "https://x.com/TheResilix/status/2113183111039377489",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113182417175695413",
-      "handle": "senechal_a",
-      "display_name": "Me Sénéchal 🇨🇵🇭🇺",
-      "text": "Un rappel salutaire en ces temps où la robe de la bête immonde est encore féconde.\n\nDes sanctions exemplaires doivent être prises pour punir les malfaiteurs et effrayer ceux qui voudraient les imiter (lapidation à coups de code du travail commenté ou de gaja).\n\nNo robaran !!!",
-      "created_at": "2026-10-22T08:15:23+00:00",
-      "url": "https://x.com/senechal_a/status/2113182417175695413",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113182081165766968",
-      "handle": "TejashDhanani",
-      "display_name": "Tejash Dhanani",
-      "text": "सबसे पहले, ब्लैकरॉक और रिलायंस ने टाटा ग्रुप को बर्बाद कर दिया।\n\nअब, #hdfcbank बैंक की बारी है।\n\nइसके बाद: #L&amp;T।\n\nक्या तुम @narendramodi @nsitharaman बेवकूफ लोग भी इन गंदे कामों में शामिल हो?\n\n#nifty \n#BlackRock\n#Reliance",
-      "created_at": "2026-10-22T08:14:03+00:00",
-      "url": "https://x.com/TejashDhanani/status/2113182081165766968",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113180709984829753",
-      "handle": "SahilVermaRA",
-      "display_name": "Sahil Verma SEBI R.A.",
-      "text": "#̢̛ͥ̀̽̽ͨ̌̓͆̇̀̽ͦͨͫͯ̏̎̇̈̚͜҉̕͢͏͡҉̸̶̛͢͡҉̵̨̭̳̘̹̫͔͖̜̠͖̫̲̖̱̤̻̖͉͢͞͡ͅͅ͏̸̷̢͑̊̀̐ͣͭͭ̉͂ͨ̽͒̊̎͛ͪ̊̎ͩͧ̀͝͠͠͏̸̵̵̷̵ Hdfc  is no longer Good bank . Customer support is worst then All PSU bank.\n\n#hdfcbank\n\n#̢̛ͥ̀̽̽ͨ̌̓͆̇̀̽ͦͨͫͯ̏̎̇̈̚͜҉̕͢͏͡҉̸̶̛͢͡҉̵̨̭̳̘̹̫͔͖̜̠͖̫̲̖̱̤̻̖͉͢͞͡ͅͅ͏̸̷̢͑̊̀̐ͣͭͭ̉͂ͨ̽͒̊̎͛ͪ̊̎ͩͧ̀͝͠͠͏̸̵̵̷̵",
-      "created_at": "2026-10-22T08:08:36+00:00",
-      "url": "https://x.com/SahilVermaRA/status/2113180709984829753",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113179644941697449",
-      "handle": "fmr_porto",
-      "display_name": "Fernando R",
-      "text": "@DrGPT1 Mas quem são estas lunáticas, e quem é que lhes dá voz? Quem é a gaja? Agora qualquer maluca tem acesso aos microfones numa televisão para mandar bojardas pela boca fora?",
-      "created_at": "2026-10-22T08:04:22+00:00",
-      "url": "https://x.com/fmr_porto/status/2113179644941697449",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113178908107342159",
-      "handle": "PatakotaV",
-      "display_name": "Venkat Patakota",
-      "text": "The problems at #HDFCBank seem to stem largely from poor leadership, ineffective top management, and a serious erosion of ethics and values.\n\nPSU banks generally follow a system of transfers every three years and periodic role rotations. At HDFC Bank, however, some individuals appear to remain in the same positions for years, raising concerns about accountability and the need for fresh perspectives.\n\nTop management continues to enjoy its benefits, seemingly irrespective of performance or outcomes.\n\nIt is time to clean up the entire system, restore ethical values, strengthen accountability, and rebuild a culture of integrity and good corporate governance.\n\nInitially, Anup Bagchi will have tough time",
-      "created_at": "2026-10-22T08:01:27+00:00",
-      "url": "https://x.com/PatakotaV/status/2113178908107342159",
-      "image": "https://pbs.twimg.com/media/HVOD45eWIAAL7MR.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113178500744233190",
-      "handle": "gaja_thoogudeep",
-      "display_name": "Gaja Thoogudeepa",
-      "text": "ಕಾರ್ಯಕ್ರಮಕ್ಕೆ ಬಂದವರು ಹಲವರು... ಆದ್ರೆ ಚರ್ಚೆಯಲ್ಲಿ ಪದೇ ಪದೇ ಕೇಳಿಸಿದ ಹೆಸರು #DBOSS 🐘 💥 \n\nಮೈಸೂರಲ್ಲಿ ಹೀರೋಗಳು ಹಲವರಿದ್ರೂ, ಅಭಿಮಾನಿಗಳ ಮಾತಲ್ಲಿ ಬಾಸ್ ಹವಾ ಬೇರೆ ಲೆವೆಲ್\n\nಎಲ್ಲರೂ ಹೀರೋ ಆಗಬಹುದು... \nಆದ್ರೆ D BOSS ಆಗೋಕೆ ಯಾವನು ಕೈಲೂ ಆಗಲ್ಲ .\n#BBK13 #PremadaOoralli https://t.co/9ZNpNTRn0N",
-      "created_at": "2026-10-22T07:59:50+00:00",
-      "url": "https://x.com/gaja_thoogudeep/status/2113178500744233190",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113177837155000714",
-      "handle": "prathmkushwaha",
-      "display_name": "Pratham Kushwaha 🇮🇳",
-      "text": "@Sahilinfra2 Oh, alright great then. So they can use BEML rakes as well. If Alstom rakes are being used on Line 4, then BEML rakes also be used on Line 5, or both in mix fleet continue to operate until also Titagarh rakes will arrive for line 5.",
-      "created_at": "2026-10-22T07:57:11+00:00",
-      "url": "https://x.com/prathmkushwaha/status/2113177837155000714",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE615H01020",
-          "query": "\"TITAGARH\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113176529828274447",
-      "handle": "WasidMalik28986",
-      "display_name": "Wasid Malik",
-      "text": "@UC_Assist Abhi tak urban company ka koi jawab nahi",
-      "created_at": "2026-10-22T07:52:00+00:00",
-      "url": "https://x.com/WasidMalik28986/status/2113176529828274447",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0CAZ01013",
-          "query": "\"Urban Company\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113175015780913501",
-      "handle": "Sathi9zjc",
-      "display_name": "Sathi",
-      "text": "@HDFC_Bank Remove hdfcbank from stock market",
-      "created_at": "2026-10-22T07:45:59+00:00",
-      "url": "https://x.com/Sathi9zjc/status/2113175015780913501",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113174897698762941",
-      "handle": "Sathi9zjc",
-      "display_name": "Sathi",
-      "text": "@Cash_Traderr Remove hdfcbank from stock market",
-      "created_at": "2026-10-22T07:45:31+00:00",
-      "url": "https://x.com/Sathi9zjc/status/2113174897698762941",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113173854822842400",
-      "handle": "Sathi9zjc",
-      "display_name": "Sathi",
-      "text": "@CNBC_Awaaz @_anujsinghal Remove hdfcbank from stock market",
-      "created_at": "2026-10-22T07:41:22+00:00",
-      "url": "https://x.com/Sathi9zjc/status/2113173854822842400",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113173792130478545",
-      "handle": "arbindtiwariT",
-      "display_name": "🅰arbind Tiwari #🅰3️⃣RT Signature Financial Serv.",
-      "text": "#Hope Inside The Banking Sectors Now ...\n\nAt This Time Both..\n\n#PSU #PRIVATE\n#LARGE #SMALL #MID \n\nNOW CHOICES ARE YOURS \n\n#PNB #CANBK #SBIN #ICICIBANK #AXISBANK #KOTAKBANK #INDUSINDBK #HDFCBANK \n\n#MIDCAPS AND #SMALLCAPS ARE #MULTIBAGGERS FOR COMING DAYS....",
-      "created_at": "2026-10-22T07:41:07+00:00",
-      "url": "https://x.com/arbindtiwariT/status/2113173792130478545",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113173628900794463",
-      "handle": "Unparallelworld",
-      "display_name": "Unparalleled world",
-      "text": "#ViveOberoi ने बताया #Bishnoi समाज का गौरवशाली इतिहास, वन्यजीव संरक्षण की परंपरा पर की बात\n@vivekoberoi \n #BishnoiCommunity #WildlifeConservation #Blackbuck #UWTV https://t.co/52gxArEtNq",
-      "created_at": "2026-10-22T07:40:28+00:00",
-      "url": "https://x.com/Unparallelworld/status/2113173628900794463",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113173627961311469",
-      "handle": "jago_indiajago",
-      "display_name": "Jago India Jago News (जागो इंडिया जागो)",
-      "text": "Vivek Oberoi ने की Bishnoi समाज की तारीफ, हिरणों के प्रति प्रेम का किया जिक्र\n#BishnoiSamaj #BishnoiCommunity #WildlifeConservation #Blackbuck #NatureLovers #RajasthanNews #jagoindiajago https://t.co/4HQ85yXWDc",
-      "created_at": "2026-10-22T07:40:28+00:00",
-      "url": "https://x.com/jago_indiajago/status/2113173627961311469",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113173420162818439",
-      "handle": "Indian_Affairs",
-      "display_name": "Indian Affairs",
-      "text": "Announcing the Nominees for India’s Most Influential SEBI-Approved Credit Rating Agency 2026\n@CrisilLimited \n@ICRALimited \n@CareEdge_Group \n@IndiaRatings \n@InfomericsR \n@acuiteratings \nVoting Link : https://t.co/HYBj4uVCPW\n#CRISIL #ICRA #IndiaRatings  #Infomerics #AcuiteRatings https://t.co/yBVVUtomDq",
-      "created_at": "2026-10-22T07:39:38+00:00",
-      "url": "https://x.com/Indian_Affairs/status/2113173420162818439",
-      "image": "https://pbs.twimg.com/media/HVOABSsagAAa2H3.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE007A01025",
-          "query": "\"Crisil\""
-        },
-        {
-          "entityId": "isin:INE007A01025",
-          "query": "\"CRISIL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113173124086685706",
-      "handle": "Manuela74285846",
-      "display_name": "mamazita",
-      "text": "@dianaftlopes E o q tu querias ser tb mas infelizmente n vales uma unha d zaza qd ele sair continua o ódio n lhe vas dar falinhas bonitas cm fazes c os outros, mesmo n fazendo nd é protagonista js tu és so a gaja d pano amarelo",
-      "created_at": "2026-10-22T07:38:28+00:00",
-      "url": "https://x.com/Manuela74285846/status/2113173124086685706",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113172503464235094",
-      "handle": "eurovisionpollz",
-      "display_name": "VOTE! 🗳️",
-      "text": "🗳️ EUROVISION 14THS – SEMI-FINAL 1\nVote for your favourite!\n\n🇱🇹 Silvester Belt – Luktelk (2024)\n🇦🇿 Dihaj – Skeletons (2017)\n🇵🇱 Justyna Steczkowska – Gaja (2025)\n🇮🇸 Euroband – This Is My Life (2008)\n\nThe song with the most votes advances to the Grand Final!\n#Eurovision",
-      "created_at": "2026-10-22T07:36:00+00:00",
-      "url": "https://x.com/eurovisionpollz/status/2113172503464235094",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113172203797946586",
-      "handle": "Investwithkabir",
-      "display_name": "Kabir Mehrotra",
-      "text": "🏦 BANKING STOCKS ADD TO MARKET PRESSURE\n\nHeavyweights including HDFC Bank and Reliance Industries were among the stocks weighing on the market in Thursday's session.\n\nWhen heavyweight stocks weaken together, it becomes harder for the benchmark indices to recover.\n\nWatch market breadth not just the Nifty headline number.\n\n#Nifty50 #HDFCBank #RelianceIndustries #BankingStocks #IndianMarkets #StockMarketNews #MarketAnalysis #TradingIndia",
-      "created_at": "2026-10-22T07:34:48+00:00",
-      "url": "https://x.com/Investwithkabir/status/2113172203797946586",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113171867163123939",
-      "handle": "antonio87152655",
-      "display_name": "António =Maio de 61 Do Glorioso",
-      "text": "Alguém leva esta  gaja a Gaza ou às manifes de Paris para que possa saber o que é um gangue? \nPqp especialista em tanta merda 💩 e não vale merda 💩 alguma. \nReparem!!! e diz que lidera pessoas 😜 😜 😜 \nDeve ser porteira na festa do AVANTE 😜",
-      "created_at": "2026-10-22T07:33:28+00:00",
-      "url": "https://x.com/antonio87152655/status/2113171867163123939",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113171777061044283",
-      "handle": "PauloAl64850720",
-      "display_name": "Paulo Almeida",
-      "text": "Não é que alguém queira saber o que a gaja dos óculos tem para dizer.\nO que importa é saber que há gajas com a gaja dos óculos.",
-      "created_at": "2026-10-22T07:33:07+00:00",
-      "url": "https://x.com/PauloAl64850720/status/2113171777061044283",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113171244153700830",
-      "handle": "stoicknayan",
-      "display_name": "Nayan",
-      "text": "@rasikpatel1950 Sir view on urbanco? Please",
-      "created_at": "2026-10-22T07:31:00+00:00",
-      "url": "https://x.com/stoicknayan/status/2113171244153700830",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0CAZ01013",
-          "query": "\"URBANCO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113170548809408776",
-      "handle": "sheshuku",
-      "display_name": "raj sheshu",
-      "text": "Dear @HDFCERGOGIC @HdfcL59052 purchasing policy at turtlemint. While trying payment getting error. Kindly do needful. https://t.co/FrndLjgD7L",
-      "created_at": "2026-10-22T07:28:14+00:00",
-      "url": "https://x.com/sheshuku/status/2113170548809408776",
-      "image": "https://pbs.twimg.com/media/HVN9aXgaUAAuiT1.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0OC301013",
-          "query": "\"TURTLEMINT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113170484514709998",
-      "handle": "JankaPipars",
-      "display_name": "Jānis Nepareizais",
-      "text": "@Egriks Tad pārējie kas nesaņēma monētu  ir vnk idioti? Kādēļ Višvsnatu pavadā gāja gan vēlēšanu lūzeri gan uzvarētāji? Jo idioti?",
-      "created_at": "2026-10-22T07:27:58+00:00",
-      "url": "https://x.com/JankaPipars/status/2113170484514709998",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE18UN01038",
-          "query": "\"GAJA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113170332853157966",
-      "handle": "kohliradar",
-      "display_name": "KohliVortex",
-      "text": "Shikhar Dhawan is such a lovable player, even after retirement\n\nHis bond with Virat Kohli, Rohit Sharma, and all the other players seems so genuine and selfless ❤️ https://t.co/SahWp9CFL6",
-      "created_at": "2026-10-22T07:27:22+00:00",
-      "url": "https://x.com/kohliradar/status/2113170332853157966",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113170290180231421",
-      "handle": "sanjayahuja02",
-      "display_name": "Darvas Box Trader Sanjay Ahuja",
-      "text": "740 now ✍🏻\n\n#DARVAX\n\n #NSE #BSE #stockmarket #sensex #nifty #banknifty #hdfcbank #reliance #sbin #ipo #ShareThisPost \n#stockanalysis #bankex https://t.co/lxP8DX9Ed0",
-      "created_at": "2026-10-22T07:27:12+00:00",
-      "url": "https://x.com/sanjayahuja02/status/2113170290180231421",
-      "image": "https://pbs.twimg.com/media/HVN9KswbAAAdg-z.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2113169425260269603",
-      "handle": "Cash_Traderr",
-      "display_name": "TRADE WIZARD",
-      "text": "#HDFCBank is turning into a full-blown corporate drama. 🍿\n\nOne senior executive reportedly leaking internal information.\nAnother raising concerns about alleged wrongdoing.\nThe CEO's possible resignation becoming a talking point.\nAnd the bank is busy announcing results and NIM guidance.\n\nWhat exactly is happening inside India's largest private-sector bank?\n\nWhen senior management itself becomes the headline, shareholders have every reason to demand answers.",
-      "created_at": "2026-10-22T07:23:46+00:00",
-      "url": "https://x.com/Cash_Traderr/status/2113169425260269603",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE040A01034",
-          "query": "\"HDFCBANK\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 7,
-    "incomplete": 229,
-    "checkedAt": "2026-10-23T12:25:00.303324+00:00"
+    "attempted": 12,
+    "incomplete": 244,
+    "checkedAt": "2026-10-25T14:44:23.634744+00:00"
   },
   "archive": [
     {
@@ -9490,9 +9432,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-10-25T14:05:24.120Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-10-25T14:44:58.542Z",
     "lastSuccessAt": null
   }
 }
