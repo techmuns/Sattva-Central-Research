@@ -964,8 +964,8 @@
       "pending": []
     },
     "isin:INE415I01015|KIRIINDUS": {
-      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-25T17:44:17+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 4,
       "lastSuccessAt": "2026-10-20T15:29:19+00:00",
       "targetThrough": null,
@@ -2780,6 +2780,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 244,
-    "checkedAt": "2026-10-25T17:42:36.860020+00:00"
+    "checkedAt": "2026-10-25T17:44:17.377424+00:00"
   }
 }
