@@ -784,8 +784,8 @@
       "lastDiscoveryAt": "2026-10-20T07:46:04+00:00"
     },
     "isin:INE084101034|INDOMIM": {
-      "lastAttemptAt": "2026-10-20T07:46:04+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-25T13:19:30+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 12,
       "targetThrough": "2026-09-21T14:54:36+00:00",
       "pending": [
@@ -2779,7 +2779,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 251,
-    "checkedAt": "2026-10-25T12:15:41.484617+00:00"
+    "incomplete": 255,
+    "checkedAt": "2026-10-25T13:19:30.709476+00:00"
   }
 }
