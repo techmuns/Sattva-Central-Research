@@ -1098,58 +1098,59 @@
       "pending": []
     },
     "isin:INE774D01024|M&MFIN": {
-      "lastAttemptAt": "2026-10-20T18:34:15+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 6,
-      "lastSuccessAt": "2026-09-27T08:32:05+00:00",
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
+      "error": null,
+      "lastResultCount": 38,
+      "lastSuccessAt": "2026-10-25T22:41:56+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE993A01026|Man Industries (India)": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
       "error": null,
-      "lastResultCount": 6,
-      "lastSuccessAt": "2026-10-20T19:29:44+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-25T22:41:56+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE993A01026|MANINDS": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
       "error": null,
-      "lastResultCount": 10,
-      "targetThrough": "2026-09-27T08:32:05+00:00",
-      "pending": [
-        {
-          "from": "2026-09-22T20:32:05.469791+00:00",
-          "to": "2026-09-27T08:32:05+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-20T19:29:44+00:00"
+      "lastResultCount": 49,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-25T22:41:56+00:00",
+      "lastSuccessAt": "2026-09-27T08:32:05+00:00"
     },
     "isin:INE103A01014|Mangalore Petrochemicals and Refinery": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
       "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-20T19:29:44+00:00",
+      "lastSuccessAt": "2026-10-25T22:41:56+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE103A01014|MRPL": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
       "error": "result-cap-incomplete",
-      "lastResultCount": 106,
+      "lastResultCount": 107,
       "lastSuccessAt": "2026-09-27T08:32:05+00:00",
       "targetThrough": "2026-10-20T19:29:44+00:00",
       "pending": [
         {
-          "from": "2026-09-25T08:32:05+00:00",
-          "to": "2026-10-08T02:00:54.500000+00:00"
-        },
-        {
           "from": "2026-10-08T02:00:54.500000+00:00",
           "to": "2026-10-20T19:29:44+00:00"
+        },
+        {
+          "from": "2026-09-25T08:32:05+00:00",
+          "to": "2026-10-01T17:16:29.750000+00:00"
+        },
+        {
+          "from": "2026-10-01T17:16:29.750000+00:00",
+          "to": "2026-10-08T02:00:54.500000+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-25T22:41:56+00:00"
     },
     "isin:INE071D01033|Menon Bearings": {
       "lastAttemptAt": "2026-10-05T05:09:11+00:00",
@@ -1168,33 +1169,51 @@
       "pending": []
     },
     "isin:INE338I01027|Motilal Oswal Financial Services": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
-      "error": null,
-      "lastResultCount": 80,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 101,
+      "targetThrough": "2026-10-25T22:41:56+00:00",
+      "pending": [
+        {
+          "from": "2026-09-11T11:04:59+00:00",
+          "to": "2026-10-03T16:53:27.500000+00:00"
+        },
+        {
+          "from": "2026-10-03T16:53:27.500000+00:00",
+          "to": "2026-10-25T22:41:56+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-20T19:29:44+00:00",
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE338I01027|MOTILALOFS": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
       "error": null,
-      "lastResultCount": 75,
-      "lastSuccessAt": "2026-10-20T19:29:44+00:00",
+      "lastResultCount": 19,
+      "lastSuccessAt": "2026-10-25T22:41:56+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE310A01015|Nilkamal": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
-      "error": null,
-      "lastResultCount": 12,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 104,
+      "targetThrough": "2026-10-25T22:41:56+00:00",
+      "pending": [
+        {
+          "from": "2026-09-11T11:04:59+00:00",
+          "to": "2026-10-03T16:53:27.500000+00:00"
+        },
+        {
+          "from": "2026-10-03T16:53:27.500000+00:00",
+          "to": "2026-10-25T22:41:56+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-20T19:29:44+00:00",
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE310A01015|NILKAMAL": {
-      "lastAttemptAt": "2026-10-20T19:29:44+00:00",
+      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
       "error": "search-unavailable",
       "lastResultCount": 14,
       "targetThrough": "2026-09-13T11:04:59+00:00",
@@ -2778,8 +2797,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 244,
-    "checkedAt": "2026-10-25T22:32:21.338397+00:00"
+    "attempted": 9,
+    "incomplete": 240,
+    "checkedAt": "2026-10-25T22:41:56.290296+00:00"
   }
 }
