@@ -972,8 +972,8 @@
       "pending": []
     },
     "isin:INE082A01010|Kopran": {
-      "lastAttemptAt": "2026-10-20T15:29:19+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-25T18:14:29+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 107,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
       "targetThrough": "2026-10-20T15:29:19+00:00",
@@ -2780,6 +2780,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 244,
-    "checkedAt": "2026-10-25T17:44:17.377424+00:00"
+    "checkedAt": "2026-10-25T18:14:29.081536+00:00"
   }
 }
