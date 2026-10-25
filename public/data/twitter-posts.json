@@ -9532,9 +9532,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-10-25T22:42:39.718Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-10-25T23:16:49.311Z",
     "lastSuccessAt": null
   }
 }
