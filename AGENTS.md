@@ -3,6 +3,16 @@
 Read `CLAUDE.md` for the repository's implementation conventions and
 `docs/INTELLIGENCE-RELIABILITY.md` for the data reliability requirements.
 
+## Standing newsletter parity requirement
+
+Recorded on 27 October 2026: shared newsletter fixes must be applied to both
+`techmuns/Sattva-Central-Research` and `techmuns/Glow-Central-Research` before the work
+is finished. Use the same event/source logic and regression fixtures, preserve each
+family's branding, portfolio, recipients, credentials, history and spending controls,
+and verify each automatic publication. Implement future shared fixes in Sattva first;
+follow `docs/NEWSLETTER-PARITY.md` and update the shared source lock in both repositories.
+This requirement does not authorize additional manual production actions.
+
 ## Standing user requirement: current data and continuous history
 
 Recorded on 6 September 2026. The user expects to open Sattva Central Research and
