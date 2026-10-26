@@ -217,3 +217,11 @@ unordered changed versions remain explicitly unresolved. Source readings replace
 concatenation in the briefing; the full source register preserves the saved fields. The
 original design and provider budgets are unchanged. Required CI replays 36 exact readings
 from the customer's 202-page PDF through `verify-newsletter-output.mjs`.
+
+## Timezone evidence
+
+Equivalent call instants consolidate when their source timezone is explicit. Bare nonlocal
+abbreviations are retained verbatim without guessing a geographic UTC offset; an unresolved
+zone cannot suppress a potentially different call. Expanded supported zone names supply the
+known offset. This conservative boundary follows the ambiguity described in
+[IANA's timezone guidance](https://data.iana.org/time-zones/tzdb/theory.html#time-zone-abbreviations).

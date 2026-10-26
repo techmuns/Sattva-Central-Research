@@ -385,3 +385,13 @@ console.log('PASS final evidence regressions: generic corrections, whole-board s
 assert.equal(eventDate('29 Octoberish 2026'),null,'An unknown month word cannot be guessed from its first three letters');
 assert.equal(financialPeriod('Septemberish 2026'),null);assert.equal(eventDate('30 Sept 2026'),'2026-09-30');
 await import('./verify-newsletter-investments.mjs');
+
+// An abbreviation is retained literally; it cannot assert an unstated geographic offset.
+const zonedCall=(label,id)=>{const item=structuredClone(readDcwCall);item.url='https://fixture.test/'+id;item.keys=[id];item.content.facts.find(f=>f.field==='date'&&/P.M/.test(f.value)).value='Earnings conference call scheduled for Friday, October 30, 2026 at '+label;return item;};
+for(const [abbr,full,india] of [['EST','Eastern Standard Time','19:00'],['EDT','Eastern Daylight Time','18:00'],['CST','Central Standard Time','20:00'],['CDT','Central Daylight Time','19:00'],['PST','Pacific Standard Time','22:00'],['PDT','Pacific Daylight Time','21:00']]){
+ const ambiguous=zonedCall('08:30 '+abbr,'ambiguous-'+abbr),known=zonedCall('08:30 '+full,'explicit-'+abbr),indian=zonedCall(india+' IST','india-'+abbr);
+ assert.equal(scheduledEarningsCall(ambiguous).instant,null,'A bare nonlocal abbreviation cannot invent a geographic offset');
+ assert.equal(clusterStories([ambiguous,indian]).length,2,'An unresolved timezone must not hide a potentially different call');
+ assert.equal(clusterStories([known,indian]).length,1,'The explicitly expanded supported zone matches the same instant in India');
+}
+console.log('PASS timezone ambiguity regressions: literal abbreviations preserve evidence; explicitly expanded zones match equivalent instants');

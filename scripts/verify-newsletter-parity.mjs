@@ -18,7 +18,7 @@ assert.match(contract.initialGlowRevision,/^[a-f0-9]{40}$/);
 assert.equal(contract.schemaVersion,1);assert.equal(contract.upstream,'techmuns/Sattva-Central-Research');
 const roots=[root,...(process.env.NEWSLETTER_PEER_ROOT?[resolve(process.env.NEWSLETTER_PEER_ROOT)]:[])];
 for(const directory of roots)for(const [file,expected] of Object.entries(contract.files)){
- assert.match(file,/^(?:worker\/newsletter-[a-z-]+\.mjs|scripts\/(?:collect-newsletter|newsletter-wake-gate|verify-newsletter-parity)\.mjs|scripts\/lib\/newsletter-[a-z-]+\.mjs|scripts\/fixtures\/newsletter\/[a-z0-9-]+\.(?:json|xml))$/);
+ assert.match(file,/^(?:public\/js\/data\/newsletter-shared\.js|worker\/newsletter-[a-z-]+\.mjs|scripts\/(?:collect-newsletter|newsletter-wake-gate|verify-newsletter-(?:parity|output|investments|investor|events|source-links))\.mjs|scripts\/lib\/newsletter-[a-z-]+\.mjs|scripts\/fixtures\/newsletter\/[a-z0-9-]+\.(?:json|xml))$/);
  assert.match(expected,/^[a-f0-9]{64}$/);
  const hash=createHash('sha256').update(canonical(readFileSync(resolve(directory,file),'utf8'))).digest('hex');
  assert.equal(hash,expected,`Shared newsletter source drift: ${file}. Port the shared change and update the shared lock in both repositories.`);
