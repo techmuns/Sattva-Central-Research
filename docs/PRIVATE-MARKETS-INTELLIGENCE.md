@@ -67,3 +67,11 @@ amounts and unrecognised values appear under Unspecified; All retains every
 source observation. Original round wording, monetary amounts, footnotes and
 source fields remain unchanged in the table, drilldown and filtered export.
 Saved raw round selections migrate to their display group during an upgrade.
+
+The weekly inbox layout shares `worker/newsletter-style.mjs` with the total
+portfolio newsletter: the same indigo palette, serif masthead/company headings,
+640px paper, section rules and dark subscription footer. Both desktop and narrow
+mobile inboxes retain complete reported fields, source notes and coverage warnings.
+Newly prepared editions use this layout; previously frozen delivery bodies stay
+unchanged. Local visual check: `NEWSLETTER_LAYOUT=1 node
+scripts/verify-private-markets-intelligence.mjs` (with the existing Playwright runtime).
