@@ -1283,70 +1283,59 @@
       "pending": []
     },
     "isin:INE881D01027|OFSS": {
-      "lastAttemptAt": "2026-10-21T00:32:26+00:00",
-      "lastResultCount": 49,
-      "error": "search-unavailable",
-      "targetThrough": "2026-09-08T19:20:14+00:00",
-      "pending": [
-        {
-          "from": "2026-09-04T07:20:14.185651+00:00",
-          "to": "2026-09-08T19:20:14+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-09-27T12:23:53+00:00"
+      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastResultCount": 22,
+      "error": null,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-26T02:16:06+00:00",
+      "lastSuccessAt": "2026-09-08T19:20:14+00:00"
     },
     "isin:INE0BYP01024|Oswal Pumps": {
-      "lastAttemptAt": "2026-10-21T01:04:07+00:00",
-      "lastResultCount": 102,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastResultCount": 22,
+      "error": null,
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
       "targetThrough": "2026-09-27T12:23:53+00:00",
       "pending": [
         {
-          "from": "2026-09-06T19:20:14+00:00",
-          "to": "2026-09-17T03:52:03.500000+00:00"
-        },
-        {
           "from": "2026-09-17T03:52:03.500000+00:00",
           "to": "2026-09-27T12:23:53+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-26T02:16:06+00:00"
     },
     "isin:INE0BYP01024|OSWALPUMPS": {
-      "lastAttemptAt": "2026-10-21T01:08:54+00:00",
-      "lastResultCount": 66,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-09-27T12:23:53+00:00",
+      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastResultCount": 37,
+      "error": null,
+      "lastSuccessAt": "2026-10-26T02:16:06+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE119201023|Park Medi World": {
-      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
-      "lastResultCount": 48,
+      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastResultCount": 9,
       "error": null,
-      "lastSuccessAt": "2026-10-21T01:44:05+00:00",
+      "lastSuccessAt": "2026-10-26T02:16:06+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE119201023|PARKHOSPS": {
-      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
-      "lastResultCount": 15,
+      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastResultCount": 1,
       "error": null,
-      "lastSuccessAt": "2026-10-21T01:44:05+00:00",
+      "lastSuccessAt": "2026-10-26T02:16:06+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE417T01026|PB Fintech": {
-      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
-      "lastResultCount": 108,
+      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastResultCount": 101,
       "error": "result-cap-incomplete",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
       "targetThrough": "2026-10-16T06:34:32+00:00",
       "pending": [
-        {
-          "from": "2026-09-26T12:57:23+00:00",
-          "to": "2026-10-16T06:34:32+00:00"
-        },
         {
           "from": "2026-09-06T19:20:14+00:00",
           "to": "2026-09-16T16:08:48.500000+00:00"
@@ -1354,14 +1343,22 @@
         {
           "from": "2026-09-16T16:08:48.500000+00:00",
           "to": "2026-09-26T12:57:23+00:00"
+        },
+        {
+          "from": "2026-09-26T12:57:23+00:00",
+          "to": "2026-10-06T09:45:57.500000+00:00"
+        },
+        {
+          "from": "2026-10-06T09:45:57.500000+00:00",
+          "to": "2026-10-16T06:34:32+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-21T01:44:05+00:00"
+      "lastDiscoveryAt": "2026-10-26T02:16:06+00:00"
     },
     "isin:INE417T01026|POLICYBZR": {
-      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
       "lastResultCount": 109,
-      "error": "result-cap-incomplete",
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
       "targetThrough": "2026-10-16T06:34:32+00:00",
       "pending": [
@@ -1378,7 +1375,7 @@
           "to": "2026-09-26T12:57:23+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-21T01:44:05+00:00"
+      "lastDiscoveryAt": "2026-10-26T02:16:06+00:00"
     },
     "isin:INE15B701018|Pine Labs": {
       "lastAttemptAt": "2026-10-21T01:44:05+00:00",
@@ -2797,8 +2794,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 240,
-    "checkedAt": "2026-10-26T01:23:35.084814+00:00"
+    "attempted": 7,
+    "incomplete": 237,
+    "checkedAt": "2026-10-26T02:16:06.977674+00:00"
   }
 }
