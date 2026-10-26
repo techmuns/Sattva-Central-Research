@@ -1810,7 +1810,7 @@
       "pending": []
     },
     "isin:INE109A01011|Shipping Corporation of India": {
-      "lastAttemptAt": "2026-10-21T18:01:21+00:00",
+      "lastAttemptAt": "2026-10-26T22:45:01+00:00",
       "error": "search-unavailable",
       "lastResultCount": 30,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -2802,6 +2802,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-26T22:07:32.362816+00:00"
+    "checkedAt": "2026-10-26T22:45:01.578239+00:00"
   }
 }
