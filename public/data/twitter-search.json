@@ -1686,7 +1686,7 @@
       "pending": []
     },
     "isin:INE148I01020|SAMMAANCAP": {
-      "lastAttemptAt": "2026-10-21T12:01:14+00:00",
+      "lastAttemptAt": "2026-10-26T13:49:31+00:00",
       "error": "search-unavailable",
       "lastResultCount": 15,
       "lastSuccessAt": "2026-10-16T13:03:01+00:00",
@@ -2802,6 +2802,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-26T13:06:17.436558+00:00"
+    "checkedAt": "2026-10-26T13:49:31.437175+00:00"
   }
 }
