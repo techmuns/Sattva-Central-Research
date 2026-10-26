@@ -1,0 +1,335 @@
+{
+  "source": "Prepared morning previews built 2026-10-26T20:41:15Z and 2026-10-26T21:52:54Z; saved source fields, no paid requests.",
+  "cases": [
+    {
+      "ticker": "VARROC",
+      "company": "Varroc Engineering",
+      "sourceFacts": [
+        {
+          "field": "event",
+          "value": "Execution of definitive agreements (Securities Subscription and Purchase Agreement and Shareholders' Agreement) for proposed investment in Forsee Power India Private Limited"
+        },
+        {
+          "field": "counterparty",
+          "value": "Forsee Power India Private Limited"
+        },
+        {
+          "field": "status",
+          "value": "Agreements executed; completion still pending"
+        },
+        {
+          "field": "date",
+          "value": "Agreements executed on October 26, 2026"
+        },
+        {
+          "field": "date",
+          "value": "Earlier communication reference dated October 16, 2026"
+        },
+        {
+          "field": "conditions",
+          "value": "Transaction completion conditional on fulfilment/waiver of conditions precedent in transaction documents"
+        },
+        {
+          "field": "date",
+          "value": "Indicative completion timeline on or before December 31, 2026"
+        },
+        {
+          "field": "amount",
+          "value": "Aggregate consideration shall not exceed €4.5 Million"
+        },
+        {
+          "field": "amount",
+          "value": "Forsee turnover for FY ended March 31, 2026 was INR 18,83,88,451"
+        },
+        {
+          "field": "amount",
+          "value": "Forsee turnover for FY ended March 31, 2024 was INR 16,04,32,770"
+        },
+        {
+          "field": "amount",
+          "value": "Forsee turnover for FY ended March 31, 2025 was INR 10,57,37,870"
+        },
+        {
+          "field": "ownership",
+          "value": "Upon completion, Varroc will hold 2,95,398 equity shares resulting in 45% equity stake and 80,380 OCPRS"
+        },
+        {
+          "field": "conditions",
+          "value": "Consideration form is cash"
+        },
+        {
+          "field": "conditions",
+          "value": "No related party transaction; no promoter/promoter group/group company interest in Forsee"
+        },
+        {
+          "field": "conditions",
+          "value": "No governmental or regulatory approvals required for the acquisition"
+        },
+        {
+          "field": "reason",
+          "value": "Stated purpose of the investment is strategic alignment and long-term business/commercial benefits in electric mobility business"
+        },
+        {
+          "field": "event",
+          "value": "Background of target entity: incorporation and business description"
+        }
+      ],
+      "rows": [
+        {
+          "text": "Varroc Engineering Limited VARROC Execution of definitive agreements (Securities Subscription and Purchase Agreement and Shareholders' Agreement) for proposed investment in Forsee Power India Private Limited; Background of target entity: incorporation and business description; Amount: Aggregate consideration shall not exceed €4.5 Million; Amount: Forsee turnover for FY… Corporate announcement · Source facts · Mon 26 Oct, 17:58 IST · Announcement → · [2]",
+          "urls": [
+            "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1772228d-3ef2-4832-adde-38e2bcddcb6e.pdf",
+            "https://nsearchives.nseindia.com/corporate/VARROC_26102026175446_Intimation_Forsee_ExecutionofAgreements.pdf"
+          ],
+          "description": "Execution of definitive agreements (Securities Subscription and Purchase Agreement and Shareholders' Agreement) for proposed investment in Forsee Power India Private Limited; Background of target entity: incorporation and business description; Amount: Aggregate consideration shall not exceed €4.5 Million; Amount: Forsee turnover for FY…"
+        },
+        {
+          "text": "Varroc Engineering Limited VARROC Varroc Engineering Limited has informed the Exchange regarding Update-Acquisition/Scheme/Sale/Disposal-XBRL Corporate announcement · Source read; factual summary unavailable · Mon 26 Oct, 18:36 IST · Announcement →",
+          "urls": [
+            "https://nsearchives.nseindia.com/corporate/xbrl/REG30_Restructuring_16405_WebXMLFile_20261026_183633773.xml"
+          ],
+          "description": "Varroc Engineering Limited has informed the Exchange regarding Update-Acquisition/Scheme/Sale/Disposal-XBRL"
+        },
+        {
+          "text": "Varroc Engineering Limited VARROC Varroc Engineering executes agreements for €4.5 million Forsee acquisition Reported development · Headline only · Mon 26 Oct, 18:18 IST · News report →",
+          "urls": [
+            "https://news.google.com/rss/articles/CBMixAFBVV95cUxNQXVwMnFmSF9iOW5yVHc5SHB1YXhZNDMzME0zSnZEUkF0QjlQYTMySXBfM19wTWRPeXFOeUVYcTRDd2FCMkk4ckNzX3lBbjFFWHlPRzhyNnFPSVRKZEpCSzdlTjNxS0lfUkUzYXdqQ3FHYjFoOTFhZUU4QksxbnRNXy1pV1dpQkx6TnlQbnFWSF9yRVdHeS1xNGxXdXNNc3hLZ2VNcC1JOUh4WXB5Y2MyYU9QYWxmczNxQUNlSEl6cktLNkVD?oc=5"
+          ],
+          "description": "Varroc Engineering executes agreements for €4.5 million Forsee acquisition"
+        },
+        {
+          "text": "Varroc Engineering Limited VARROC Varroc Engineering Acquires 45% Stake in Forsee Power India for €4.5 Million Reported development · Headline only · Mon 26 Oct, 20:00 IST · News report →",
+          "urls": [
+            "https://news.google.com/rss/articles/CBMiwwFBVV95cUxOWHVRdlhEZWJ4ZDNwcTZ6dm1FS2ZoaHk4bDRPSFhzNHhhT0tLbW9SbFhGc3pXU09ZQkJYWWtfYVd5NzFhVXlkMjQ2V2xKclE0d3I1TXFmVWRXT2hvajFlZzFUVGRESzEyNDBXakg3S2lQSXZhOTVpVmthV2s4UFlqSWRxZGdYRVhhVVd1aUZDVEMyX05wZ2RBZHdsY0s5VEFPUVZrY0Vwak1UdlRuQ01Lc2NYR1pNejh5aEF2dVdFVTc3MDDSAcMBQVVfeXFMTlh1UXZYRGVieGQzcHE2enZtRUtmaGh5OGw0T0hYczR4YU9LS21vUmxYRnN6V1NPWUJCWFlrX2FXeTcxYVV5ZDI0NldsSnJRNHdyNU1xZlVkV09ob2oxZWcxVFRkREsxMjQwV2pIN0tpUEl2YTk1aVZrYVdrOFBZaklkcWRnWEVYYVVXdWlGQ1RDMl9OcGdkQWR3bGNLOVRBT1FWa2NFcGpNVHZUbkNNS3NjWEdaTXo4eWhBdnVXRVU3NzAw?oc=5"
+          ],
+          "description": "Varroc Engineering Acquires 45% Stake in Forsee Power India for €4.5 Million"
+        },
+        {
+          "text": "Varroc Engineering Limited VARROC Varroc Engineering (NSE:VARROC): Has It Signed Definitive Deals to Acquire 45% Stake in Forsee Power India? Reported development · Headline only · Mon 26 Oct, 17:55 IST · News report →",
+          "urls": [
+            "https://news.google.com/rss/articles/CBMi4wFBVV95cUxNanZVN3dLei11cmhBTGlNTE12ZGNFd084QXJXcHZSeTJqdEhIVjZVeHdjMDlsbFlicXdUU2ZMbTJQMjFVUWdjMmhCek5XWXpQN1NYcGY4OTNBMEdyNzlkRWRqMDdlT3hxcHR0MnBrQUZPWnVzWGVVSXpfOE1xT0JKMFVza2hZT1pkTUpodHhnWEIyeC1XdnZSM0VKY3VqcFYwLXpDUEtLaUkwOXFySEpmamFxRW1pZ3F0QlNudWtwbU9IalNOd0l0LVFMMHZrVTNYSHFQWlN4cVpNZ0ZXNWZhaldrSQ?oc=5"
+          ],
+          "description": "Varroc Engineering (NSE:VARROC): Has It Signed Definitive Deals to Acquire 45% Stake in Forsee Power India?"
+        }
+      ]
+    },
+    {
+      "ticker": "SHOPERSTOP",
+      "company": "Shoppers Stop",
+      "sourceFacts": [
+        {
+          "field": "event",
+          "value": "Investment by subscription to Rights Issue of Non-Cumulative Optionally Convertible Preference Shares (NOCPS) in wholly owned material subsidiary Global SS Beauty Brands Limited (GSSBBL)"
+        },
+        {
+          "field": "counterparty",
+          "value": "Global SS Beauty Brands Limited (GSSBBL), wholly owned material subsidiary of Shoppers Stop Limited"
+        },
+        {
+          "field": "amount",
+          "value": "Rs. 10 Crores second tranche investment via 1000 NOCPS of Rs. 1,00,000 each"
+        },
+        {
+          "field": "amount",
+          "value": "Overall investment in GSSBBL preference share capital enhanced to Rs. 135 Crores"
+        },
+        {
+          "field": "amount",
+          "value": "Total Board-approved additional investment of upto Rs. 40 Crores via Rights Issue of 4000 preference shares"
+        },
+        {
+          "field": "status",
+          "value": "Second tranche investment completed"
+        },
+        {
+          "field": "date",
+          "value": "Investment completed on October 26, 2026"
+        },
+        {
+          "field": "date",
+          "value": "Original Board approval communicated May 05, 2026"
+        },
+        {
+          "field": "conditions",
+          "value": "Allotment of NOCPS expected to be completed within 15 working days"
+        },
+        {
+          "field": "conditions",
+          "value": "Nature of consideration is cash"
+        },
+        {
+          "field": "conditions",
+          "value": "No governmental or regulatory approvals required other than regular establishment licenses/registration"
+        },
+        {
+          "field": "conditions",
+          "value": "Transaction classified as related party transaction; arm's length not applicable as GSSBBL is wholly owned subsidiary"
+        },
+        {
+          "field": "ownership",
+          "value": "Pre-acquisition: Company held 100% equity (4,99,994 shares, remaining six held by nominees) and 12,500 preference shares, 100% shareholding and control"
+        },
+        {
+          "field": "ownership",
+          "value": "Post-acquisition: Company to hold 4,99,994 equity shares and 13,500 preference shares, 100% shareholding and control"
+        },
+        {
+          "field": "reason",
+          "value": "Purpose of acquisition is to fund GSSBBL's growth, expansion plans and working capital requirements"
+        },
+        {
+          "field": "reason",
+          "value": "GSSBBL is in expansion phase and needs additional funds to grow its business"
+        },
+        {
+          "field": "ownership",
+          "value": "Promoter/promoter group/group companies have interest in GSSBBL to the extent of their 66.01% equity shareholding in Shoppers Stop Limited"
+        },
+        {
+          "field": "amount",
+          "value": "Cost of acquisition stated as Rs. 10,00,00,000 (Rupees Ten Crores Only)"
+        },
+        {
+          "field": "counterparty",
+          "value": "GSSBBL incorporated on December 08, 1995, engaged in distribution of beauty products and operating specialty retail stores"
+        },
+        {
+          "field": "amount",
+          "value": "GSSBBL turnover FY 2025-26 Rs. 379.75 Crores, FY 2024-25 Rs. 220.02 Crores, FY 2023-24 Rs. 95.73 Crores"
+        }
+      ],
+      "rows": [
+        {
+          "text": "Shoppers Stop Ltd SHOPERSTOP Investment by subscription to Rights Issue of Non-Cumulative Optionally Convertible Preference Shares (NOCPS) in wholly owned material subsidiary Global SS Beauty Brands Limited (GSSBBL); Amount: Rs. 10 Crores second tranche investment via 1000 NOCPS of Rs. 1,00,000 each; Amount: Overall investment in GSSBBL preference share capital… Corporate announcement · Source facts · Mon 26 Oct, 18:09 IST · Announcement → · [2] · [3] · [4]",
+          "urls": [
+            "https://nsearchives.nseindia.com/corporate/SHOPERSTOP_26102026180807_InfusionDisclosureSD.pdf",
+            "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2865c31c-10cf-4b19-9211-112395ba3691.pdf",
+            "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c0ae0c3f-745d-4dc1-a9f2-6e60bb6d93cf.pdf",
+            "https://nsearchives.nseindia.com/corporate/SHOPERSTOP_26102026180856_InfusionDisclosureSD.pdf"
+          ],
+          "description": "Investment by subscription to Rights Issue of Non-Cumulative Optionally Convertible Preference Shares (NOCPS) in wholly owned material subsidiary Global SS Beauty Brands Limited (GSSBBL); Amount: Rs. 10 Crores second tranche investment via 1000 NOCPS of Rs. 1,00,000 each; Amount: Overall investment in GSSBBL preference share capital…"
+        },
+        {
+          "text": "Shoppers Stop Ltd SHOPERSTOP SHOPPERS STOP LIMITED has informed the Exchange regarding Update-Acquisition/Scheme/Sale/Disposal-XBRL Corporate announcement · Source read; factual summary unavailable · Mon 26 Oct, 18:15 IST · Announcement →",
+          "urls": [
+            "https://nsearchives.nseindia.com/corporate/xbrl/REG30_Restructuring_2284_WebXMLFile_20261026_181518838.xml"
+          ],
+          "description": "SHOPPERS STOP LIMITED has informed the Exchange regarding Update-Acquisition/Scheme/Sale/Disposal-XBRL"
+        },
+        {
+          "text": "Shoppers Stop Ltd SHOPERSTOP Shoppers Stop invests ₹10 crore in beauty subsidiary GSSBBL Reported development · Headline only · Mon 26 Oct, 18:18 IST · News report →",
+          "urls": [
+            "https://news.google.com/rss/articles/CBMisgFBVV95cUxQXzI5dzlpNG9jX0xiN2V2Z3ZvUHIxVHdqaWpaN0o2S1BFcFN2NnlTb0V2U2E4LW5FQ25SV1RRTml6T1NiUUFvSnlTTVhRa3hrRWxvUlFPdTMxcjNmOE5EOEw4MGV0d1N4NVpKRGUxU0ctSjRIOF9JY2ExVVdmM2ZzSmlnOWhnX2ZycFZOdEpROGJTSXhMRko3MWFTSVptQmdyeG5HRWRoclVibHJSYmxxZldB?oc=5"
+          ],
+          "description": "Shoppers Stop invests ₹10 crore in beauty subsidiary GSSBBL"
+        },
+        {
+          "text": "Shoppers Stop SHOPERSTOP Invests Rs 10 Cr in Beauty Unit Reported development · Headline only · Mon 26 Oct, 18:09 IST · News report →",
+          "urls": [
+            "https://news.google.com/rss/articles/CBMiywFBVV95cUxQdEpKSnVQYTUyOWlsczVtQVpMYjA1V293MVc1WktqaVRpcExHOXUzNC1HdzlCMkZVN0hkNXYwQVpXRzJ2d2dwLXZJU1RoQUdVT2NaUTZTVnhXRkFQd3M5bUNQZzk1eF9tTlFmbEpNdmVTSmY3STZIR29hVXRCaEotbExsTjFPXzg1eXNab3M5VmwxcG9FSjQ2TVBrdE9MZERoTXZvZWtlbWFqVVBZOTJSM2RMOVFkLUN1WlFSV1ZCOTFVTUM5NXlEVlpxNA?oc=5"
+          ],
+          "description": "Shoppers Stop SHOPERSTOP Invests Rs 10 Cr in Beauty Unit"
+        },
+        {
+          "text": "Shoppers Stop SHOPERSTOP Invests Rs 10 Cr in Beauty Subsidiary Reported development · Headline only · Mon 26 Oct, 18:09 IST · News report →",
+          "urls": [
+            "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNaUc2NWpNeWYxcU1EUUsyYXJ0RTlBNzRIUXpkSFhGSW9Gd0pqWTJpSnBnazhjTTNFVVNRZFd1M1hoZ3FGTjRWTldSTU5uUmNWMzFzcnk0RnBGX0xiMW5Ob1o2SmczNG40LUFRRmlSTzROWS1vMEVJekFsdnBRYVVHWGdfcUlNVlpabl9ZNkpPV1UxUHF0TTBlZ3E4UldsLVVlYmIxdjdyX2czQ25qTWFUcmdONV9kVmMxRzZGNG9QUlQ?oc=5"
+          ],
+          "description": "Shoppers Stop SHOPERSTOP Invests Rs 10 Cr in Beauty Subsidiary"
+        }
+      ]
+    },
+    {
+      "ticker": "PURVA",
+      "company": "Puravankara",
+      "sourceFacts": [
+        {
+          "field": "event",
+          "value": "Board meeting scheduled to consider and approve Un-audited Standalone and Consolidated Financial Results"
+        },
+        {
+          "field": "date",
+          "value": "Board meeting date: Monday, November 02, 2026"
+        },
+        {
+          "field": "status",
+          "value": "Proposed/intimation stage, not yet held"
+        },
+        {
+          "field": "date",
+          "value": "Financial results period: quarter and half year ended September 30, 2026"
+        },
+        {
+          "field": "conditions",
+          "value": "Trading window closure period for Designated Persons and immediate relatives"
+        },
+        {
+          "field": "reason",
+          "value": "Trading window closure cited regulatory basis"
+        },
+        {
+          "field": "counterparty",
+          "value": "Filed with BSE Limited and National Stock Exchange of India Limited"
+        }
+      ],
+      "rows": [
+        {
+          "text": "Puravankara Limited PURVA Board meeting scheduled to consider and approve Un-audited Standalone and Consolidated Financial Results; Conditions: Trading window closure period for Designated Persons and immediate relatives; Proposed/intimation stage, not yet held; Filed with BSE Limited and National Stock Exchange of India Limited; Trading window closure cited… Corporate announcement · Source facts · Mon 26 Oct, 18:03 IST · Announcement →",
+          "urls": [
+            "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cab701f7-7e1a-4dee-804d-0347ab8dacec.pdf"
+          ],
+          "description": "Board meeting scheduled to consider and approve Un-audited Standalone and Consolidated Financial Results; Conditions: Trading window closure period for Designated Persons and immediate relatives; Proposed/intimation stage, not yet held; Filed with BSE Limited and National Stock Exchange of India Limited; Trading window closure cited…"
+        },
+        {
+          "text": "Puravankara Limited PURVA Board meeting 2 Nov 2026: to consider unaudited standalone and consolidated quarterly financial results for the period ended September 2026. Corporate announcement · Source facts · Mon 26 Oct, 18:08 IST · Announcement →",
+          "urls": [
+            "https://nsearchives.nseindia.com/corporate/xbrl/PRIOR_INTIMATION_2651_WebXMLFile_20261026_180815727.xml"
+          ],
+          "description": "Board meeting 2 Nov 2026: to consider unaudited standalone and consolidated quarterly financial results for the period ended September 2026."
+        }
+      ]
+    },
+    {
+      "ticker": "KSB",
+      "company": "KSB Ltd",
+      "sourceFacts": [
+        {
+          "field": "event",
+          "value": "Intimation of Board Meeting for approval of Unaudited Financial Results for the quarter ended 30th September, 2026"
+        },
+        {
+          "field": "date",
+          "value": "Board meeting scheduled for Tuesday, 3rd November 2026"
+        },
+        {
+          "field": "status",
+          "value": "Board meeting is scheduled (not yet held)"
+        },
+        {
+          "field": "conditions",
+          "value": "Trading window closed for Directors/Officers/Designated Persons/Connected Persons from 1st October 2026 till 48 hours after results announcement"
+        },
+        {
+          "field": "date",
+          "value": "Letter dated 26th October, 2026"
+        }
+      ],
+      "rows": [
+        {
+          "text": "KSB Ltd KSB KSB Ltd KSB Board meeting 3 Nov 2026: to consider unaudited standalone and consolidated quarterly financial results for the period ended September 2026. Corporate announcement · Source facts · Mon 26 Oct, 17:48 IST · Announcement →",
+          "urls": [
+            "https://nsearchives.nseindia.com/corporate/xbrl/PRIOR_INTIMATION_1195_WebXMLFile_20261026_174801629.xml"
+          ],
+          "description": "Board meeting 3 Nov 2026: to consider unaudited standalone and consolidated quarterly financial results for the period ended September 2026."
+        },
+        {
+          "text": "KSB Ltd KSB Intimation of Board Meeting for approval of Unaudited Financial Results for the quarter ended 30th September, 2026; Conditions: Trading window closed for Directors/Officers/Designated Persons/Connected Persons from 1st October 2026 till 48 hours after results announcement; Board meeting is scheduled (not yet held) Corporate announcement · Source facts · Mon 26 Oct, 17:44 IST · Announcement →",
+          "urls": [
+            "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93b154aa-996b-4e0c-9e3e-6df2fc3cafb8.pdf"
+          ],
+          "description": "Intimation of Board Meeting for approval of Unaudited Financial Results for the quarter ended 30th September, 2026; Conditions: Trading window closed for Directors/Officers/Designated Persons/Connected Persons from 1st October 2026 till 48 hours after results announcement; Board meeting is scheduled (not yet held)"
+        }
+      ]
+    }
+  ]
+}

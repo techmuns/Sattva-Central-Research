@@ -40,6 +40,7 @@ const METRICS = {
 export const printable = (value) =>
   String(value ?? '')
     .replace(/₹/g, 'INR ')
+    .replace(/€/g, 'EUR ')
     .replace(/→/g, ' -> ')
     .replace(/[−–—]/g, '-')
     .replace(/[“”]/g, '"')

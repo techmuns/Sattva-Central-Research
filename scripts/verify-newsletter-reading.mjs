@@ -14,11 +14,10 @@ import { reviewNewsEvents } from '../worker/newsletter-events.mjs';
 
 const at = istInstant('2026-09-17', '08:00');
 const row = (headline, overrides = {}) => ({ kind: 'news', ticker: 'ALANKIT', company: 'Alankit', headline, at, source: 'Reuters', score: 2, ...overrides });
-const first = row('Alankit wins airport software contract worth 2600 crore');
-const second = row(first.headline, { source: 'Business Line' });
+const first = row('Alankit wins airport software contract worth 2600 crore',{url:'https://fixture.test/reuters/article'});
+const second = row(first.headline, { source: 'Business Line',url:first.url });
 assert.equal(clusterStories([first, second], { company: 'Alankit' }).length, 1);
 for (const other of [
-  row(first.headline, { source: 'Reuters' }),
   row(first.headline, { ticker: 'OTHER' }),
   row(first.headline, { source: 'Mint', related: true }),
   row(first.headline.replace('2600', '3600'), { source: 'Mint' }),
@@ -26,6 +25,8 @@ for (const other of [
   row(first.headline, { source: 'Mint', at: at + 86400001 }),
   row(first.headline, { kind: 'filing' }),
 ]) assert.equal(relatedReports(first, other, 'Alankit'), false);
+assert.equal(relatedReports(first,row(first.headline,{source:'Reuters',url:first.url})),true,'An identical same-publisher ingestion copy is one update');
+assert.equal(relatedReports(first,row(first.headline,{url:'https://fixture.test/a-different-approval'})),false,'An unread identical headline alone cannot corroborate a repeated development');
 for (const [positive, negative] of [['approves', 'rejects'], ['wins', 'loses'], ['grants', 'revokes'], ['allows', 'bans'], ['authorises', 'prohibits'], ['clears', 'blocks'], ['starts', 'stops']]) {
   assert.equal(relatedReports(row(`Acme ${positive} airport software contract worth 2600 crore`), row(`Acme ${negative} airport software contract worth 2600 crore`, { source: 'Mint' }), 'Acme'), false);
 }

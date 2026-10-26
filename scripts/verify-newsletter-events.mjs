@@ -61,7 +61,8 @@ for (const [a, b] of [
 const chain = [0, 12, 25].map((hours, i) => ({ ...base, id: String(i), at: base.at + hours * 3600000 }));
 assert.equal(parseEventGroups('[["0","1","2"]]', chain), null);
 const asStory = (r, extra = {}) => ({ ...r, kind: 'news', source: r.source, dek: r.summary, ...extra });
-assert.equal(relatedNewsReports(asStory(base), asStory(base, { source: 'Another publisher' })), true);
+assert.equal(relatedNewsReports(asStory(base), asStory(base, { source: 'Another publisher' })), false,'An identical headline without corroboration cannot merge distinct unread events');
+assert.equal(relatedNewsReports(asStory(base,{url:'https://fixture.test/article'}), asStory(base, { source: 'Another publisher',url:'https://fixture.test/article?utm_campaign=copy' })), true);
 assert.equal(relatedNewsReports(asStory(base, { eventId: 'a' }), asStory(base, { eventId: 'b', source: 'Another publisher' })), false, 'reviewed singletons override identical headlines');
 assert.equal(relatedNewsReports(asStory(base), asStory(base, { kind: 'filing' })), false);
 assert.equal(relatedNewsReports(asStory(base), asStory(base, { source: 'Another publisher', headline: 'EIL signs an oil infrastructure deal in Saudi Arabia and UAE' })), false, 'no fuzzy grouping on failure');
@@ -97,8 +98,13 @@ assert.equal(partial.reviewed, 5);
 assert.equal(partial.eligible, 10);
 const longReports = news();
 for (const r of longReports.groups[0].items) r.summary = '&'.repeat(3500);
-assert.ok(JSON.stringify(longReports).length < EVENT_REQUEST_BYTES, 'raw model input alone would fit');
-assert.equal((await reviewNewsEvents({ news: longReports, env, fetcher: forbidden })).reason, 'limit', 'HTML escaping and cumulative source size prevent oversized semantic groups');
+assert.ok(JSON.stringify(longReports).length < EVENT_REQUEST_BYTES);
+const longCheck=await reviewNewsEvents({news:longReports,env,fetcher:async(_url,init)=>{
+ const reports=JSON.parse(JSON.parse(init.body).messages[0].content).REPORTS;
+ assert(reports.every(r=>r.summary==='&'.repeat(3500)),'Actual model input keeps complete qualifications without an obsolete HTML-escape budget');
+ return answer(reports.map(r=>[r.id]));
+}});
+assert.equal(longCheck.reviewed,5);
 
 // Exercise each deployment's actual company grouping, rendering and delivery identities.
 const ASSETS = { fetch: async request => new URL(request.url).pathname === '/data/portfolio-companies.json'

@@ -877,6 +877,13 @@ match would quietly fail the day they reword it.
 
 ### The team brief — two editions a weekday, built at the edge
 
+**Concise editions, 27 October 2026:** new GitHub-prepared newsletters follow
+`docs/NEWSLETTER-INVESTOR-BRIEF.md`: document copies first, event identity second,
+one factual reading after consolidation, exact original-source links and at most three
+90,000-byte email bodies. Preserve corrections, all source evidence and the Sattva design.
+`docs/NEWSLETTER-PARITY.md` records the shared Glow/Sattva logic and upstream workflow.
+
+
 **Owner correction, 22 October 2026:** daily emails and test copies must only carry reports
 published inside their printed edition window. Never send historical backlog, newly captured old
 reports or missed-edition catch-up. Preserve dashboard archives. Refuse more than six parts before
