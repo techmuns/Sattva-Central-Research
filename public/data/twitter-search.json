@@ -1387,8 +1387,8 @@
       "lastSuccessAt": "2026-09-08T19:20:14+00:00"
     },
     "isin:INE15B701018|PINELABS": {
-      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-26T04:18:55+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 39,
       "targetThrough": "2026-10-16T06:34:32+00:00",
       "pending": [
@@ -2796,6 +2796,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 237,
-    "checkedAt": "2026-10-26T03:41:54.149556+00:00"
+    "checkedAt": "2026-10-26T04:18:55.662592+00:00"
   }
 }
