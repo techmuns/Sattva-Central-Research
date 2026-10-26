@@ -1,3 +1,4 @@
+import { NEWSLETTER_STYLE } from './newsletter-style.mjs';
 import {newsletterRequest} from './newsletter-request.mjs';
 // worker/newsletter-brief.mjs — the brief itself: what goes in it, where each figure comes from,
 // and the email it is rendered into. Pure apart from the injected `fetcher`, `env.ASSETS` and the
@@ -1361,11 +1362,7 @@ export function briefSummary(brief) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmtNumber = (v, decimals) => v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 const signed = (v, decimals, suffix = '') => (v > 0 ? '+' : v < 0 ? '−' : '') + fmtNumber(Math.abs(v), decimals) + suffix;
-const INK = '#0f172a', PAPER = '#ffffff', CREAM = '#eef2ff', RULE = '#e2e8f0', META = '#64748b', BODY = '#334155', BODY2 = '#475569';
-// Sattva Ventures' indigo accent.
-const GOLD = '#4f46e5', GOLD_LIGHT = '#a5b4fc';
-const SERIF = "Georgia,'Times New Roman',Times,serif";
-const SANS = 'Arial,Helvetica,sans-serif';
+const { INK, PAPER, CREAM, RULE, META, BODY, BODY2, GOLD, GOLD_LIGHT, SERIF, SANS } = NEWSLETTER_STYLE;
 const NUM = 'font-variant-numeric:tabular-nums;white-space:nowrap;';
 const toneOf = (v) => (v > 0 ? MOODS.good.color : v < 0 ? MOODS.watch.color : MOODS.neutral.color);
 
