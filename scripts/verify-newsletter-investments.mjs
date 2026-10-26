@@ -98,3 +98,8 @@ assert.equal(clusterStories([anchor,staleCurrency]).length,1,'Explicit supported
 const purva=all.get('PURVA'),badDay=structuredClone(purva.find(r=>r.content.format==='pdf'));badDay.url='https://fixture.test/wrong-weekday';badDay.content.hash='wrong-weekday';badDay.content.facts.find(f=>/^Board meeting date:/.test(f.value)).value='Board meeting date: Friday, November 02, 2026';
 assert.equal(clusterStories([purva.find(r=>r.content.format==='xbrl'),badDay]).length,2,'An inconsistent weekday/date is not silently normalized');
 console.log('PASS live investment/notice regressions: native update fields, named targets, exact prices/currencies/dates/stages, ambiguous subsidiaries, all source links and complete concise terms; network/model/mail calls=0');
+
+const pendingPublisher={...beautyNews,url:'https://fixture.test/pending-investment',headline:'Shoppers Stop announces investment in Global SS Beauty Brands Limited for INR 10 crore; completion still pending'};
+const pendingProfiles=investmentProfiles([shopAnchor,pendingPublisher]);
+assert(pendingProfiles.get(pendingPublisher)?.pending&&pendingProfiles.get(pendingPublisher)?.stage===null,'Exercise the explicit-pending/no-stage profile');
+assert.equal(clusterStories([shopAnchor,pendingPublisher]).length,2,'A pending acquisition cannot absorb its completion update');

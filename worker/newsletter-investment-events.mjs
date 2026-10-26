@@ -35,6 +35,7 @@ const explicitAlias=(text,alias)=>{
 };
 const conditionKey=value=>/^(?:Transaction completion conditional on fulfilment\/waiver of conditions precedent in transaction documents|(?:Completion )?(?:is )?subject to (?:fulfilment of )?conditions precedent)[.!]?$/i.test(clean(value))?'conditions-precedent':normal(value);
 const termsAgree=(x,y)=>{
+ if(x.pending&&y.stage==='completed'||y.pending&&x.stage==='completed')return false;
  for(const key of ['amount','total'])if(x[key]&&y[key]&&x[key].key!==y[key].key)return false;
  for(const key of ['stake','stage','instrument','tranche'])if(x[key]&&y[key]&&x[key]!==y[key])return false;
  // A publisher paraphrase of the same condition is not a new event. An extra or

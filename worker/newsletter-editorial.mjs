@@ -2,7 +2,7 @@
 // deletes a captured row, changes an edition window or certifies an unread document.
 import { scheduledBoardMeetingSummary } from './newsletter-filing-events.mjs';
 import { investorSourceFacts, investorSourceSummary, xbrlBoardMeetingNote, votingResultNote, readNoticeNote, consolidatedBoardReading, hasSourceChange } from './newsletter-source-notes.mjs';
-import { newsletterSourceUrl } from './newsletter-source-links.mjs';
+import { newsletterSourceUrl, newsletterSourceUrls } from './newsletter-source-links.mjs';
 import { scheduledEarningsCall, consolidatedEarningsCallNote } from './newsletter-notice-events.mjs';
 import { investmentReading } from './newsletter-investment-events.mjs';
 export const EDITORIAL_VERSION = 1;
@@ -82,7 +82,7 @@ export function editorialEvents(brief, companies) {
       completeSourceSummary:!!completeSourceSummary&&!cluster.versionConflict,
       description: scheduledBoardMeetingSummary(lead),
       facts: investorSourceFacts(lead),
-      sources: [...new Set([lead,...members.filter(s=>s!==lead)].map(newsletterSourceUrl).filter(Boolean))],
+      sources: [...new Set([newsletterSourceUrl(lead),...[lead,...members.filter(s=>s!==lead)].flatMap(newsletterSourceUrls)].filter(Boolean))],
       evidence: lead.content?.state === 'ready' ? sourceSummary?'Source read':'Source read; factual summary unavailable' : lead.content?.state==='partial'?'Partial source read':'Headline only',
     });
   }

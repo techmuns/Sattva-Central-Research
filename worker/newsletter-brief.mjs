@@ -960,11 +960,13 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
     extraItems: priceEvidenceItems(priceContext, moves) });
   news.dedup = await reviewNewsEvents({ news, env, fetcher, enabled: includeAi, budget: contentService?.newsBudget, now });
   brief.priceReasons = await attachPriceReasons({ brief, context: priceContext, env, fetcher, now, enabled: includeAi });
+  // Apply durable event history before admitting summary work; transport copies cannot
+  // consume paid slots or the coverage denominator of genuinely new developments.
+  await annotateEditorialHistory(brief, briefStats(brief).companies, reported);
   // Notes see the final groups, including every publisher's qualifications and source text.
   brief.ai = includeAi ? await readAiNotes({ env, fetcher, now, companies: briefStats(brief).companies, sectors: new Map(holdings.map((h) => [upper(h.ticker), h.sector && !/^unclassified$/i.test(h.sector) ? h.sector : null])) })
     : { ok: false, reason: 'preview', requested: 0, answered: 0, items: {} };
   if (contentService && newsAiEnabled(env)) brief.newsAiBudget = contentService.newsBudget.status(now);
-  await annotateEditorialHistory(brief, briefStats(brief).companies, reported);
   brief.reported = briefStories(brief).flatMap(s => (s.keys || []).map(key => ({ key, publishedAt: s.at })));
   return brief;
 }
@@ -1274,7 +1276,7 @@ export function aiItemsFor(companies, sectors = new Map(), { readableOnly = fals
   const items = [];
   for (const c of companies) {
     for (const k of c.clusters) {
-      if (k.kind !== 'story' || items.length >= AI_ITEM_LIMIT) continue;
+      if (k.kind !== 'story' || items.length >= AI_ITEM_LIMIT || [k.main,...k.others].some(s=>s.editorialReported)) continue;
       if (readableOnly && ![k.main,...k.others].some(s => ['ready','partial'].includes(s.content?.state) && s.content?.facts?.length)) continue;
       const s = k.main;
       items.push({
@@ -1321,6 +1323,7 @@ export function parseAiNotes(text, ids) {
 }
 
 export async function readAiNotes({ env, fetcher = fetch, now = Date.now(), companies, sectors = new Map() }) {
+  companies=companies.map(c=>({...c,clusters:c.clusters.filter(k=>![k.main,...k.others].some(s=>s.editorialReported))}));
   // News notes are produced with their source read and reused across editions. Never send
   // an unconfirmed article back to the generic writer as a headline-only fallback.
   const newsNotes = {}, newsModels = new Set();
@@ -1809,9 +1812,9 @@ ${index}<p style="font-size:11px;color:${META};">${esc(coverage)}</p>
 </td></tr></table></td></tr></table></body></html>`;
 }
 
-export function renderBriefHtml(brief, { dashboardUrl = PRODUCTION_ORIGIN, recipient = null, productName = PRODUCT_NAME, brand = BRAND, settings = null, pdfUrl = null, part = null, preview = false, stats: suppliedStats = null, sourceLinks = null } = {}) {
+export function renderBriefHtml(brief, { dashboardUrl = PRODUCTION_ORIGIN, recipient = null, productName = PRODUCT_NAME, brand = BRAND, settings = null, pdfUrl = null, part = null, preview = false, stats: suppliedStats = null, sourceLinks = null, reading = null } = {}) {
   const stats = suppliedStats || briefStats(brief);
-  if (part?.investor) return renderInvestorEmail(brief, { dashboardUrl, recipient, productName, brand, settings, pdfUrl, part, preview, stats, sourceLinks });
+  if (part?.investor) return renderInvestorEmail(brief, { dashboardUrl, recipient, productName, brand, settings, pdfUrl, part, preview, stats, sourceLinks, reading });
   if (part?.reportLink === true) return renderBriefReportHtml(brief, { dashboardUrl, recipient, productName, brand, settings, pdfUrl, part, stats });
   const subject = briefSubject(brief, { brand, part, stats });
   const companies = part?.companies ?? stats.companies;

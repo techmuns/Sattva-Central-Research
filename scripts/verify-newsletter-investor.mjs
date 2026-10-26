@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdirSync,writeFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { pdfFixture } from './verify-newsletter-pdf.mjs';
-import { briefStats,briefStoryKeys,renderBriefHtml,aiItemsFor,clusterStories,NEWSLETTER_STYLE } from '../worker/newsletter-brief.mjs';
+import {DEFAULT_SETTINGS,istInstant} from '../public/js/data/newsletter-shared.js';
+import { briefStats,briefStoryKeys,renderBriefHtml,aiItemsFor,readAiNotes,buildBrief,briefStories,clusterStories,NEWSLETTER_STYLE } from '../worker/newsletter-brief.mjs';
 import { editorialEvents,referenceReason,annotateEditorialHistory,EDITORIAL_EMAIL_PARTS } from '../worker/newsletter-editorial.mjs';
 import { renderInvestorEmails,emailBytes } from '../worker/newsletter-email.mjs';
 import { renderBriefPdf } from '../worker/newsletter-pdf.mjs';
@@ -167,9 +168,50 @@ for(const compact of [false,true]){
  assert(!html.includes('Evidence →'),'An event link cannot be disguised as the complete-edition PDF');
  assert(html.includes('News report →')&&html.includes('Announcement →'));
 }
+// Every original attached to one deduplicated row is available directly from the inbox.
+const multipleSources=structuredClone(traceable),multiRow=multipleSources.news.groups[0].items[0];
+multiRow.content={state:'pending'};multiRow.sourceUrls=[longSource,'https://www.tradingview.com/news/exact-copy','https://archive.test/exact-captured-copy'];
+const multiDb=new DatabaseSync(':memory:');multiDb.exec('CREATE TABLE newsletter_views(id TEXT PRIMARY KEY,payload TEXT NOT NULL)');
+const multiShortcuts=newsletterSourceShortcuts(multiDb,options.dashboardUrl);multiShortcuts.prepare(multipleSources);
+assert(multiShortcuts.links.has(longSource),'A long attached original is registered before publication');
+const multiHtml=renderInvestorEmails(multipleSources,{...options,sourceLinks:multiShortcuts.links}).map(m=>m.html).join('');
+for(const url of multiRow.sourceUrls)assert(multiHtml.includes('href="'+emailSourceUrl(url,multiShortcuts.links,options.dashboardUrl).replaceAll('&','&amp;')+'"'),'Every attached original is linked in email, including short-link publication');
+multiDb.close();
+const subscribed=renderInvestorEmails(traceable,{...options,recipient:{addedBy:'Ravi <Desk> & Team'},settings:{morning:{time:'09:15'},evening:{time:'15:45'}}})[0].html;
+assert(subscribed.includes('Weekdays '+(traceable.edition==='morning'?'09:15':'15:45')+' IST.'));
+assert(subscribed.includes('Added by Ravi &lt;Desk&gt; &amp; Team.')&&!subscribed.includes('Ravi <Desk>'),'Subscription provenance stays concise and escaped');
+
 const pending=Array.from({length:40},(_,i)=>({id:`pending${i}`,kind:'story',main:{kind:'filing',content:{state:'pending'}},others:[]}));
 const ready={id:'readable41',kind:'story',main:{kind:'filing',content:official.content},others:[]};
 assert.deepEqual(aiItemsFor([{company:'Test',ticker:'TEST',clusters:[...pending,ready]}],new Map(),{readableOnly:true}).map(i=>i.id),['readable41'],'Pending leaders cannot consume the summary allowance');
+
+{
+// A delivered event cannot take a summary slot or inflate new-event coverage.
+const covered=Array.from({length:40},(_,i)=>({id:'covered-'+i,kind:'story',main:{kind:'filing',headline:'Already covered',content:official.content,editorialReported:true},others:[]}));
+const fresh={...ready,id:'fresh',main:{...ready.main,headline:'A genuinely new customer contract'}};
+assert.deepEqual(aiItemsFor([{company:'Test',ticker:'TEST',clusters:[...covered,fresh]}],new Map(),{readableOnly:true}).map(i=>i.id),['fresh']);
+let summaries=0;
+const freshNotes=await readAiNotes({env:{CLAUDE_KEY:'ABSKfixture-only'},companies:[{company:'Test',ticker:'TEST',clusters:[...covered,fresh]}],fetcher:async(_url,init)=>{
+ summaries++;const items=JSON.parse(JSON.parse(init.body).messages[0].content).ITEMS;assert.deepEqual(items.map(i=>i.id),['fresh']);
+ return Response.json({stop_reason:'end_turn',content:[{type:'text',text:JSON.stringify([{id:'fresh',summary:'A new customer contract was disclosed.',impact:'It could support revenue.'}])}]});
+}});
+assert.equal(summaries,1);assert.equal(freshNotes.requested,1);assert.equal(freshNotes.partial,false);
+const historyNow=istInstant('2026-10-27','08:00'),historyData={
+ '/data/portfolio-companies.json':{holdings:[{ticker:'TCS',name:'Tata Consultancy Services Limited'}]},
+ '/data/market-news.json':{articles:[]},'/data/nse-filings/index.json':{days:[{day:'2026-10-26'}]},
+ '/data/nse-filings/2026-10-26.json':{rows:[{ticker:'TCS',company:'Tata Consultancy Services Limited',subject:'Press Release',description:'A customer contract was announced',publishedAt:'2026-10-26T14:00:00Z',url:'https://nsearchives.nseindia.com/corporate/new-transport-copy.pdf'}]},
+};let historyWriterCalls=0;
+const acknowledged=await buildBrief({edition:'morning',day:'2026-10-27',now:historyNow,settings:DEFAULT_SETTINGS,includeAi:true,
+ reported:{empty:false,since:historyNow-86400000,has:key=>key.startsWith('newsletter-event:')},
+ env:{CLAUDE_KEY:'ABSKfixture-only',ASSETS:{fetch:async request=>historyData[new URL(request.url).pathname]?Response.json(historyData[new URL(request.url).pathname]):new Response(null,{status:404})}},
+ contentService:{enqueue(){},async process(){},get:()=>({...official.content,hash:'acknowledged-document'})},
+ fetcher:async(_url,init)=>{if(init?.body&&JSON.parse(init.body).messages){historyWriterCalls++;throw Error('An acknowledged source must not reach a writer');}return new Response(null,{status:503});},
+});
+assert.equal(briefStories(acknowledged).length,1,'The copied source remains in the complete report');
+assert.equal(editorialEvents(acknowledged,briefStats(acknowledged).companies).events.length,0);
+assert.equal(historyWriterCalls,0,'Durable event history is applied before the summary request');
+assert.equal(acknowledged.ai.requested,0);assert.equal(acknowledged.ai.partial,false);
+}
 
 const db=new DatabaseSync(':memory:');
 const storage={sql:{exec:(sql,...args)=>{const rows=db.prepare(sql).all(...args);return {toArray:()=>rows};}},transactionSync:fn=>{db.exec('BEGIN');try{const out=fn();db.exec('COMMIT');return out;}catch(e){db.exec('ROLLBACK');throw e;}}};
@@ -331,9 +373,11 @@ assert.deepEqual(compactDigest.flatMap(m=>m.keys).sort(),briefStoryKeys(crowded)
 const dense=structuredClone(busy);
 dense.announcements.groups=Array.from({length:500},(_,i)=>({ticker:`DENSE${i}`,company:`Material Issuer ${i}`,items:[{...structuredClone(official),
  headline:`Issuer ${i} signed an INR 100 crore customer contract, subject to final approvals, with work scheduled to start in November 2026. The filing describes implementation steps and supporting administrative details available in the original announcement and its supporting source documents.`,
- keys:[`dense:${i}`],content:{state:'pending'},
+ keys:[`dense:${i}`],content:{state:'pending'},sourceUrls:[],
  url:`https://www.bseindia.com/xml-data/corpfiling/AttachLive/00000000-0000-4000-8000-${String(i).padStart(12,'0')}.pdf`}]}));
-const denseBefore=JSON.stringify(dense),denseDigest=renderInvestorEmails(dense,options),denseHtml=denseDigest.map(m=>m.html).join('');
+const denseBefore=JSON.stringify(dense),packingStarted=performance.now(),denseDigest=renderInvestorEmails(dense,options),denseHtml=denseDigest.map(m=>m.html).join('');
+const packing500Ms=Math.round(performance.now()-packingStarted);
+assert(packing500Ms<20000,'500 distinct disclosures pack within 20 seconds on one standard runner');
 assert(denseDigest.length<=3&&denseDigest.every(m=>m.part.compact&&m.part.summaryChars===140&&m.bytes<=90000),'A dense edition shortens excerpts before exceeding the existing three-email limit');
 assert.equal(denseDigest.flatMap(m=>m.part.eventIds).length,500);
 assert.equal(new Set(denseDigest.flatMap(m=>m.part.eventIds)).size,500,'Every investor update appears once');
@@ -361,4 +405,4 @@ if(process.env.NEWSLETTER_INVESTOR_OUTPUT){
  writeFileSync(`${dir}/investor-brief.pdf`,renderBriefPdf(brief));
  writeFileSync(`${dir}/busy-email.html`,digest[0].html);
 }
-console.log(`PASS investor replay: ${excluded.length} actual attribution/noise cases, direct source links, Aurobindo/Bharat copy regressions, lossless source register, corrections, acknowledged restart, readable summary admission, queue priority/fairness, ${digest.length} email(s) for 180 distinct material disclosures`);
+console.log(`PASS investor replay: ${excluded.length} actual attribution/noise cases, direct source links, Aurobindo/Bharat copy regressions, lossless source register, corrections, acknowledged restart, readable summary admission, queue priority/fairness, ${digest.length} email(s) for 180 distinct material disclosures; 500-disclosure packing ${packing500Ms}ms`);

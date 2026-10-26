@@ -147,7 +147,8 @@ export function renderBriefDeliveryEmails(brief, options = {}, { maxBytes = EMAI
 /** Current GitHub deliveries use the investor reading layer; legacy frozen bodies are never
  * rewritten. Every accepted part links the same publication-verified complete evidence report. */
 export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_BYTES,maxParts=EDITORIAL_EMAIL_PARTS}={}) {
-  const stats=briefStats(brief), reading=editorialEvents(brief,stats.companies);
+  const stats=briefStats(brief), snapshot=editorialEvents(brief,stats.companies);
+  const reading={...snapshot,byId:new Map(snapshot.events.map(event=>[event.id,event])),companyCount:new Set(snapshot.events.map(event=>event.ticker)).size};
   const origin=(options.dashboardUrl || '').replace(/\/$/,'');
   if (!options.preview && (!origin || !options.pdfUrl?.startsWith(origin+'/api/newsletter/pdf/') ||
       !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(options.pdfUrl.slice((origin+'/api/newsletter/pdf/').length)))) throw Error('Investor delivery requires an immutable edition PDF');
@@ -155,7 +156,7 @@ export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_B
   // before reaching the same hard part limit; the complete report is unchanged.
   for (const [compact,summaryChars] of [[false,340],[true,220],[true,140],[true,100]]) for (const supplements of [true,false]) {
     const pages=[], selected=[];
-    const measure=(ids,index)=>emailBytes(renderBriefHtml(brief,{...options,stats,part:{investor:true,reportLink:true,eventIds:ids,compact,summaryChars,supplements,index,total:maxParts,packing:true}}));
+    const measure=(ids,index)=>emailBytes(renderBriefHtml(brief,{...options,stats,reading,part:{investor:true,reportLink:true,eventIds:ids,compact,summaryChars,supplements,index,total:maxParts,packing:true}}));
     const firstOverhead=measure([],1),continuationOverhead=measure([],2);let used=firstOverhead;
     // Card markup is additive. Measure each card once instead of rendering the whole
     // growing edition for every candidate (quadratic date formatting/string allocation).
@@ -174,8 +175,8 @@ export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_B
     if(pages.length>maxParts)continue;
     const messages=pages.map((eventIds,i)=>{
       const part={investor:true,reportLink:true,eventIds,compact,summaryChars,supplements,index:i+1,total:pages.length};
-      const html=renderBriefHtml(brief,{...options,stats,part});
-      return {html,bytes:emailBytes(html),part,subject:investorSubject(brief,options.brand||'Sattva Ventures',stats),
+      const html=renderBriefHtml(brief,{...options,stats,reading,part});
+      return {html,bytes:emailBytes(html),part,subject:investorSubject(brief,options.brand||'Sattva Ventures',stats,reading),
         // The first accepted email delivers the verified full report. Later emails continue
         // its reading layer; they cannot acknowledge a source the report did not contain.
         keys:i===0?keysFor(stats.companies):[]};
