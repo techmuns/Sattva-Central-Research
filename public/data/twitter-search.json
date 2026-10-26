@@ -1400,7 +1400,7 @@
       "lastDiscoveryAt": "2026-10-21T01:44:05+00:00"
     },
     "isin:INE572E01012|PNB Housing Fin": {
-      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastAttemptAt": "2026-10-26T05:16:35+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-16T06:34:32+00:00",
@@ -2796,6 +2796,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 237,
-    "checkedAt": "2026-10-26T04:18:55.662592+00:00"
+    "checkedAt": "2026-10-26T05:16:35.885994+00:00"
   }
 }
