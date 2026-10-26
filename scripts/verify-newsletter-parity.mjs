@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 const contract=JSON.parse(readFileSync(new URL('../docs/NEWSLETTER-SHARED-SOURCE.json',import.meta.url),'utf8'));
-const root=resolve(new URL('..',import.meta.url).pathname);
+const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const canonical=text=>text.replaceAll('Glow Ventures','Family Office').replaceAll('Sattva Ventures','Family Office')
  .replaceAll('GLOW VENTURES','FAMILY OFFICE').replaceAll('SATTVA VENTURES','FAMILY OFFICE')
  .replaceAll('Glow-Central-Research','Central-Research').replaceAll('Sattva-Central-Research','Central-Research')
