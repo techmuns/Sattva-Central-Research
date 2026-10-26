@@ -39,6 +39,10 @@ for(const text of ['Long &amp; &lt;Source&gt;','₹12 crore','Series A*','Consum
 assert(!detailedHtml.includes('<Source>'));
 assert.match(detailedHtml,/GLOW VENTURES/);
 assert.match(intelligenceEmails(model,{dashboardUrl:'https://sattva-central-research.example.test'})[0].html,/SATTVA VENTURES/);
+const introduction=emails[0].html.slice(0,emails[0].html.indexOf('Whole universe'));
+assert.doesNotMatch(introduction,/Reporting window|Across this edition|Source coverage|Source checks are overdue/,'Funding leads immediately after the masthead');
+assert.doesNotMatch(emails[0].html,/Across this edition|border-left:3px solid #c2410c/,'No edition-count paragraph or orange warning box');
+assert(emails[0].html.indexOf('Reporting window')>emails[0].html.indexOf('Coverage &amp; sources'),'Reporting dates remain in the closing source notes');
 const noRoster=buildIntelligence({capture,at:monday,slot:privateMarketsSlot(monday)});assert.match(intelligenceEmails(noRoster,{dashboardUrl:'https://fixture.test'})[0].html,/section is unavailable/);
 assert(buildIntelligence({capture:{...capture,sourceCheckedAt:new Date(monday+11*60000).toISOString()},roster,at:monday}).coverage.stale,'An invalid future source clock cannot appear fresh');
 const duplicate=structuredClone(capture);duplicate.deals.push({...duplicate.deals[0],id:'f'.repeat(24),sourceUrl:'https://inc42.com/buzz/second-fixture-funding/'});duplicate.articles.push({...duplicate.articles[0],url:'https://inc42.com/buzz/second-fixture-funding/'});const grouped=buildIntelligence({capture:duplicate,roster,at:monday});assert.equal(grouped.rows.length,1);assert.equal(grouped.rows[0].observations.length,2);duplicate.deals[1].sourceUrl=duplicate.deals[0].sourceUrl;assert.equal(buildIntelligence({capture:duplicate,roster,at:monday}).rows.length,2,'Repeated identical rows in one table remain distinct');
@@ -89,7 +93,7 @@ at=monday+WEEK;unknown=false;await job.wake();assert.equal(uncertainBodies.lengt
 at=Date.parse('2026-10-21T14:00:00Z');local=localNewsletter(path.join(root,'roster-recovery.sqlite'),{env,now:()=>at});local.store.apply([{op:'subscribe',email:'fixture@example.test',by:'Fixture'}]);let rosterUp=false;const recoveryBodies=[];
 job=new PrivateMarketsJob(local,{readSources:async()=>({capture:structuredClone(capture),roster:rosterUp?roster:{ok:false}}),publish:async()=>{},refreshInputs:async()=>{},fetcher:async(url,options)=>{recoveryBodies.push(JSON.parse(options.body).html);return Response.json({success:true,data:{messageId:'<accepted@example.test>'}});},now:()=>at,sleep:async()=>{}});
 await job.prepare();at=monday;await job.wake();assert.equal(job.pending().length,0);assert.equal(job.pendingMatches().length,1);assert.match(recoveryBodies[0],/section is unavailable/);
-at=monday+WEEK;rosterUp=true;await job.wake();assert.match(recoveryBodies[1],/Fund-directory recovery/);assert.match(recoveryBodies[1],/0 reported funding entries in the whole-universe section/);assert.match(recoveryBodies[1],/1 matched entries in the invested-funds section/);assert.equal(recoveryBodies[1].match(/<strong>Fixture New Company<\/strong>/g).length,1,'Recovered old matches appear only in the invested-funds section');assert.equal(job.pendingMatches().length,0);await local.close();
+at=monday+WEEK;rosterUp=true;await job.wake();assert.match(recoveryBodies[1],/Fund-directory recovery/);assert.match(recoveryBodies[1],/No captured funding observations in this section/);assert.equal(recoveryBodies[1].match(/<strong>Fixture New Company<\/strong>/g).length,1,'Recovered old matches appear only in the invested-funds section');assert.equal(job.pendingMatches().length,0);await local.close();
 console.log('PASS private weekly clock, source evidence, exact fund/manager matching, lossless multipart, isolated history, durable claims, restart, cooldown and unsubscribe.');
 
 // Opt-in local/CI browser inspection; every artifact stays inside this checkout.
