@@ -217,7 +217,7 @@ const otherZone=structuredClone(readDcwCall);otherZone.url='https://fixture.test
 assert.equal(clusterStories([readDcwCall,otherZone]).length,2,'Conflicting explicit timezones remain separate');
 const dcwAll=structuredClone(dcwCall);dcwAll.announcements.groups[0].items=[readDcwCall,dcwCallXml];
 const mergedCall=editorialEvents(dcwAll,[{ticker:'DCW',company:'Dcw Limited',stories:[readDcwCall,dcwCallXml],clusters:clusterStories([readDcwCall,dcwCallXml]).map((c,i)=>({...c,id:`DCW#${i+1}`}))}]).events;
-assert.equal(mergedCall.length,1);assert.equal(mergedCall[0].sources.length,2);
+assert.equal(mergedCall.length,1);assert.deepEqual(new Set(mergedCall[0].sources),new Set([readDcwCall.url,dcwCallXml.url,...readDcwCall.sourceUrls,...dcwCallXml.sourceUrls]),'Every attached original survives call consolidation');
 assert(mergedCall[0].sourceSummary.includes('02:00 P.M (IST)')&&mergedCall[0].sourceSummary.includes('subject to change'),'The consolidated reading uses the explicit timezone and preserves the proposed status');
 assert(mergedCall[0].completeSourceSummary);
 console.log('PASS read notice identity: DCW PDF/XBRL board and call consolidation; distinct terms/date/time/period/status/timezone guards; both original links retained');

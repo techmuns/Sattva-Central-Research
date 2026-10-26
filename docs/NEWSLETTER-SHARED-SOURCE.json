@@ -46,7 +46,7 @@
     "scripts/verify-newsletter-events.mjs": "290a97ad52203e4a3728d0461e965d91ef1d721283d406baccd34e5110db8201",
     "scripts/verify-newsletter-investments.mjs": "ccdf7c685238d261a5beeae85f6508a57434399ac1d92c1a055b54dd2bedc48d",
     "scripts/verify-newsletter-investor.mjs": "26e5ac2a06f2dfe773bde1535841f488ffc7713266cedc2f901d9ec5fea3d62b",
-    "scripts/verify-newsletter-output.mjs": "5576c47a58de3636fb3090a753fccba78e08c9a697cf0c82200d8d88650dc75d",
+    "scripts/verify-newsletter-output.mjs": "2b6da6a5e239bec85b545ed7f237c094d4a21dd08eba4218eea3cd945cfbff97",
     "scripts/verify-newsletter-parity.mjs": "4cf9e3bc46074b9ff8b7102111d3ae6344b026bfd3d283701aca4c35595fdbf3",
     "scripts/verify-newsletter-source-links.mjs": "89b9f265de4eccfc417215086421f44ae8bc4aaf10e12643812d7e45dfc1a876",
     "worker/newsletter-brief.mjs": "b6aa6893f16b40cab48df24052dbcc25ad674f8fa3c146998c5564ce37ff5747",
