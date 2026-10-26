@@ -1378,9 +1378,9 @@
       "lastDiscoveryAt": "2026-10-26T02:16:06+00:00"
     },
     "isin:INE15B701018|Pine Labs": {
-      "lastAttemptAt": "2026-10-21T01:44:05+00:00",
+      "lastAttemptAt": "2026-10-26T03:41:54+00:00",
       "lastResultCount": 47,
-      "error": null,
+      "error": "search-unavailable",
       "targetThrough": null,
       "pending": [],
       "lastDiscoveryAt": "2026-10-21T01:44:05+00:00",
@@ -2794,8 +2794,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 7,
+    "attempted": 1,
     "incomplete": 237,
-    "checkedAt": "2026-10-26T02:16:06.977674+00:00"
+    "checkedAt": "2026-10-26T03:41:54.149556+00:00"
   }
 }
