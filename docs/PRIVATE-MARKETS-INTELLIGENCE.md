@@ -75,3 +75,7 @@ mobile inboxes retain complete reported fields, source notes and coverage warnin
 Newly prepared editions use this layout; previously frozen delivery bodies stay
 unchanged. Local visual check: `NEWSLETTER_LAYOUT=1 node
 scripts/verify-private-markets-intelligence.mjs` (with the existing Playwright runtime).
+
+Funding sections begin directly below the masthead. The former edition-count
+introduction and orange coverage banner are removed. Reporting dates and actual
+source status remain in the closing Coverage & sources notes.
