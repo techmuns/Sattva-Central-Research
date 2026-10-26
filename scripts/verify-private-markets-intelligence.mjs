@@ -28,21 +28,23 @@ const html=(company='Fixture New Company',amount='$2 Mn')=>`<meta property="arti
 mergeArticle(capture,capture.articles[0],parseArticle(html(),article),new Date(at).toISOString());capture.sourceCheckedAt=capture.generatedAt=new Date(at).toISOString();
 const model=buildIntelligence({capture,roster,at:monday,slot:privateMarketsSlot(monday)});
 assert.equal(model.rows.length,1);assert.equal(model.matched.length,1);const emails=intelligenceEmails(model,{dashboardUrl:'https://fixture.test'});
-assert.match(emails[0].html,/Whole universe/);assert.match(emails[0].html,/Investments by funds/);assert.match(emails[0].html,/specific vehicle unconfirmed/);assert.match(emails[0].html,/Mix of equity and debt/);assert.match(emails[0].html,/Source checks are overdue/);
+assert.match(emails[0].html,/Whole universe/);assert.match(emails[0].html,/Investments by funds/);assert.match(emails[0].html,/specific vehicle unconfirmed/);
+assert(model.notes.some(n=>n.note.includes('Mix of equity and debt')),'Source notes remain in the retained model');assert.equal(model.coverage.stale,true);
 assert.match(emails[0].subject,/Private Markets Intelligence/);assert.match(emails[0].html,/<meta charset="utf-8">/);assert(!emails[0].html.includes('undefined'));
 // Presentation must retain long/hostile source fields, limitations and every link.
 const detailed=structuredClone(model);
 Object.assign(detailed.rows[0],{company:'Long & <Source> '+ '名'.repeat(160),amount:'₹12 crore',round:'Series A*',sector:'Consumer',subsector:'Retail',businessModel:'D2C',investors:'Investor & <Partners>',leadInvestor:'Lead & Co',change:'Source correction',sourceMissing:true});
 detailed.rows[0].matches[0].closed=true;
 const detailedHtml=intelligenceEmails(detailed,{dashboardUrl:'https://glow-central-research.example.test'})[0].html;
-for(const text of ['Long &amp; &lt;Source&gt;','₹12 crore','Series A*','Consumer','Retail','D2C','Investor &amp; &lt;Partners&gt;','Lead &amp; Co','Source correction','Retained observation','closed fund in workbook','Mix of equity and debt','source clock','Manage subscription / unsubscribe'])assert(detailedHtml.includes(text),`Retained in styled email: ${text}`);
+for(const text of ['Long &amp; &lt;Source&gt;','₹12 crore','Series A*','Consumer','Retail','D2C','Investor &amp; &lt;Partners&gt;','Lead &amp; Co','Source correction','Retained observation','closed fund in workbook','Inc42 source ↗','Manage subscription / unsubscribe'])assert(detailedHtml.includes(text),`Retained in styled email: ${text}`);
 assert(!detailedHtml.includes('<Source>'));
 assert.match(detailedHtml,/GLOW VENTURES/);
 assert.match(intelligenceEmails(model,{dashboardUrl:'https://sattva-central-research.example.test'})[0].html,/SATTVA VENTURES/);
 const introduction=emails[0].html.slice(0,emails[0].html.indexOf('Whole universe'));
 assert.doesNotMatch(introduction,/Reporting window|Across this edition|Source coverage|Source checks are overdue/,'Funding leads immediately after the masthead');
 assert.doesNotMatch(emails[0].html,/Across this edition|border-left:3px solid #c2410c/,'No edition-count paragraph or orange warning box');
-assert(emails[0].html.indexOf('Reporting window')>emails[0].html.indexOf('Coverage &amp; sources'),'Reporting dates remain in the closing source notes');
+assert.doesNotMatch(emails[0].html,/Coverage &amp; sources|Reporting window|Source listing checked|Source checks are overdue|Source note ↗|Mix of equity and debt/,'No closing coverage or global source-note section in email');
+assert(emails[0].html.includes(article.url),'Per-company evidence links remain in email');
 const noRoster=buildIntelligence({capture,at:monday,slot:privateMarketsSlot(monday)});assert.match(intelligenceEmails(noRoster,{dashboardUrl:'https://fixture.test'})[0].html,/section is unavailable/);
 assert(buildIntelligence({capture:{...capture,sourceCheckedAt:new Date(monday+11*60000).toISOString()},roster,at:monday}).coverage.stale,'An invalid future source clock cannot appear fresh');
 const duplicate=structuredClone(capture);duplicate.deals.push({...duplicate.deals[0],id:'f'.repeat(24),sourceUrl:'https://inc42.com/buzz/second-fixture-funding/'});duplicate.articles.push({...duplicate.articles[0],url:'https://inc42.com/buzz/second-fixture-funding/'});const grouped=buildIntelligence({capture:duplicate,roster,at:monday});assert.equal(grouped.rows.length,1);assert.equal(grouped.rows[0].observations.length,2);duplicate.deals[1].sourceUrl=duplicate.deals[0].sourceUrl;assert.equal(buildIntelligence({capture:duplicate,roster,at:monday}).rows.length,2,'Repeated identical rows in one table remain distinct');

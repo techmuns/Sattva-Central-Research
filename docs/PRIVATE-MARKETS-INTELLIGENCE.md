@@ -71,11 +71,13 @@ Saved raw round selections migrate to their display group during an upgrade.
 The weekly inbox layout shares `worker/newsletter-style.mjs` with the total
 portfolio newsletter: the same indigo palette, serif masthead/company headings,
 640px paper, section rules and dark subscription footer. Both desktop and narrow
-mobile inboxes retain complete reported fields, source notes and coverage warnings.
+mobile inboxes retain complete reported funding fields and per-company source links.
 Newly prepared editions use this layout; previously frozen delivery bodies stay
 unchanged. Local visual check: `NEWSLETTER_LAYOUT=1 node
 scripts/verify-private-markets-intelligence.mjs` (with the existing Playwright runtime).
 
 Funding sections begin directly below the masthead. The former edition-count
-introduction and orange coverage banner are removed. Reporting dates and actual
-source status remain in the closing Coverage & sources notes.
+introduction, orange coverage banner and closing Coverage & sources section are
+removed, including its timestamps, coverage copy and global source footnotes.
+Source notes and coverage metadata remain in the retained model and capture;
+per-company evidence links and correction labels remain in each funding entry.
