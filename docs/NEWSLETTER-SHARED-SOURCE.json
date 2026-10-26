@@ -20,7 +20,7 @@
     "worker/newsletter-event-identity.mjs": "ba43a8ad892ebbe3c03914d5bf67b8bb7a8db57ef9c5cc1fff90c77291e715da",
     "worker/newsletter-events.mjs": "7187c9f73126782bae5ceb7ca99d3d730e60f54dae3199da5934edaa20ec3ae9",
     "worker/newsletter-filing-events.mjs": "8954a528a5220e80667d5b959a8b68d2f2ebd1b7ee38f97a5ca6015286efc0d1",
-    "worker/newsletter-github.mjs": "43548daad5c0ee57cd114263babfd550eec4c335f662c7f19e4af33a31c3cfb9",
+    "worker/newsletter-github.mjs": "1b348fba7c52274c00d09228d19d8e2852925f772ce9954d35603b00a69d5760",
     "worker/newsletter-investment-events.mjs": "6be3af43d9bb061ef0ee41929fd17ac7352418e760f90dec87c281e1bfda7161",
     "worker/newsletter-investor-email.mjs": "998f976ef91a2813d462179cfac99a9d7d5fbec85054403c693730e419aedd84",
     "worker/newsletter-notice-events.mjs": "21cb8d326a9e29f1d63432bfd3142f6cdbb56f625ac78071008338f07331af3b",

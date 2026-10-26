@@ -71,7 +71,7 @@ export async function handleGithubNewsletter(request,env,{object,guardWrite,pdfH
   if(!head)return json({ok:false,reason:'preparing'},503);const value=await read(`preview-${edition}-${format}-${part}`);
   if(!value?.ok)return json({ok:false,reason:value?.reason||'preview-unavailable'},503);
   if(format==='pdf')return newsletterPdfResponse(value,read,pdfHeaders(value.filename));
-  return new Response(value.body,{headers:{'content-type':format==='text'?'text/plain; charset=utf-8':'text/html; charset=utf-8','cache-control':'private, no-store','content-security-policy':"default-src 'none'; img-src https: data:; style-src 'unsafe-inline'",'x-newsletter-subject':encodeURIComponent(value.subject||''),'x-newsletter-part':String(value.part||1),'x-newsletter-parts':String(value.parts||1),'x-newsletter-built-at':value.builtAt||head.createdAt}});
+  return new Response(value.body,{headers:{'content-type':format==='text'?'text/plain; charset=utf-8':'text/html; charset=utf-8','cache-control':'private, no-store','content-security-policy':"default-src 'none'; img-src https: data:; style-src 'unsafe-inline'",'x-newsletter-subject':encodeURIComponent(value.subject||''),'x-newsletter-part':String(value.part||1),'x-newsletter-parts':String(value.parts||1),'x-newsletter-built-at':value.builtAt||head.createdAt,...(value.deliveryFormat?{'x-newsletter-delivery-format':value.deliveryFormat,'x-newsletter-delivery-parts':String(value.deliveryParts)}:{})}});
  }
  if(url.pathname.startsWith('/api/newsletter/requests/')){
   if(request.method!=='GET')return json({ok:false,reason:'method'},405);const id=url.pathname.split('/').at(-1);if(!uuid(id))return json({ok:false,reason:'invalid-request'},400);
