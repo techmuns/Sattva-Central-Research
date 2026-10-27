@@ -65,6 +65,10 @@ assert.equal(companyReadings([]).length,0);
 // document is a different member from the stable group identity.
 const canonical=hfcl[0].id,consolidated=editorialEvents({ai:{items:{[canonical]:{summary:'Consolidated HFCL source reading',impact:'',unknowns:''}}}},companies(rows));
 assert.equal(consolidated.events.find(e=>e.id===canonical).summary,'Consolidated HFCL source reading');
+const conflicting=structuredClone(hfcl[0].variants);conflicting[0].cluster.versionConflict=true;conflicting[0].summary=null;conflicting[0].sourceSummary='Captured versions conflict; chronology unconfirmed.';
+const protectedReading=companyReadings(conflicting,{[canonical]:{summary:'Unsupported consolidated version selection'}})[0];
+assert.notEqual(protectedReading.summary,'Unsupported consolidated version selection','Consolidated notes cannot override an existing source-version conflict guard');
+assert(protectedReading.variants.some(v=>v.cluster.versionConflict),'Every conflicted source version remains retained');
 const brief=fromRows(rows),before=JSON.stringify(brief),stats=briefStats(brief);
 const options={brand:'Sattva Ventures',productName:'Research Central',dashboardUrl:'https://example.test',pdfUrl:'https://example.test/api/newsletter/pdf/00000000-0000-0000-0000-000000000001'};
 const messages=renderInvestorEmails(brief,options);assert(messages.length<=3);

@@ -96,7 +96,7 @@ export function companyReadings(events,notes={}) {
       }
       const separateSummaries=variants.filter(v=>material(v.lead).length>0).length>1;
       const id=variants.length>1?`reading:${variants[0].id}`:variants[0].id;
-      const consolidated=variants.length>1&&!separateSummaries?notes[id]:null;
+      const consolidated=variants.length>1&&!separateSummaries&&!variants.some(v=>v.cluster.versionConflict)?notes[id]:null;
       return {...lead,...(consolidated?{note:consolidated,summary:consolidated.summary}:{}),id,variants,additionalReadings,separateSummaries,rank:Math.max(...variants.map(v=>v.rank)),at:Math.max(...variants.map(v=>v.at)),
         sources:[...new Set(variants.flatMap(v=>v.sources))],read:variants.reduce((n,v)=>n+v.read,0),total:variants.reduce((n,v)=>n+v.total,0),sourceCount:variants.reduce((n,v)=>n+v.sourceCount,0),relatedSources:variants.filter(v=>v.lead.related).length};
     }).sort(compare);
