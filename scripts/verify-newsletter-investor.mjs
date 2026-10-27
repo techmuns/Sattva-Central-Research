@@ -62,8 +62,11 @@ for(const token of [NEWSLETTER_STYLE.CREAM,NEWSLETTER_STYLE.INK,NEWSLETTER_STYLE
 assert(inbox.includes('border-top:3px double')&&inbox.includes('max-width:640px')&&inbox.includes('Evening Portfolio Brief'),'Retain the original masthead, paper width and edition format');
 assert(!inbox.includes(official.headline),'A grounded summary replaces the repetitive source headline in the inbox');
 assert(!inbox.includes('Descriptions are abbreviated')&&!inbox.includes('reference/calendar groups'),'Detailed diagnostics belong in the complete report');
-const incomplete=structuredClone(brief);incomplete.announcements.nseHistory={ok:true,missingDays:['2026-10-06']};
-assert(renderInvestorEmails(incomplete,options)[0].html.includes('Partial coverage: NSE'),'A successful subset cannot conceal missing source days');
+const incomplete=structuredClone(brief);incomplete.announcements.nseHistory={ok:true,days:[],missingDays:['2026-10-06']};
+incomplete.content={pending:69,partial:4};
+for(const message of renderInvestorEmails(incomplete,options))for(const label of ['Partial coverage:','pending reads','partial reads','Coverage details (PDF)','Open dashboard'])assert(!message.html.includes(label),'Edition diagnostics and the dashboard shortcut stay out of the inbox');
+const incompletePdf=Buffer.from(renderBriefPdf(incomplete)).toString('latin1');
+assert(incompletePdf.includes('69 source items remain unread')&&incompletePdf.includes('2026-10-06'),'The full report retains unread counts and missing source days');
 for(const [,headline]of excluded)assert(!messages[0].html.includes(headline),'Reference records must not become investor developments');
 assert.deepEqual(messages.flatMap(m=>m.keys).sort(),briefStoryKeys(brief).sort(),'The verified report retains every source identity, including reference records');
 const before=JSON.stringify(brief),pdf=Buffer.from(renderBriefPdf(brief)).toString('latin1');

@@ -52,8 +52,11 @@ source link labelled Announcement or News report. Source URL length never change
 destination to the newsletter PDF. Prefer an exact captured publisher alias over its Google
 discovery wrapper; unresolved wrappers retain their specific captured report link, and missing
 source links are explicit. Never substitute a publisher homepage or construct an article URL.
-A grounded summary replaces the repeated headline. A short coverage note links to
-the full diagnostics; reference and reading counters do not clutter every event.
+A grounded summary replaces the repeated headline. At the user's request on 27 October,
+the email omits the edition-wide coverage banner and the Open dashboard shortcut. The
+separate Download PDF button retains access to full coverage diagnostics; per-event source
+states and exact original links remain in the inbox. Reference and reading counters do not
+clutter every event.
 `renderInvestorEmails` first packs detailed event descriptions, then, if necessary,
 abbreviated descriptions. Long source URLs use stable short links on the newsletter origin,
 as requested by the user on 26 October. Each opens the exact original article or filing with
@@ -177,8 +180,9 @@ search schedule or new Cloudflare processing/storage binding is introduced.
 An in-place link-policy upgrade gives formerly unsupported pending links one ordinary retry;
 later discoveries preserve their backoff and never reset a reading lease or completed job.
 
-Source capture, document reading, grouping and answer availability remain distinct. The email
-opens with partial source coverage, unread counts and unavailable AI notes where applicable.
+Source capture, document reading, grouping and answer availability remain distinct. The full
+report retains partial source coverage, unread counts and unavailable AI notes where applicable;
+the email retains each event's actual verification state without the aggregate coverage banner.
 A new render time cannot make an old or incomplete capture current. This change does not
 certify exhaustive upstream collection, live OCR quality or statistical model accuracy.
 

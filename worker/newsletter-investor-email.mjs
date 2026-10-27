@@ -53,18 +53,8 @@ ${s.related?`<div style="margin-top:4px;color:${META};font-size:11px">Related en
 <div style="margin-top:6px;font-size:11px;color:${META}">${type} · ${esc(evidence)}${incomplete} · ${esc(istLabel(s.at))} · ${source?link(source,sourceLabel):'Source link unavailable'}${extraSources}</div>
 </td></tr>`;
   }).join('');
-  const a=brief.announcements,n=brief.news;
-  const gaps=[];
-  if (!a.nse?.ok || !a.nseHistory?.ok || a.nseHistory?.missingDays?.length) gaps.push('NSE');
-  if (!a.bse?.ok || a.bse?.partial) gaps.push('BSE');
-  if (a.filingArchive?.ok===false || a.filingArchive?.unverifiedSources) gaps.push('filing archive');
-  if (!n.source?.ok || n.source?.archiveComplete===false || n.source?.checks?.some(s=>s.ok===false || (Number.isFinite(s.feeds)&&Number.isFinite(s.feedsOk)&&s.feedsOk<s.feeds))) gaps.push('publishers');
-  if (n.company?.partial || n.company?.ok===false || n.tradingview?.partial || n.tradingview?.ok===false || n.tradingview?.archiveComplete===false) gaps.push('company news');
-  if (brief.trades?.source?.ok===false) gaps.push('ownership');
-  if (brief.calendar?.screener?.ok===false || brief.calendar?.moneycontrol?.ok===false || brief.actions?.source?.ok===false) gaps.push('calendar');
-  const pending=brief.content?.pending||0,partial=brief.content?.partial||0;
-  const coverage=[gaps.length?`Partial coverage: ${gaps.join(', ')}`:null,pending?`${pending} pending reads`:null,partial?`${partial} partial reads`:null,!brief.ai?.ok?'AI notes limited':null].filter(Boolean);
-  const warning=coverage.length?`<div style="padding:9px 10px;background:${CREAM};color:${BODY};font-size:11px;margin:12px 0">${esc(coverage.join(' · '))}. ${link(reportUrl,'Coverage details (PDF) →')}</div>`:'';
+  // Edition-wide coverage diagnostics stay in the complete report. Per-event
+  // source states and exact original links remain beside each inbox reading.
   const first=part.index===1;
   const calendar=first?(brief.calendar?.rows || []).map(r=>
     `<tr>${cell(`<span style="white-space:nowrap">${esc(r.date)}</span>`+(r.time?`<br>${esc(r.time)} IST`:''))}${cell(esc(r.company),'font-family:'+SERIF+';font-weight:bold')}${cell(link(r.url,r.label))}</tr>`).join(''):'';
@@ -81,7 +71,6 @@ ${s.related?`<div style="margin-top:4px;color:${META};font-size:11px">Related en
 <tr><td align="center" style="padding:30px 24px 0"><div style="font-family:${SERIF};font-size:30px;line-height:1.2;font-weight:bold;letter-spacing:3px;color:${INK}">${esc(brand.toUpperCase())}</div><div style="border-top:3px double ${INK};margin:12px 0 7px;font-size:0;line-height:0">&nbsp;</div><div style="font-size:11px;letter-spacing:4px;text-transform:uppercase;color:${META}">${esc(productName)} — ${esc(TAGLINES[brief.edition])}</div><div style="margin-top:10px;padding:7px 0;border-top:1px solid ${RULE};border-bottom:1px solid ${RULE};font-size:11px;letter-spacing:1px;color:${META}">${esc(istDateLong(brief.at))} · ${esc(istLabel(brief.window.from))} → ${esc(istLabel(brief.window.to))}</div></td></tr>
 <tr><td style="padding:14px 24px 22px"><div style="color:${BODY};font-size:12px"><strong>${reading.events.length} portfolio update${reading.events.length===1?'':'s'}</strong> · ${companies} compan${companies===1?'y':'ies'}${part.total>1?` · Part ${part.index} of ${part.total}`:''}</div>
 ${preview?`<div style="font-size:11px;color:${META};margin-top:5px">Preview · saved readings</div>`:''}
-${warning}<div style="margin-top:8px;font-size:12px">${link(dashboardUrl+'/#/research/daily-alerts?scope=portfolio','Open dashboard →')}</div>
 ${heading('YOUR PORTFOLIO COMPANIES')}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;table-layout:fixed;overflow-wrap:anywhere">${cards||(part.packing?'':`<tr><td style="padding:18px 0;color:${META}">No new developments identified in the available readings.</td></tr>`)}</table>
 ${first&&part.supplements?`${calendar?heading('UPCOMING RESULTS & CALLS')+table(calendar):''}${actionRows?heading('CORPORATE ACTION DATES')+table(actionRows):''}${markets?heading('MARKET CONTEXT')+table(markets):''}`:''}
 ${first&&!part.supplements?`<p style="font-size:12px">${brief.calendar?.rows?.length||0} results/calls · ${brief.actions?.rows?.length||0} corporate actions · ${link(reportUrl,'Dates and markets (PDF) →')}</p>`:''}
