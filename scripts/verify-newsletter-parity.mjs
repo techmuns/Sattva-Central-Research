@@ -13,7 +13,9 @@ const canonical=text=>text.replaceAll('Glow Ventures','Family Office').replaceAl
  .replaceAll('sattva-central-research.tech-441.workers.dev','central-research.example')
  .replaceAll('GlowCentralResearch/1.0','ResearchBot/1.0').replaceAll('SattvaCentralResearch/1.0','ResearchBot/1.0')
  .replaceAll('GlowResearch/1.0','ResearchBot/1.0').replaceAll('SattvaCentralBot/1.0','ResearchBot/1.0')
- .replaceAll('`glow-${brief.day}','`family-${brief.day}').replaceAll('`sattva-${brief.day}','`family-${brief.day}');
+ .replaceAll('`glow-${brief.day}','`family-${brief.day}').replaceAll('`sattva-${brief.day}','`family-${brief.day}')
+ .replaceAll("'glow-2026-09-17-morning-brief.pdf'","'family-2026-09-17-morning-brief.pdf'").replaceAll("'sattva-2026-09-17-morning-brief.pdf'","'family-2026-09-17-morning-brief.pdf'")
+ .replaceAll('attachment; filename="glow-','attachment; filename="family-').replaceAll('attachment; filename="sattva-','attachment; filename="family-');
 assert.match(contract.initialGlowRevision,/^[a-f0-9]{40}$/);
 assert.equal(contract.schemaVersion,1);assert.equal(contract.upstream,'techmuns/Sattva-Central-Research');
 const roots=[root,...(process.env.NEWSLETTER_PEER_ROOT?[resolve(process.env.NEWSLETTER_PEER_ROOT)]:[])];
