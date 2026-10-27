@@ -81,7 +81,7 @@ export function editorialEvents(brief, companies) {
       summary: note && lead === cluster.main && !cluster.versionConflict && !completeSourceSummary ? note.summary : null,
       sourceSummary,
       completeSourceSummary:!!completeSourceSummary&&!cluster.versionConflict,
-      description: scheduledBoardMeetingSummary(lead),
+      description: lead.kind==='trade'?[lead.headline,lead.dek].filter(Boolean).join(' · '):scheduledBoardMeetingSummary(lead),
       facts: investorSourceFacts(lead),
       sources: [...new Set([newsletterSourceUrl(lead),...[lead,...members.filter(s=>s!==lead)].flatMap(newsletterSourceUrls)].filter(Boolean))],
       evidence: lead.content?.state === 'ready' ? sourceSummary?'Source read':'Source read; factual summary unavailable' : lead.content?.state==='partial'?'Partial source read':'Headline only',

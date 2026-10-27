@@ -86,11 +86,12 @@ export function companyReadings(events,notes={}) {
       const known=new Set(facts(lead.lead).map(signature)),additionalReadings=[];
       for(const variant of ranked.slice(1)){
         const novel=versionTerms(variant.lead).filter(f=>(f.field!=='source'||lead.lead.content?.format==='xbrl')&&!known.has(signature(f)));
-        if(novel.length){
+        const measurement=['trade','move'].includes(variant.lead.kind);
+        if(novel.length||measurement){
           const value=description(variant);
           // Unverified identical headlines cannot erase genuinely different read terms.
-          const reading=headlineKey(value)===headlineKey(variant.lead.headline)||headlineKey(value)===headlineKey(description(lead))?novel.map(f=>`${f.name||f.field}: ${clean(f.value)}`).join('; '):value;
-          if(headlineKey(reading)!==headlineKey(description(lead))&&!additionalReadings.some(r=>headlineKey(r.text)===headlineKey(reading)))additionalReadings.push({text:reading,source:variant.sources[0]});
+          const reading=measurement?variant.lead.dek||'Separate source observation':headlineKey(value)===headlineKey(variant.lead.headline)||headlineKey(value)===headlineKey(description(lead))?novel.map(f=>`${f.name||f.field}: ${clean(f.value)}`).join('; '):value;
+          if(measurement||headlineKey(reading)!==headlineKey(description(lead))&&!additionalReadings.some(r=>headlineKey(r.text)===headlineKey(reading)))additionalReadings.push({text:reading,source:variant.sources[0],...(measurement?{at:variant.lead.at,dayOnly:variant.lead.dayOnly}:{})});
           facts(variant.lead).forEach(f=>known.add(signature(f)));
         }
       }

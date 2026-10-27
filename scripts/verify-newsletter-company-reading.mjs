@@ -61,6 +61,12 @@ for(const date of ['2026-10-19','2026-10-20'])assert(JSON.stringify([differentCa
 const invalidCall=structuredClone(rows[2]);invalidCall.content.facts.find(f=>f.location.endsWith('/DateOfCallForTranscriptsOfEarningsOrQuarterlyCalls')).value='2026-02-31';
 assert.equal(supportingDocumentSummary(invalidCall),null,'Invalid native call dates cannot become factual prose or identity');
 assert.equal(companyReadings([]).length,0);
+const tradeA={...rows[0],kind:'trade',headline:'Insider purchase reported',dek:'Director Alpha bought 10 shares',url:'https://fixture.test/trade-a',content:null};
+const tradeB={...tradeA,dek:'Director Beta bought 20 shares',at:tradeA.at+60000,url:'https://fixture.test/trade-b'};
+const measurements=editorialEvents({},companies([tradeA,tradeB])).events;
+assert.equal(measurements.length,1,'Identical trade headings print once');assert.equal(measurements[0].variants.length,2,'Separate measurements remain separate retained records');
+assert(measurements[0].description.includes('Director Beta bought 20 shares'));assert(measurements[0].additionalReadings.some(r=>r.text.includes('Director Alpha bought 10 shares')&&r.at===tradeA.at),'Every distinct measurement keeps its details, date and exact source inside the shared heading');
+assert.equal(aiItemsFor(companies([tradeA,tradeB])).length,0,'Trade observations consume no model allowance');
 // A writer note is applied once to the conserved group, even when its strongest
 // document is a different member from the stable group identity.
 const canonical=hfcl[0].id,consolidated=editorialEvents({ai:{items:{[canonical]:{summary:'Consolidated HFCL source reading',impact:'',unknowns:''}}}},companies(rows));
