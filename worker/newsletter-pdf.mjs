@@ -373,7 +373,7 @@ export function renderBriefPdf(
     previousReadingCompany=event.ticker;
     const summary=event.summary || event.sourceSummary || event.description || event.lead.headline;
     pdf.paragraph(summary,{size:10});
-    for(const extra of event.additionalReadings||[])pdf.paragraph(`Additional source: ${extra.text}`,{size:10});
+    for(const extra of event.additionalReadings||[])pdf.paragraph(`Additional source: ${extra.text}`,{size:10,url:readableUrl(extra.source,dashboardUrl)});
     if(event.summary&&event.note?.impact)pdf.paragraph(`Potential impact / AI: ${event.note.impact}`,{size:9,color:MUTED});
     if(event.summary&&event.note?.unknowns)pdf.paragraph(`Watch next: ${event.note.unknowns}`,{size:9,color:MUTED});
     pdf.paragraph(`${event.evidence} / ${event.read} of ${event.total} source items read / ${storyWhen(event.lead)}`,{size:8,color:MUTED});

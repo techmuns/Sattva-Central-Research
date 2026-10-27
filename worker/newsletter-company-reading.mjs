@@ -21,6 +21,12 @@ export function boardDisclosure(item) {
   if(rows.some(f=>['amount','ownership'].includes(f.field)||/\b(?:fund.?rais\w*|acquisition|buyback|preferential|rights issue|merger|QIP)\b/i.test(f.value)))return null;
   if(events.some(value=>!board.includes(value)&&!/\b(?:trading window|earnings conference call|earnings call|conference call for analysts)\b/i.test(value)))return null;
   if(!board.length||rows.some(f=>['event','status','date'].includes(f.field)&&hasSourceChange(f.value)))return null;
+  // A second proposal embedded in the board sentence is not routine notice prose.
+  for(const value of board){
+    let residual=value;for(const period of financialPeriodsIn(value))residual=residual.replace(period,'');
+    residual=residual.replace(/\b(?:board|of|directors|meeting|scheduled|to|consider|and|approve|for|approval|un-audited|unaudited|audited|standalone|consolidated|financial|results|the|quarter|quarterly|half|year|yearly|ended)\b/gi,'').replace(/[\s.,:;()/-]/g,'');
+    if(residual)return null;
+  }
   const dates=rows.filter(f=>f.field==='date'&&/^board meeting (?:date:|scheduled for)/i.test(clean(f.value))).flatMap(f=>eventDates(f.value));
   const periods=board.flatMap(financialPeriodsIn).map(financialPeriod);
   if(!dates.length||dates.some(d=>!d||d!==dates[0])||!periods.length||periods.some(p=>!p||p!==periods[0]))return null;

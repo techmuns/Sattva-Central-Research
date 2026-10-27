@@ -35,7 +35,7 @@ export function renderInvestorEmail(brief, {dashboardUrl,recipient,productName,b
     const sourceLabel=s.kind==='filing'?'Announcement →':s.kind==='news'?'News report →':'Source →';
     const sameCompany=index>0&&events[index-1].ticker===event.ticker;
     const continued=index===0&&part.continuedCompany===event.ticker?' (continued)':'';
-    const additional=(event.additionalReadings||[]).map(r=>`<div style="margin-top:5px"><strong>Additional source:</strong> ${esc(short(r.text,summaryChars))}</div>`).join('');
+    const additional=(event.additionalReadings||[]).map(r=>`<div style="margin-top:5px"><strong>${link(emailSourceUrl(r.source,sourceLinks,dashboardUrl),'Additional source →',GOLD,compact?'gvl':null)}</strong> ${esc(short(r.text,summaryChars))}</div>`).join('');
     const type=s.kind==='filing'?'Corporate announcement':s.kind==='trade'?'Ownership disclosure':s.kind==='move'?'Price context':'Reported development';
     // One description per event. Never repeat its headline above an equivalent AI summary.
     // Keep the bounded structured meeting note intact, including a later agenda

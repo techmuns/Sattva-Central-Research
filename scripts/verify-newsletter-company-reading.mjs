@@ -52,6 +52,8 @@ for(const [name,alter] of [
  ['period',s=>s.replaceAll('September','June')],
  ['revision',s=>s.replace('"New"','"Revised"')],
 ]){const changed=JSON.parse(alter(JSON.stringify(biocon[1])));changed.url='https://fixture.test/'+name;changed.content.hash='other-'+name;assert.equal(clusterStories([biocon[0],changed]).length,2,`Different ${name} must survive`);}
+const extraAgenda=structuredClone(biocon[0]);extraAgenda.url='https://fixture.test/extra-agenda';extraAgenda.content.hash='extra-agenda';extraAgenda.content.facts.find(f=>f.field==='event').value+=' and employee stock option plan';
+assert.equal(clusterStories([extraAgenda,biocon[1]]).length,2,'Mixed board documents cannot hide an unclassified additional proposal even with a matching financial period');
 const dated=structuredClone(rows[2]);dated.url='https://fixture.test/other-call';dated.content.hash='other-call';dated.content.facts.find(f=>f.location.endsWith('/DateOfCallForTranscriptsOfEarningsOrQuarterlyCalls')).value='2026-10-20';
 const differentCalls=editorialEvents({},companies([rows[2],dated])).events;
 assert.equal(differentCalls[0].variants.length,2,'Identical headings still retain both explicitly dated calls');
