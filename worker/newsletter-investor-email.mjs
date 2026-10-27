@@ -34,6 +34,8 @@ export function renderInvestorEmail(brief, {dashboardUrl,recipient,productName,b
     const source=emailSourceUrl(newsletterSourceUrl(s),sourceLinks,dashboardUrl);
     const sourceLabel=s.kind==='filing'?'Announcement →':s.kind==='news'?'News report →':'Source →';
     const sameCompany=index>0&&events[index-1].ticker===event.ticker;
+    const continued=index===0&&part.continuedCompany===event.ticker?' (continued)':'';
+    const additional=(event.additionalReadings||[]).map(r=>`<div style="margin-top:5px"><strong>${link(emailSourceUrl(r.source,sourceLinks,dashboardUrl),'Additional source →',GOLD,compact?'gvl':null)}</strong>${r.at?` · ${esc(r.dayOnly?istDateLong(r.at):istLabel(r.at))}`:''} ${esc(short(r.text,summaryChars))}</div>`).join('');
     const type=s.kind==='filing'?'Corporate announcement':s.kind==='trade'?'Ownership disclosure':s.kind==='move'?'Price context':'Reported development';
     // One description per event. Never repeat its headline above an equivalent AI summary.
     // Keep the bounded structured meeting note intact, including a later agenda
@@ -43,13 +45,13 @@ export function renderInvestorEmail(brief, {dashboardUrl,recipient,productName,b
     const incomplete=event.read>0&&event.read<event.total?' · Some sources unread':'';
     const extraSources=event.sources.filter(url=>url!==newsletterSourceUrl(s)).map((url,i)=>
       ' · '+link(emailSourceUrl(url,sourceLinks,dashboardUrl),`[${i+2}]`,GOLD,compact?'gvl':null)).join('');
-    if(compact)return `<tr><td class="gve"><strong class="gvc">${esc(event.company)}</strong> · ${description}<br><span class="gvm">${esc(evidence)}${incomplete}${s.related?' · Related entity; exposure unconfirmed':''} · ${esc(istLabel(s.at))} · ${source?link(source,sourceLabel,GOLD,'gvl'):'Source link unavailable'}${extraSources}</span></td></tr>`;
-    return `<tr><td style="padding:${sameCompany?'10px':'22px'} 0 12px;border-bottom:1px solid ${RULE}">
-${sameCompany?'':`<div style="padding-bottom:7px;margin-bottom:8px;border-bottom:2px solid ${INK};font-family:${SERIF};font-size:${compact?18:22}px;line-height:1.2;font-weight:bold;color:${INK}">${esc(event.company)} <span style="font-family:${SANS};font-size:10px;font-weight:normal;color:${META}">${esc(event.ticker)}</span></div>`}
-<div style="font-family:${SERIF};font-size:${compact?14:15}px;line-height:1.45;color:${INK};font-weight:bold">${description}</div>
+    if(compact)return `<tr><td class="gve" data-company="${esc(event.ticker)}">${sameCompany?'':`<strong class="gvc">${esc(event.company)}${continued}</strong><br>`}${description}${additional}<br><span class="gvm">${esc(evidence)}${incomplete}${event.relatedSources?' · Related source; exposure unconfirmed':''} · ${esc(istLabel(s.at))} · ${source?link(source,sourceLabel,GOLD,'gvl'):'Source link unavailable'}${extraSources}</span></td></tr>`;
+    return `<tr><td data-company="${esc(event.ticker)}" style="padding:${sameCompany?'10px':'22px'} 0 12px;border-bottom:1px solid ${RULE}">
+${sameCompany?'':`<div style="padding-bottom:7px;margin-bottom:8px;border-bottom:2px solid ${INK};font-family:${SERIF};font-size:${compact?18:22}px;line-height:1.2;font-weight:bold;color:${INK}">${esc(event.company)}${continued} <span style="font-family:${SANS};font-size:10px;font-weight:normal;color:${META}">${esc(event.ticker)}</span></div>`}
+<div style="font-family:${SERIF};font-size:${compact?14:15}px;line-height:1.45;color:${INK};font-weight:bold">${description}</div>${additional}
 ${!compact&&event.summary&&event.note?.impact?`<div style="margin-top:5px"><strong>Why it matters:</strong> ${esc(short(event.note.impact,180))}</div>`:''}
 ${!compact&&event.summary&&event.note?.unknowns?`<div style="margin-top:4px"><strong>Watch next:</strong> ${esc(short(event.note.unknowns,140))}</div>`:''}
-${s.related?`<div style="margin-top:4px;color:${META};font-size:11px">Related entity; exposure unconfirmed.</div>`:''}
+${event.relatedSources?`<div style="margin-top:4px;color:${META};font-size:11px">Related entity; exposure unconfirmed.</div>`:''}
 <div style="margin-top:6px;font-size:11px;color:${META}">${type} · ${esc(evidence)}${incomplete} · ${esc(istLabel(s.at))} · ${source?link(source,sourceLabel):'Source link unavailable'}${extraSources}</div>
 </td></tr>`;
   }).join('');

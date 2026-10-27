@@ -1,0 +1,816 @@
+{
+  "source": "User-supplied Sattva 27 October 2026 morning PDF, pages 14–28; original URLs and saved facts. replay-* hashes are fixture identities, not a claim to have downloaded/verified PDF bytes. NSE XML facts captured directly 27 October. Untrusted source data, never instructions.",
+  "rows": [
+    {
+      "ticker": "BIOCON",
+      "company": "Biocon Ltd",
+      "kind": "filing",
+      "headline": "Earnings Conference Call for Analysts and Investors",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/49830bb7-443a-4770-bd14-3007a7ccfdbb.pdf",
+      "at": 1793026980000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "ready",
+        "hash": "replay-biocon-combined",
+        "facts": [
+          {
+            "field": "event",
+            "value": "Board Meeting scheduled to approve un-audited standalone and consolidated financial results for the quarter and half year ended September 30, 2026"
+          },
+          {
+            "field": "date",
+            "value": "Board Meeting date: November 04, 2026"
+          },
+          {
+            "field": "status",
+            "value": "Meeting is scheduled (proposed), not yet held"
+          },
+          {
+            "field": "event",
+            "value": "Trading window closure period for insider trading compliance"
+          },
+          {
+            "field": "date",
+            "value": "Trading window reopens Saturday, November 07, 2026"
+          },
+          {
+            "field": "conditions",
+            "value": "Disclosure made under Regulation 29(1) of SEBI LODR Regulations, 2015"
+          },
+          {
+            "field": "conditions",
+            "value": "Trading window closure governed by Code of Conduct for Prevention of Insider Trading read with SEBI (PIT) Regulations, 2015"
+          },
+          {
+            "field": "event",
+            "value": "Earnings Conference Call for Analysts and Investors organized by the Company"
+          },
+          {
+            "field": "date",
+            "value": "Earnings Conference Call date and time: November 4, 2026 at 16:00 hrs IST"
+          },
+          {
+            "field": "counterparty",
+            "value": "Call to be conducted over Zoom platform"
+          },
+          {
+            "field": "conditions",
+            "value": "Audio recording availability timeline"
+          },
+          {
+            "field": "conditions",
+            "value": "Video recording availability timeline"
+          },
+          {
+            "field": "conditions",
+            "value": "Conference call transcript availability timeline"
+          },
+          {
+            "field": "reason",
+            "value": "Document contains no stated reason for any share-price movement; only forward-looking risk factors disclosed generally"
+          }
+        ],
+        "note": {
+          "summary": "Board meeting 4 November 2026 to consider Q2/H1 FY27 results, ended 30 September 2026; earnings call at 16:00 IST.",
+          "impact": "",
+          "unknowns": ""
+        }
+      },
+      "keys": [
+        "oct27-replay:0"
+      ]
+    },
+    {
+      "ticker": "BIOCON",
+      "company": "Biocon Ltd",
+      "kind": "filing",
+      "headline": "BIOCON LIMITED has informed the Exchange about Board Meeting to be held on 04-Nov-2026 to inter-alia consider and approve the Unaudited Financial results of the Company for the Half Yearly ended September 2026 .",
+      "url": "https://nsearchives.nseindia.com/corporate/xbrl/PRIOR_INTIMATION_2181_WebXMLFile_20261026_202617988.xml",
+      "at": 1793026560000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "ready",
+        "format": "xbrl",
+        "hash": "replay-biocon-xml",
+        "facts": [
+          {
+            "field": "source",
+            "name": "NSE symbol",
+            "value": "BIOCON",
+            "quote": "BIOCON",
+            "location": "Main/NSESymbol",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Name of the company",
+            "value": "BIOCON LIMITED",
+            "quote": "BIOCON LIMITED",
+            "location": "Main/NameOfTheCompany",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Whether company is SME",
+            "value": "false",
+            "quote": "false",
+            "location": "Main/WhetherCompanyIsSME",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "ISIN",
+            "value": "INE376G01013",
+            "quote": "INE376G01013",
+            "location": "Main/ISIN",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Type of meeting",
+            "value": "Board Meeting",
+            "quote": "Board Meeting",
+            "location": "Main/TypeOfMeeting",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Type of intimation",
+            "value": "New",
+            "quote": "New",
+            "location": "Main/TypeOfIntimation",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Date of proposed meeting",
+            "value": "2026-11-04",
+            "quote": "2026-11-04",
+            "location": "Main/DateOfProposedMeeting",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Whether trading window is closed",
+            "value": "true",
+            "quote": "true",
+            "location": "Main/WhetherTradingWindowIsClosed",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Date of start of trading window closure",
+            "value": "2026-10-01",
+            "quote": "2026-10-01",
+            "location": "Main/DateOfStartOfTradingWindowClosure",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Details of date of end of trading window closure",
+            "value": "06-11-2026",
+            "quote": "06-11-2026",
+            "location": "Main/DetailsOfDateOfEndOfTradingWindowClosure",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Date of report",
+            "value": "2026-10-26",
+            "quote": "2026-10-26",
+            "location": "Main/DateOfReport",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Agenda 1",
+            "value": "Financial results",
+            "quote": "Financial results",
+            "location": "Main/Agenda1",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Whether results are audited or unaudited",
+            "value": "Unaudited",
+            "quote": "Unaudited",
+            "location": "Main/WhetherResultsAreAuditedOrUnaudited",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Nature of report standalone consolidated",
+            "value": "Standalone And Consolidated",
+            "quote": "Standalone And Consolidated",
+            "location": "Main/NatureOfReportStandaloneConsolidated",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Reporting period type",
+            "value": "Half Yearly",
+            "quote": "Half Yearly",
+            "location": "Main/ReportingPeriodType",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Month of period ended",
+            "value": "September",
+            "quote": "September",
+            "location": "Main/MonthOfPeriodEnded",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Year of period ended",
+            "value": "2026 [source unit: pure]",
+            "quote": "2026",
+            "location": "Main/YearOfPeriodEnded",
+            "unit": "pure"
+          }
+        ]
+      },
+      "keys": [
+        "oct27-replay:1"
+      ]
+    },
+    {
+      "ticker": "HFCL",
+      "company": "HFCL Limited",
+      "kind": "filing",
+      "headline": "HFCL LIMITED has informed the Exchange about Transcripts - earnings or quarterly calls",
+      "url": "https://nsearchives.nseindia.com/corporate/xbrl/SAIIM_4160_WebXMLFile_20261026_202628566.xml",
+      "at": 1793026560000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "ready",
+        "format": "xbrl",
+        "hash": "replay-hfcl-xml",
+        "facts": [
+          {
+            "field": "source",
+            "name": "NSE symbol",
+            "value": "HFCL",
+            "quote": "HFCL",
+            "location": "Main/NSESymbol",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Name of the company",
+            "value": "HFCL LIMITED",
+            "quote": "HFCL LIMITED",
+            "location": "Main/NameOfTheCompany",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Scrip code",
+            "value": "500183",
+            "quote": "500183",
+            "location": "Main/ScripCode",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "MSEI symbol",
+            "value": "NOTLISTED",
+            "quote": "NOTLISTED",
+            "location": "Main/MSEISymbol",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "ISIN",
+            "value": "INE548A01028",
+            "quote": "INE548A01028",
+            "location": "Main/ISIN",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Type of announcement",
+            "value": "New",
+            "quote": "New",
+            "location": "Main/TypeOfAnnouncement",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Purpose of disclosure",
+            "value": "Transcripts - earnings or quarterly calls",
+            "quote": "Transcripts - earnings or quarterly calls",
+            "location": "Main/PurposeOfDisclosure",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Date of report",
+            "value": "2026-10-26",
+            "quote": "2026-10-26",
+            "location": "Main/DateOfReport",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Date of call for transcripts of earnings or quarterly calls",
+            "value": "2026-10-19",
+            "quote": "2026-10-19",
+            "location": "Main/DateOfCallForTranscriptsOfEarningsOrQuarterlyCalls",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Time of conclusion of call for transcripts of earnings or quarterly calls",
+            "value": "17:45:00",
+            "quote": "17:45:00",
+            "location": "Main/TimeOfConclusionOfCallForTranscriptsOfEarningsOrQuarterlyCalls",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Date of disclosure of prior intimation of earnings or quarterly calls to the exchange",
+            "value": "2026-10-13",
+            "quote": "2026-10-13",
+            "location": "Main/DateOfDisclosureOfPriorIntimationOfEarningsOrQuarterlyCallsToTheExchange",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Date of transcripts uploaded on website of the company",
+            "value": "2026-10-26",
+            "quote": "2026-10-26",
+            "location": "Main/DateOfTranscriptsUploadedOnWebsiteOfTheCompany",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Time of transcripts uploaded on website of the company",
+            "value": "20:18:00",
+            "quote": "20:18:00",
+            "location": "Main/TimeOfTranscriptsUploadedOnWebsiteOfTheCompany",
+            "unit": null
+          },
+          {
+            "field": "source",
+            "name": "Weblink of transcripts",
+            "value": "https://cdn.prod.website-files.com/69e0036b695965871f0524ab/6adf67ca9b8245bf9f570df0_HFCL_STX_IC_19102026_Transcript.pdf",
+            "quote": "https://cdn.prod.website-files.com/69e0036b695965871f0524ab/6adf67ca9b8245bf9f570df0_HFCL_STX_IC_19102026_Transcript.pdf",
+            "location": "Main/WeblinkOfTranscripts",
+            "unit": null
+          }
+        ],
+        "note": {
+          "summary": "Transcript availability notice; no financial content in this cover notice.",
+          "impact": "",
+          "unknowns": ""
+        }
+      },
+      "keys": [
+        "oct27-replay:2"
+      ]
+    },
+    {
+      "ticker": "HFCL",
+      "company": "HFCL Limited",
+      "kind": "filing",
+      "headline": "This is further to our earlier announcement dated October 19, 2026. In terms of Regulation 30 read with Para A of Part A of Schedule III to the Securities and Exchange Board of India ....",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/476f5fb2-41fb-4fb2-9460-a53d12da4eb9.pdf",
+      "at": 1793025180000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "ready",
+        "hash": "replay-hfcl-transcript",
+        "facts": [
+          {
+            "field": "event",
+            "value": "Submission of transcript of conference call on unaudited financial results for Q2 and H1 FY27 under Regulation 30 of SEBI LODR"
+          },
+          {
+            "field": "date",
+            "value": "Board meeting approving results held October 19, 2026"
+          },
+          {
+            "field": "amount",
+            "value": "Consolidated profit before tax Q2 FY27 INR 538.60 crore vs INR 106.34 crore Q2 FY26"
+          },
+          {
+            "field": "amount",
+            "value": "Consolidated profit after tax Q2 FY27 INR 394.22 crore vs INR 71.92 crore Q2 FY26"
+          },
+          {
+            "field": "amount",
+            "value": "Half-year PBT grew from INR 61.64 crore to INR 870.12 crore"
+          },
+          {
+            "field": "amount",
+            "value": "Half-year PAT grew from INR 42.62 crore to INR 639.86 crore"
+          },
+          {
+            "field": "amount",
+            "value": "Consolidated revenue INR 2,541.79 crore, up ~143.62% YoY"
+          },
+          {
+            "field": "amount",
+            "value": "EBITDA INR 658.00 crore, up 223.55% YoY"
+          },
+          {
+            "field": "amount",
+            "value": "Order book stands at INR 28,900 crore"
+          },
+          {
+            "field": "event",
+            "value": "Acquisition of an aerospace business expected to be completed in the current quarter"
+          },
+          {
+            "field": "amount",
+            "value": "Aerospace business being acquired has unexecuted order book of approximately INR 1600 crore"
+          }
+        ],
+        "note": {
+          "summary": "HFCL Q2/H1 FY27 call transcript: PAT ₹394.22 crore (+448%); revenue ₹2,541.79 crore; order book ₹28,900 crore; aerospace acquisition pending.",
+          "impact": "",
+          "unknowns": ""
+        }
+      },
+      "type": "Earnings Call Transcript",
+      "keys": [
+        "oct27-replay:3"
+      ]
+    },
+    {
+      "ticker": "HFCL",
+      "company": "HFCL Limited",
+      "kind": "filing",
+      "headline": "HFCL Limited has informed the Exchange about Transcript",
+      "url": "https://nsearchives.nseindia.com/corporate/AHMED_26102026200652_HFCL_STX_IC_19102026_Transcript.pdf",
+      "at": 1793025420000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "pending"
+      },
+      "keys": [
+        "oct27-replay:4"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "news",
+      "headline": "Sona Blw Precision Forgings Ltd Sept-Quarter Consol Net Profit 2.23 Billion Rupees",
+      "url": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxOY3RwOFk3azBaaGtHRUQ2QlhkcHZuRTYzaVdOMVRzSUcxRzN3YW82bmRJSU5NOFAwMXdBMFUwZUhucFpkMm9hRzY3aElDcDlNSFdtNnZBYW52YWNVekVNRkllb3hvcUdUeFVxaXBtaENnUmV3R1lFOFNsdENMZVpRaGx3VmVjX3FVbml3aVNHTzAtUHFtYVdBcUpGU1dKazVZRll4UmlTQnVESm1sS0xaUWtBQUZSUHZhZF9tOTdjNWFzYVF3T05KaktXRWhNb0h2N2N4ZkJVMEJMWHVOLW05UzNwTkJaTms?oc=5",
+      "at": 1793014560000,
+      "score": 1,
+      "source": "Captured publisher",
+      "content": {
+        "state": "pending"
+      },
+      "keys": [
+        "oct27-replay:5"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "news",
+      "headline": "Sona Blw Precision Forgings Ltd Sept-Quarter Consol Net Profit 2.23 Billion Rupees",
+      "url": "https://in.tradingview.com/news/reuters.com,2026:newsml_FWN46C16S:0-sona-blw-precision-forgings-ltd-sept-quarter-consol-net-profit-2-23-billion-rupees/",
+      "at": 1793014560000,
+      "score": 1,
+      "source": "Captured publisher",
+      "content": {
+        "state": "partial",
+        "facts": []
+      },
+      "keys": [
+        "oct27-replay:6"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "news",
+      "headline": "SONACOMS: Record Q2 results and order wins amid mix-driven margin pressure",
+      "url": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxNWHpueV8xemMyNGg1SS1NSkhaNUNKNUdVXzUyVmNqMXpJUncxbFVPM3o0VU80LVB6MEYwcnZkSzRKbHN2V09qUHYxcE9fT0pTem0wOXBydWk2eDlKdENrZkF2LWs3V185SzZVdHJWOV9oT2VNU2F6QzFodDJ3UTlmZWFvT016elBsY2cyWTJfRnR1M2pmUDJVdThrdnRadGYtTTY0QmRIRmNIY2ZLR2FyNXJDVlZVcFNqazRpV0hITjB3SHI0Mnl0d0RtYjhVRFJYbV8yODVYTENuTi04TWR2SlhESU01OTZrajZGc1ZWZWhMUQ?oc=5",
+      "at": 1793022780000,
+      "score": 1,
+      "source": "Captured publisher",
+      "content": {
+        "state": "pending"
+      },
+      "keys": [
+        "oct27-replay:7"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "news",
+      "headline": "SONACOMS: Record Q2 results and order wins amid mix-driven margin pressure",
+      "url": "https://in.tradingview.com/news/urn:summary_document_transcript:quartr.com:4357493:0-sonacoms-record-q2-results-and-order-wins-amid-mix-driven-margin-pressure/",
+      "at": 1793022780000,
+      "score": 1,
+      "source": "Captured publisher",
+      "content": {
+        "state": "ready",
+        "hash": "replay-sona-record",
+        "facts": [
+          {
+            "field": "event",
+            "value": "Q2 revenue, EBITDA and PAT reached records."
+          },
+          {
+            "field": "amount",
+            "value": "BEVs contributed 51% of automotive sales."
+          },
+          {
+            "field": "conditions",
+            "value": "Strong orders and cash generation were offset by mix and inflation pressure; margin guidance remains 23%-25%."
+          }
+        ],
+        "note": {
+          "summary": "Record Q2 revenue, EBITDA and PAT; BEVs at 51% of automotive sales; margin guidance 23%–25%.",
+          "impact": "",
+          "unknowns": ""
+        }
+      },
+      "keys": [
+        "oct27-replay:8"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "news",
+      "headline": "SONACOMS: Q2 growth and a ₹251 bn order book offset margin pressure from mix and input costs",
+      "url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxPQlMtQ0RDUlBkX0NpUDF2bnFiMmh2MldQbDNDZ3g1alZEaUx4YXhzWXBYak9OUmxZSlJjeWNhZndRaTRjcWtXcXpUSHU4cENVWVlCMVYzNFN0QWJGaWh5bTkzQ2kybWhlbEd0UE0xT2kyQTBSQVFEUTNIZ3gzTmpoMWJTVzhhX2dBOVdwOFZBMHpqSGQtdkt1MHZPa3daMzd4bW1KT3BUYUZoTTIxMG5OdEE2YWRmXzBzNUhOdzFqcGJ2dmdhbnpiU2tYbU9LcWlRa2hheDVEQzhmQWNYQ1FEcmVHUGE2a0llNlBDcEpCR0dBdDdKTDNoR1lQdl9LUDcxWGM0?oc=5",
+      "at": 1793012580000,
+      "score": 1,
+      "source": "Captured publisher",
+      "content": {
+        "state": "pending"
+      },
+      "keys": [
+        "oct27-replay:9"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "news",
+      "headline": "SONACOMS: Q2 growth and a ₹251 bn order book offset margin pressure from mix and input costs",
+      "url": "https://in.tradingview.com/news/urn:summary_document_slides:quartr.com:4275167:0-sonacoms-q2-growth-and-a-251-bn-order-book-offset-margin-pressure-from-mix-and-input-costs/",
+      "at": 1793012580000,
+      "score": 1,
+      "source": "Captured publisher",
+      "content": {
+        "state": "ready",
+        "hash": "replay-sona-slides",
+        "facts": [
+          {
+            "field": "event",
+            "value": "Q2 FY27 revenue grew 35% and PAT 29%."
+          },
+          {
+            "field": "amount",
+            "value": "Q2 FY27 EBITDA margin fell to 23.0% amid mix and input-cost pressure."
+          },
+          {
+            "field": "amount",
+            "value": "H1 BEV revenue rose 119%."
+          },
+          {
+            "field": "amount",
+            "value": "The net order book reached INR 251 bn. Sona BLW Precision Forgings Q2 FY27 Results: Key Highlights Source content has not been read; document summary pending. Latest document check: Tue 27 Oct, 07:59 IST. Money / Neutral / Kalkine India / via Company news / 26 Oct, 16:27 IST Read original source -> Sona Blw Precision Forgings Limited has informed the Exchange about Investor Presentation NSE filing / Investor Presentation Source content has not been read; document summary pending. Other / Neutral / NSE / 26 Oct, 16:27 IST Read original source ->"
+          }
+        ],
+        "note": {
+          "summary": "Q2 FY27 revenue +35%, PAT +29%; EBITDA margin 23%; net order book ₹251 bn.",
+          "impact": "",
+          "unknowns": ""
+        }
+      },
+      "keys": [
+        "oct27-replay:10"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "filing",
+      "headline": "Sona Blw Precision Forgings Limited has informed the Exchange regarding a press release dated October 26, 2026, titled \"Press Release for Q2 financial results\".",
+      "url": "https://nsearchives.nseindia.com/corporate/SONACOMS_26102026172559_Press_release.pdf",
+      "at": 1793015820000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "ready",
+        "hash": "replay-sona-press",
+        "facts": [
+          {
+            "field": "event",
+            "value": "Sona BLW Precision Forgings Ltd. announced unaudited standalone and consolidated financial results for Q2 and H1 FY27 (quarter and half year ended September 30, 2026)"
+          },
+          {
+            "field": "amount",
+            "value": "Q2 FY27 Revenue of Rs. 1,547 crores with 35% YoY growth"
+          },
+          {
+            "field": "amount",
+            "value": "Q2 FY27 EBITDA of Rs. 356 crores with margin of 23.0%, 23% YoY growth"
+          },
+          {
+            "field": "amount",
+            "value": "Q2 FY27 PAT of Rs. 223 crores with net profit margin of 14.4%, 29% YoY growth"
+          },
+          {
+            "field": "amount",
+            "value": "H1 FY27 Revenue of Rs. 2,857 crores with 43% YoY growth"
+          },
+          {
+            "field": "amount",
+            "value": "H1 FY27 EBITDA of Rs. 658 crores with EBITDA margin of 23.0%"
+          },
+          {
+            "field": "amount",
+            "value": "H1 FY27 PAT of Rs. 403 crores with net profit margin of 14.1%, 36% YoY growth"
+          },
+          {
+            "field": "amount",
+            "value": "BEV revenue grew 129% YoY, reaching 51% of Automotive revenues"
+          },
+          {
+            "field": "amount",
+            "value": "New order additions of Rs 36bn, net order book at Rs 251bn (second highest ever)"
+          },
+          {
+            "field": "amount",
+            "value": "Net order book of Rs. 25,100 crores with EV and Robotics & Physical AI programs contributing 65%"
+          },
+          {
+            "field": "counterparty",
+            "value": "Global OEM of electric passenger vehicles awarded order for helical limited slip differentials for EV platform"
+          },
+          {
+            "field": "counterparty",
+            "value": "Indian OEM of ICE and electric two-wheelers awarded order for integrated motor controllers"
+          },
+          {
+            "field": "counterparty",
+            "value": "Indian OEM of ICE and electric two-wheelers awarded additional traction motor volumes under existing order"
+          },
+          {
+            "field": "counterparty",
+            "value": "Indian OEM of passenger, commercial, off-highway and electric vehicles awarded order for differential assemblies (ICE)"
+          },
+          {
+            "field": "counterparty",
+            "value": "North American OEM of passenger vehicles and EVs awarded order for starter motors"
+          },
+          {
+            "field": "counterparty",
+            "value": "New customer OEM of ICE and electric two-wheelers awarded order for rear radar sensors"
+          },
+          {
+            "field": "event",
+            "value": "Sona Comstar's Driveline Division awarded the 2026 Deming Prize for Total Quality Management by JUSE"
+          }
+        ],
+        "note": {
+          "summary": "Q2 FY27 revenue ₹1,547 crore (+35%); PAT ₹223 crore (+29%); net order book ₹25,100 crore.",
+          "impact": "",
+          "unknowns": ""
+        }
+      },
+      "keys": [
+        "oct27-replay:11"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "filing",
+      "headline": "Sona Blw Precision Forgings Limited has submitted to the Exchange, the financial results for the period ended September 30, 2026.",
+      "url": "https://nsearchives.nseindia.com/corporate/SONACOMS_26102026170351_All_1.pdf",
+      "at": 1793014560000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "ready",
+        "hash": "replay-sona-board",
+        "facts": [
+          {
+            "field": "event",
+            "value": "Board of Directors approved unaudited standalone and consolidated financial results for Q2 and H1 FY27"
+          },
+          {
+            "field": "date",
+            "value": "Board meeting held on October 26, 2026"
+          },
+          {
+            "field": "event",
+            "value": "Acquisition of Railway Business of Escorts Kubota Limited completed as going concern slump sale"
+          },
+          {
+            "field": "counterparty",
+            "value": "Escorts Kubota Limited"
+          },
+          {
+            "field": "amount",
+            "value": "Rs. 16,426.32 million consideration for Railway Business acquisition"
+          },
+          {
+            "field": "status",
+            "value": "Acquisition completed with effect from June 01, 2025"
+          },
+          {
+            "field": "event",
+            "value": "Definitive agreements signed with DENSO Corporation Japan to form two Joint Ventures for EV/Hybrid powertrain systems"
+          },
+          {
+            "field": "counterparty",
+            "value": "DENSO Corporation Japan (DENSO)"
+          },
+          {
+            "field": "ownership",
+            "value": "One JV will have 51:49 equity ownership between DENSO:SONA for high voltage liquid cooled EV traction motors and controllers"
+          },
+          {
+            "field": "ownership",
+            "value": "Other JV will have 51:49 equity ownership between SONA:DENSO for air cooled EV traction motors and controllers"
+          },
+          {
+            "field": "conditions",
+            "value": "Transaction subject to fulfilment of customary conditions"
+          },
+          {
+            "field": "amount",
+            "value": "DENSO to buy 49% equity stake in subsidiary at Enterprise Value of Rs. 17,500 million"
+          },
+          {
+            "field": "conditions",
+            "value": "Both JV partners will also be paid royalty as agreed in the definitive agreements from their majority owned joint ventures"
+          },
+          {
+            "field": "event",
+            "value": "Company received dividend from wholly owned subsidiary"
+          },
+          {
+            "field": "amount",
+            "value": "Dividend received Rs. 594.63 million"
+          },
+          {
+            "field": "event",
+            "value": "ESOP grant of 1,00,000 Employee Stock Options under Sona Employee Stock Option Plan 2023"
+          }
+        ],
+        "note": {
+          "summary": "Q2/H1 FY27 results approved. Escorts Kubota railway acquisition completed; DENSO joint ventures subject to customary conditions.",
+          "impact": "",
+          "unknowns": ""
+        }
+      },
+      "keys": [
+        "oct27-replay:12"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "filing",
+      "headline": "Investor Presentation for Q2 financials results",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/3dce7b47-7fc3-40fe-91c3-1b5bd64a232b.pdf",
+      "at": 1793012220000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "pending"
+      },
+      "keys": [
+        "oct27-replay:13"
+      ]
+    },
+    {
+      "ticker": "SONACOMS",
+      "company": "Sona BLW Precision Forgings Ltd",
+      "kind": "filing",
+      "headline": "Sona Blw Precision Forgings Limited has informed the Exchange about Investor Presentation",
+      "url": "https://nsearchives.nseindia.com/corporate/SONACOMS_26102026162612_IPP.pdf",
+      "at": 1793012220000,
+      "score": 1,
+      "source": "Exchange",
+      "content": {
+        "state": "pending"
+      },
+      "keys": [
+        "oct27-replay:14"
+      ]
+    }
+  ]
+}

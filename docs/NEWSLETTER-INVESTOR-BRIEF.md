@@ -229,3 +229,27 @@ abbreviations are retained verbatim without guessing a geographic UTC offset; an
 zone cannot suppress a potentially different call. Expanded supported zone names supply the
 known offset. This conservative boundary follows the ambiguity described in
 [IANA's timezone guidance](https://data.iana.org/time-zones/tzdb/theory.html#time-zone-abbreviations).
+
+27 October company/headline contract: the email and PDF investment briefing order whole
+company blocks, then their headlines. A company never reopens after another company.
+Detailed and compact inbox modes print one company heading; packing keeps a company in
+one email whenever it fits, and labels any unavoidable adjacent continuation. The same
+three-body/90,000-byte limits and current-window/history safeguards still apply.
+
+The deterministic company reading ledger consumes retained source events before summary
+admission. Mixed results-meeting/call documents match native notices on explicit issuer,
+board date and calendar period; material capital terms, changed periods and corrections
+retain the conservative source-event boundaries. Exact normalized headlines print once.
+Transcript/presentation cover notices can share a reading with a fuller disclosure while
+remaining separate source variants, rather than pretending their document bytes are equal.
+The richest read source leads; extra known terms, distinct versions and every exact source
+link remain attached. Several independently read transactions with the same generic title
+keep separate writer inputs and additional readings beneath the shared heading.
+
+Reading-group notes use a separate identity namespace so a consolidated transcript summary
+cannot be relabelled as the contents of its cover notice in the source register. The durable
+acknowledged-source fingerprint version remains unchanged; this presentation release cannot
+resend history. Publication checks source/event conservation, company contiguity and unique
+headlines. The 27 October Biocon, HFCL and SONACOMS PDF/XML fixtures are mandatory in the
+existing output release gate in both repositories. This adds no provider, lookup, model budget,
+source fetch, collection schedule, dashboard UI change or production retry/send.

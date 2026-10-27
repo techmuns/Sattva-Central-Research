@@ -395,3 +395,6 @@ for(const [abbr,full,india] of [['EST','Eastern Standard Time','19:00'],['EDT','
  assert.equal(clusterStories([known,indian]).length,1,'The explicitly expanded supported zone matches the same instant in India');
 }
 console.log('PASS timezone ambiguity regressions: literal abbreviations preserve evidence; explicitly expanded zones match equivalent instants');
+
+// Mandatory release gate for the 27 October company/headline regressions.
+await import('./verify-newsletter-company-reading.mjs');

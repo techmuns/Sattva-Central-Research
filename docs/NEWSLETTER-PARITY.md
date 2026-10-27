@@ -25,3 +25,8 @@ state and production schedules separate. Sattva's reviewed attribution and priva
 remain tested. No new lookup provider, spending allowance, manual production run or email send
 is introduced by this port. Follow the existing automatic deployment and processing pipeline,
 then verify the published prepared editions and exact link destinations read-only.
+
+The 27 October company/headline release adds the common company reading ledger and exact
+Biocon/HFCL/SONACOMS PDF/native XML replay. These fixtures run from the existing full-output
+release gate. Both renderers and writer admission consume the same grouping; source archives,
+delivery acknowledgements and family-owned configuration remain separate and unchanged.

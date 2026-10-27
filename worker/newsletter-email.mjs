@@ -162,19 +162,35 @@ export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_B
     // growing edition for every candidate (quadratic date formatting/string allocation).
     if(firstOverhead>maxBytes-PACKING_RESERVE)continue;
     let failed=false;
-    for (const event of reading.events) {
-      const cost=measure([event.id],2)-continuationOverhead;
-      if (used+cost<=maxBytes-PACKING_RESERVE) {selected.push(event.id);used+=cost;continue;}
-      if (!selected.length) {failed=true;break;}
-      pages.push(selected.splice(0));
-      if (pages.length>=maxParts || continuationOverhead+cost>maxBytes-PACKING_RESERVE) {failed=true;break;}
-      selected.push(event.id);used=continuationOverhead+cost;
+    const blocks=[];
+    for(const event of reading.events){
+      if(blocks.at(-1)?.ticker!==event.ticker)blocks.push({ticker:event.ticker,events:[]});
+      blocks.at(-1).events.push({event,cost:measure([event.id],2)-continuationOverhead});
+    }
+    for(const block of blocks){
+      const blockCost=block.events.reduce((n,row)=>n+row.cost,0);
+      // Keep a company intact whenever it fits in an empty continuation email.
+      // Only an oversized company may continue across an adjacent part boundary.
+      if(selected.length&&used+blockCost>maxBytes-PACKING_RESERVE&&continuationOverhead+blockCost<=maxBytes-PACKING_RESERVE){
+        pages.push(selected.splice(0));used=continuationOverhead;
+        if(pages.length>=maxParts){failed=true;break;}
+      }
+      for (const {event,cost} of block.events) {
+        if (used+cost<=maxBytes-PACKING_RESERVE) {selected.push(event.id);used+=cost;continue;}
+        if (!selected.length) {failed=true;break;}
+        pages.push(selected.splice(0));
+        if (pages.length>=maxParts || continuationOverhead+cost>maxBytes-PACKING_RESERVE) {failed=true;break;}
+        selected.push(event.id);used=continuationOverhead+cost;
+      }
+      if(failed)break;
     }
     if(failed)continue;
     if(selected.length||!pages.length)pages.push(selected);
     if(pages.length>maxParts)continue;
     const messages=pages.map((eventIds,i)=>{
-      const part={investor:true,reportLink:true,eventIds,compact,summaryChars,supplements,index:i+1,total:pages.length};
+      const previousTicker=i>0?reading.byId.get(pages[i-1].at(-1))?.ticker:null;
+      const continuedCompany=reading.byId.get(eventIds[0])?.ticker===previousTicker?previousTicker:null;
+      const part={investor:true,reportLink:true,eventIds,compact,summaryChars,supplements,index:i+1,total:pages.length,continuedCompany};
       const html=renderBriefHtml(brief,{...options,stats,reading,part});
       return {html,bytes:emailBytes(html),part,subject:investorSubject(brief,options.brand||'Sattva Ventures',stats,reading),
         // The first accepted email delivers the verified full report. Later emails continue

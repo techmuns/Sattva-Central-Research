@@ -331,7 +331,7 @@ export function renderBriefPdf(
   pdf.rule();
   pdf.y += 18;
   pdf.metrics([
-    { value: String(reading.events.length), label: "DISTINCT DEVELOPMENTS" },
+    { value: String(reading.events.length), label: "PORTFOLIO UPDATES" },
     {
       value: `${new Set(reading.events.map(e=>e.ticker)).size} / ${brief.book.listed}`,
       label: "COMPANIES WITH DEVELOPMENTS",
@@ -363,18 +363,23 @@ export function renderBriefPdf(
     "READING THIS BRIEF",
     "Every company update retains its original evidence and links. Market and portfolio figures keep their source dates, verification limits and unavailable states. Use the contents above or the PDF bookmarks to move between sections.",
   );
-  pdf.section("Investment briefing", {fresh:true,subtitle:"Distinct developments first / full source register follows"});
+  pdf.section("Investment briefing", {fresh:true,subtitle:"Company headlines / full source register follows"});
   pdf.paragraph(`${reading.events.length} development${reading.events.length===1?'':'s'} / ${reading.reference.length} reference or calendar groups / ${reading.repeated.length} previously covered groups. Source history and all links are retained in the following register.`,{size:9,color:MUTED});
   if(brief.content?.pending)pdf.note("READING COVERAGE",`${brief.content.pending} source items remain unread. Unread headlines are reported leads, not verified document summaries. Full source checks and failures are disclosed in Sources & reading notes.`);
+  let previousReadingCompany=null;
   for(const event of reading.events) {
     pdf.ensure(100);
-    pdf.paragraph(`${event.company} / ${event.lead.kind==='filing'?'Corporate announcement':'Development'}`,{font:'F2',size:11,gap:4});
+    if(previousReadingCompany!==event.ticker)pdf.paragraph(event.company,{font:'F2',size:13,gap:4});
+    previousReadingCompany=event.ticker;
     const summary=event.summary || event.sourceSummary || event.description || event.lead.headline;
     pdf.paragraph(summary,{size:10});
+    for(const extra of event.additionalReadings||[])pdf.paragraph(`Additional source: ${extra.text}`,{size:10,url:readableUrl(extra.source,dashboardUrl)});
     if(event.summary&&event.note?.impact)pdf.paragraph(`Potential impact / AI: ${event.note.impact}`,{size:9,color:MUTED});
     if(event.summary&&event.note?.unknowns)pdf.paragraph(`Watch next: ${event.note.unknowns}`,{size:9,color:MUTED});
     pdf.paragraph(`${event.evidence} / ${event.read} of ${event.total} source items read / ${storyWhen(event.lead)}`,{size:8,color:MUTED});
-    pdf.paragraph('Primary / lead source ->',{size:8,color:ACCENT,url:readableUrl(event.lead.content?.sourceUrl||event.lead.url,dashboardUrl),gap:12});
+    const primary=event.lead.content?.sourceUrl||event.lead.url;
+    pdf.paragraph('Primary / lead source ->',{size:8,color:ACCENT,url:readableUrl(primary,dashboardUrl),gap:event.sources.length>1?3:12});
+    for(const [i,url]of event.sources.filter(url=>url!==primary).entries())pdf.paragraph(`Additional source ${i+2} ->`,{size:8,color:ACCENT,url:readableUrl(url,dashboardUrl),gap:3});
   }
   pdf.section("Your portfolio companies", {
     fresh: true,

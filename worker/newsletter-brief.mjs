@@ -87,8 +87,9 @@ import { isXbrlFilingUrl, readableFilingUrl } from '../public/js/data/nse-xbrl-s
 import { announcementDocumentIdentity } from '../public/js/data/announcements-shared.js';
 import { newsAiEnabled } from './newsletter-openai.mjs';
 import { attachContent, sameContentEvent } from './newsletter-content.mjs';
-import { annotateEditorialHistory, editorialPriority } from './newsletter-editorial.mjs';
+import { annotateEditorialHistory, editorialPriority, editorialEvents } from './newsletter-editorial.mjs';
 import { sameNewsletterSource, changedDocumentVersion } from './newsletter-source-links.mjs';
+import { sameBoardDisclosure, summaryReadings } from './newsletter-company-reading.mjs';
 import { sameScheduledBoardMeeting } from './newsletter-filing-events.mjs';
 import { sameScheduledEarningsCall } from './newsletter-notice-events.mjs';
 import { investmentProfiles, sameInvestmentEvent } from './newsletter-investment-events.mjs';
@@ -1167,6 +1168,7 @@ export function clusterStories(stories, { company = '' } = {}) {
     Number(b.content?.state==='ready')-Number(a.content?.state==='ready') ||
     Number(!!explicitEvent(b)?.count)-Number(!!explicitEvent(a)?.count) ||
     Number(b.kind==='filing')-Number(a.kind==='filing') ||
+    (b.content?.facts||[]).filter(f=>['event','amount','ownership','conditions'].includes(f.field)).length-(a.content?.facts||[]).filter(f=>['event','amount','ownership','conditions'].includes(f.field)).length ||
     b.score-a.score || b.headline.length-a.headline.length || a.at-b.at)[0];
   for(const s of [...stories].sort((a,b)=>a.at-b.at)) {
     const home=documents.find(d=>['filing','news'].includes(s.kind)&&d.items.every(i=>
@@ -1188,7 +1190,7 @@ export function clusterStories(stories, { company = '' } = {}) {
       for (const c of clusters) {
         if (c.kind !== 'story') continue;
         if(c.documents.every(d=>sameInvestmentEvent(d.main,s,investments)||sameExplicitEvent(d.main,s) ||
-          s.kind==='filing'&&d.main.kind==='filing'&&!changedDocumentVersion(d.main,s)&&(sameScheduledBoardMeeting(d.main,s)||sameScheduledEarningsCall(d.main,s)))) {home=c;break;}
+          s.kind==='filing'&&d.main.kind==='filing'&&!changedDocumentVersion(d.main,s)&&(sameScheduledBoardMeeting(d.main,s)||sameBoardDisclosure(d.main,s)||sameScheduledEarningsCall(d.main,s)))) {home=c;break;}
         const news = c.items.filter(i => i.kind === 'news');
         if (s.kind === 'news' && news.length) {
           if (news.every(i => relatedNewsReports(i, s)) && c.items.every(i => sameContentEvent(i, s) || !contentConflicts(i, s))) { home = c; break; }
@@ -1274,21 +1276,19 @@ Return ONLY a JSON array [{"id":"exact item id","summary":"...","impact":"...","
 /** Keep every related source's evidence and read status, with the immutable source link. */
 export function aiItemsFor(companies, sectors = new Map(), { readableOnly = false } = {}) {
   const items = [];
-  for (const c of companies) {
-    for (const k of c.clusters) {
-      if (k.kind !== 'story' || items.length >= AI_ITEM_LIMIT || [k.main,...k.others].some(s=>s.editorialReported)) continue;
-      if (readableOnly && ![k.main,...k.others].some(s => ['ready','partial'].includes(s.content?.state) && s.content?.facts?.length)) continue;
-      const s = k.main;
-      items.push({
-        id: k.id, company: c.company, ticker: c.ticker, sector: sectors.get(c.ticker) || null,
-        kind: s.kind === 'filing' ? 'exchange filing' : 'published story', type: s.type || null,
-        headline: s.headline, detail: s.dek || null,
-        related: k.others.map(r => ({ source: r.source, headline: r.headline, summary: r.dek || null })),
-        SOURCE_EVIDENCE: (k.documents?.map(d=>d.main)||[s,...k.others]).map(r => ({ url: r.content?.sourceUrl || r.url, source: r.source,
-          state: r.content?.state || 'pending', reason: r.content?.reason || null, format: r.content?.format || null,
-          checkedAt: r.content?.checkedAt || null, facts: r.content?.facts || [] })),
-      });
-    }
+  // Use the same conserved company/headline groups as the reader, before requesting
+  // a summary. Cover notices and repeated ingestion routes cannot buy extra notes.
+  for (const event of summaryReadings(editorialEvents({}, companies).events)) {
+    const clusters=(event.variants||[event]).map(v=>v.cluster),members=clusters.flatMap(k=>[k.main,...k.others]);
+    if(items.length>=AI_ITEM_LIMIT||event.cluster.kind!=='story'||members.some(s=>s.editorialReported))continue;
+    const documents=clusters.flatMap(k=>k.documents?.map(d=>d.main)||[k.main,...k.others]);
+    if(readableOnly&&!documents.some(s=>['ready','partial'].includes(s.content?.state)&&s.content?.facts?.length))continue;
+    const s=event.lead;
+    items.push({id:event.id,company:event.company,ticker:event.ticker,sector:sectors.get(event.ticker)||null,
+      kind:s.kind==='filing'?'exchange filing':'published story',type:s.type||null,headline:s.headline,detail:s.dek||null,
+      related:members.filter(r=>r!==s).map(r=>({source:r.source,headline:r.headline,summary:r.dek||null})),
+      SOURCE_EVIDENCE:documents.map(r=>({url:r.content?.sourceUrl||r.url,source:r.source,state:r.content?.state||'pending',
+        reason:r.content?.reason||null,format:r.content?.format||null,checkedAt:r.content?.checkedAt||null,facts:r.content?.facts||[]}))});
   }
   return items;
 }
@@ -1327,17 +1327,17 @@ export async function readAiNotes({ env, fetcher = fetch, now = Date.now(), comp
   // News notes are produced with their source read and reused across editions. Never send
   // an unconfirmed article back to the generic writer as a headline-only fallback.
   const newsNotes = {}, newsModels = new Set();
-  if (newsAiEnabled(env)) for (const company of companies) for (const cluster of company.clusters) {
-    const content = cluster.main.content;
-    if (cluster.main.kind === 'news' && content?.state === 'ready' && content.note) {
-      newsNotes[cluster.id] = { ...content.note,
-        ...(cluster.others.length ? { unknowns: [content.note.unknowns, 'This summary covers the lead article; linked reports may add details.'].filter(Boolean).join(' ') } : {}) };
+  if (newsAiEnabled(env)) for (const event of summaryReadings(editorialEvents({},companies).events)) {
+    const content=event.lead.content;
+    if(event.lead.kind==='news'&&content?.state==='ready'&&content.note){
+      newsNotes[event.id]={...content.note,
+        ...(event.total>1?{unknowns:[content.note.unknowns,'This summary covers the lead article; linked reports may add details.'].filter(Boolean).join(' ')}:{})};
       newsModels.add(content.model);
     }
   }
   const ordered = companies.map(c => ({...c, clusters:[...c.clusters].sort((a,b)=>editorialPriority(b.main)-editorialPriority(a.main))}));
   const candidates = aiItemsFor(ordered, sectors, { readableOnly: true });
-  const requested = companies.reduce((n,c) => n + c.clusters.filter(k => k.kind === 'story').length, 0);
+  const requested = summaryReadings(editorialEvents({},companies).events).filter(e=>e.cluster.kind==='story').length;
   const mergeNews = result => ({ ...result, ok: result.ok || Object.keys(newsNotes).length > 0,
     requested, partial: result.answered + Object.keys(newsNotes).length < requested,
     supplied: result.supplied + Object.keys(newsNotes).length, answered: result.answered + Object.keys(newsNotes).length, items: { ...result.items, ...newsNotes },
