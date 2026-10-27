@@ -5,7 +5,7 @@ import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {pdfFixture} from './verify-newsletter-pdf.mjs';
 import {briefStats,briefStoryKeys,briefCompanies,clusterStories,aiItemsFor,renderBriefHtml} from '../worker/newsletter-brief.mjs';
 import {editorialEvents,EDITORIAL_VERSION} from '../worker/newsletter-editorial.mjs';
-import {headlineKey,companyReadings} from '../worker/newsletter-company-reading.mjs';
+import {headlineKey,companyReadings,supportingDocumentSummary} from '../worker/newsletter-company-reading.mjs';
 import {renderInvestorEmails} from '../worker/newsletter-email.mjs';
 import {xbrlFacts} from '../worker/newsletter-content.mjs';
 import {renderBriefPdf} from '../worker/newsletter-pdf.mjs';
@@ -58,6 +58,8 @@ const dated=structuredClone(rows[2]);dated.url='https://fixture.test/other-call'
 const differentCalls=editorialEvents({},companies([rows[2],dated])).events;
 assert.equal(differentCalls[0].variants.length,2,'Identical headings still retain both explicitly dated calls');
 for(const date of ['2026-10-19','2026-10-20'])assert(JSON.stringify([differentCalls[0].sourceSummary,differentCalls[0].additionalReadings]).includes(date),'Both distinct call dates are visible inside the unique headline');
+const invalidCall=structuredClone(rows[2]);invalidCall.content.facts.find(f=>f.location.endsWith('/DateOfCallForTranscriptsOfEarningsOrQuarterlyCalls')).value='2026-02-31';
+assert.equal(supportingDocumentSummary(invalidCall),null,'Invalid native call dates cannot become factual prose or identity');
 assert.equal(companyReadings([]).length,0);
 // A writer note is applied once to the conserved group, even when its strongest
 // document is a different member from the stable group identity.

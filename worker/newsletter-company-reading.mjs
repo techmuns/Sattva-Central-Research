@@ -1,5 +1,5 @@
 // Deterministic company/headline ledger over retained source events. No I/O or model work.
-import { eventDates, financialPeriod, financialPeriodsIn, hasSourceChange } from './newsletter-event-identity.mjs';
+import { eventDate, eventDates, financialPeriod, financialPeriodsIn, hasSourceChange } from './newsletter-event-identity.mjs';
 import { scheduledBoardMeeting } from './newsletter-filing-events.mjs';
 import { noticeTags } from './newsletter-notice-events.mjs';
 const clean=value=>String(value||'').normalize('NFKC').replace(/\s+/g,' ').trim();
@@ -34,7 +34,7 @@ export function boardDisclosure(item) {
   return {date:dates[0],period:periods[0],agendas:['results'],mixed:true};
 }
 export function sameBoardDisclosure(a,b) {
-  if(!sameIssuer(a,b)||Math.abs(a.at-b.at)>3600000)return false;
+  if(!sameIssuer(a,b)||!Number.isFinite(a.at)||!Number.isFinite(b.at)||Math.abs(a.at-b.at)>3600000)return false;
   const x=boardDisclosure(a),y=boardDisclosure(b);
   // Leave the existing strict matcher authoritative for ordinary notices.
   if(!x||!y||!x.mixed&&!y.mixed||!x.period||!y.period)return false;
@@ -50,7 +50,7 @@ function supportingDocument(item) {
   if(!type)return null;
   const callDate=tags.get('DateOfCallForTranscriptsOfEarningsOrQuarterlyCalls');
   const sourceDates=facts(item).filter(f=>f.field==='date'&&/^(?:earnings |conference )?call (?:date:|held on)/i.test(clean(f.value))).flatMap(f=>eventDates(f.value));
-  if(callDate)sourceDates.push(callDate);
+  if(callDate)sourceDates.push(eventDate(callDate));
   if(sourceDates.some(d=>!d||d!==sourceDates[0]))return null;
   return {type,date:sourceDates[0]||null,periods:financialPeriodsIn(value).map(financialPeriod)};
 }
