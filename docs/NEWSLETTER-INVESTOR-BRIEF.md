@@ -30,9 +30,12 @@ The email gives a short factual description, an existing grounded AI note where 
 supported potential impact and material unknowns. Without an AI note, read document facts
 can be shown as source facts. Unread headlines remain unverified leads. Existing grounded
 news notes can appear in previews without another model request. Price context retains its
-supported reason or explicit unknown state. All markets, upcoming calendar entries and
-corporate-action dates fit with the first email where possible; an explicit count and link
-to the complete tables replaces those supplements when necessary.
+supported reason or explicit unknown state. Company readings flow through consecutive parts,
+followed by the complete upcoming calendar, corporate-action dates and Market Context in the
+final email. The packer reserves that ending before assigning company readings. It never
+replaces closing tables with a PDF-only count; an edition that cannot fit safely is refused.
+Only the final email has the full dark closing footer. Earlier parts use a small continuation
+line and retain the subscription control. A single-email edition keeps the same complete ending.
 
 Saved NSE board-meeting XBRL fields supply a short factual notice when no grounded AI note
 exists: meeting date, stated agenda, results period and dividend type where present. The
@@ -46,8 +49,11 @@ The email and PDF investment briefing use the same source note.
 
 `newsletter-investor-email.mjs` preserves the original 640px paper, serif masthead and company
 headings, double rules, indigo accents, lavender background and dark footer. Shared style
-tokens prevent the compact view from drifting from the established newsletter. Each event
-has one short description, supported impact and next unknown when available, and a direct
+tokens prevent the compact view from drifting from the established newsletter.
+Market percentage changes use the original shared gain/loss colours, bold and signed, with
+zero and unavailable comparisons neutral. Quote values, source dates and verification labels
+remain intact; these colours indicate direction rather than an investment recommendation.
+Each event has one short description, supported impact and next unknown when available, and a direct
 source link labelled Announcement or News report. Source URL length never changes that
 destination to the newsletter PDF. Prefer an exact captured publisher alias over its Google
 discovery wrapper; unresolved wrappers retain their specific captured report link, and missing
