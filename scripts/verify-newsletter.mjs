@@ -833,7 +833,11 @@ await test('the AI notes: one bounded request per brief, JSON in and out, each n
   const asked = JSON.parse(calls[0].body.messages[0].content).ITEMS;
   const stats = briefStats(brief);
   const storyUpdates = stats.companies.flatMap((c) => c.clusters.filter((k) => k.kind === 'story'));
-  assert.equal(asked.length, storyUpdates.length, 'every filing or story update is asked about; a trade or a price move is not');
+  const referenceNotices=storyUpdates.filter(k=>k.main.headline==='Intimation of schedule of Investor Conference');
+  assert.equal(referenceNotices.length,1,'This fixture includes one archived calendar-only notice');
+  assert.equal(asked.length,storyUpdates.length-referenceNotices.length,'Every eligible reading is asked about; the calendar-only notice consumes no summary allowance');
+  assert(!asked.some(i=>referenceNotices.some(k=>k.id===i.id)));
+  assert(renderBriefHtml(brief).includes(referenceNotices[0].main.headline),'The excluded calendar notice remains in the complete source register');
   assert.ok(asked.every((i) => storyUpdates.some((k) => k.id === i.id)));
   const project = asked.find((i) => i.kind === 'exchange filing' && /2600|2,600/.test(i.headline));
   assert.equal(project.related.length, storyUpdates.find(k => k.id === project.id).others.length, 'Every corroborated related source headline travels with its final event; no guessed membership');

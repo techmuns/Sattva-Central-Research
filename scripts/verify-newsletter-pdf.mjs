@@ -264,7 +264,7 @@ export function verifyNewsletterPdf() {
     "https://example.test/actions/nse",
   ])
     assert.ok(raw.includes(url), "original evidence URL remains clickable");
-  assert.equal((raw.match(/\/URI \(https:\/\/example.test\/filing\/bse-copy.pdf\)/g) || []).length,1,'A folded exchange copy is clickable once, without duplicate links');
+  assert.equal((raw.match(/\/URI \(https:\/\/example.test\/filing\/bse-copy.pdf\)/g) || []).length,2,'A folded exchange copy is clickable once in the investment reading and once in the complete source register');
   // A note larger than a page must continue safely and retain its last words, not paint over footers.
   const long = structuredClone(brief);
   long.performance.rows[0].company =
