@@ -1885,7 +1885,7 @@
       "lastDiscoveryAt": "2026-10-16T14:21:24+00:00"
     },
     "isin:INE01IU01018|SKYGOLD": {
-      "lastAttemptAt": "2026-10-21T22:42:28+00:00",
+      "lastAttemptAt": "2026-10-27T03:42:00+00:00",
       "error": "search-unavailable",
       "lastResultCount": 110,
       "targetThrough": "2026-10-02T10:43:50+00:00",
@@ -2802,6 +2802,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-27T02:49:49.693949+00:00"
+    "checkedAt": "2026-10-27T03:42:00.840652+00:00"
   }
 }
