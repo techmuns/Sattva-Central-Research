@@ -39,6 +39,7 @@ export function pdfFixture() {
               direction: "positive",
               keywords: ["order"],
               url: "https://example.test/filing/terms.pdf",
+              sourceUrls: ["https://example.test/filing/terms.pdf", "https://example.test/filing/bse-copy.pdf", "https://example.test/filing/bse-copy.pdf"],
               content: {
                 state: "ready",
                 facts: [
@@ -125,6 +126,7 @@ export function pdfFixture() {
           time: "16:30",
           sources: ["Screener", "Moneycontrol"],
           url: "https://example.test/calendar/call",
+          sourceUrls: ["https://example.test/calendar/call", "https://example.test/calendar/moneycontrol"],
         },
       ],
       more: 0,
@@ -146,6 +148,7 @@ export function pdfFixture() {
             "Dividend of INR 5 per share, subject to shareholder approval",
           source: "NSE",
           url: "https://example.test/actions/dividend",
+          sourceUrls: ["https://example.test/actions/dividend", "https://example.test/actions/nse"],
         },
       ],
       more: 0,
@@ -254,10 +257,14 @@ export function verifyNewsletterPdf() {
   );
   for (const url of [
     "https://example.test/filing/terms.pdf",
+    "https://example.test/filing/bse-copy.pdf",
     "https://example.test/calendar/call",
+    "https://example.test/calendar/moneycontrol",
     "https://example.test/actions/dividend",
+    "https://example.test/actions/nse",
   ])
     assert.ok(raw.includes(url), "original evidence URL remains clickable");
+  assert.equal((raw.match(/\/URI \(https:\/\/example.test\/filing\/bse-copy.pdf\)/g) || []).length,1,'A folded exchange copy is clickable once, without duplicate links');
   // A note larger than a page must continue safely and retain its last words, not paint over footers.
   const long = structuredClone(brief);
   long.performance.rows[0].company =

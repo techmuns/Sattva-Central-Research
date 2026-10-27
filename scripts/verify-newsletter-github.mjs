@@ -10,6 +10,7 @@ import {readerKeys,encode64,openForReader,sealForReader} from '../worker/mutual-
 import {handleGithubNewsletter} from '../worker/newsletter-github.mjs';
 import {newsletterAssets} from './collect-newsletter.mjs';
 import {newsletterWakePlan} from './lib/newsletter-wake-plan.mjs';
+import {SOURCE_LOOKUP_BATCH_SIZE,SOURCE_INDEX_FORMAT} from '../worker/newsletter-source-shortcuts.mjs';
 fs.mkdirSync('.cache',{recursive:true});const root=fs.mkdtempSync(path.resolve('.cache/newsletter-github-'));
 let at=Date.parse('2026-09-15T06:30:00Z');
 const repo='techmuns/Sattva-Central-Research',secret='fixture-reader-secret-only-123456789',now=()=>at;
@@ -17,8 +18,8 @@ for(const hours of [0,1,2,23,24])assert(newsletterRequestIsFresh({at:at-hours*36
 for(const input of [{at:at-86400001,to:'me',sourceOnly:true},{at:at+3600001,to:'me',sourceOnly:true},{at:'invalid',to:'me',sourceOnly:true},
  {at:at-3600001,to:'all',sourceOnly:true},{at:at-3600001,to:'me',sourceOnly:false},{at:at-3600001,to:'me',sourceOnly:'true'}])assert.equal(newsletterRequestIsFresh(input,at),false,'Only an actual source-only single-recipient request receives the bounded queue allowance');
 const env={PRIVATE_MARKETS_INTELLIGENCE_ENABLED:'true',NEWSLETTER_PROCESSING_ENABLED:'true',GITHUB_REPOSITORY:repo,GITHUB_ACTIONS:'true',GITHUB_REF:'refs/heads/main',GITHUB_SHA:'a'.repeat(40),GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1',GITHUB_TOKEN:'fixture-actions-token',BACKGROUND_STATE_KEY:'fixture-master-secret-only-123456789'};
-let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false,pdfWait=0,allowFixtureMail=false,cancelDuringPdf=null;
-let exists=false,sequence=1,body='',assetReads=0;const remote=new Map(),tag='newsletter-data';
+let published=0,failUpload=false,providerCalls=0,emailCalls=0,removeDuringPdf=false,pdfWait=0,allowFixtureMail=false,cancelDuringPdf=null,sourceChecks=0;
+let exists=false,sequence=1,body='',assetReads=0;const remote=new Map(),tag='newsletter-data',assetPaths=[];
 const fetcher=async(raw,options={})=>{
   const url=new URL(raw),method=options.method||'GET';
   if(['api.github.com','uploads.github.com'].includes(url.hostname)) {
@@ -52,8 +53,10 @@ try{
  source.db.prepare('UPDATE newsletter_documents SET rowid=0 WHERE id=?').run(pdfId);
  const oldBudget=source.schedule.content.newsBudget.reserve({job:'old-news',model:'fixture',amount:1234,now:at});assert(oldBudget.ok);
  const before=source.db.prepare('SELECT total_changes() n').get().n,keys=await readerKeys(secret),recipient={kid:keys.kid,publicKey:encode64(keys.publicKey)};
- const options={env,fetcher,recipient,privateMarketsSources:async()=>({capture:emptyCapture(),roster:{ok:true,version:1,source:'Fixture fund source',checkedAt:new Date(at).toISOString(),funds:[{name:'PRIVATE FIXTURE FUND'}]}}),verifyPdf:async()=>{cancelDuringPdf?.abort(new DOMException('Fixture caller cancelled','AbortError'));if(pdfWait)await new Promise(done=>setTimeout(done,pdfWait));if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
+ const options={env,fetcher,recipient,privateMarketsSources:async()=>({capture:emptyCapture(),roster:{ok:true,version:1,source:'Fixture fund source',checkedAt:new Date(at).toISOString(),funds:[{name:'PRIVATE FIXTURE FUND'}]}}),verifySourceLinks:async links=>{sourceChecks++;assert(links.length);throw Error('Fixture source publication unavailable');},verifyPdf:async()=>{cancelDuringPdf?.abort(new DOMException('Fixture caller cancelled','AbortError'));if(pdfWait)await new Promise(done=>setTimeout(done,pdfWait));if(removeDuringPdf)source.store.apply([{op:'unsubscribe',email:'fixture@example.com',by:'Fixture'}]);},localOptions:{now},inputs:()=>exportNewsletter(source.storage,{inputs:true}),notify:async()=>{published++;},transportOptions:{sleep:async()=>{},head:()=>env.GITHUB_SHA}};
  runtime=await githubNewsletter({...options,file:path.join(root,'runner.sqlite'),out:path.join(root,'publication'),legacyClient:input=>exportNewsletter(source.storage,input)});
+ const originalSource='https://publisher.test/actual/article?id=42&captured='+('a'.repeat(500)),alias=runtime.sourceShortcuts.register(originalSource),aliasId=alias.split('/').at(-1);
+ const sourceBatch=[{id:aliasId,url:originalSource},...Array.from({length:19},(_,i)=>{const url=`https://publisher.test/actual/other/${i}?captured=${'b'.repeat(500)}`;return {id:runtime.sourceShortcuts.register(url).split('/').at(-1),url};})];
  assert.equal(source.db.prepare('SELECT total_changes() n').get().n,before);assert.deepEqual(runtime.store.snapshot(),source.store.snapshot());assert.deepEqual(Buffer.from(runtime.store.document(pdfId).body),pdf);assert.equal(runtime.store.delivery('old-unknown').finishedAt,null);
  assert.throws(()=>decodeNewsletterColumn({blob64:'AA==',bytes:1,hash:'wrong'},'newsletter_documents','body'),/integrity/);
  const stalePreview=()=>runtime.db.prepare('INSERT OR REPLACE INTO newsletter_views VALUES(?,?)').run('preview-morning-html-2',JSON.stringify({ok:true,body:'Old second part',part:2,parts:2}));
@@ -67,8 +70,35 @@ try{
  const saved=await runtime.publish(),site=path.join(root,'public');await installPreparedBackground([saved],{env,fetcher,publicRoot:site,scratch:path.join(root,'install')});
  const cipherFiles=new Map(fs.readdirSync(path.join(site,'generated-views/newsletter')).map(name=>[name,fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8')]));
  const again=await runtime.publish();await installPreparedBackground([again],{env,fetcher,publicRoot:site,scratch:path.join(root,'install-again')});for(const [name,value]of cipherFiles)assert.equal(fs.readFileSync(path.join(site,'generated-views/newsletter',name),'utf8'),value,'Unchanged private readers reuse ciphertext instead of reuploading PDF history');
- const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,ASSETS:{fetch:async request=>{assetReads++;const file=path.join(site,new URL(request.url).pathname);return fs.existsSync(file)?new Response(fs.readFileSync(file)):new Response(null,{status:404});}}};
+ const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,ASSETS:{fetch:async request=>{assetReads++;assetPaths.push(new URL(request.url).pathname);const file=path.join(site,new URL(request.url).pathname);return fs.existsSync(file)?new Response(fs.readFileSync(file)):new Response(null,{status:404});}}};
  const common={object:{newsletterPdf(){throw Error('Prepared saved PDFs cannot touch Cloudflare SQL');},newsletterSnapshot:async()=>source.store.snapshot()},now,pdfHeaders:filename=>({'content-type':'application/pdf','cache-control':'private, no-store'}),guardWrite:async()=>null};
+ const sourceResponse=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/s/'+aliasId),worker,common);
+ assert.equal(sourceResponse.status,302);assert.equal(sourceResponse.headers.get('location'),originalSource,'The short link opens the exact captured source, never the edition PDF');
+ assert.equal(sourceResponse.headers.get('referrer-policy'),'no-referrer');
+ const checkedSources=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/sources?ids='+aliasId),worker,common);
+ assert.deepEqual((await checkedSources.json()).links,[{id:aliasId,url:originalSource}]);
+ for(let offset=0;offset<sourceBatch.length;offset+=SOURCE_LOOKUP_BATCH_SIZE){
+  const batch=sourceBatch.slice(offset,offset+SOURCE_LOOKUP_BATCH_SIZE),beforeSourceReads=assetPaths.length;
+  const batchResponse=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/sources?ids='+batch.map(r=>r.id).join(',')),worker,common);
+  assert.equal(batchResponse.status,200);const batchValue=await batchResponse.json();
+  assert.deepEqual(batchValue.links,batch);assert.equal(batchValue.lookupFormat,SOURCE_INDEX_FORMAT);
+  const sourceReads=assetPaths.slice(beforeSourceReads);
+  assert(sourceReads.length<=11,'Five-source requests stay comfortably below the subrequest budget');
+  assert(sourceReads.every(p=>p.endsWith('/sources-head.json')||/\/sources-(?:index|page)-/.test(p)),'Bulk source verification never opens the full head or private PDF pages');
+ }
+ const oversizedBatch=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/sources?ids='+sourceBatch.slice(0,6).map(r=>r.id).join(',')),worker,common);
+ assert.equal(oversizedBatch.status,400);assert.equal((await oversizedBatch.json()).reason,'source-batch-limit');
+ const sourceHeadFile=path.join(site,'generated-views/newsletter/sources-head.json');
+ fs.renameSync(sourceHeadFile,sourceHeadFile+'.fixture-held');
+ try{
+  const legacy=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/sources?ids='+aliasId),worker,common),value=await legacy.json();
+  assert.equal(legacy.status,200);assert.deepEqual(value.links,[{id:aliasId,url:originalSource}]);
+  assert.equal(value.lookupFormat,'legacy-private-records','Exact legacy destinations alone cannot certify the bounded lookup deployment');
+ }finally{fs.renameSync(sourceHeadFile+'.fixture-held',sourceHeadFile);}
+ for(const path of ['/s/not-a-source','/s/'+crypto.randomUUID(),'/sources?ids='+aliasId+','+aliasId]){
+  assert.equal((await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter'+path),worker,common)).status,404);
+ }
+ assert.equal((await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/s/'+aliasId,{method:'POST'}),worker,common)).status,405);
  const statusResponse=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter'),worker,common),publicStatus=await statusResponse.json();
  assert.equal(publicStatus.privateMarkets.enabled,true);
  const privatePreview=await handleGithubNewsletter(new Request('https://fixture.test/api/newsletter/private-markets/preview'),worker,common);
@@ -99,6 +129,9 @@ try{
  // Real guarded fetch: a private checkpoint/PDF wait outlasts the original
  // transport signal, then the provider receives a fresh deadline exactly once.
  pdfWait=80;allowFixtureMail=true;
+ runtime.schedule.sendNow=async()=>{runtime.store.beginDelivery({key:'source-publication-gate',edition:'morning',day:'2026-09-15',source:'button',recipients:1});return runtime.schedule.fetcher('https://devde.muns.io/email/send/raw',{method:'POST',body:JSON.stringify({email:'fixture@example.com',html:`<a href="${alias}">News report →</a>`})});};
+ const sourceEnvelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id:crypto.randomUUID(),at,edition:'morning',to:'all',email:null,token:null})),{kid:queueKey.kid,publicKey:encode64(queueKey.publicKey)},`${repo}:github-newsletter-request:v1`);
+ await assert.rejects(runtime.processRequest(sourceEnvelope),/source publication unavailable/);assert.equal(sourceChecks,1);assert.equal(emailCalls,0,'A published PDF cannot authorize sending broken source shortcuts');
  const deadlineRequest=async(label,signal)=>{
   runtime.schedule.sendNow=async()=>{runtime.store.beginDelivery({key:label,edition:'morning',day:'2026-09-15',source:'button',recipients:1});return newsletterRequest(runtime.schedule.fetcher,'https://devde.muns.io/email/send/raw',{method:'POST',body:JSON.stringify({email:'fixture@example.com',html:'Synthetic'}),signal},50);};
   const envelope=await sealForReader(new TextEncoder().encode(JSON.stringify({id:crypto.randomUUID(),at,edition:'morning',to:'all',email:null,token:null})),{kid:queueKey.kid,publicKey:encode64(queueKey.publicKey)},`${repo}:github-newsletter-request:v1`);
@@ -109,6 +142,7 @@ try{
  pdfWait=0;allowFixtureMail=false;cancelDuringPdf=null;runtime.schedule.sendNow=originalSend;
  const claim=runtime.schedule.content.newsBudget.reserve({job:'new-news',model:'fixture',amount:5678,now:at});assert(claim.ok);await runtime.schedule.fetcher('https://api.openai.com/v1/responses',{method:'POST',body:'{}'});assert.equal(providerCalls,1);
  await runtime.close();runtime=null;restarted=await githubNewsletter({...options,file:path.join(root,'restarted.sqlite'),out:path.join(root,'restarted-publication'),legacyClient:async()=>{throw Error('An initialized archive cannot reset');}});assert(restarted.db.prepare('SELECT id FROM newsletter_news_ai_calls WHERE id=?').get(claim.id),'Metered I/O follows acknowledged restart storage containing its actual reservation');assert.equal(restarted.store.delivery('old-unknown').finishedAt,null);assert.deepEqual(Buffer.from(restarted.store.document(pdfId).body),pdf);
+ assert.equal(restarted.sourceShortcuts.register(originalSource),alias,'Preview replacement and encrypted restart preserve emailed source destinations');
  // A stale public reader may admit multiple completion jobs. Recheck the actual
  // restored state under the shared sender mutex, without publication or paid I/O.
  await restarted.schedule.record({lastWakeAt:at,lastCheckedAt:at});

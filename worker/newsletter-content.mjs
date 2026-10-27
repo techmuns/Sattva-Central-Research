@@ -6,6 +6,7 @@ import { newsAiEnabled } from './newsletter-openai.mjs';
 import { readNewsAi, NEWS_POLICY_VERSION } from './newsletter-news-ai.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { bedrockConfig, bedrockConfigured, claudeCredential } from './research-claude.mjs';
+import { editorialPriority } from './newsletter-editorial.mjs';
 
 export const CONTENT_VERSION = 1;
 export const CONTENT_BATCH = 6;
@@ -65,7 +66,33 @@ export async function readBoundedBytes(response, limit = CONTENT_BYTES) {
 }
 
 export async function fetchContent(item, fetcher = fetch) {
-  let url = contentUrl(item.url, item.kind);
+  let url = contentUrl(item.url, item.kind) || (item.sourceUrls || []).map(value=>contentUrl(value,item.kind))
+    .find(value=>value && (item.kind!=='news' || new URL(value).pathname!=='/'));
+  if(!url && item.kind==='news') {
+    // Google RSS is a discovery link, never article text. Older links encode the publisher
+    // address; newer ones may redirect. Only explicit allowed-publisher targets are usable.
+    const google=value=>{try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='news.google.com'&&!u.username&&!u.password&&!u.port&&/^\/(?:rss\/)?articles\/[A-Za-z0-9_-]{1,4096}$/.test(u.pathname)?u:null;}catch{return null;}};
+    const wrapper=google(item.url);
+    if(wrapper) {
+      try {
+        const token=wrapper.pathname.split('/').at(-1).replace(/-/g,'+').replace(/_/g,'/');
+        const decoded=atob(token+'='.repeat((4-token.length%4)%4));
+        const candidates=[...new Set((decoded.match(/https:\/\/[^\s\x00-\x20<>"\\]+/g)||[]).map(value=>contentUrl(value,'news')).filter(Boolean))];
+        if(candidates.length===1)url=candidates[0];
+      }catch{/* Opaque current-format links require an explicit redirect. */}
+      let current=wrapper.href;
+      for(let hop=0;!url&&hop<2;hop++) {
+        const response=await fetcher(current,{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{accept:'text/html','user-agent':'Mozilla/5.0 (compatible; SattvaCentralBot/1.0)'}});
+        const location=response.headers.get('location');await response.body?.cancel();
+        if([301,302,303,307,308].includes(response.status)&&location) {
+          const next=new URL(location,current).href;
+          url=contentUrl(next,'news');
+          if(!url&&!google(next))throw failure('unsupported-redirect');
+          current=next;
+        }else throw failure([429,503].includes(response.status)?'rate-limited':[401,403].includes(response.status)?'access-limited':'source-link-unresolved');
+      }
+    }
+  }
   if (!url) throw failure(item.url ? 'unsupported-source' : 'missing-link');
   const signal = AbortSignal.timeout(15000);
   for (let hops = 0; hops <= 3; hops++) {
@@ -160,11 +187,13 @@ const base64 = bytes => {
   return btoa(value);
 };
 
-export async function readDocumentFacts({ item, env, fetcher = fetch, now = Date.now(), newsBudget = null }) {
+export async function readDocumentFacts({ item, env, fetcher = fetch, now = Date.now(), newsBudget = null, cachedDocument = null }) {
   const base = { version: CONTENT_VERSION, checkedAt: now, sourceUrl: item.url, facts: [] };
   try {
     const source = await fetchContent(item, fetcher);
     Object.assign(base, { sourceUrl: source.url, hash: source.hash });
+    const cached=cachedDocument?.(source.hash);
+    if(cached?.state==='ready' && cached.version===(item.kind==='news'&&newsAiEnabled(env)?NEWS_POLICY_VERSION:CONTENT_VERSION)) return {...cached,...base,version:cached.version,facts:cached.facts};
     const prefix = new TextDecoder().decode(source.bytes.subarray(0, 1024));
     if (isXbrlFilingUrl(source.url)) {
       return { ...base, state: 'ready', format: 'xbrl', facts: xbrlFacts(new TextDecoder().decode(source.bytes), item.ticker) };
@@ -208,14 +237,14 @@ export async function readDocumentFacts({ item, env, fetcher = fetch, now = Date
 export function contentItems(brief) {
   return ['announcements', 'news'].flatMap(section => (brief[section]?.groups || []).flatMap(g => g.items.map(row => ({
     row, ticker: g.ticker, company: g.company, kind: section === 'announcements' ? 'filing' : 'news',
-    headline: row.headline, summary: row.summary || '', related: row.attribution === 'related', at: row.at, url: row.url, keys: row.keys || [],
+    headline: row.headline, summary: row.summary || '', related: row.attribution === 'related', at: row.at, url: row.url, sourceUrls:row.sourceUrls || [], keys: row.keys || [],
   }))));
 }
 
 export async function attachContent(brief, { service = null, env, fetcher = fetch, now = Date.now(), process = true, extraItems = [] } = {}) {
   const items = contentItems(brief);
   const references = await Promise.all([...items, ...extraItems].map(async item => ({ ...item, id: await contentIdentity(item) })));
-  const jobs = [...new Map(references.map(j => [j.id, j])).values()];
+  const jobs = [...new Map(references.map(j => [j.id, j])).values()].sort((a,b)=>editorialPriority(b)-editorialPriority(a)||b.at-a.at);
   if (service) {
     if (process) {
       service.enqueue(jobs, now);

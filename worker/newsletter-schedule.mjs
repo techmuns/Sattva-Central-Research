@@ -1,6 +1,6 @@
 import {newsletterRequest} from './newsletter-request.mjs';
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
-import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys, newsletterDeliveryPolicy } from './newsletter-email.mjs';
+import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, renderBriefDeliveryEmails, acceptedStoryKeys, newsletterDeliveryPolicy } from './newsletter-email.mjs';
 import { buildBrief, briefStats, briefStories, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
 import { newsletterNewsReadComplete } from './newsletter-sources.mjs';
 import { contentIdentity, contentItems } from './newsletter-content.mjs';
@@ -154,6 +154,7 @@ export class NewsletterSchedule {
     return {
       dashboardUrl: this.dashboardUrl(),
       settings: this.store.settings(),
+      ...(this.sourceLinks ? {sourceLinks:this.sourceLinks} : {}),
       ...(productName ? { productName } : {}),
       ...(recipient ? { recipient } : {}),
     };
@@ -271,14 +272,15 @@ export class NewsletterSchedule {
     const placeholder = `${this.dashboardUrl()}/api/newsletter/pdf/00000000-0000-0000-0000-000000000000`;
     let messages;
     try {
-      messages = renderBriefEmails(brief, { ...this.renderOptions(footerRecipient), pdfUrl: placeholder });
+      await this.prepareSources?.(brief);
+      messages = renderBriefDeliveryEmails(brief, { ...this.renderOptions(footerRecipient), pdfUrl: placeholder, editorial: !!this.deliveryQueue });
       const policyReason = newsletterDeliveryPolicy({ partCount: messages.length, lateCount: briefStats(brief).late });
       if (policyReason) throw Object.assign(new Error('Newsletter delivery policy refused this edition'), { code: policyReason });
       const plannedKeys = new Set(messages.flatMap(message => message.keys));
       if (briefStories(brief).some(item => !item.keys?.length || item.keys.some(key => !plannedKeys.has(key)))) {
         throw Error('Eligible alert missing from email plan');
       }
-      if (messages.some(message => message.part)) {
+      if (messages.some(message => message.part && !message.part.reportLink)) {
         const sections={calendar:brief.calendar?.rows,actions:brief.actions?.rows,performance:brief.performance?.rows,india:brief.markets.rows.filter(r=>r.group==='india'),markets:brief.markets.rows.filter(r=>r.group!=='india')};
         for (const [name,rows] of Object.entries(sections)) {
           const carried=new Set(messages.flatMap(message=>message.part?.sections?.[name] || []));
@@ -289,6 +291,11 @@ export class NewsletterSchedule {
       const reason = ['email-too-large', 'email-part-limit', 'historical-backlog-stopped'].includes(error?.code) ? error.code : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map(r => ({ email: r.email, ok: false, reason })) });
     }
+    // Only the GitHub queue has the exact-publication guard before provider I/O.
+    // The retired direct sender must never acknowledge a report it cannot verify.
+    if (messages.some(message => message.part?.reportLink) && !this.deliveryQueue) {
+      return finish({ sent: 0, failed: list.length, reason: 'pdf-unverified', outcomes: list.map(r => ({ email: r.email, ok: false, reason: 'pdf-unverified' })) });
+    }
     const renderStats = briefStats(brief);
     let pdfUrl, documentId;
     try {
@@ -297,8 +304,8 @@ export class NewsletterSchedule {
     } catch {
       return finish({ sent: 0, failed: list.length, reason: 'pdf-failed', outcomes: list.map(r => ({ email: r.email, ok: false, reason: 'pdf-failed' })) });
     }
-    const subject = briefSubject(brief, this.renderOptions());
-    const summary = { ...briefSummary(brief), emailParts: messages.length, htmlBytes: messages.map(m => m.bytes) };
+    const subject = messages[0]?.subject || briefSubject(brief, this.renderOptions());
+    const summary = { ...briefSummary(brief), emailParts: messages.length, htmlBytes: messages.map(m => m.bytes), deliveryFormat: messages[0]?.part?.investor ? 'investor-brief' : messages[0]?.part?.reportLink ? 'complete-report' : 'inline' };
     // GitHub owns resumable delivery. The retired object path keeps its original
     // claims; no historical/uncertain edition is implicitly enrolled for replay.
     if (this.deliveryQueue) return this.deliveryQueue.deliver({ key, edition, source, brief, list, messages, pdfUrl, documentId, credential, subject, summary, testRequest: source === 'test' && !includeAi ? testRequest : null });
@@ -384,7 +391,7 @@ export class NewsletterSchedule {
     }
     if (format === 'html') {
       let messages;
-      try { messages = renderBriefEmails(brief, this.renderOptions()); }
+      try { await this.prepareSources?.(brief); messages = renderBriefDeliveryEmails(brief, { ...this.renderOptions(), editorial: true, preview: true }); }
       catch (error) { return { ok: false, reason: error?.code || 'build-failed' }; }
       const message = messages[part - 1];
       if (!message) return { ok: false, reason: 'invalid-part' };

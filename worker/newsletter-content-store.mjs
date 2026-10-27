@@ -1,5 +1,6 @@
 import { NewsletterNewsBudget } from './newsletter-news-budget.mjs';
 import { CONTENT_BATCH, readDocumentFacts } from './newsletter-content.mjs';
+import { editorialPriority } from './newsletter-editorial.mjs';
 
 export const CONTENT_SCAN_MS = 60 * 60 * 1000;
 export const CONTENT_TICK_MS = 60 * 1000;
@@ -19,6 +20,8 @@ export class NewsletterContentStore {
         next_at INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, lease TEXT, result TEXT)`);
       this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_content_due ON newsletter_content(state,next_at,first_seen)');
       this.storage.sql.exec('CREATE TABLE IF NOT EXISTS newsletter_content_meta (id INTEGER PRIMARY KEY, value TEXT NOT NULL)');
+      const columns=this.storage.sql.exec('PRAGMA table_info(newsletter_content)').toArray();
+      if(!columns.some(c=>c.name==='priority')) this.storage.sql.exec('ALTER TABLE newsletter_content ADD COLUMN priority INTEGER NOT NULL DEFAULT 0');
       this.initialised = true;
     }
     return this.storage.sql.exec(sql, ...args).toArray();
@@ -32,9 +35,15 @@ export class NewsletterContentStore {
     this.storage.transactionSync(() => {
       for (const item of items) {
         const { row, id, ...input } = item;
+        input.linkPolicy=1;
         if (!/^[a-f0-9]{64}$/.test(id) || !input.ticker || !['filing', 'news'].includes(input.kind)) throw new Error('Invalid content job');
-        this.rows(`INSERT INTO newsletter_content(id,input,state,first_seen,next_at) VALUES (?,?,'pending',?,?) ON CONFLICT(id) DO NOTHING`,
-          id, JSON.stringify(input), now, now);
+        this.rows(`INSERT INTO newsletter_content(id,input,state,first_seen,next_at,priority) VALUES (?,?,'pending',?,?,?)
+          ON CONFLICT(id) DO UPDATE SET
+            next_at=CASE WHEN newsletter_content.state='pending' AND COALESCE(json_extract(newsletter_content.input,'$.linkPolicy'),0)<1
+              AND json_extract(newsletter_content.result,'$.reason') IN ('unsupported-source','unsupported-redirect')
+              THEN MIN(newsletter_content.next_at,excluded.next_at) ELSE newsletter_content.next_at END,
+            input=excluded.input,priority=excluded.priority`,
+          id, JSON.stringify(input), now, now,editorialPriority(input));
       }
     });
   }
@@ -44,7 +53,7 @@ export class NewsletterContentStore {
     return row ? json(row.result) || { state: 'pending', reason: row.state === 'reading' ? 'reading' : 'queued' } : null;
   }
 
-  claim(now, preferred = []) {
+  claim(now, preferred = [], { oldest=false }={}) {
     this.rows('SELECT 1');
     return this.storage.transactionSync(() => {
       let row;
@@ -52,7 +61,11 @@ export class NewsletterContentStore {
         row = this.rows("SELECT * FROM newsletter_content WHERE id=? AND state!='ready' AND next_at<=?", id, now)[0];
         if (row) break;
       }
-      row ||= this.rows("SELECT * FROM newsletter_content WHERE state!='ready' AND next_at<=? ORDER BY first_seen,id LIMIT 1", now)[0];
+      // Use publication time: discovering an old risk disclosure today cannot let it
+      // crowd out current filings. Keep a separate oldest-job slot for retained history.
+      row ||= oldest
+        ? this.rows("SELECT * FROM newsletter_content WHERE state!='ready' AND next_at<=? ORDER BY first_seen,id LIMIT 1",now)[0]
+        : this.rows("SELECT * FROM newsletter_content WHERE state!='ready' AND next_at<=? ORDER BY CASE WHEN json_extract(input,'$.at')>=? THEN 1 ELSE 0 END DESC,priority DESC,json_extract(input,'$.at') DESC,first_seen DESC,id LIMIT 1",now,now-3*86400000)[0];
       if (!row) return null;
       const lease = crypto.randomUUID();
       this.rows("UPDATE newsletter_content SET state='reading',next_at=?,attempts=attempts+1,lease=? WHERE id=?", now + CONTENT_LEASE_MS, lease, row.id);
@@ -61,7 +74,7 @@ export class NewsletterContentStore {
   }
 
   complete(job, result, now) {
-    const slow = ['unsupported-source', 'unsupported-format', 'missing-link', 'too-large', 'access-limited', 'issuer-mismatch', 'news-budget', 'news-attempt-limit', 'company-evidence-unconfirmed', 'refused'].includes(result.reason);
+    const slow = ['unsupported-source', 'unsupported-format', 'source-link-unresolved', 'missing-link', 'too-large', 'access-limited', 'issuer-mismatch', 'news-budget', 'news-attempt-limit', 'company-evidence-unconfirmed', 'refused'].includes(result.reason);
     const retry = slow ? 86400000 : Math.min(6 * 3600000, CONTENT_TICK_MS * 2 ** Math.min(job.attempts, 12));
     this.rows('UPDATE newsletter_content SET state=?,result=?,next_at=?,lease=NULL WHERE id=? AND lease=?',
       result.state, JSON.stringify(result), now + retry, job.id, job.lease);
@@ -70,12 +83,14 @@ export class NewsletterContentStore {
   async process({ env, fetcher = fetch, now = Date.now(), preferred = [], limit = CONTENT_BATCH }) {
     // Claim the whole bounded batch before yielding; other wakes cannot start the same jobs.
     const jobs = [];
-    for (let i = 0; i < limit; i++) { const job = this.claim(now, preferred); if (!job) break; jobs.push(job); }
+    // Reserve one slot for the oldest due job so fresh filings cannot starve retained work.
+    for (let i = 0; i < limit; i++) { const fair=i===limit-1; const job = this.claim(now, fair?[]:preferred,{oldest:fair}); if (!job) break; jobs.push(job); }
     const queue = [...jobs];
     await Promise.all(Array.from({ length: Math.min(2, jobs.length) }, async () => {
       while (queue.length) {
         const job = queue.shift();
-        const result = await readDocumentFacts({ item: job.item, env, fetcher, now, newsBudget: this.newsBudget });
+        const result = await readDocumentFacts({ item: job.item, env, fetcher, now, newsBudget: this.newsBudget,
+          cachedDocument: job.item.kind==='filing' ? hash => json(this.rows("SELECT result FROM newsletter_content WHERE state='ready' AND json_extract(input,'$.ticker')=? AND json_extract(input,'$.kind')=? AND json_extract(result,'$.hash')=? LIMIT 1",job.item.ticker,job.item.kind,hash)[0]?.result) : null });
         this.complete(job, result, now);
       }
     }));

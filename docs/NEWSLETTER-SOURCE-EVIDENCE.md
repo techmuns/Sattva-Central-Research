@@ -4,6 +4,24 @@ Updated 24 September 2026. These are Sattva's contracts after adapting Glow's so
 and email improvements. The scope is the direct listed companies in `portfolio-companies.json`.
 The public brief never reads private Family Office quantities or a donor `/data/book.json`.
 
+## Current concise edition contract — 27 October 2026
+
+[Investor brief](NEWSLETTER-INVESTOR-BRIEF.md) supersedes the raw-row email presentation below
+for new GitHub-prepared editions. Consolidate verified document copies first; match disclosures
+by issuer, event, normalized dates and financial period; retain all source versions and links;
+then produce one factual reading per event. Real corrections, changed terms and new developments
+remain distinct. The same mandatory fixtures used in Glow cover the reported repetitions.
+
+New editions retain every eligible investor development in at most three 90,000-byte email
+bodies. Short source links open the exact saved original article or announcement, never the
+newsletter PDF. Publish and verify those immutable targets before any email submission. The
+complete PDF retains the source register and supplementary tables. Historical saved PDFs,
+acknowledgements, subscribers and archives remain intact; old oversized plans retain their
+existing refusal rules. No external API, model budget or collection schedule is added.
+
+Sattva keeps its original newsletter palette, masthead and portfolio scope. Shared logic parity
+and future template updates are described in [Newsletter parity](NEWSLETTER-PARITY.md).
+
 ## What the reader receives
 
 The 08:00 and 16:00 IST weekday editions retain source headlines and links, with distinct filings,

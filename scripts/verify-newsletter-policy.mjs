@@ -3,10 +3,12 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {gzipSync} from 'node:zlib';
-import {buildBrief,briefStories,sourcesNote} from '../worker/newsletter-brief.mjs';
-import {newsletterDeliveryPolicy,MAX_DELIVERY_EMAIL_PARTS} from '../worker/newsletter-email.mjs';
+import {buildBrief,briefStories,briefStoryKeys,sourcesNote,PRODUCTION_ORIGIN} from '../worker/newsletter-brief.mjs';
+import {newsletterDeliveryPolicy,MAX_DELIVERY_EMAIL_PARTS,renderBriefEmails,renderBriefDeliveryEmails,EMAIL_HTML_BYTES} from '../worker/newsletter-email.mjs';
 import {NewsletterDeliveryQueue} from './lib/newsletter-delivery-queue.mjs';
 import {localNewsletter} from './lib/newsletter-local.mjs';
+import {renderBriefPdf} from '../worker/newsletter-pdf.mjs';
+import {verifyNewsletterSourceLinks} from './verify-newsletter-source-links.mjs';
 import {DEFAULT_SETTINGS,editionWindow,istInstant} from '../public/js/data/newsletter-shared.js';
 
 const day='2026-10-22',now=istInstant(day,'08:00'),window=editionWindow('morning',day,DEFAULT_SETTINGS);
@@ -66,21 +68,40 @@ for(const [count,late,expected,age=0,oldPublished=false,priceContext=false]of [[
   }finally{await local.close();}
 }
 
-// A newly built oversized edition must fail as a whole before its first email or PDF is saved.
+// Busy current editions use one explicitly labelled email linking the complete report.
 const oversized=structuredClone(captures);
 oversized['/data/market-news.json'].articles=Array.from({length:220},(_,i)=>({
   title:`${holding.name} distinct order number ${i}`,publishedAt:new Date(window.from+i).toISOString(),
   url:`https://fixture.test/current/${i}`,publisher:'Fixture',summary:'Distinct terms of this specific order. '.repeat(150),
 }));
-let sends=0;
+const sent=[];
 const large=localNewsletter(':memory:',{env:{...env,ASSETS:{fetch:async request=>{
   const value=oversized[new URL(request.url).pathname];return value?Response.json(value):new Response(null,{status:404});
-}}},now:()=>now,fetcher:async(raw)=>{if(String(raw).includes('/email/send/'))sends++;return new Response(null,{status:503});}});
+}}},now:()=>now,fetcher:async(raw,options)=>{if(String(raw).includes('/email/send/')){sent.push(JSON.parse(options.body));return Response.json({success:true,data:{messageId:'<report@fixture.test>'}});}return new Response(null,{status:503});}});
 try{
+  const brief=await buildBrief({edition:'morning',day,settings:DEFAULT_SETTINGS,env:large.schedule.env,now,includeAi:false,fetcher:async()=>new Response(null,{status:503})});
+  const pdfUrl=PRODUCTION_ORIGIN+'/api/newsletter/pdf/00000000-0000-0000-0000-000000000001';
+  const options={dashboardUrl:PRODUCTION_ORIGIN,pdfUrl,recipient:{addedBy:'<script>escaped</script>'}};
+  assert(renderBriefEmails(brief,options).length>6,'Reproduce a legitimate current edition above the six-email budget');
+  const original=JSON.stringify(brief),messages=renderBriefDeliveryEmails(brief,options);
+  assert.equal(messages.length,1);assert.equal(messages[0].part.reportLink,true);
+  assert(messages[0].bytes<=EMAIL_HTML_BYTES);assert(messages[0].html.includes('No additional email parts follow'));
+  assert(!messages[0].html.includes('<script>'));assert(messages[0].html.includes('&lt;script&gt;'));
+  assert.deepEqual(messages[0].keys.sort(),briefStoryKeys(brief).sort());
+  assert.equal(JSON.stringify(brief),original,'Transport fallback cannot remove or rewrite report evidence');
+  assert.throws(()=>renderBriefDeliveryEmails(brief,{dashboardUrl:PRODUCTION_ORIGIN,pdfUrl:PRODUCTION_ORIGIN+'/api/newsletter/preview?format=pdf'}),/immutable/);
+  const pathological=structuredClone(brief);pathological.news.groups[0].items[0].summary='Unabridged source conditions. '.repeat(10000);
+  assert.equal(renderBriefDeliveryEmails(pathological,options).length,1,'One unfit source cannot block the complete report');
+  const crowded=structuredClone(brief);crowded.news.groups[0].company='Very long company name & '.repeat(5000);
+  assert.equal(renderBriefDeliveryEmails(crowded,options)[0].part.compact,true,'An oversized company index switches to explicit report totals, not another email');
+  const pdf=Buffer.from(renderBriefPdf(brief)).toString('latin1');
+  assert(pdf.includes('https://fixture.test/current/0'));assert(pdf.includes('https://fixture.test/current/219'),'The final source link survives in the complete immutable report');
   const result=await large.schedule.deliver({edition:'morning',day,at:now,key:'large-edition',source:'timer',now,includeAi:false,recipients:[{email:'fixture@example.test'}]});
-  assert.equal(result.reason,'email-part-limit');
-  assert.equal(sends,0);
+  assert.equal(result.reason,'pdf-unverified','The direct sender cannot use a report fallback without the verified GitHub queue');
+  assert.equal(sent.length,0);assert.equal(large.store.reportedCount(),0,'An unverified report acknowledges no source identities');
   assert.equal(large.db.prepare('SELECT COUNT(*) n FROM newsletter_documents').get().n,0);
-  assert.equal(large.store.reportedCount(),0,'Refusing delivery does not mark unsent updates delivered');
+  await large.schedule.deliver({edition:'morning',day,at:now,key:'large-edition',source:'timer',now,includeAi:false,recipients:[{email:'fixture@example.test'}]});
+  assert.equal(sent.length,0,'Replaying a refused direct delivery cannot send an unverified link');
 }finally{await large.close();}
-console.log('PASS newsletter policy: strict publication window, 2,584 old reports excluded, six-part delivery ceiling, frozen backlog stopped, receipts/history preserved, restart cannot replay, normal recovery retained');
+await verifyNewsletterSourceLinks();
+console.log('PASS newsletter policy: strict publication window, 2,584 old reports excluded, bounded current-report delivery, complete PDF evidence, frozen backlog stopped, receipts/history preserved, restart cannot replay');

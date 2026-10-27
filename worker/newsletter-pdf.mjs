@@ -18,6 +18,7 @@ import {
   calendarDayLabel,
 } from "./newsletter-brief.mjs";
 import { priceReasonText } from "./newsletter-price-reasons.mjs";
+import { editorialEvents, referenceReason } from "./newsletter-editorial.mjs";
 import {
   istDateLong,
   istLabel,
@@ -55,6 +56,8 @@ const paragraphHeight = (text, size, font = "F1", gap = 6) =>
   wrap(text, CONTENT, font, size).length * size * 1.42 + gap;
 const noteHeight = (text) =>
   40 + wrap(text, CONTENT - 30, "F1", 10).length * 14.2;
+const sourceLinks = (story, dashboardUrl) => [...new Set([story.url, ...(story.sourceUrls || [])]
+  .filter(Boolean).map(url => readableUrl(url, dashboardUrl)).filter(Boolean))];
 const updateHeight = (k, note) => {
   const s = k.main;
   const metadata = `${s.topic.label} / ${s.mood.label} / ${s.source} / ${storyWhen(s)}${s.related ? " / related entity" : ""}${s.late ? " / not in the previous brief" : ""}`;
@@ -72,7 +75,7 @@ const updateHeight = (k, note) => {
         (s.why?.source ? 40 : 0)
       : 0) +
     paragraphHeight(metadata, 8) +
-    (s.url ? 22 : 0) +
+    (new Set([s.url, ...(s.sourceUrls || [])].filter(Boolean)).size * 22) +
     20 +
     k.others.reduce(
       (n, r) =>
@@ -82,7 +85,7 @@ const updateHeight = (k, note) => {
           `${r.source} / ${storyWhen(r)}${r.related ? " / related entity" : ""}${r.late ? " / not in the previous brief" : ""}`,
           8,
         ) +
-        (r.dek ? paragraphHeight(r.dek, 10) : 0),
+        (r.dek ? paragraphHeight(r.dek, 10) : 0) + (r.sourceUrls?.length || 0) * 22,
       0,
     )
   );
@@ -127,6 +130,8 @@ function calendar(pdf, brief, dashboardUrl) {
               color: ACCENT,
               url: readableUrl(r.url, dashboardUrl),
             }),
+            ...sourceLinks(r, dashboardUrl).filter(url => url !== readableUrl(r.url, dashboardUrl))
+              .map(url => cell("Additional calendar source ->", { size: 8, color: ACCENT, url })),
           ],
         ],
       })),
@@ -179,6 +184,8 @@ function actions(pdf, brief, dashboardUrl) {
               color: ACCENT,
               url: readableUrl(r.url, dashboardUrl),
             }),
+            ...sourceLinks(r, dashboardUrl).filter(url => url !== readableUrl(r.url, dashboardUrl))
+              .map(url => cell("Additional action source ->", { size: 8, color: ACCENT, url })),
           ],
         ],
       })),
@@ -303,6 +310,7 @@ export function renderBriefPdf(
   const stats = briefStats(brief),
     edition = TAGLINES[brief.edition],
     date = istLabel(brief.at, { time: false });
+  const reading=editorialEvents(brief,stats.companies);
   const pdf = new BriefPdf({
     brand: BRAND,
     edition,
@@ -323,20 +331,21 @@ export function renderBriefPdf(
   pdf.rule();
   pdf.y += 18;
   pdf.metrics([
-    { value: String(stats.updates), label: "COMPANY UPDATES" },
+    { value: String(reading.events.length), label: "DISTINCT DEVELOPMENTS" },
     {
-      value: `${stats.companies.length} / ${brief.book.listed}`,
-      label: "COMPANIES WITH UPDATES",
+      value: `${new Set(reading.events.map(e=>e.ticker)).size} / ${brief.book.listed}`,
+      label: "COMPANIES WITH DEVELOPMENTS",
       size: 18,
     },
-    { value: String(stats.good), label: "GOOD", color: tone(1) },
-    { value: String(stats.watch), label: "WATCH-OUTS", color: tone(-1) },
+    { value: String(stats.stories), label: "SOURCE ITEMS RETAINED" },
+    { value: String(brief.content?.pending ?? 'Unknown'), label: "PENDING SOURCE READS" },
   ]);
   pdf.paragraph(
     `Window: ${istLabel(brief.window.from)} to ${istLabel(brief.window.to)}${brief.onDemand ? " / built on request" : ""}`,
     { size: 9, color: MUTED, gap: 16 },
   );
   pdf.contents([
+    "Investment briefing",
     "Your portfolio companies",
     ...(brief.calendar ? ["On the calendar"] : []),
     ...(brief.actions ? ["Corporate actions"] : []),
@@ -354,10 +363,23 @@ export function renderBriefPdf(
     "READING THIS BRIEF",
     "Every company update retains its original evidence and links. Market and portfolio figures keep their source dates, verification limits and unavailable states. Use the contents above or the PDF bookmarks to move between sections.",
   );
+  pdf.section("Investment briefing", {fresh:true,subtitle:"Distinct developments first / full source register follows"});
+  pdf.paragraph(`${reading.events.length} development${reading.events.length===1?'':'s'} / ${reading.reference.length} reference or calendar groups / ${reading.repeated.length} previously covered groups. Source history and all links are retained in the following register.`,{size:9,color:MUTED});
+  if(brief.content?.pending)pdf.note("READING COVERAGE",`${brief.content.pending} source items remain unread. Unread headlines are reported leads, not verified document summaries. Full source checks and failures are disclosed in Sources & reading notes.`);
+  for(const event of reading.events) {
+    pdf.ensure(100);
+    pdf.paragraph(`${event.company} / ${event.lead.kind==='filing'?'Corporate announcement':'Development'}`,{font:'F2',size:11,gap:4});
+    const summary=event.summary || event.sourceSummary || event.description || event.lead.headline;
+    pdf.paragraph(summary,{size:10});
+    if(event.summary&&event.note?.impact)pdf.paragraph(`Potential impact / AI: ${event.note.impact}`,{size:9,color:MUTED});
+    if(event.summary&&event.note?.unknowns)pdf.paragraph(`Watch next: ${event.note.unknowns}`,{size:9,color:MUTED});
+    pdf.paragraph(`${event.evidence} / ${event.read} of ${event.total} source items read / ${storyWhen(event.lead)}`,{size:8,color:MUTED});
+    pdf.paragraph('Primary / lead source ->',{size:8,color:ACCENT,url:readableUrl(event.lead.content?.sourceUrl||event.lead.url,dashboardUrl),gap:12});
+  }
   pdf.section("Your portfolio companies", {
     fresh: true,
     subtitle:
-      "Company developments / source facts, AI interpretation and original links",
+      "Complete source register / includes reference records and unverified matches",
   });
   if (!stats.stories)
     pdf.note(
@@ -400,6 +422,7 @@ export function renderBriefPdf(
         url: readableUrl(s.url, dashboardUrl),
         gap: 7,
       });
+      if(referenceReason(s))pdf.paragraph(`Reference only: ${referenceReason(s)}`,{font:'F2',size:9,color:MUTED});
       if (s.dek) pdf.paragraph(s.dek, { size: 10, color: MUTED });
       if (note) {
         pdf.note("AI SUMMARY", note.summary);
@@ -424,13 +447,22 @@ export function renderBriefPdf(
         `${s.topic.label} / ${s.mood.label} / ${s.source} / ${storyWhen(s)}${s.related ? " / related entity" : ""}${s.late ? " / not in the previous brief" : ""}`,
         { size: 8, color: MUTED },
       );
-      if (s.url)
-        pdf.paragraph("Read original source ->", {
+      for (const [i, url] of sourceLinks(s, dashboardUrl).entries())
+        pdf.paragraph(i === 0 ? "Read original source ->" : `Read additional original source ${i + 1} ->`, {
           font: "F2",
           size: 9,
           color: ACCENT,
-          url: readableUrl(s.url, dashboardUrl),
+          url,
         });
+      // Pair saved facts with that version's own linked heading. Copies remain
+      // linked below without printing an identical document's extraction again.
+      const factSources=new Set((k.documents || [{main:s},...k.others.map(main=>({main}))]).map(d=>d.main));
+      const savedFacts=item=>{
+        if(!factSources.has(item)||!item.content?.facts?.length)return;
+        pdf.paragraph(`Saved source facts / ${item.content.state}`,{font:'F2',size:9,color:MUTED});
+        for(const fact of item.content.facts)pdf.paragraph(`${fact.name || fact.field}: ${fact.value}`,{size:8,color:MUTED});
+      };
+      savedFacts(s);
       for (const r of k.others) {
         pdf.paragraph(`Related: ${r.headline}`, {
           size: 10,
@@ -441,6 +473,9 @@ export function renderBriefPdf(
           { size: 8, color: MUTED },
         );
         if (r.dek) pdf.paragraph(r.dek, { size: 10, color: MUTED });
+        savedFacts(r);
+        for (const url of sourceLinks(r, dashboardUrl).filter(url => url !== readableUrl(r.url, dashboardUrl)))
+          pdf.paragraph("Read additional related source ->", { font: "F2", size: 9, color: ACCENT, url });
       }
       pdf.y += 4;
       pdf.rule();
