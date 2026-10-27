@@ -1917,7 +1917,7 @@
       "pending": []
     },
     "isin:INE073K01018|Sona Blw Precision Forgings": {
-      "lastAttemptAt": "2026-10-22T00:27:58+00:00",
+      "lastAttemptAt": "2026-10-27T06:03:09+00:00",
       "error": "search-unavailable",
       "lastResultCount": 19,
       "lastSuccessAt": "2026-10-02T10:43:50+00:00",
@@ -2802,6 +2802,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-27T05:06:34.680401+00:00"
+    "checkedAt": "2026-10-27T06:03:09.775400+00:00"
   }
 }
