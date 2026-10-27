@@ -2006,8 +2006,8 @@
       "lastDiscoveryAt": "2026-10-22T03:30:38+00:00"
     },
     "isin:INE958L01034|String Metaverse": {
-      "lastAttemptAt": "2026-10-22T03:30:38+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-27T12:00:39+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 6,
       "lastSuccessAt": "2026-10-22T03:30:38+00:00",
       "targetThrough": null,
@@ -2802,6 +2802,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 233,
-    "checkedAt": "2026-10-27T11:02:50.753443+00:00"
+    "checkedAt": "2026-10-27T12:00:39.844054+00:00"
   }
 }
