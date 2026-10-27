@@ -30,3 +30,10 @@ The 27 October company/headline release adds the common company reading ledger a
 Biocon/HFCL/SONACOMS PDF/native XML replay. These fixtures run from the existing full-output
 release gate. Both renderers and writer admission consume the same grouping; source archives,
 delivery acknowledgements and family-owned configuration remain separate and unchanged.
+
+The shared multipart closing rule places the complete results/call calendar, corporate-action
+dates, Market Context and full closing footer in the final email. Earlier parts continue the
+company readings with a small continuation line. Signed market changes retain the original
+gain/loss colours in detailed and compact modes. Shared regressions check complete table rows,
+company order, all three byte-bounded emails, and neutral missing/zero comparisons; frozen
+delivery bodies and source history retain their original content.

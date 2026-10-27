@@ -4,7 +4,7 @@ import { mkdirSync,writeFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { pdfFixture } from './verify-newsletter-pdf.mjs';
 import {DEFAULT_SETTINGS,istInstant} from '../public/js/data/newsletter-shared.js';
-import { briefStats,briefStoryKeys,renderBriefHtml,aiItemsFor,readAiNotes,buildBrief,briefStories,clusterStories,NEWSLETTER_STYLE } from '../worker/newsletter-brief.mjs';
+import { briefStats,briefStoryKeys,renderBriefHtml,aiItemsFor,readAiNotes,buildBrief,briefStories,clusterStories,NEWSLETTER_STYLE,MOODS } from '../worker/newsletter-brief.mjs';
 import { editorialEvents,referenceReason,annotateEditorialHistory,EDITORIAL_EMAIL_PARTS } from '../worker/newsletter-editorial.mjs';
 import { renderInvestorEmails,emailBytes } from '../worker/newsletter-email.mjs';
 import { renderBriefPdf } from '../worker/newsletter-pdf.mjs';
@@ -58,6 +58,29 @@ const options={dashboardUrl:'https://example.test',brand:'Sattva Ventures',pdfUr
 const messages=renderInvestorEmails(brief,options);
 assert.equal(messages.length,1);assert(messages[0].html.includes('INR 100 crore'));assert(messages[0].html.includes('Watch next:'));
 const inbox=messages[0].html;
+function assertEnding(messages,source){
+ const ending=messages.at(-1).html;
+ for(const [title,rows]of [['UPCOMING RESULTS & CALLS',source.calendar.rows],['CORPORATE ACTION DATES',source.actions.rows],['MARKET CONTEXT',source.markets.rows]]){
+  assert.equal(messages.filter(m=>m.html.includes(title)).length,rows.length?1:0,title);
+  if(rows.length)assert(ending.includes(title),`${title} belongs only in the final email`);
+ }
+ assert.equal(messages.filter(m=>m.html.includes('Automated by Munshot')).length,1);
+ assert(ending.includes('Automated by Munshot')&&!ending.includes('Continued in Part'));
+ for(const [i,message]of messages.entries()){
+  assert(message.html.includes('Unsubscribe'),'Reader controls remain available in every part');
+  if(i<messages.length-1){assert(message.html.includes(`Continued in Part ${i+2} of ${messages.length}`));assert(!message.html.includes('AI impacts are interpretations.'));}
+  assert(!message.html.includes('Dates and markets (PDF)'),'Closing tables cannot be replaced by a PDF-only count');
+ }
+ const tables=ending.indexOf('UPCOMING RESULTS & CALLS');
+ if(tables>=0)assert(tables>ending.lastIndexOf('data-company='),'All company readings precede the closing tables');
+ assert(ending.indexOf('Automated by Munshot')>ending.indexOf('MARKET CONTEXT'));
+}
+assertEnding(messages,brief);
+const coloured=structuredClone(brief);
+coloured.markets.rows=[1.25,-2.5,0,null].map((changePct,i)=>({...structuredClone(brief.markets.rows[0]),label:`Market colour ${i}`,changePct}));
+const colouredHtml=renderInvestorEmails(coloured,options).at(-1).html;
+for(const [colour,value]of [[MOODS.good.color,'+1.25%'],[MOODS.watch.color,'−2.50%'],[MOODS.neutral.color,'0.00%'],[NEWSLETTER_STYLE.META,'Change unavailable']])
+ assert(colouredHtml.includes(`<span style="color:${colour};font-weight:bold">${value}</span>`),'Gain/loss/flat/unavailable changes retain the original market colours and signs');
 for(const token of [NEWSLETTER_STYLE.CREAM,NEWSLETTER_STYLE.INK,NEWSLETTER_STYLE.GOLD,NEWSLETTER_STYLE.GOLD_LIGHT,NEWSLETTER_STYLE.SERIF])assert(inbox.includes(token),'The original newsletter palette and serif design must remain');
 assert(inbox.includes('border-top:3px double')&&inbox.includes('max-width:640px')&&inbox.includes('Evening Portfolio Brief'),'Retain the original masthead, paper width and edition format');
 assert(!inbox.includes(official.headline),'A grounded summary replaces the repetitive source headline in the inbox');
@@ -309,18 +332,27 @@ const busy=structuredClone(brief);busy.announcements.groups[0].items=Array.from(
 busy.ai={ok:false,items:{}};
 const digest=renderInvestorEmails(busy,options);
 assert(digest.length<=EDITORIAL_EMAIL_PARTS);assert(digest.every(m=>m.bytes<=90000));
+assert(digest.length>1);assertEnding(digest,busy);
+assert.deepEqual(digest.flatMap(m=>m.part.eventIds),editorialEvents(busy,briefStats(busy).companies).events.map(e=>e.id),'Reserving the ending cannot reorder the company reading flow');
 assert.deepEqual(digest.flatMap(m=>m.part.eventIds).sort(),editorialEvents(busy,briefStats(busy).companies).events.map(e=>e.id).sort());
 for(const message of digest)assert(message.html.includes('Headline only'));
 const supplemented=structuredClone(busy);supplemented.announcements.groups[0].items=supplemented.announcements.groups[0].items.slice(0,30);
 supplemented.calendar.rows=Array.from({length:80},(_,i)=>({...structuredClone(brief.calendar.rows[0]),label:`Results/call ${i} ${'x'.repeat(250)}`}));
 const supplementStats=briefStats(supplemented),supplementEvents=editorialEvents(supplemented,supplementStats.companies).events;
-const measured=(ids,index)=>emailBytes(renderBriefHtml(supplemented,{...options,stats:supplementStats,part:{investor:true,reportLink:true,eventIds:ids,index,total:3,packing:true,supplements:true,compact:false}}));
-const firstBase=measured([],1),laterBase=measured([],2),oneCard=measured([supplementEvents[0].id],2)-laterBase;
-const supplementalBudget=firstBase+3*oneCard+1024;
-assert(supplementalBudget<90000&&firstBase-laterBase>27*oneCard,'The fixture needs first-page tables, then event-only continuations');
+const measured=(ids,closing)=>emailBytes(renderBriefHtml(supplemented,{...options,stats:supplementStats,part:{investor:true,reportLink:true,eventIds:ids,index:closing?3:1,total:3,packing:true,supplements:true,compact:false}}));
+const ordinaryBase=measured([],false),endingBase=measured([],true),oneCard=measured([supplementEvents[0].id],false)-ordinaryBase;
+const supplementalBudget=endingBase+3*oneCard+1024;
+assert(supplementalBudget<90000&&endingBase-ordinaryBase>27*oneCard,'The fixture needs company readings first, then a substantial final table section');
 const supplementDigest=renderInvestorEmails(supplemented,options,{maxBytes:supplementalBudget});
-assert.equal(supplementDigest.length,2);assert(supplementDigest.every(m=>m.part.supplements&&!m.part.compact&&m.bytes<=supplementalBudget),'Continuation pages must not be charged for first-email tables');
+assert.equal(supplementDigest.length,2);assert(supplementDigest.every(m=>m.part.supplements&&!m.part.compact&&m.bytes<=supplementalBudget),'Only the ending must reserve the complete tables and full footer');
 assert.equal(supplementDigest.flatMap(m=>m.part.eventIds).length,30);
+assertEnding(supplementDigest,supplemented);
+assert.equal(supplementDigest[0].part.eventIds.length,30,'Keep the whole company together before the final tables');
+assert.equal(supplementDigest[1].part.eventIds.length,0);
+assert(!supplementDigest[1].html.includes('YOUR PORTFOLIO COMPANIES')&&!supplementDigest[1].html.includes('No new developments'),'A tables-only ending must not imply that the preceding company readings are empty');
+for(const row of supplemented.calendar.rows)assert(supplementDigest.at(-1).html.includes(row.label),'Every upcoming row is retained in the final email');
+const oversizedEnding=structuredClone(brief);oversizedEnding.calendar.rows[0].label='x'.repeat(100000);
+assert.throws(()=>renderInvestorEmails(oversizedEnding,options),e=>e.code==='email-too-large','An unfit closing table cannot silently disappear into a PDF fallback');
 const crowded=structuredClone(busy);
 crowded.announcements.groups=Array.from({length:320},(_,i)=>({ticker:`CROWDED${i}`,company:`Material Issuer ${i}`,items:[{...structuredClone(busy.announcements.groups[0].items[0]),headline:`Distinct contract ${i} with Customer ${i}`,keys:[`crowded:${i}`],url:`https://fixture.test/material/${i}?discovery=${'x'.repeat(1000)}`}]}));
 assert.throws(()=>renderInvestorEmails(crowded,options),error=>error.code==='email-too-large','An edition with exceptionally large source URLs must fail closed, never replace article links or send a partial plan');
@@ -370,6 +402,7 @@ const oversized=new Map([['source-00000000-0000-4000-8000-000000000000',{format:
 assert.throws(()=>newsletterSourceViews(oversized,{repo:'fixture/repo',env:{BACKGROUND_STATE_KEY:'fixture-source-index-secret-only'}}),/exceeds/,'Oversized source records fail publication rather than truncating their destination');
 for(const group of crowded.announcements.groups)group.items[0].url=group.items[0].url.split('?')[0];
 const compactDigest=renderInvestorEmails(crowded,options);
+assertEnding(compactDigest,crowded);
 assert(compactDigest.length<=3&&compactDigest.every(m=>m.part.compact&&m.bytes<=90000),'A busy multi-company edition must use the genuinely compact branded rows');
 assert.equal(compactDigest.flatMap(m=>m.part.eventIds).length,320);
 assert.deepEqual(compactDigest.flatMap(m=>m.keys).sort(),briefStoryKeys(crowded).sort());
@@ -380,6 +413,7 @@ dense.announcements.groups=Array.from({length:500},(_,i)=>({ticker:`DENSE${i}`,c
  url:`https://www.bseindia.com/xml-data/corpfiling/AttachLive/00000000-0000-4000-8000-${String(i).padStart(12,'0')}.pdf`}]}));
 const denseBefore=JSON.stringify(dense),packingStarted=performance.now(),denseDigest=renderInvestorEmails(dense,options),denseHtml=denseDigest.map(m=>m.html).join('');
 const packing500Ms=Math.round(performance.now()-packingStarted);
+assertEnding(denseDigest,dense);
 assert(packing500Ms<20000,'500 distinct disclosures pack within 20 seconds on one standard runner');
 assert(denseDigest.length<=3&&denseDigest.every(m=>m.part.compact&&m.part.summaryChars===140&&m.bytes<=90000),'A dense edition shortens excerpts before exceeding the existing three-email limit');
 assert.equal(denseDigest.flatMap(m=>m.part.eventIds).length,500);
@@ -388,6 +422,7 @@ assert.deepEqual(denseDigest.flatMap(m=>m.keys).sort(),briefStoryKeys(dense).sor
 for(const group of dense.announcements.groups)assert(denseHtml.includes(`href="${group.items[0].url}"`),'Dense packing retains the full exact announcement URL');
 assert.equal(JSON.stringify(dense),denseBefore,'Shorter inbox excerpts cannot rewrite the captured record');
 const shortestDigest=renderInvestorEmails(dense,options,{maxBytes:80000});
+assertEnding(shortestDigest,dense);
 assert(shortestDigest.length<=3&&shortestDigest.every(m=>m.part.summaryChars===100&&m.bytes<=80000),'The shortest tier stays bounded under additional byte pressure');
 assert.equal(new Set(shortestDigest.flatMap(m=>m.part.eventIds)).size,500);
 assert.deepEqual(shortestDigest.flatMap(m=>m.keys).sort(),briefStoryKeys(dense).sort());
@@ -407,5 +442,8 @@ if(process.env.NEWSLETTER_INVESTOR_OUTPUT){
  writeFileSync(`${dir}/investor-email.html`,messages[0].html);
  writeFileSync(`${dir}/investor-brief.pdf`,renderBriefPdf(brief));
  writeFileSync(`${dir}/busy-email.html`,digest[0].html);
+ digest.forEach((message,i)=>writeFileSync(`${dir}/busy-email-${i+1}.html`,message.html));
+ writeFileSync(`${dir}/market-colours.html`,colouredHtml);
+ writeFileSync(`${dir}/compact-ending.html`,shortestDigest.at(-1).html);
 }
 console.log(`PASS investor replay: ${excluded.length} actual attribution/noise cases, direct source links, Aurobindo/Bharat copy regressions, lossless source register, corrections, acknowledged restart, readable summary admission, queue priority/fairness, ${digest.length} email(s) for 180 distinct material disclosures; 500-disclosure packing ${packing500Ms}ms`);

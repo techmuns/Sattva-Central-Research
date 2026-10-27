@@ -154,38 +154,42 @@ export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_B
       !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(options.pdfUrl.slice((origin+'/api/newsletter/pdf/').length)))) throw Error('Investor delivery requires an immutable edition PDF');
   // Preserve every item and exact URL on dense days. Shorten inbox excerpts
   // before reaching the same hard part limit; the complete report is unchanged.
-  for (const [compact,summaryChars] of [[false,340],[true,220],[true,140],[true,100]]) for (const supplements of [true,false]) {
+  for (const [compact,summaryChars] of [[false,340],[true,220],[true,140],[true,100]]) {
+    const supplements=true;
     const pages=[], selected=[];
-    const measure=(ids,index)=>emailBytes(renderBriefHtml(brief,{...options,stats,reading,part:{investor:true,reportLink:true,eventIds:ids,compact,summaryChars,supplements,index,total:maxParts,packing:true}}));
-    const firstOverhead=measure([],1),continuationOverhead=measure([],2);let used=firstOverhead;
+    const measure=(ids,closing)=>emailBytes(renderBriefHtml(brief,{...options,stats,reading,part:{investor:true,reportLink:true,eventIds:ids,compact,summaryChars,supplements,index:closing?maxParts:1,total:closing?maxParts:Math.max(2,maxParts),packing:true}}));
+    const continuationOverhead=measure([],false),closingOverhead=measure([],true);let used=closingOverhead;
     // Card markup is additive. Measure each card once instead of rendering the whole
     // growing edition for every candidate (quadratic date formatting/string allocation).
-    if(firstOverhead>maxBytes-PACKING_RESERVE)continue;
+    if(closingOverhead>maxBytes-PACKING_RESERVE)continue;
     let failed=false;
     const blocks=[];
     for(const event of reading.events){
       if(blocks.at(-1)?.ticker!==event.ticker)blocks.push({ticker:event.ticker,events:[]});
-      blocks.at(-1).events.push({event,cost:measure([event.id],2)-continuationOverhead});
+      blocks.at(-1).events.push({event,cost:measure([event.id],false)-continuationOverhead});
     }
-    for(const block of blocks){
+    // Reserve the final tables/footer first, then fill backwards. Reversing each
+    // completed page restores the original company/event order without losing rows.
+    const flush=()=>{pages.unshift(selected.splice(0).reverse());used=continuationOverhead;};
+    for(const block of blocks.reverse()){
       const blockCost=block.events.reduce((n,row)=>n+row.cost,0);
       // Keep a company intact whenever it fits in an empty continuation email.
       // Only an oversized company may continue across an adjacent part boundary.
-      if(selected.length&&used+blockCost>maxBytes-PACKING_RESERVE&&continuationOverhead+blockCost<=maxBytes-PACKING_RESERVE){
-        pages.push(selected.splice(0));used=continuationOverhead;
+      if((selected.length||!pages.length)&&used+blockCost>maxBytes-PACKING_RESERVE&&continuationOverhead+blockCost<=maxBytes-PACKING_RESERVE){
+        flush();
         if(pages.length>=maxParts){failed=true;break;}
       }
-      for (const {event,cost} of block.events) {
+      for (const {event,cost} of block.events.reverse()) {
         if (used+cost<=maxBytes-PACKING_RESERVE) {selected.push(event.id);used+=cost;continue;}
-        if (!selected.length) {failed=true;break;}
-        pages.push(selected.splice(0));
+        if (!selected.length&&pages.length) {failed=true;break;}
+        flush();
         if (pages.length>=maxParts || continuationOverhead+cost>maxBytes-PACKING_RESERVE) {failed=true;break;}
         selected.push(event.id);used=continuationOverhead+cost;
       }
       if(failed)break;
     }
     if(failed)continue;
-    if(selected.length||!pages.length)pages.push(selected);
+    if(selected.length||!pages.length)pages.unshift(selected.reverse());
     if(pages.length>maxParts)continue;
     const messages=pages.map((eventIds,i)=>{
       const previousTicker=i>0?reading.byId.get(pages[i-1].at(-1))?.ticker:null;
