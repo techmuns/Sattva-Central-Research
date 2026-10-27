@@ -5,6 +5,7 @@ import { investorSourceFacts, investorSourceSummary, xbrlBoardMeetingNote, votin
 import { newsletterSourceUrl, newsletterSourceUrls } from './newsletter-source-links.mjs';
 import { scheduledEarningsCall, consolidatedEarningsCallNote } from './newsletter-notice-events.mjs';
 import { investmentReading } from './newsletter-investment-events.mjs';
+import { companyReadings, supportingDocumentSummary } from './newsletter-company-reading.mjs';
 export const EDITORIAL_VERSION = 1;
 export const EDITORIAL_EMAIL_PARTS = 3;
 const text = value => String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
@@ -71,7 +72,7 @@ export function editorialEvents(brief, companies) {
     if(board?.lead)lead=board.lead;
     const investment=investmentReading(readingItems);
     if(investment?.lead)lead=investment.lead;
-    const completeSourceSummary=investment?.note||(callCluster?consolidatedEarningsCallNote(readingItems):board?board.note||null:xbrlBoardMeetingNote(lead)||votingResultNote(lead)||readNoticeNote(lead));
+    const completeSourceSummary=investment?.note||(callCluster?consolidatedEarningsCallNote(readingItems):board?board.note||null:xbrlBoardMeetingNote(lead)||votingResultNote(lead)||supportingDocumentSummary(lead)||readNoticeNote(lead));
     const sourceSummary=cluster.versionConflict?'Different versions of this document were captured; their chronology is unconfirmed. Read the retained versions before relying on the figures.':completeSourceSummary || investorSourceSummary(lead);
     events.push({ id: cluster.id, company: company.company, ticker: company.ticker, cluster,
       lead, note, rank: Math.max(...eligible.map(editorialPriority)), at: Math.max(...eligible.map(s => s.at)),
@@ -86,8 +87,7 @@ export function editorialEvents(brief, companies) {
       evidence: lead.content?.state === 'ready' ? sourceSummary?'Source read':'Source read; factual summary unavailable' : lead.content?.state==='partial'?'Partial source read':'Headline only',
     });
   }
-  events.sort((a,b) => b.rank-a.rank || Number(b.lead.kind === 'filing')-Number(a.lead.kind === 'filing') || b.at-a.at || a.ticker.localeCompare(b.ticker));
-  return { version: EDITORIAL_VERSION, events, reference, repeated, sources: companies.reduce((n,c)=>n+c.stories.length,0) };
+  return { version: EDITORIAL_VERSION, readingVersion: 2, events: companyReadings(events,brief.ai?.items), reference, repeated, sources: companies.reduce((n,c)=>n+(c.stories?.length??c.clusters.reduce((count,k)=>count+1+k.others.length,0)),0) };
 }
 
 // Fingerprints supplement (never replace) source identities in the existing acknowledged
