@@ -2632,7 +2632,7 @@
       "pending": []
     },
     "isin:INE235A01022|FINCABLES": {
-      "lastAttemptAt": "2026-10-22T23:39:04+00:00",
+      "lastAttemptAt": "2026-10-28T17:29:54+00:00",
       "lastResultCount": 48,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00",
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-28T16:44:57.781793+00:00"
+    "checkedAt": "2026-10-28T17:29:54.837330+00:00"
   }
 }
