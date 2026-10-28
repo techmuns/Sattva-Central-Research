@@ -2522,8 +2522,8 @@
       "lastDiscoveryAt": "2026-10-28T07:31:11+00:00"
     },
     "isin:INE120A01034|Carborundum Universal": {
-      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-28T07:45:19+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 11,
       "lastSuccessAt": "2026-10-22T20:54:29+00:00",
       "targetThrough": null,
@@ -2818,8 +2818,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 8,
+    "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-28T07:31:11.845567+00:00"
+    "checkedAt": "2026-10-28T07:45:19.229558+00:00"
   }
 }
