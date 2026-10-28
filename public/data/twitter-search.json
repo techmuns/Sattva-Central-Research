@@ -2208,8 +2208,8 @@
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|URBANCO": {
-      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-28T02:34:40+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 104,
       "lastSuccessAt": "2026-10-17T05:23:01+00:00",
       "targetThrough": "2026-10-22T10:22:06+00:00",
@@ -2801,7 +2801,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 248,
-    "checkedAt": "2026-10-28T01:56:11.522842+00:00"
+    "incomplete": 251,
+    "checkedAt": "2026-10-28T02:34:40.381296+00:00"
   }
 }
