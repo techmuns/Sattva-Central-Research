@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-28T02:36:40.556Z",
-  "oldestDataAt": "2026-10-28T02:36:40.556Z",
+  "capturedAt": "2026-10-28T08:55:48.076Z",
+  "oldestDataAt": "2026-10-28T08:55:48.076Z",
   "from": "2025-10-28",
   "to": "2026-10-28",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-28T02:36:40.556Z",
+      "capturedAt": "2026-10-28T08:55:48.076Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-28T02:36:40.556Z",
+      "capturedAt": "2026-10-28T08:55:48.076Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-23",
-      "oldestDate": "2026-10-05",
+      "latestDate": "2026-10-27",
+      "oldestDate": "2026-10-06",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-28T02:36:40.556Z",
+      "capturedAt": "2026-10-28T08:55:48.076Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-28T02:36:40.556Z",
+      "capturedAt": "2026-10-28T08:55:48.076Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2029,
+  "withRows": 2031,
   "emptyCount": 0,
-  "rowCount": 22663,
+  "rowCount": 22669,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -259068,6 +259068,21 @@
     "GANGAFORGE": [
       {
         "ticker": "GANGAFORGE",
+        "date": "2026-10-27",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Ganga Forging",
+          "Insider": "Pine Oak Global Fund",
+          "Transaction": "Sell",
+          "Trade Shares": "12216663",
+          "Broadcast Date": "2026-10-27",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "GANGAFORGE",
         "date": "2026-10-14",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=5",
         "sourceId": "bulk",
@@ -337157,6 +337172,21 @@
     "KALANA": [
       {
         "ticker": "KALANA",
+        "date": "2026-10-27",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Kalana Ispat",
+          "Insider": "Aftabhusen S Khandwawala",
+          "Transaction": "Acquisition",
+          "Trade Shares": "780558",
+          "Broadcast Date": "2026-10-27",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "KALANA",
         "date": "2026-09-01",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -393912,6 +393942,21 @@
     "KORE": [
       {
         "ticker": "KORE",
+        "date": "2026-10-27",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Jay Jalaram Tech",
+          "Insider": "Kamlesh Varjivandas Thakkar",
+          "Transaction": "Acquisition",
+          "Trade Shares": "870750",
+          "Broadcast Date": "2026-10-27",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "KORE",
         "date": "2026-10-22",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -414838,6 +414883,21 @@
     "PKTEA": [
       {
         "ticker": "PKTEA",
+        "date": "2026-10-27",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "The Peria Karamalai Tea",
+          "Insider": "Kiran Vyapar Ltd",
+          "Transaction": "Acquisition",
+          "Trade Shares": "18667",
+          "Broadcast Date": "2026-10-27",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PKTEA",
         "date": "2026-10-05",
         "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
         "sourceId": "insiders",
@@ -432666,6 +432726,43 @@
           "Trade Value": "45.09 crore",
           "Price": "91.5",
           "Broadcast Date": "2026-10-27",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "ANNAPURNA": [
+      {
+        "ticker": "ANNAPURNA",
+        "date": "2026-10-27",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Annapurna Swadi.",
+          "Insider": "Mr. Ritesh Shaw",
+          "Transaction": "Release",
+          "Trade Shares": "7415000",
+          "Broadcast Date": "2026-10-27",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "SILKFLEX": [
+      {
+        "ticker": "SILKFLEX",
+        "date": "2026-10-24",
+        "url": "https://www.screener.in/trades/insiders/?o=-2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Silkflex Polymer",
+          "Insider": "Tushar Lalitkumar Sanghavi",
+          "Category": "Director",
+          "Security Type": "Warrant",
+          "Transaction": "Allotment",
+          "Trade Shares": "1200000",
+          "Trade Value": "24.6 crore",
+          "Broadcast Date": "2026-10-24",
           "Source": "Screener.in"
         }
       }
