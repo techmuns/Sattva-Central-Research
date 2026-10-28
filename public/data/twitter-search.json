@@ -2704,8 +2704,8 @@
       "pending": []
     },
     "isin:INE04I401011|Kpit Technologies": {
-      "lastAttemptAt": "2026-10-23T00:13:31+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-28T23:54:43+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 46,
       "lastSuccessAt": "2026-10-23T00:13:31+00:00",
       "targetThrough": null,
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-28T23:22:02.753182+00:00"
+    "checkedAt": "2026-10-28T23:54:43.606623+00:00"
   }
 }
