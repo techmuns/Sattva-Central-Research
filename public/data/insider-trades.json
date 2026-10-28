@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-28T16:47:29.011Z",
-  "oldestDataAt": "2026-10-28T16:47:29.011Z",
-  "from": "2025-10-28",
-  "to": "2026-10-28",
+  "capturedAt": "2026-10-28T21:06:36.528Z",
+  "oldestDataAt": "2026-10-28T21:06:36.528Z",
+  "from": "2025-10-29",
+  "to": "2026-10-29",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 5,
+      "pagesRead": 2,
       "latestDate": "2026-10-28",
-      "oldestDate": "2026-10-27",
+      "oldestDate": "2026-10-28",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 125,
-      "capturedAt": "2026-10-28T16:47:29.011Z",
+      "rowCount": 50,
+      "capturedAt": "2026-10-28T21:06:36.528Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-28T16:47:29.011Z",
+      "capturedAt": "2026-10-28T21:06:36.528Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-28T16:47:29.011Z",
+      "capturedAt": "2026-10-28T21:06:36.528Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-28T16:47:29.011Z",
+      "capturedAt": "2026-10-28T21:06:36.528Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2038,
   "emptyCount": 0,
-  "rowCount": 22819,
+  "rowCount": 22804,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -94135,28 +94135,6 @@
       },
       {
         "ticker": "DALBHARAT",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "DALBHARAT",
-          "Insider": "Kotak Mahindra Mutual Fund",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "97157",
-          "Trade %": "0.05",
-          "Trade Value": null,
-          "Post Holding Shares": "9391203",
-          "Post Holding %": "5",
-          "Mode": "Market",
-          "From Date": "2025-10-06",
-          "To Date": "2025-10-06",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "DALBHARAT",
         "date": null,
         "cells": {
           "Company": "Private Limited",
@@ -133701,50 +133679,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Ajit Krishnankutty Kumar",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "5000",
-          "Trade %": "0",
-          "Trade Value": "7666800",
-          "Post Holding Shares": "15135",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-27",
-          "To Date": "2025-10-27",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Pawan Kumar Danwar",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1000",
-          "Trade %": "0",
-          "Trade Value": "1535000",
-          "Post Holding Shares": "4000",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-23",
-          "To Date": "2025-10-23",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "ANTHEM": [
@@ -150747,28 +150681,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "KEI",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "KEI Industries Ltd",
-          "Insider": "Adarsh Kumar Jain",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "5000",
-          "Trade %": "0",
-          "Trade Value": "20511776",
-          "Post Holding Shares": "35000",
-          "Post Holding %": "0.04",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-27",
-          "To Date": "2025-10-27",
-          "Broadcast Date": "2025-10-28",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "UNOMINDA": [
@@ -153263,28 +153175,6 @@
           "To Date": "2025-12-15",
           "Broadcast Date": "2025-12-18",
           "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ASTRAL",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "ASTRAL",
-          "Insider": "Life Insurance Corporation of India",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "22458",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "13432386",
-          "Post Holding %": "5",
-          "Mode": "Market",
-          "From Date": "2025-10-03",
-          "To Date": "2025-10-03",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
       }
@@ -172862,28 +172752,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "MEDANTA",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "MEDANTA",
-          "Insider": "Sunil Sachdeva",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "8709801",
-          "Trade %": "3.24",
-          "Trade Value": null,
-          "Post Holding Shares": "29991884",
-          "Post Holding %": "11.15",
-          "Mode": "Off Market Transfer",
-          "From Date": "2025-09-30",
-          "To Date": "2025-09-30",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "PARADEEP": [
@@ -190553,72 +190421,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "Anshuman Maheshwary",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "20000",
-          "Trade %": "0",
-          "Trade Value": "23687400",
-          "Post Holding Shares": "35152",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-23",
-          "To Date": "2025-10-23",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "Priya Biswas",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1000",
-          "Trade %": "0",
-          "Trade Value": "1179000",
-          "Post Holding Shares": "48520",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-24",
-          "To Date": "2025-10-24",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "SHIKHAR PRABHAKAR",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2000",
-          "Trade %": "0",
-          "Trade Value": "2371600",
-          "Post Holding Shares": "4200",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-24",
-          "To Date": "2025-10-24",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "MANIPALHOS": [
@@ -198095,28 +197897,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Dhinakar Balakrishnan",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1500",
-          "Trade %": "0",
-          "Trade Value": "1107450",
-          "Post Holding Shares": "11582",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-20",
-          "To Date": "2025-10-23",
-          "Broadcast Date": "2025-10-28",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "VOLTAS": [
@@ -201769,28 +201549,6 @@
           "From Date": "2025-11-26",
           "To Date": "2025-11-26",
           "Broadcast Date": "2025-11-26",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "UJJIVANSFB",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "Ujjivan Small Finance Bank Ltd",
-          "Insider": "ABDUL HAMEED CHAMAN",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "50001",
-          "Trade %": "0",
-          "Trade Value": "2694553",
-          "Post Holding Shares": "175137",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-28",
-          "To Date": "2025-10-28",
-          "Broadcast Date": "2025-10-28",
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
@@ -217746,28 +217504,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "KFINTECH",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "KFINTECH",
-          "Insider": "Wasatch Advisors LP",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "306098",
-          "Trade %": "0.17",
-          "Trade Value": null,
-          "Post Holding Shares": "8896077",
-          "Post Holding %": "5.16",
-          "Mode": "Market",
-          "From Date": "2025-10-07",
-          "To Date": "2025-10-07",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "CPPLUS": [
@@ -218055,72 +217791,6 @@
           "From Date": "2025-11-04",
           "To Date": "2025-11-04",
           "Broadcast Date": "2025-11-06",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "RRKABEL",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "RRKABEL",
-          "Insider": "Hemlata Home Solutions Pvt Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "5832464",
-          "Trade %": "5.16",
-          "Trade Value": null,
-          "Post Holding Shares": "5832464",
-          "Post Holding %": "5.16",
-          "Mode": "Scheme Of Amalgamation",
-          "From Date": "2025-10-01",
-          "To Date": "2025-10-01",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "RRKABEL",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "RRKABEL",
-          "Insider": "ICICI Prudential Mutual Fund",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "253463",
-          "Trade %": "0.22",
-          "Trade Value": null,
-          "Post Holding Shares": "5877807",
-          "Post Holding %": "5.19",
-          "Mode": "Market",
-          "From Date": "2025-10-06",
-          "To Date": "2025-10-06",
-          "Broadcast Date": "2025-10-28",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "RRKABEL",
-        "date": "2025-10-28",
-        "cells": {
-          "Company": "RRKABEL",
-          "Insider": "Ram Ratna Research & Holdings Pvt Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "4488464",
-          "Trade %": "3.97",
-          "Trade Value": null,
-          "Post Holding Shares": null,
-          "Post Holding %": null,
-          "Mode": "Scheme Of Amalgamation",
-          "From Date": "2025-10-01",
-          "To Date": "2025-10-01",
-          "Broadcast Date": "2025-10-28",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
