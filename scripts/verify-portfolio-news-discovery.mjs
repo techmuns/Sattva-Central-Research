@@ -75,6 +75,11 @@ const mapped = mapPortfolioDiscoveryEvents('market-news', broad, identities);
 assert.equal(mapped[0].ticker, 'STLTECH');
 assert.equal(mapped[0].importance, 'high');
 assert.equal(mapPortfolioDiscoveryEvents('market-news', broad, identities), mapped, 'partial paints reuse mapping');
+// A new capture is a new array; its unchanged stories keep the SAME mapped copies, so every per-row
+// cache keyed on a mapped event still hits after the capture moves.
+const nextCapture = mapPortfolioDiscoveryEvents('market-news', [...broad, { id: 'm9', headline: 'Unrelated market wrap', day, url: 'https://example.test/wrap' }], identities);
+assert.notEqual(nextCapture, mapped);
+assert.equal(nextCapture[0], mapped[0], 'an unchanged story keeps its mapped copy across captures');
 assert.equal(mapPortfolioDiscoveryEvents('market-news', broad, [neco])[0].ticker, undefined, 'scope membership change invalidates mapping');
 const social = mapPortfolioDiscoveryEvents('twitter', [{ ...broad[0], headline: 'Datasel faulty shells controversy' }], identities)[0];
 assert.equal(social.ticker, 'JAYNECOIND');

@@ -86,6 +86,36 @@ let sourceTimer = null;
 let lastSourceCheck = 0;
 const timelines = new Map();
 let historyReader = null, historyGeneration = 0;
+
+// THE LAST VIEW OF EACH SCOPE, FOR THE PAGE'S LIFETIME. Switching Universe → Portfolio used to drop
+// the view on screen and wait for the narrowed collection to read, assemble and rank again before
+// anything painted. A scope's last completed view now paints at once and its collection revalidates
+// it behind the "Checking sources" status, exactly as returning to this tab does. A held view is used
+// only for the same IST day, the same scope membership and the same signed-in session; anything
+// that invalidates the private book clears them all. Memory only — never written to storage.
+const scopeViews = new Map();
+// Null where the membership cannot be read (a reader mid-upgrade holding an older collector):
+// nothing is then held, and a scope switch reads afresh exactly as it always did.
+const viewContext = (scope, day) => {
+  if (typeof generalAlerts.alertContextKey !== 'function') return null;
+  const { token, email, orgId } = getHostContext().session;
+  return JSON.stringify([generalAlerts.alertContextKey(scope, coverage.holdings(), day), token, email, orgId]);
+};
+function holdView(view) {
+  if (!view || view.provisional || !view.scope || !view.day) return;
+  const context = viewContext(view.scope, view.day);
+  if (context !== null) scopeViews.set(view.scope, { view, context });
+}
+function heldView(scope) {
+  const held = scopeViews.get(scope);
+  if (!held) return null;
+  if (held.view.day !== currentDay() || held.context !== viewContext(scope, held.view.day)) { scopeViews.delete(scope); return null; }
+  return held.view;
+}
+// A provisional view (narrowed off Universe) is replaced by the narrowed collection's own ranking,
+// never merged with it: it was read from the same records, and merging would let its Universe-
+// assembled identities outlive the ranking that supersedes them.
+const mergeBase = view => view?.provisional ? null : view;
 function clearTimelines({ history = false } = {}) {
   for (const state of timelines.values()) state.controller.destroy();
   timelines.clear();
@@ -151,6 +181,7 @@ function sourceChanged(change) {
 // Keep a completed view in memory across tab visits. This lifetime listener also
 // revokes that cached private view if access expires while another tab is open.
 onPortfolioInvalidation((version) => {
+  scopeViews.clear();
   clearTimelines({ history: true });
   actionGeneration++;
   alerts.clearRankingCache();
@@ -243,7 +274,13 @@ export function render(ctx) {
   }
 
   if (report && report.scope !== ctx.scope) {
-    report = null;
+    // Keep the outgoing view for its scope; paint this scope's last view, or — the first time this
+    // page opens a narrower scope — its cards narrowed off the Universe view already ranked here.
+    holdView(report);
+    const universe = report.scope === 'universe' && !report.provisional ? report : heldView('universe');
+    const held = heldView(ctx.scope);
+    const narrowed = held ? null : alerts.narrowReport(universe, ctx.scope, { holdings: coverage.holdings() });
+    report = held || (narrowed && alerts.withPositionSnapshot(narrowed, cachedPositionSizes())) || null;
     resetCardScroll = true;
   }
 
@@ -261,7 +298,7 @@ export function render(ctx) {
       // An empty partial is still an unfinished source read. Merge the retained window beneath
       // any newer live evidence instead of letting that partial suppress a slow cache restore.
       // The merge ranks in slices; a live report that completed meanwhile is never overwritten.
-      const merged = report ? await alerts.mergePartialReportAsync(cached, report, { isCurrent: restoring }) : cached;
+      const merged = mergeBase(report) ? await alerts.mergePartialReportAsync(cached, report, { isCurrent: restoring }) : cached;
       if (!restoring() || !merged || report?.pending === 0) return;
       report = alerts.withPositionSnapshot(merged, cachedPositionSizes());
       paint(ctxRef);
@@ -360,7 +397,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
     while (queuedPartial && current()) {
       const partial = queuedPartial;
       queuedPartial = null;
-      const merged = await alerts.mergePartialReportAsync(report, partial, { isCurrent: current });
+      const merged = await alerts.mergePartialReportAsync(mergeBase(report), partial, { isCurrent: current });
       if (!merged || !current()) return;
       report = alerts.withPositionSnapshot(merged, checkedSnapshot);
       paint(ctxRef);
@@ -393,7 +430,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
       : alerts.withPositionSnapshot(next, positionSizes);
     if (!current() || !completed) return;
     const settled = completed.pending || completed.feeds.some(feed => feed.status === 'failed')
-      ? await alerts.mergePartialReportAsync(report, completed, { isCurrent: current }) : completed;
+      ? await alerts.mergePartialReportAsync(mergeBase(report), completed, { isCurrent: current }) : completed;
     if (!current() || !settled) return;
     report = settled;
     refreshTimelineHistory();

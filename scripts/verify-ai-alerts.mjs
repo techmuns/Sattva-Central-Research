@@ -541,3 +541,28 @@ assert.deepEqual(runSteps(sortSteps([], byKey)), []);
 assert.deepEqual(runSteps(sortSteps([sample[0]], byKey)), [sample[0]]);
 assert.deepEqual(runSteps(sortSteps([...sample].slice(0, 3000), byKey, { run: 7, stride: 5 })), [...sample].slice(0, 3000).sort(byKey), 'odd run and stride sizes order the same');
 console.log(`PASS: sliced ranking and merge equal their synchronous references (3,000-company Universe: ${Math.round(syncMs)}ms synchronous, ${yields} yields, longest stretch ${Math.round(longestStretch)}ms), and stop when nobody is waiting.`);
+
+// A NARROWER SCOPE, READ OFF THE UNIVERSE VIEW. Switching Universe → Portfolio paints this at once
+// while Portfolio's own collection runs. It must hold exactly the companies, evidence and readings
+// a Portfolio ranking of the same records produces — only the order of the full list may differ.
+{
+  const { narrowReport } = await import('../public/js/data/ai-alerts.js');
+  const { matchesAlertScope, alertScopeContext } = await import('../public/js/data/daily-alerts.js');
+  clearRankingCache();
+  const universeRanked = rankReport(universeReport, { holdings: universeHoldings });
+  const context = alertScopeContext('portfolio', universeHoldings);
+  const direct = rankReport({ ...universeReport, scope: 'portfolio', events: universeEvents.filter(e => matchesAlertScope(e, context)) }, { holdings: universeHoldings });
+  const narrowed = narrowReport(universeRanked, 'portfolio', { holdings: universeHoldings });
+  const reading = card => JSON.stringify([card.key, card.score, card.priority, card.events.map(e => e.id), card.insight, card.badge, card.holding]);
+  assert(direct.allCards.length > 0 && direct.allCards.length < universeRanked.allCards.length, 'the fixture narrows to a real subset');
+  assert.deepEqual(narrowed.allCards.map(reading).sort(), direct.allCards.map(reading).sort(), 'every Portfolio company, with the same evidence and reading');
+  assert.deepEqual(narrowed.cards.map(card => card.key).sort(), direct.cards.map(card => card.key).sort(), 'the same companies cross the threshold');
+  assert.equal(narrowed.scope, 'portfolio');
+  assert.equal(narrowed.provisional, true, 'it is marked provisional, so the tab replaces it rather than merging from it');
+  assert.equal(narrowed.meta.activeCompanies, direct.meta.activeCompanies);
+  assert.equal(narrowed.meta.surfacedCompanies, direct.meta.surfacedCompanies);
+  assert.equal(narrowReport(direct, 'watchlist'), null, 'only a Universe view can be narrowed');
+  assert.equal(narrowReport(universeRanked, 'universe'), null);
+  assert.equal(narrowReport({ ...universeRanked, allCards: undefined }, 'portfolio'), null);
+  console.log(`PASS: Portfolio narrowed off the Universe view holds the same ${direct.allCards.length} companies, evidence and readings as a Portfolio ranking.`);
+}

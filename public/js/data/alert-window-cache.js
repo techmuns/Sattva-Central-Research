@@ -105,7 +105,11 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
   
   async function save(value) {
     try {
-      const { events, ...metadata } = value;
+      // Events are saved as JSON below; the manifest's metadata (feed rows, scope context) takes
+      // the same JSON form, so a stray non-data field — a function on a feed row — is dropped
+      // instead of failing the whole transaction with DataCloneError and leaving no offline copy.
+      const { events, ...rest } = value;
+      const metadata = JSON.parse(JSON.stringify(rest));
       const entries = new Map(), parts = [];
       let batch = [], bytes = 2;
       const flush = async () => {
@@ -150,7 +154,17 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
       return result;
     } catch { fail(); return { persistent: false }; }
   }
-  return { async read() { return load(); }, write(value) {
+  // The manifest alone — its save time, day and scope context — so a reader can choose between two
+  // windows before paying to load either one's parts.
+  async function peek() {
+    try {
+      const entry = await read(cacheKey);
+      const manifest = entry?.value;
+      if (!manifest || (manifest.version !== 1 && manifest.version !== 2)) return null;
+      return { savedAt: entry.savedAt || 0, value: { version: manifest.version, day: manifest.day, scopeContext: manifest.scopeContext } };
+    } catch { return null; }
+  }
+  return { async read() { return load(); }, peek, write(value) {
     // Resolving a superseded caller must never claim that its exact revision reached disk.
     waiting?.resolve({ persistent: false, superseded: true });
     const result = new Promise(resolve => { waiting = { value, resolve }; });

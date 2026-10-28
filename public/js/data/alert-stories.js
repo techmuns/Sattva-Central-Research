@@ -33,8 +33,17 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
     return loading;
   }
   function decision(record) { return decisions.get(storyKey(record)); }
-  function records(events) {
-    return [...new Map(events.map(storyRecord).filter(Boolean).map(r => [storyKey(r), r])).values()];
+  function records(events) { return runSteps(recordSteps(events)); }
+  // The same records as steps: a review reads a Universe window's evidence, which as one pass was a
+  // multi-second task at 4x CPU throttle behind the first completed paint.
+  function* recordSteps(events) {
+    const byKey = new Map();
+    for (let i = 0; i < events.length; i++) {
+      if ((i & 511) === 511) yield;
+      const record = storyRecord(events[i]);
+      if (record) byKey.set(storyKey(record), record);
+    }
+    return [...byKey.values()];
   }
   function status(events) {
     const rows = records(events), reviewed = rows.filter(r => decision(r)).length;
@@ -69,8 +78,10 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
   }
   async function check(events, isCurrent) {
     await load();
+    const rows = await runStepsInSlices(recordSteps(events), { keepGoing: isCurrent });
+    if (!rows) return;
     const byCompany = new Map();
-    for (const r of records(events)) {
+    for (const r of rows) {
       const key = JSON.stringify([r.company, r.relation]);
       if (!byCompany.has(key)) byCompany.set(key, []);
       byCompany.get(key).push(r);
@@ -202,6 +213,6 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
     const keepGoing=options.isCurrent || options.keepGoing || (()=>true);
     return keepGoing() ? runStepsInSlices(projectSteps(events),{...options,keepGoing}) : Promise.resolve(undefined);
   };
-  return { load, review, project, projectAsync, status, revision: () => revision, onChange: fn => { listeners.add(fn); return () => listeners.delete(fn); } };
+  return { load, review, project, projectAsync, projectSteps, status, revision: () => revision, onChange: fn => { listeners.add(fn); return () => listeners.delete(fn); } };
 }
 export const storyGrouping = createStoryGrouping();
