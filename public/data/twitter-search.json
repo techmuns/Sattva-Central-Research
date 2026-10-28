@@ -2182,8 +2182,8 @@
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0OC301013|Turtlemint Fintech Solutions": {
-      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-28T00:49:50+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-22T10:22:06+00:00",
       "targetThrough": null,
@@ -2802,6 +2802,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-10-27T23:53:39.215478+00:00"
+    "checkedAt": "2026-10-28T00:49:50.711042+00:00"
   }
 }
