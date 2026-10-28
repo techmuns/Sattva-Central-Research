@@ -2360,10 +2360,10 @@
       "pending": []
     },
     "isin:INE564S01019|Vikram Kamats Hospitality": {
-      "lastAttemptAt": "2026-10-22T17:02:12+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-12T22:32:50+00:00",
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": null,
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2389,25 +2389,21 @@
       "lastDiscoveryAt": "2026-10-22T10:22:06+00:00"
     },
     "isin:INE540H01012|Voltamp Transformers": {
-      "lastAttemptAt": "2026-10-22T17:43:46+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 56,
-      "lastSuccessAt": "2026-10-12T22:32:50+00:00",
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": null,
+      "lastResultCount": 24,
+      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE540H01012|VOLTAMP": {
-      "lastAttemptAt": "2026-10-22T18:05:14+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 16,
-      "targetThrough": "2026-10-03T05:24:56+00:00",
-      "pending": [
-        {
-          "from": "2026-09-28T17:24:56.228683+00:00",
-          "to": "2026-10-03T05:24:56+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-12T22:32:50+00:00"
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": null,
+      "lastResultCount": 55,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-28T07:31:11+00:00",
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE377N01017|Waaree Energies": {
       "lastAttemptAt": "2026-10-23T08:40:45+00:00",
@@ -2464,36 +2460,53 @@
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|AARTIPHARM": {
-      "lastAttemptAt": "2026-10-22T18:37:13+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": null,
+      "lastResultCount": 20,
+      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE852O01025|Aptus Value Housing Finance India": {
-      "lastAttemptAt": "2026-10-22T19:07:25+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE852O01025|APTUS": {
-      "lastAttemptAt": "2026-10-22T20:01:32+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 105,
+      "targetThrough": "2026-10-28T07:31:11+00:00",
+      "pending": [
+        {
+          "from": "2026-10-19T07:31:11.845567+00:00",
+          "to": "2026-10-23T19:31:11.422783+00:00"
+        },
+        {
+          "from": "2026-10-23T19:31:11.422783+00:00",
+          "to": "2026-10-28T07:31:11+00:00"
+        }
+      ]
     },
     "isin:INE0UIZ01018|BlackBuck": {
-      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 105,
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": null,
+      "lastResultCount": 24,
       "targetThrough": "2026-10-22T20:54:29+00:00",
       "pending": [
-        {
-          "from": "2026-10-13T20:54:29.963576+00:00",
-          "to": "2026-10-18T08:54:29.481788+00:00"
-        },
         {
           "from": "2026-10-18T08:54:29.481788+00:00",
           "to": "2026-10-22T20:54:29+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-28T07:31:11+00:00"
     },
     "isin:INE0UIZ01018|BLACKBUCK": {
-      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 105,
       "targetThrough": "2026-10-22T20:54:29+00:00",
       "pending": [
@@ -2505,7 +2518,8 @@
           "from": "2026-10-18T08:54:29.481788+00:00",
           "to": "2026-10-22T20:54:29+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-28T07:31:11+00:00"
     },
     "isin:INE120A01034|Carborundum Universal": {
       "lastAttemptAt": "2026-10-22T20:54:29+00:00",
@@ -2804,8 +2818,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 250,
-    "checkedAt": "2026-10-28T06:28:54.267023+00:00"
+    "attempted": 8,
+    "incomplete": 246,
+    "checkedAt": "2026-10-28T07:31:11.845567+00:00"
   }
 }
