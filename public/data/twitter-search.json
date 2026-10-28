@@ -2688,8 +2688,8 @@
       ]
     },
     "isin:INE391J01032|Jtl Industries": {
-      "lastAttemptAt": "2026-10-23T00:13:31+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-28T22:42:20+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 10,
       "lastSuccessAt": "2026-10-23T00:13:31+00:00",
       "targetThrough": null,
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-28T21:29:20.244233+00:00"
+    "checkedAt": "2026-10-28T22:42:20.573019+00:00"
   }
 }
