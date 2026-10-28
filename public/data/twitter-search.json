@@ -2696,8 +2696,8 @@
       "pending": []
     },
     "isin:INE391J01032|JTLIND": {
-      "lastAttemptAt": "2026-10-23T00:13:31+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-28T23:22:02+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 19,
       "lastSuccessAt": "2026-10-23T00:13:31+00:00",
       "targetThrough": null,
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-28T22:42:20.573019+00:00"
+    "checkedAt": "2026-10-28T23:22:02.753182+00:00"
   }
 }
