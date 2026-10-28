@@ -2225,42 +2225,42 @@
       ]
     },
     "isin:INE879I01012|Valor Estate": {
-      "lastAttemptAt": "2026-10-22T10:22:06+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "error": null,
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-10-22T10:56:26+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 5,
-      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-10-22T11:41:27+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "error": null,
       "lastResultCount": 1,
-      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
-      "lastAttemptAt": "2026-10-22T12:38:05+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 12,
-      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
+      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "error": null,
+      "lastResultCount": 40,
+      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|VAML": {
-      "lastAttemptAt": "2026-10-22T13:11:52+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 39,
-      "lastSuccessAt": "2026-10-12T21:45:53+00:00",
+      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "error": null,
+      "lastResultCount": 87,
+      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2281,15 +2281,11 @@
       "pending": []
     },
     "isin:INE205A01025|Vedanta": {
-      "lastAttemptAt": "2026-10-22T13:19:29+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 117,
+      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 112,
       "targetThrough": "2026-09-20T00:19:51+00:00",
       "pending": [
-        {
-          "from": "2026-09-15T12:19:51.488863+00:00",
-          "to": "2026-09-20T00:19:51+00:00"
-        },
         {
           "from": "2026-09-11T00:19:51.977725+00:00",
           "to": "2026-09-13T06:19:51.733294+00:00"
@@ -2297,12 +2293,20 @@
         {
           "from": "2026-09-13T06:19:51.733294+00:00",
           "to": "2026-09-15T12:19:51.488863+00:00"
+        },
+        {
+          "from": "2026-09-15T12:19:51.488863+00:00",
+          "to": "2026-09-17T18:19:51.244431+00:00"
+        },
+        {
+          "from": "2026-09-17T18:19:51.244431+00:00",
+          "to": "2026-09-20T00:19:51+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-12T21:45:53+00:00"
+      "lastDiscoveryAt": "2026-10-28T03:19:34+00:00"
     },
     "isin:INE205A01025|VEDL": {
-      "lastAttemptAt": "2026-10-22T13:57:27+00:00",
+      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
       "error": "search-unavailable",
       "lastResultCount": 103,
       "targetThrough": "2026-09-20T00:19:51+00:00",
@@ -2316,7 +2320,7 @@
           "to": "2026-09-20T00:19:51+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-12T21:45:53+00:00"
+      "lastDiscoveryAt": "2026-10-28T03:19:34+00:00"
     },
     "isin:INE704J01044|Vedanta Oil and Gas": {
       "lastAttemptAt": "2026-10-07T08:39:38+00:00",
@@ -2800,8 +2804,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 251,
-    "checkedAt": "2026-10-28T02:34:40.381296+00:00"
+    "attempted": 7,
+    "incomplete": 246,
+    "checkedAt": "2026-10-28T03:19:34.991143+00:00"
   }
 }
