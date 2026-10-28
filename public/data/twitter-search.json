@@ -2530,8 +2530,8 @@
       "pending": []
     },
     "isin:INE120A01034|CARBORUNIV": {
-      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-28T08:17:53+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 6,
       "lastSuccessAt": "2026-10-22T20:54:29+00:00",
       "targetThrough": null,
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-28T07:45:19.229558+00:00"
+    "checkedAt": "2026-10-28T08:17:53.665809+00:00"
   }
 }
