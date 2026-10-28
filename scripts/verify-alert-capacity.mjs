@@ -87,3 +87,27 @@ assert.deepEqual((await concurrent.read()).value, firstWindow, 'cleanup never de
 await concurrent.write(firstWindow);
 assert.equal(concurrentDisk.size, concurrentDisk.get(KEY).value.parts.length + 1, 'obsolete versions are reclaimed after readers finish');
 console.log(`PASS: ${events.length} events across ${manifest.parts.length} cache parts; all 600 AI cards, tail evidence, corruption, quota failure, legacy migration and recovery.`);
+
+// THE SAVED WINDOW MUST BE CLONEABLE, OR NOTHING IS SAVED. IndexedDB structured-clones every row,
+// and one function on one feed row (the NSE / X / IPO sources' `warm`, 21 October 2026) made each
+// AI Alerts and All Alerts save throw DataCloneError: no offline copy existed, and every scope switch
+// and reload waited for the whole live read. This disk clones exactly as IndexedDB does.
+{
+  const { FEEDS } = await import('../public/js/data/daily-alerts.js');
+  const { materializeAllAlerts } = await import('../public/js/data/all-alerts-cache.js');
+  assert.doesNotThrow(() => structuredClone(FEEDS), 'every alert feed row is plain data');
+  const rows = FEEDS.map(feed => ({ ...feed, status: 'ok', events: [] }));
+  assert.doesNotThrow(() => structuredClone(materializePublicAlertWindow({ day: '2026-09-07', feeds: rows, events: [] })), 'the AI Alerts window is cloneable');
+  assert.doesNotThrow(() => structuredClone(materializeAllAlerts({ day: '2026-09-07', sourceFeeds: rows })), 'the All Alerts pool is cloneable');
+  const cloningDisk = new Map();
+  const cloning = createAlertWindowCache({ cacheKey: 'clone-fixture', read: key => cloningDisk.get(key), write: async (entries) => {
+    try { for (const [key, entry] of entries) cloningDisk.set(key, structuredClone(entry)); } catch { return { persistent: false }; }
+    return { persistent: true };
+  } });
+  const stray = { day: '2026-09-07', feeds: [{ id: 'announcements', status: 'ok', warm: () => null }], events: events.slice(0, 3) };
+  assert.equal((await cloning.write(stray)).persistent, true, 'a stray function on a feed row is dropped, never fatal to the save');
+  assert.deepEqual((await cloning.read()).value.events, events.slice(0, 3));
+  assert.equal(typeof (await cloning.read()).value.feeds[0].warm, 'undefined');
+  assert.deepEqual((await cloning.peek()).value.day, '2026-09-07', 'the manifest can be read without its parts');
+  console.log('PASS: every feed row and saved alert window is structured-cloneable, so the offline copy is written.');
+}

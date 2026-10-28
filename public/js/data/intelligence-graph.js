@@ -211,17 +211,25 @@ function contextSentence(event) {
  * selected by AI Alerts. Context can explain and corroborate; it contributes zero priority points.
  */
 export function indexAlertContext(report, insightCompanies = []) {
-  const group = rows => {
+  const steps = indexAlertContextSteps(report, insightCompanies);
+  for (;;) { const step = steps.next(); if (step.done) return step.value; }
+}
+// The same index as steps, for a ranking driven in slices: one pass over a Universe history.
+export function* indexAlertContextSteps(report, insightCompanies = []) {
+  function* group(rows) {
     const byTicker = new Map();
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
+      if ((i & 2047) === 2047) yield;
+      const row = rows[i];
       const ticker = String(row.ticker || '').toUpperCase();
       if (!byTicker.has(ticker)) byTicker.set(ticker, []);
       byTicker.get(ticker).push(row);
     }
     return byTicker;
-  };
-  return { events: group(report?.events || []), insights: group(insightCompanies),
-    feeds: new Map((report?.feeds || []).map(feed => [feed.id, feed])) };
+  }
+  const events = yield* group(report?.events || []);
+  const insights = yield* group(insightCompanies);
+  return { events, insights, feeds: new Map((report?.feeds || []).map(feed => [feed.id, feed])) };
 }
 
 export function enrichCardFromAllAlerts(card, report, { insightCompanies = [], contextIndex = null } = {}) {

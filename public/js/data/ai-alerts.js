@@ -25,7 +25,7 @@ import * as kpiImpact from './kpi-impact.js';
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
 import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
-import { enrichCardFromAllAlerts, indexAlertContext } from './intelligence-graph.js';
+import { enrichCardFromAllAlerts, indexAlertContextSteps } from './intelligence-graph.js';
 import { canonicalArticleUrl } from './filings-shared.js';
 import { getHostContext } from '../core/host-context.js';
 import { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
@@ -38,7 +38,20 @@ export const onChange = fn => {
   const a = generalAlerts.onChange(fn), b = storyGrouping.onChange(({ changed = true } = {}) => fn({ storyStatusOnly: !changed }));
   return () => { a(); b(); };
 };
-export const storyStatus = report => storyGrouping.status(report?.allCards?.flatMap(card => card.sourceEvents || card.events) || []);
+// Read on every paint of the heading. The answer depends only on the report's cards, the grouping's
+// decisions (its revision) and whether a check is running, so it is kept per report until either
+// moves: over a Universe report the status walk was tens of milliseconds on every repaint.
+const storyStatuses = new WeakMap();
+export const storyStatus = report => {
+  if (!report?.allCards) return storyGrouping.status([]);
+  const revision = storyGrouping.revision();
+  const probe = storyGrouping.status([]);
+  const hit = storyStatuses.get(report.allCards);
+  if (hit && hit.revision === revision && hit.checking === probe.checking) return hit.value;
+  const value = storyGrouping.status(report.allCards.flatMap(card => card.sourceEvents || card.events));
+  storyStatuses.set(report.allCards, { revision, checking: value.checking, value });
+  return value;
+};
 // Keep ranking inputs in memory only; private position sizes must never enter a saved report.
 const rankingOptions = new WeakMap();
 const rankingEvidence = new WeakMap();
@@ -114,9 +127,12 @@ const normalizedHeadline = dayCache((value) => String(value || '')
 const feedFamily = (event) => event.feed === 'nse-filings' ? 'announcements' : event.feed === 'market-news' ? 'news' : event.feed;
 
 /** Syndicated links and duplicate exchange disclosures are not independent corroboration. */
-function dedupe(events) {
+// As steps, so the ranking can yield inside one company's history: a company with years of
+// coverage projected its stories as one synchronous block of ~80ms inside a single ranking step.
+function* dedupeSteps(events) {
   const seen = new Set();
-  events = storyGrouping.project(events);
+  // A reader still holding an older grouping module (mid-upgrade) offers only the synchronous form.
+  events = storyGrouping.projectSteps ? yield* storyGrouping.projectSteps(events) : storyGrouping.project(events);
   // Prefer the useful copy when one exchange supplied a generic label and the other a full
   // subject. Stable ordering also stops equivalent source arrival order changing read state.
   return [...events].sort((a, b) => Number(b.importance === 'high') - Number(a.importance === 'high') ||
@@ -762,23 +778,32 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   const holdingByEntity = new Map(portfolioNewsEntities(holdings).map(entity => [entity.entityId,
     holdings.find(h => entity.portfolioIsins.includes(String(h.isin || '').toUpperCase())) || entity]));
 
-  const supportedReport = { ...report, events: (report?.events || []).filter(newsCanSupportAI) };
-  const windowEvidence = (report?.events || []).filter(event => (event.ticker || event.entityId) &&
-    validDay(event.day) && event.day >= firstDay && event.day <= day);
-  const recent = windowEvidence.filter(event => newsCanSupportAI(event) && event.aiEligible !== false || isRelatedNewsContext(event));
-  const grouped = new Map();
-  for (const event of recent) {
+  // ONE PASS OVER THE REPORT, IN SLICES: the supported pool the context reads, the window
+  // evidence, and the companies it groups into — each in the report's own order, exactly as the
+  // three filters this replaced built them, but never as one task over a Universe history.
+  const supportedEvents = [], windowEvidence = [], grouped = new Map();
+  const allEvents = report?.events || [];
+  for (let i = 0; i < allEvents.length; i++) {
+    if ((i & 1023) === 1023) yield;
+    const event = allEvents[i];
+    const supported = newsCanSupportAI(event);
+    if (supported) supportedEvents.push(event);
+    if (!((event.ticker || event.entityId) && validDay(event.day) && event.day >= firstDay && event.day <= day)) continue;
+    windowEvidence.push(event);
+    if (!(supported && event.aiEligible !== false || isRelatedNewsContext(event))) continue;
     const ticker = event.ticker ? String(event.ticker).toUpperCase() : event.entityId;
     const list = grouped.get(ticker);
     if (list) list.push(event);
     else grouped.set(ticker, [event]);
   }
+  const supportedReport = { ...report, events: supportedEvents };
+  const recentCount = [...grouped.values()].reduce((sum, list) => sum + list.length, 0);
 
   let cards = [];
   for (const [key, rawEvents] of grouped) {
     const ticker = rawEvents.find(e => e.ticker)?.ticker || null;
     const entityId = rawEvents.find(e => e.entityId)?.entityId || null;
-    const events = dedupe(rawEvents).filter(event => event.day >= firstDay && event.day <= day);
+    const events = (yield* dedupeSteps(rawEvents)).filter(event => event.day >= firstDay && event.day <= day);
     if (!events.length) { yield; continue; }
     const scoredEvents = events
       .map((event) => ({ event, score: eventScore(event, day, feedById.get(event.feed)) }))
@@ -856,7 +881,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
     if (!card.holding || !card.sector || !card.hasMaterialNegative) continue;
     negativeBySector.set(card.sector, (negativeBySector.get(card.sector) || 0) + 1);
   }
-  const contextIndex = indexAlertContext(supportedReport, insightCompanies);
+  const contextIndex = yield* indexAlertContextSteps(supportedReport, insightCompanies);
   const enriched = [];
   for (const card of cards) {
     const peers = card.sector ? negativeBySector.get(card.sector) || 0 : 0;
@@ -908,7 +933,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
       positionSizes: positionSizes?.sizes || null,
       sortedByHolding: report?.scope === 'portfolio' && weights.size > 0,
       firstDay,
-      rawEvents: recent.length,
+      rawEvents: recentCount,
       topFunnelEvents: (report?.events || []).length,
       dedupedEvents: cards.reduce((sum, card) => sum + card.events.length, 0),
       contextualEvents: cards.reduce((sum, card) => sum + (card.contextEvents?.length || 0) + (card.upcomingEvents?.length || 0), 0),
@@ -1021,6 +1046,35 @@ function finishMerge(previous, next, merged) {
   return result;
 }
 
+/**
+ * A narrower scope's cards read straight off a ranked Universe view — no feed read, no ranking — to
+ * paint while that scope's own collection runs. Every company in Portfolio or Watchlist is also in
+ * Universe, ranked there from the same source records, so a card is kept when its own evidence is
+ * in the narrower scope. It is PROVISIONAL: the tab replaces it with the narrowed collection's first
+ * ranking and never merges evidence from it, so nothing it lacks (a portfolio-only schedule) and
+ * nothing it carries can outlive that ranking. Null where it cannot answer.
+ */
+export function narrowReport(source, scope, { holdings = coverage.holdings() } = {}) {
+  if (!source || source.scope !== 'universe' || !['portfolio', 'watchlist'].includes(scope) || !Array.isArray(source.allCards)) return null;
+  // A collector without the scope predicate (an older cached module) cannot say what is in scope.
+  if (typeof generalAlerts.alertScopeContext !== 'function' || typeof generalAlerts.matchesAlertScope !== 'function') return null;
+  const context = generalAlerts.alertScopeContext(scope, holdings);
+  const inScope = card => (card.sourceEvents || card.events || []).some(event => generalAlerts.matchesAlertScope(event, context));
+  const allCards = source.allCards.filter(inScope);
+  const kept = new Set(allCards);
+  const cards = source.cards.filter(card => kept.has(card));
+  const result = { ...source, scope, cards, allCards, provisional: true, meta: { ...source.meta,
+    sortedByHolding: false, activeCompanies: allCards.length, surfacedCompanies: cards.length,
+    suppressedCompanies: allCards.length - cards.length,
+    mustSee: cards.filter(card => card.priority === 'must-see').length,
+    correlated: cards.filter(card => card.confluence?.length).length,
+    important: cards.filter(card => card.priority === 'important').length,
+  } };
+  // No ranking evidence travels with it: it is never a merge base (see the tab's `mergeBase`).
+  rankingOptions.set(result, { ...rankingOptions.get(source), holdings });
+  return result;
+}
+
 /** Apply a newly checked private snapshot without another feed read or ranking pass. */
 export function withPositionSnapshot(report, snapshot) {
   if (!report || !snapshot) return report;
@@ -1110,8 +1164,20 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
   queued = null;
   if (typeof window !== 'undefined' && isCurrent()) {
     const first = shiftDay(report.day || generalAlerts.today(), -(WINDOW_DAYS - 1));
-    void storyGrouping.review(report.events.filter(event => event.day >= first && event.day <= report.day &&
-      (newsCanSupportAI(event) || isRelatedNewsContext(event))), { isCurrent });
+    // The window's reviewable evidence is picked in slices: over a Universe history this filter was
+    // a long task of its own, landing between the final assembly and the first completed paint.
+    const pick = function* () {
+      const picked = [], events = report.events;
+      for (let i = 0; i < events.length; i++) {
+        if ((i & 1023) === 1023) yield;
+        const event = events[i];
+        if (event.day >= first && event.day <= report.day && (newsCanSupportAI(event) || isRelatedNewsContext(event))) picked.push(event);
+      }
+      return picked;
+    };
+    void runStepsInSlices(pick(), { keepGoing: isCurrent }).then(picked => {
+      if (picked && isCurrent()) void storyGrouping.review(picked, { isCurrent });
+    });
   }
   if (publishing) await publishing;
   await kpiRead;

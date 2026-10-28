@@ -104,16 +104,30 @@ function shiftDay(day, amount) {
 }
 
 export function materializePublicAlertWindow(report) {
+  return runSteps(materializePublicAlertWindowSteps(report));
+}
+// The saved window is public evidence only: no private feed, no position size, and no portfolio-
+// only schedule (the S Screen calendar is the synchronized book's own and never leaves the
+// session, exactly as the All Alerts public pool excludes it). Driven in slices by the collector;
+// over a Universe history the copy was one 1.7-second task at 4x CPU throttle.
+export function* materializePublicAlertWindowSteps(report) {
   const firstDay = shiftDay(report.day, -(ALERT_WINDOW_CACHE_DAYS - 1));
   const privateFeeds = new Set(['price-levels', 'company-documents', 'drhp-documents']);
+  const source = report.events || [];
+  const events = [];
+  for (let i = 0; i < source.length; i++) {
+    if ((i & 1023) === 1023) yield;
+    const event = source[i];
+    if (event.private || event.portfolioOnly || privateFeeds.has(event.feed) || !(event.ticker || event.entityId) ||
+        !(event.day >= firstDay && event.day <= report.day)) continue;
+    const { sourceRecord: _sourceRecord, private: _private, weightPct: _weightPct, holdingWeightPct: _holdingWeightPct, ...saved } = event;
+    events.push(saved);
+  }
   return {
     version: 1,
     day: report.day,
     feeds: (report.feeds || []).filter((feed) => !privateFeeds.has(feed.id)).map(({ events, count, todayCount, ...feed }) => feed),
-    events: (report.events || [])
-      .filter((event) => !event.private && !privateFeeds.has(event.feed) && (event.ticker || event.entityId) && event.day >= firstDay && event.day <= report.day)
-      .map(({ sourceRecord: _sourceRecord, private: _private, weightPct: _weightPct,
-        holdingWeightPct: _holdingWeightPct, ...event }) => event),
+    events,
   };
 }
 
@@ -141,20 +155,30 @@ function validAlertWindow(value, throughDay) {
 /** Restore a ready public alert window, narrowed against the current in-memory scope. */
 export async function readCachedAlertWindow({ scope = 'portfolio', holdings = null, day = today() } = {}) {
   const book = holdings || coverage.holdings();
+  // THE NEWEST USABLE WINDOW IS THE ONLY ONE LOADED. Both manifests are small; the Universe window's
+  // parts are tens of megabytes of JSON to hash and parse, so reading it in full only to discard it
+  // for a newer scoped copy was most of the cost of restoring Portfolio. An older copy is loaded
+  // only when the newer one turns out to be incomplete or invalid.
+  const contextOk = (value) => !value?.scopeContext || value.scopeContext === alertContextKey(scope, book, value.day);
+  const caches = [scopedWindowCache(scope), alertWindowCache];
+  const heads = await Promise.all(caches.map((cache) => cache.peek()));
+  const order = caches.map((cache, i) => ({ cache, head: heads[i] }))
+    .filter(({ head }) => head && contextOk(head.value))
+    .sort((a, b) => (b.head.savedAt || 0) - (a.head.savedAt || 0));
   let entry = null;
-  for (const cache of [scopedWindowCache(scope), alertWindowCache]) {
+  for (const { cache } of order) {
     const candidate = await cache.read();
-    if (validAlertWindow(candidate?.value, day) && (!candidate.value.scopeContext ||
-        candidate.value.scopeContext === alertContextKey(scope, book, candidate.value.day)) &&
-        (!entry || candidate.savedAt > entry.savedAt)) entry = candidate;
+    if (validAlertWindow(candidate?.value, day) && contextOk(candidate.value)) { entry = candidate; break; }
   }
   if (!entry) return null;
-  const wanted = scopeMatcher(scope, holdings || coverage.holdings());
   const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
-  const entityIds = new Set(portfolioNewsEntities(holdings || coverage.holdings()).map(e => e.entityId));
-  const scopeContext = { scope, wanted, entityIds };
-  const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day &&
-    matchesAlertScope(event, scopeContext)).map(restoreChatterAlert);
+  const scopeContext = alertScopeContext(scope, book);
+  const events = [];
+  let started = performance.now();
+  for (const event of entry.value.events) {
+    if (event.day >= firstDay && event.day <= day && matchesAlertScope(event, scopeContext)) events.push(restoreChatterAlert(event));
+    if (performance.now() - started >= 8) { await yieldForInputSlice(); started = performance.now(); }
+  }
   const sameDay = entry.value.day === day;
   return {
     day,
@@ -165,6 +189,11 @@ export async function readCachedAlertWindow({ scope = 'portfolio', holdings = nu
     pending: 0,
     cacheSavedAt: entry.savedAt || null,
   };
+}
+
+/** The membership `matchesAlertScope` reads for a scope, built once for a whole pass. */
+export function alertScopeContext(scope, holdings = coverage.holdings()) {
+  return { scope, wanted: scopeMatcher(scope, holdings), entityIds: new Set(portfolioNewsEntities(holdings).map(e => e.entityId)) };
 }
 
 // Capture membership as well as the scope label. A watchlist edit, Family handoff or Universe
@@ -416,7 +445,11 @@ export const FEEDS = [
   { id: 'insider', label: 'Insider trades', tab: 'insider-trades', what: 'Retained insider and promoter disclosures, under their broadcast dates.' },
   { id: 'news', label: 'Company news', tab: 'news', what: 'Retained stories about a company in scope, under their published dates. High importance means the story matched one of the thirty tracked keywords the desk watches newsflow by; the reading is a TOPIC and never a direction, so every row here stays neutral.' },
   { id: 'market-news', label: 'Market news', tab: 'news', what: 'Retained market-wide stories, tagged with the same tracked keywords for filtering. They carry no company, so importance stays low — a keyword is material ABOUT a company, and there is none on these rows — and they are Universe only.' },
-  ...ADDITIONAL_SOURCES.map(({ load, read, ...feed }) => feed),
+  // A feed row is DATA: it is spread into every report and saved on the device, and IndexedDB
+  // cannot clone a function. `warm` leaking in here (21 October 2026) made every AI Alerts and All
+  // Alerts save throw DataCloneError, so no offline copy existed and each scope switch and reload
+  // waited for the whole live read. The functions stay on ADDITIONAL_SOURCES (LOADERS, WARMERS).
+  ...ADDITIONAL_SOURCES.map(({ load, read, warm, ...feed }) => feed),
 ];
 
 const feedById = new Map(FEEDS.map((f) => [f.id, f]));
@@ -881,18 +914,23 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   if (load && poolMode && !isCurrent()) return null;
   const completed = await build();
   if (load && !queryWindow) {
-    // Materialize from the already-settled source records; this starts no second
-    // read. Universe is used so the same public snapshot can be narrowed against
-    // the current Portfolio or Watchlist after a reload without persisting either.
-    if ([...settledFeeds.values()].some(feed => feed.preparedProjection)) {
-      // A portfolio shortcut is complete for this exact view, not a new Universe archive.
-      // Preserve the preceding full-scope cache and give this view its own immediate reopening.
-      void scopedWindowCache(scope).write({ ...materializePublicAlertWindow(completed),
-        scopeContext: alertContextKey(scope, book, day) });
+    // Materialize from the already-settled source records; this starts no second read.
+    if (scope !== 'universe' && !requestedCompanies.length) {
+      // A Portfolio or Watchlist read saves its OWN window, for its own immediate reopening, and
+      // leaves the Universe copy as the last Universe read wrote it. It used to assemble and sort
+      // the whole Universe a second time after every narrowed read just to save it — seconds of
+      // work, behind the view the reader was already looking at, that also evicted the narrowed
+      // assembly the next update would have reused. Restoring picks the newest usable window. (A
+      // portfolio projection read from the pool is complete for this exact view too, and is
+      // saved the same way: never as a Universe archive.)
+      const saved = await runStepsInSlices(materializePublicAlertWindowSteps(completed), { yieldForInput });
+      void scopedWindowCache(scope).write({ ...saved, scopeContext: alertContextKey(scope, book, day) });
     } else {
+      // Universe is saved whole so the same public snapshot can be narrowed against the current
+      // Portfolio or Watchlist after a reload.
       const allPublic = scope === 'universe' && !requestedCompanies.length ? completed
         : await assembleInSlices({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds }, yieldForInput);
-      void alertWindowCache.write(materializePublicAlertWindow(allPublic));
+      void alertWindowCache.write(await runStepsInSlices(materializePublicAlertWindowSteps(allPublic), { yieldForInput }));
     }
   }
   return completed;
@@ -1149,25 +1187,47 @@ function discoveryEntities(holdings, requestedCompanies) {
   return kept;
 }
 const DISCOVERY_FEEDS = new Set(['market-news', 'twitter', 'ipos']);
-export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
+// ONE MAPPED COPY PER (STORY, MATCH). `matched` is the discovery reading kept on the source record
+// (`discoveryFor`), so it is the same object while the story and the book are unchanged; keeping
+// the copy built from it means a new capture re-maps only its new stories, and every per-row cache
+// keyed on the mapped event (its canonical address, its sort day, the ranking's row comparison)
+// still hits. Profiled before this: the re-map plus the address parsing it forced on every copy
+// was 2.5–4.7 seconds of one task at 4x CPU throttle on the first Portfolio open after Universe.
+const discoveryCopies = new WeakMap();
+function discoveryCopy(event, matched, feedId) {
+  const hit = discoveryCopies.get(matched);
+  if (hit && hit.event === event && hit.feedId === feedId) return hit.value;
+  const value = { ...event, ...newsSignal(matched),
+    ...(feedId === 'twitter' ? { aiEligible: false, importance: IMPORTANCE.LOW } : {}),
+    id: `${event.id}:entity:${matched.entityId}`, entityId: matched.entityId, ticker: matched.ticker,
+    company: matched.company, issuer: feedId === 'ipos' ? event.company : null,
+    sourceRecord: matched,
+    detail: [event.detail, feedId === 'twitter' ? 'Unverified social discussion; open the post and corroborate against primary sources.' : null,
+      matched.attribution.reason].filter(Boolean).join(' · '),
+  };
+  discoveryCopies.set(matched, { event, feedId, value });
+  return value;
+}
+// ONE IMPLEMENTATION, TWO DRIVERS: the assembly drives the steps in slices; callers that must
+// answer now (tests, the projection checks) use the synchronous wrapper. Same rows, same order.
+export function* mapPortfolioDiscoveryEventsSteps(feedId, events, portfolioEntities) {
   if (!DISCOVERY_FEEDS.has(feedId)) return events;
   const signature = entitySignature(portfolioEntities);
   const cached = discoveryMappings.get(events);
   if (cached?.feedId === feedId && cached.signature === signature) return cached.value;
-  const value = events.flatMap(event => {
+  const value = [];
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
     const matches = discoveryFor(event, feedId, portfolioEntities, signature);
-    if (!matches.length) return [event];
-    return matches.map(matched => ({ ...event, ...newsSignal(matched),
-      ...(feedId === 'twitter' ? { aiEligible: false, importance: IMPORTANCE.LOW } : {}),
-      id: `${event.id}:entity:${matched.entityId}`, entityId: matched.entityId, ticker: matched.ticker,
-      company: matched.company, issuer: feedId === 'ipos' ? event.company : null,
-      sourceRecord: matched,
-      detail: [event.detail, feedId === 'twitter' ? 'Unverified social discussion; open the post and corroborate against primary sources.' : null,
-        matched.attribution.reason].filter(Boolean).join(' · '),
-    }));
-  });
+    if (!matches.length) value.push(event);
+    else for (const matched of matches) value.push(discoveryCopy(event, matched, feedId));
+    if ((i & 255) === 255) yield;
+  }
   discoveryMappings.set(events, { feedId, signature, value });
   return value;
+}
+export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
+  return runSteps(mapPortfolioDiscoveryEventsSteps(feedId, events, portfolioEntities));
 }
 
 /** One company/article can arrive through company search and the shared publisher projection.
@@ -1176,7 +1236,23 @@ export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
  * untouched. The preferred row retains its attribution and full source record, with compact
  * provenance for every contributing route; feed counts and exports use this same unique view.
  */
-export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
+export function dedupePublisherAlertFeeds(feeds, options = {}) {
+  return runSteps(dedupePublisherAlertFeedsSteps(feeds, options));
+}
+// Driven in slices by the assembly: the grouping pass reads every news row's canonical address,
+// which on a cold Universe history was one 2.5–3.2 second task at 4x CPU throttle.
+// The preferred row carries its routes' provenance. One copy per (row, provenance) is kept, so an
+// unchanged overlap is the same object in every assembly and every per-row cache beneath it hits.
+const winnerCopies = new WeakMap();
+function winnerCopy(event, newsProvenance) {
+  const key = JSON.stringify(newsProvenance);
+  const hit = winnerCopies.get(event);
+  if (hit?.key === key) return hit.value;
+  const value = { ...event, newsProvenance };
+  winnerCopies.set(event, { key, value });
+  return value;
+}
+function* dedupePublisherAlertFeedsSteps(feeds, { day, entities = [] } = {}) {
   const news = feeds.find(feed => feed.id === 'news')?.events;
   const market = feeds.find(feed => feed.id === 'market-news')?.events;
   const identity = entitySignature(entities);
@@ -1187,38 +1263,55 @@ export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
   }
   const byTicker = new Map(entities.filter(entity => entity.ticker).map(entity => [String(entity.ticker).toUpperCase(), entity.entityId]));
   const groups = new Map();
-  feeds.forEach((feed, feedIndex) => {
-    if (!['news', 'market-news'].includes(feed.id)) return;
-    feed.events.forEach((event, rowIndex) => {
+  for (let feedIndex = 0; feedIndex < feeds.length; feedIndex++) {
+    const feed = feeds[feedIndex];
+    if (!['news', 'market-news'].includes(feed.id)) continue;
+    for (let rowIndex = 0; rowIndex < feed.events.length; rowIndex++) {
+      if ((rowIndex & 511) === 511) yield;
+      const event = feed.events[rowIndex];
       const ticker = String(event.ticker || '').toUpperCase();
       const identity = event.entityId && !event.entityId.startsWith('ticker:') ? event.entityId
         : byTicker.get(ticker) || (ticker ? `ticker:${ticker}` : event.entityId);
-      if (!identity || !event.url) return;
+      if (!identity || !event.url) continue;
       const key = JSON.stringify([identity, eventUrlKey(event)]);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push({ event, feed, feedIndex, rowIndex });
-    });
-  });
+    }
+  }
+  yield;
   const changes = new Map();
   const quality = event => ({ confirmed: 3, related: 2, uncertain: 1, unrelated: 0 })[event.attribution?.status] ?? 0;
+  let walked = 0;
   for (const group of groups.values()) {
-    if (new Set(group.map(item => item.feed.id)).size < 2) continue;
+    if ((++walked & 1023) === 1023) yield;
+    if (group.length < 2 || new Set(group.map(item => item.feed.id)).size < 2) continue;
     // Prefer stronger article/company evidence; equal evidence keeps the Company news route.
     const winner = [...group].sort((a, b) => quality(b.event) - quality(a.event) || Number(b.feed.id === 'news') - Number(a.feed.id === 'news'))[0];
     const provenance = group.flatMap(({ event, feed }) => event.newsProvenance || [{ feed: feed.id, eventId: event.id,
       url: event.url, publisher: event.sourceRecord?.publisher || event.sourceRecord?.source || null,
       discoverySource: event.sourceRecord?.discoverySource || null }]);
-    for (const item of group) changes.set(`${item.feedIndex}:${item.rowIndex}`, item === winner ? { ...winner.event,
-      newsProvenance: [...new Map(provenance.map(record => [JSON.stringify(record), record])).values()] } : null);
+    for (const item of group) changes.set(`${item.feedIndex}:${item.rowIndex}`, item === winner ? winnerCopy(winner.event,
+      [...new Map(provenance.map(record => [JSON.stringify(record), record])).values()]) : null);
   }
-  const result = !changes.size ? feeds : feeds.map((feed, feedIndex) => {
-    if (!['news', 'market-news'].includes(feed.id)) return feed;
-    const events = feed.events.flatMap((event, rowIndex) => {
-      const key = `${feedIndex}:${rowIndex}`;
-      return !changes.has(key) ? [event] : changes.get(key) ? [changes.get(key)] : [];
-    });
-    return { ...feed, events, count: events.length, todayCount: events.filter(event => event.day === day).length };
-  });
+  let result = feeds;
+  if (changes.size) {
+    result = [];
+    for (let feedIndex = 0; feedIndex < feeds.length; feedIndex++) {
+      const feed = feeds[feedIndex];
+      if (!['news', 'market-news'].includes(feed.id)) { result.push(feed); continue; }
+      const events = [];
+      let todayCount = 0;
+      for (let rowIndex = 0; rowIndex < feed.events.length; rowIndex++) {
+        if ((rowIndex & 1023) === 1023) yield;
+        const key = `${feedIndex}:${rowIndex}`;
+        const event = !changes.has(key) ? feed.events[rowIndex] : changes.get(key);
+        if (!event) continue;
+        events.push(event);
+        if (event.day === day) todayCount++;
+      }
+      result.push({ ...feed, events, count: events.length, todayCount });
+    }
+  }
   lastPublisherProjection = { news, market, day, identity, groups: new Map(result
     .filter(feed => ['news', 'market-news'].includes(feed.id))
     .map(feed => [feed.id, { events: feed.events, count: feed.count, todayCount: feed.todayCount }])) };
@@ -1264,7 +1357,7 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
       // Recreating unchanged calendar events here would force the whole timeline to sort again.
       feed = readFeed(feedById.get(settled.id), { day, includeHistory, queryWindow });
     }
-    const all = mapPortfolioDiscoveryEvents(feed.id, feed.events, portfolioEntities);
+    const all = yield* mapPortfolioDiscoveryEventsSteps(feed.id, feed.events, portfolioEntities);
     // The S Screen calendar is already scoped by the exact synchronized portfolio membership.
     // That fact lets BSE-only holdings survive even when they have no NSE ticker; it must not make
     // the private portfolio schedule leak into Universe or the reader's personal watchlist.
@@ -1272,9 +1365,17 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
     // instead of being pre-scoped by its collector.
     let projection = scopeProjections.get(all);
     if (projection?.key !== projectionKey) {
-      const events = all.filter(event => matchesAlertScope(event, scopeContext));
-      projection = { key: projectionKey, events, todayCount: events.filter(e => e.day === day).length,
-        unresolved: all.filter(event => !event.ticker && !event.entityId).length };
+      const events = [];
+      let todayCount = 0, unresolved = 0;
+      for (let i = 0; i < all.length; i++) {
+        if ((i & 2047) === 2047) yield;
+        const event = all[i];
+        if (!event.ticker && !event.entityId) unresolved++;
+        if (!matchesAlertScope(event, scopeContext)) continue;
+        events.push(event);
+        if (event.day === day) todayCount++;
+      }
+      projection = { key: projectionKey, events, todayCount, unresolved };
       scopeProjections.set(all, projection);
     }
     const { events, todayCount } = projection;
@@ -1287,7 +1388,7 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
     yield;
   }
 
-  const feeds = dedupePublisherAlertFeeds(scopedFeeds, { day, entities: portfolioEntities }).map(feed => {
+  const feeds = (yield* dedupePublisherAlertFeedsSteps(scopedFeeds, { day, entities: portfolioEntities })).map(feed => {
     if (!queryWindow) return feed;
     const events = queryEvents(feed.events, queryWindow);
     return { ...feed, events, count: events.length, todayCount: events.filter(event => event.day === day).length };
@@ -1313,7 +1414,7 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
   if (!inputMatches) {
     for (const f of feeds) for (const ev of f.events) events.push(ev);
     yield* sortSteps(events, byNewestFirst);
-    ensureUniqueIds(events);
+    yield* ensureUniqueIdsSteps(events);
     yield;
     // One pass for every count, where eight filters over the whole timeline used to be one task.
     const days = new Set(), companies = new Set();
@@ -1397,13 +1498,24 @@ export function matchesAlertScope(event, { scope, wanted, entityIds, requestedEn
  * It lives in `assemble()` rather than in each collector because this is the only place that sees
  * every feed's rows together, and a collision can span two feeds as easily as two rows of one.
  */
-function ensureUniqueIds(events) {
+// The renamed copy of a duplicate is kept per (row, suffix): an unchanged timeline yields the same
+// objects on every assembly, so the ranking's row comparison and every per-row cache still hit.
+// Driven in slices — measured as one 9-second task at 4x CPU throttle over a Universe history.
+const uniqueIdCopies = new WeakMap();
+function* ensureUniqueIdsSteps(events) {
   const seen = new Map();
   for (let i = 0; i < events.length; i++) {
+    if ((i & 2047) === 2047) yield;
     const ev = events[i];
     const n = seen.get(ev.id) || 0;
     seen.set(ev.id, n + 1);
-    if (n) events[i] = { ...ev, id: `${ev.id}#${n}` };
+    if (!n) continue;
+    const id = `${ev.id}#${n}`;
+    let copies = uniqueIdCopies.get(ev);
+    if (!copies) uniqueIdCopies.set(ev, copies = new Map());
+    let copy = copies.get(id);
+    if (!copy) copies.set(id, copy = { ...ev, id });
+    events[i] = copy;
   }
   return events;
 }

@@ -2783,6 +2783,13 @@ contract does not cover: a tab the shell decided not to mount.
 
 ## AI Alerts — the explainable priority layer
 
+**Scope switches paint at once (29 October 2026).** The tab keeps each scope's last view in memory
+(same IST day, membership and session; cleared on any private-book invalidation) and, the first time,
+narrows the ranked Universe view (`narrowReport`, provisional: replaced, never merged). Feed rows are
+DATA — a function on a `FEEDS` row made every offline save throw `DataCloneError` for a week — and
+every whole-history loop in the assembly and ranking is a yielding step. See
+`docs/AI-ALERTS-SCOPE-SWITCH-2026-10-29.md`.
+
 Header simplification (12 October 2026): show one short status badge. Source health and
 unfinished grouping remain distinct (for example, `Partial coverage · Ungrouped`);
 the scope count, date window and grouping/retention explanation live on its tooltip.
