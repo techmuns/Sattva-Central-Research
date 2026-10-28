@@ -2546,8 +2546,8 @@
       "pending": []
     },
     "isin:INE488A01050|CHEMPLASTS": {
-      "lastAttemptAt": "2026-10-22T20:54:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-28T10:26:17+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 1,
       "lastSuccessAt": "2026-10-22T20:54:29+00:00",
       "targetThrough": null,
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-28T09:22:58.567583+00:00"
+    "checkedAt": "2026-10-28T10:26:17.313256+00:00"
   }
 }
