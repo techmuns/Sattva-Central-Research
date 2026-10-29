@@ -57,7 +57,7 @@ import { fetchNews, fetchAnnouncements, fetchInsiderTrades, fetchDomesticFilings
 import { fetchGoogleNews } from './free-news.mjs';
 import { DOMESTIC_FORMS } from '../public/js/data/domestic-filings-shared.js';
 import { announcementRange } from '../public/js/data/announcements-shared.js';
-import { assessFilingsHealth, FILINGS_HEALTH_FILES } from '../public/js/data/filings-health-shared.js';
+import { handleCaptureStatus, handleFilingsHealth } from './capture-status.mjs';
 import { CORS, preflight, contentTag, withTag, tagged, revalidate } from './http.mjs';
 import {
   dispatchWorkflow,
@@ -101,9 +101,8 @@ import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, a
 import { isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 import { renderFilingFailure, renderFilingPage } from './filing-page.mjs';
 
-import { handleExchangeDeals, exchangeCaptureStatus } from './exchange-deals.mjs';
+import { handleExchangeDeals } from './exchange-deals.mjs';
 import { handleAlertPool } from './alert-pool.mjs';
-import { POOL_CAPTURES, captureRevision } from '../public/js/data/alert-pool-shared.js';
 import { EXCHANGE_WORKFLOW } from './exchange-artifact.mjs';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
@@ -2239,114 +2238,6 @@ async function handleWorkflowRunStatus(env, ctx, { workflow, cacheName }) {
   }
 }
 
-// A small, same-origin view of the committed captures. The browser uses it as a watchdog without
-// downloading every multi-megabyte feed merely to learn its timestamp. Each source is independent:
-// one missing file cannot erase the status of the others, and the short edge cache makes a busy
-// dashboard cost one internal asset read per half-minute rather than one per reader.
-const CAPTURE_STATUS_TTL_S = 30;
-const CAPTURE_FILES = {
-  companyFilings: '/data/filing-capture/index.json',
-  companyNews: '/data/news.json',
-  insider: '/data/insider-trades.json',
-  announcements: '/data/corp-announcements.json',
-  corporateActions: '/data/corporate-actions.json',
-  technicals: '/data/technicals.json',
-  marketNews: '/data/market-news.json',
-  // EVERY CAPTURE THE PRECOMPUTED ALERT POOL IS BUILT FROM, so the browser can tell whether the
-  // pool it is offered was built from the files this deployment serves (js/data/alert-pool.js).
-  // The names above that the pool also reads keep their paths; these are the rest.
-  ...Object.fromEntries(Object.entries(POOL_CAPTURES).filter(([, source]) => source.path).map(([name, source]) => [name, source.path])),
-};
-
-// Read-only health signal for an independent uptime monitor. Never starts a capture or calls Muns.
-async function handleFilingsHealth(request, env, ctx) {
-  if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
-  const key = edgeKey('filings-operational-health-v2');
-  const cache = caches.default;
-  const hit = await cache.match(key);
-  if (hit) {
-    const report = await hit.json();
-    return json(report, report.ok ? 200 : 503);
-  }
-  const captures = {};
-  await Promise.all(Object.entries(FILINGS_HEALTH_FILES).map(async ([source, path]) => {
-    try {
-      const response = await env.ASSETS.fetch(new Request(new URL(`/data/${path}`, request.url)));
-      if (!response.ok) throw new Error('Capture unavailable');
-      captures[source] = await response.json();
-    } catch { captures[source] = null; }
-  }));
-  const report = assessFilingsHealth(captures);
-  ctx.waitUntil(cache.put(key, new Response(JSON.stringify(report), {
-    headers: { 'content-type': 'application/json', 'cache-control': 'max-age=30' },
-  })));
-  return json(report, report.ok ? 200 : 503);
-}
-
-async function handleCaptureStatus(request, env, ctx) {
-  if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
-
-  const cache = caches.default;
-  const key = edgeKey('capture-status-v5');
-  const held = await cache.match(key);
-  if (held) {
-    return new Response(held.body, {
-      status: 200,
-      headers: { ...Object.fromEntries(held.headers), ...CORS, 'x-sattva-cache': 'hit' },
-    });
-  }
-
-  const captures = {};
-  const exchangeIdentity = exchangeCaptureStatus(request, env, { cache });
-  await Promise.all(
-    Object.entries(CAPTURE_FILES).map(async ([name, path]) => {
-      try {
-        const response = await env.ASSETS.fetch(new Request(new URL(path, request.url)));
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const body = await response.json();
-        // WHOSE FRESHNESS THIS IS, when a capture has several contributors.
-        //
-        // The market-news file is written by two jobs — the Moneycontrol listing walk and the RSS
-        // reader — and its `capturedAt` is whichever ran last. The watchdog uses this value to
-        // decide whether to dispatch the MONEYCONTROL workflow, so reading the top-level field
-        // would let an hourly RSS run keep the timestamp fresh while Moneycontrol went unread for
-        // days, and nothing would ever notice: the one measurement that exists to catch a stalled
-        // source would be answered by a different source. So a per-source time is reported where
-        // the file carries one, and `capturedAt` stays the whole capture's for everything else.
-        const perSource = Array.isArray(body.sources)
-          ? Object.fromEntries(body.sources.map((s) => [s.id, { capturedAt: s.capturedAt || null, ok: s.ok !== false }]))
-          : body.sources && typeof body.sources === 'object'
-            ? Object.fromEntries(Object.entries(body.sources).map(([id, source]) => [id, {
-                capturedAt: source?.capturedAt || null,
-                ok: source?.state ? source.state === 'live' : source?.ok !== false,
-              }]))
-            : null;
-        captures[name] = {
-          ok: true,
-          capturedAt: body.capturedAt || body.generated_at || body.fetchedAt || body.lastRunFinishedAt || null,
-          // Every field that can move without the timestamp moving, for the alert pool's check.
-          revision: captureRevision(body),
-          ...(perSource ? { sources: perSource } : {}),
-          covered: Number.isFinite(body.covered) ? body.covered : Number.isFinite(body.company_count) ? body.company_count : null,
-          failed: Number.isFinite(body.failedCount) ? body.failedCount : Number.isFinite(body.failures) ? body.failures : null,
-          fallback: Number.isFinite(body.fallbackCount) ? body.fallbackCount : 0,
-        };
-      } catch (error) {
-        captures[name] = { ok: false, capturedAt: null, reason: String(error?.message || error) };
-      }
-    }),
-  );
-
-  captures.exchangeDeals = await exchangeIdentity;
-  const payload = { ok: true, captures, servedAt: new Date().toISOString() };
-  const store = new Response(JSON.stringify(payload), {
-    headers: { 'content-type': 'application/json', 'cache-control': `max-age=${CAPTURE_STATUS_TTL_S}` },
-  });
-  ctx.waitUntil(cache.put(key, store));
-  const response = json(payload, 200);
-  response.headers.set('x-sattva-cache', 'live');
-  return response;
-}
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {

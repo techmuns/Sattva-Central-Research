@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
@@ -8,6 +7,9 @@ import { promisify } from 'node:util';
 import { assessFilingsHealth, FILINGS_HEALTH_FILES } from '../public/js/data/filings-health-shared.js';
 import { companyCaptureStatusFromIndex } from '../public/js/data/company-captures.js';
 import worker from '../worker/index.js';
+import { prepareHealthPlan } from './prepare-capture-status.mjs';
+import { healthFromPlan } from '../worker/capture-status.mjs';
+import { FILINGS_HEALTH_PLAN_FILE } from '../worker/capture-status-contract.mjs';
 
 const now = Date.now(), recent = new Date(now - 60000).toISOString();
 const from = '2025-01-01', to = new Date(now).toISOString().slice(0, 10);
@@ -24,7 +26,11 @@ const healthy = {
   twitter: { posts: [], failed: [], capturedAt: recent, collection: { status: 'ok' } },
   insider: { byTicker: {}, rowCount: 0, empty: ['A'], capturedAt: recent, asked: 1, covered: 1, failed: {}, fallback: {} },
 };
-const assess = (value) => assessFilingsHealth(value, { now });
+const assess = (value) => {
+  const report = assessFilingsHealth(value, { now });
+  assert.deepEqual(healthFromPlan(prepareHealthPlan(value, { now }), { now }), report, 'Prepared health preserves the existing complete source assessment');
+  return report;
+};
 assert.equal(assess(healthy).status, 'healthy');
 const original = structuredClone(healthy);
 const limitedNotices = structuredClone(healthy);
@@ -227,7 +233,7 @@ const paths = Object.fromEntries(Object.entries(FILINGS_HEALTH_FILES).map(([sour
 const env = { ASSETS: { fetch: async (request) => {
   const path = new URL(request.url).pathname;
   assetReads.push(path);
-  const value = data[paths[path]];
+  const value = path === FILINGS_HEALTH_PLAN_FILE ? { version: 1, preparedAt: recent, ...prepareHealthPlan(data, { now: now - 1000 }) } : null;
   return value ? Response.json(value) : new Response('', { status: 404 });
 } } };
 const get = async (method = 'GET') => {
@@ -239,9 +245,10 @@ try {
   assert.equal((await get('POST')).status, 405);
   assert.equal(assetReads.length, 0);
   assert.equal((await get()).status, 200);
-  assert.equal(assetReads.length, 6);
+  assert.equal(assetReads.length, 1);
   await get();
-  assert.equal(assetReads.length, 6, 'short health cache avoids repeatedly downloading large captures');
+  assert.equal(assetReads.length, 2, 'Every read uses only the compact prepared plan, with no stale request-time health cache');
+  assert(assetReads.every(file => file === FILINGS_HEALTH_PLAN_FILE));
   cache.clear(); data = auth;
   const response = await get();
   assert.equal(response.status, 503);
@@ -249,7 +256,8 @@ try {
 } finally { globalThis.caches = originalCaches; globalThis.fetch = originalFetch; }
 
 // Exercise the real CLI against a local static-capture server, including a red exit and report.
-const scratch = mkdtempSync(join(tmpdir(), 'sattva-health-'));
+mkdirSync('.cache', { recursive: true });
+const scratch = mkdtempSync(join('.cache', 'sattva-health-'));
 const server = createServer((req, res) => {
   const value = data[paths[new URL(req.url, 'http://localhost').pathname]];
   res.writeHead(value ? 200 : 404, { 'content-type': 'application/json' });

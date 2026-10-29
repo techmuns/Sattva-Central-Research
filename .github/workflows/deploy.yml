@@ -10,6 +10,7 @@ on:
       - "wrangler.jsonc"
       - ".github/workflows/deploy.yml"
       - "scripts/github-deploy-state.mjs"
+      - "scripts/prepare-capture-status.mjs"
       - "scripts/lib/github-background-*.mjs"
   workflow_dispatch:
   workflow_run:
@@ -100,6 +101,9 @@ jobs:
       - name: Load verified prepared reader files from GitHub
         if: steps.plan.outputs.changed == 'true'
         run: node scripts/github-deploy-state.mjs prepare
+      - name: Prepare compact status and time-aware filing health from the exact upload
+        if: steps.plan.outputs.changed == 'true'
+        run: node scripts/prepare-capture-status.mjs
       - name: Validate the bundle
         if: steps.plan.outputs.changed == 'true'
         run: npx --yes wrangler@4 deploy --dry-run
