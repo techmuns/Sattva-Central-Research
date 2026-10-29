@@ -1,11 +1,11 @@
 import {boundedJson} from '../../public/js/data/family-book-contract.js';
-import {marketWindow} from '../../public/js/data/breakout-live-shared.js';
+import {quoteRunnerActive} from './breakout-session.mjs';
 const REPO='techmuns/Sattva-Central-Research',FILE='breakouts-refresh.yml';
 // Queue one successor while this owner is still running. Scheduled starts are
 // only a fallback; ordinary completion and a failed run both have a replacement.
 export async function ensureBreakoutRunner({env=process.env,fetcher=fetch,now=Date.now(),ignoreCurrent=false}={}){
   if(env.GITHUB_ACTIONS!=='true'||env.GITHUB_REPOSITORY!==REPO||env.GITHUB_REF!=='refs/heads/main'||!env.GITHUB_TOKEN)throw Error('Invalid quote handover context');
-  if(!marketWindow(now).collect)return {requested:false,reason:'closed'};
+  if(!quoteRunnerActive(now))return {requested:false,reason:'closed'};
   const headers={authorization:`Bearer ${env.GITHUB_TOKEN}`,accept:'application/vnd.github+json','user-agent':'SattvaQuoteHandover'};
   const root=`https://api.github.com/repos/${REPO}/actions/workflows/${FILE}`;
   for(const status of ['in_progress','queued','waiting','requested','pending']){
