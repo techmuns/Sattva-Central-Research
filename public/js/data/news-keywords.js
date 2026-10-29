@@ -173,8 +173,8 @@ export const KEYWORDS = [
     id: 'resignation',
     label: 'Resignation',
     group: 'risk',
-    test: /\bresign(?:s|ed|ation|ations)\b|\bsteps? down\b|\bstepped down\b/,
-    note: 'A bare "quits" is excluded — it matched a story about a company quitting California.',
+    test: /\bresign(?:s|ed|ation|ations)\b|\bsteps? down\b(?![\s-]+subsidiar)|\bstepped down\b/,
+    note: 'A bare "quits" is excluded — it matched a story about a company quitting California. "Step down" before "subsidiary" is a company tier, not a departure: "eClerx buys 2% in step down subsidiary" (29 October).',
   },
   {
     id: 'investigation',

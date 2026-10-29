@@ -883,6 +883,15 @@ one factual reading after consolidation, exact original-source links and at most
 90,000-byte email bodies. Preserve corrections, all source evidence and the Sattva design.
 `docs/NEWSLETTER-PARITY.md` records the shared Glow/Sattva logic and upstream workflow.
 
+**Ported from Glow, 29 October 2026 (shared newsletter lock updated):** a busy edition that no
+card tier fits falls back to a company digest (one row per company, one line per update, every
+leading source exact) instead of failing the preview; text and PDF previews no longer depend on
+inbox planning. The grouping pass partitions each company's filings AND news together, so a
+results filing, its release, presentation and news reports are one update (`unifyEvents`,
+`resultsPeriod`); an unsafe proposed group is split alone. Every tier leads each update in bold
+beside a green/red rule (`updateTone` in `newsletter-company-reading.mjs`); risk items lead at
+equal materiality. See `docs/NEWSLETTER-INVESTOR-BRIEF.md`.
+
 
 **Owner correction, 22 October 2026:** daily emails and test copies must only carry reports
 published inside their printed edition window. Never send historical backlog, newly captured old

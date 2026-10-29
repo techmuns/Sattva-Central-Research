@@ -17,10 +17,17 @@ export function referenceReason(item) {
   if (['issuer-mismatch','company-evidence-unconfirmed'].includes(item.content?.reason)) return 'Issuer connection not established by the source reading';
   if (item.kind === 'news' || !item.kind) {
     if(/^(?:Q[1-4]\s+)?results (?:this|next) week\s*:/i.test(title)&&!/\b(?:profit|revenue|margin|EBITDA|EPS|growth|loss)\b|%/i.test(title))return 'Results-calendar roundup; no company results disclosed';
-    if(/\bstock price, news, quote and history(?:\s*[-–—]\s*Yahoo Finance)?[.!]?$|\bshare price\s*[-:]\s*live\b|\bstock price live NSE\/BSE updates[.!]?$/i.test(title)) return 'Quote/reference page; no business development stated';
+    if(/\bstock price, news, quote (?:and|&) history(?:\s*[-–—]\s*Yahoo Finance)?[.!]?$|\bshare price\s*[-:]\s*live\b|\bstock price live NSE\/BSE updates[.!]?$/i.test(title)||
+      /\bshare price(?:\s*[-–—|:]\s*[a-z][\w.]*)?$/i.test(title)&&!/\d/.test(title)) return 'Quote/reference page; no business development stated';
     if((/\bis rated (?:sell|buy|hold)[.!]?$/i.test(title)||/\b(?:(?:upgraded|downgraded) to (?:sell|buy|hold) amid (?:technical|valuation|mixed|bearish)|forms death cross|faces mildly bearish technical shift)\b/i.test(title)) &&
       !/\b(?:CRISIL|ICRA|CARE Ratings|Moody|Fitch|S&P|credit rating|guidance|profit warning|default|fraud|FDA|earnings|results|contract|merger|acquisition|dividend)\b|\bby (?!MarketsMojo\b)[A-Z]/i.test(title))return 'Automated technical/opinion template; no attributed fundamental change';
-    if (/\b(?:slides|slips|climbs|rises|falls|gains|drops|jumps) (?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),? (?:outperforms|underperforms) competitors[.!]?$/i.test(title)) return 'Automated daily price comparison; no business development stated';
+    if (/\b(?:slides|slips|climbs|rises|falls|gains|drops|jumps) (?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),? (?:outperforms|underperforms) (?:competitors|(?:the )?market|peers|(?:the )?index)[.!]?$/i.test(title)) return 'Automated daily price comparison; no business development stated';
+    // Machine-written templates that state no development: a live-call stub (the call is in the
+    // calendar), an open-interest alert, a stock-screen teaser. Each stays in the complete report.
+    if (/\bearnings call (?:is live|has begun)\b/i.test(title)) return 'Automated call notice; the call is listed in the calendar';
+    if (/\bopen interest (?:surge|spike|jump|build-?up|rises?|falls?|drops?)\b/i.test(title) && !/\b(?:results|order|contract|merger|acquisition|dividend|guidance)\b/i.test(title)) return 'Automated derivatives-data template; no business development stated';
+    if (/^here'?s why (?:we think )?.{1,80}\bmight deserve your attention\b/i.test(title)) return 'Automated stock-screen article; no business development stated';
+    if (/^stocks in (?:the )?news\b|^buy,? sell,? or hold\b|\b(?:lead|top) (?:volume )?(?:gainers|losers)\b|\bdaily market commentary\b/i.test(title)) return 'Roundup, offer guide or unchanged opinion';
     if (/\bestimates\s*[-–:]\s*(?:NSE|BSE)\s*:|\boption chain\b/i.test(title) &&
         !/\b(?:raised|lowered|revised|revision|upgrade|downgrade|changed|cut|increased|decreased)\b/i.test(title)) return 'Reference page; no estimate revision stated';
     if (/\bstocks to watch|\bupcoming IPOs?\b|\bIPOs? (?:this|next) week\b|\bIPO (?:GMP|review)\b|\brated (?:buy|sell|hold) by marketsmojo\b/i.test(title)) return 'Roundup, offer guide or unchanged opinion';

@@ -1,0 +1,27 @@
+{
+  "description": "City Union Bank's Q2 FY27 results in the 28 October 2026 evening brief: one board-outcome filing and eight publisher reports of the same results, printed as nine separate updates because one differing figure voided the whole grouping reply. Headlines and times are the edition's own; the filing's read facts are its printed summary; URLs and publishers are fixture placeholders. Model replies in offline tests are fixtures, not a live model accuracy evaluation.",
+  "ticker": "CUB",
+  "company": "City Union Bank Ltd",
+  "filing": {
+    "headline": "Outcome of Board Meeting",
+    "subject": "Financial Results",
+    "exchanges": ["BSE", "NSE"],
+    "url": "https://fixture.test/cub/filing",
+    "publishedAt": "2026-10-28T06:39:00.000Z",
+    "facts": [
+      { "field": "event", "value": "Board approved standalone unaudited results for Q2/H1 FY2027 (Sept 30, 2026). Net profit Rs.41,591.21 lakh for the quarter, total income Rs.244,246.10 lakh, Gross NPA Rs.104,302.01 lakh, Net NPA Rs.34,417.65 lakh, CAR 21.26%" },
+      { "field": "event", "value": "Authorised share capital increased from Rs.10,000 lakh to Rs.20,000 lakh after RBI/shareholder approval" },
+      { "field": "event", "value": "Transferred 974 NPA accounts to ARCs for Rs.13,122 lakh consideration" }
+    ]
+  },
+  "reports": [
+    { "headline": "City Union Bank Shares Jump Up To 9% After Q2 Earnings", "publisher": "Publisher A", "url": "https://fixture.test/cub/1", "publishedAt": "2026-10-28T07:51:00.000Z" },
+    { "headline": "City Union Bank Q2 results: Stock jumps up to 10% on strong core income growth, better asset quality", "publisher": "Publisher B", "url": "https://fixture.test/cub/2", "publishedAt": "2026-10-28T07:32:00.000Z" },
+    { "headline": "City Union Bank Q2 Results: Asset Quality Improves, Profit Jumps Over 26%", "publisher": "Publisher C", "url": "https://fixture.test/cub/3", "publishedAt": "2026-10-28T07:09:00.000Z" },
+    { "headline": "City Union Bank Q2FY27 Results: Net profit rises 27% YoY to ₹416 crore", "publisher": "Publisher D", "url": "https://fixture.test/cub/4", "publishedAt": "2026-10-28T07:01:00.000Z" },
+    { "headline": "City Union Bank Q2 results: Net profit flat at Rs 416 crore, NII rises 31% YoY", "publisher": "Publisher E", "url": "https://fixture.test/cub/5", "publishedAt": "2026-10-28T06:51:00.000Z" },
+    { "headline": "City Union Bank: Q2 & H1 FY27 Unaudited Results Released", "publisher": "Publisher F", "url": "https://fixture.test/cub/6", "publishedAt": "2026-10-28T06:43:00.000Z" },
+    { "headline": "City Union Bank Q2 Results FY27: Net Profit ₹415.91 Cr", "publisher": "Publisher G", "url": "https://fixture.test/cub/7", "publishedAt": "2026-10-28T06:43:00.000Z" },
+    { "headline": "City Union Bank Sept-Quarter Net Profit 4.16 Billion Rupees", "publisher": "Publisher H", "url": "https://fixture.test/cub/8", "publishedAt": "2026-10-28T06:42:00.000Z" }
+  ]
+}

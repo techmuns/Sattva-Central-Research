@@ -62,6 +62,14 @@ try{
  const stalePreview=()=>runtime.db.prepare('INSERT OR REPLACE INTO newsletter_views VALUES(?,?)').run('preview-morning-html-2',JSON.stringify({ok:true,body:'Old second part',part:2,parts:2}));
  stalePreview();await runtime.preparePreviews();assert.equal(providerCalls,0);assert.equal(emailCalls,0);
  const preview=JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get('preview-morning-html-1').payload);assert.equal(preview.ok,true);assert.equal(preview.part,1);assert.equal(preview.parts,1);
+ // Only the inbox footer reads the send time, so an oversized one makes email planning alone fail.
+ const renderOptions=runtime.schedule.renderOptions;runtime.schedule.renderOptions=function(...args){const value=renderOptions.apply(this,args),time='9'.repeat(100000);return {...value,settings:{...value.settings,morning:{...value.settings?.morning,time},evening:{...value.settings?.evening,time}}};};
+ try{stalePreview();await runtime.preparePreviews();}finally{runtime.schedule.renderOptions=renderOptions;}
+ const viewOf=id=>JSON.parse(runtime.db.prepare('SELECT payload FROM newsletter_views WHERE id=?').get(id)?.payload||'null');
+ assert.deepEqual([viewOf('preview-morning-html-1').ok,viewOf('preview-morning-html-1').reason,viewOf('preview-morning-html-2')],[false,'preview-build-failed',null],'An email preview that cannot be planned is reported, not replaced by an older part');
+ for(const id of ['preview-morning-text-1','preview-morning-pdf-1','preview-evening-text-1','preview-evening-pdf-1'])assert.equal(viewOf(id).ok,true,'The complete-report previews survive an inbox planning failure');
+ assert.equal(viewOf('preview-morning-pdf-1').deliveryFormat,undefined,'A complete report cannot claim an email plan that was never made');
+ await runtime.preparePreviews();assert.equal(viewOf('preview-morning-html-1').ok,true);
  const originalPrivateSources=runtime.privateMarketsJob.readSources;
  runtime.privateMarketsJob.readSources=async()=>({capture:{invalid:true},roster:null});runtime.privateMarketsJob.setMeta({...runtime.privateMarketsJob.meta(),lastCheckedAt:null});
  await runtime.preparePreviews();assert.equal(runtime.privateMarketsJob.status().lastResult,'build-failed');

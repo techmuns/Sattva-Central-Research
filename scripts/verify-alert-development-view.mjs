@@ -34,6 +34,8 @@ console.log('PASS: distinct filing identity, one semantic authority, exchange-fi
 
 for(const title of ['Praj order intake rises','GRSE order pipeline','Triveni order bookings']) assert.ok(matchKeywords(title).some(k=>k.id==='orderbook'));
 for(const title of ['in order to expand','court order','bookings for a hotel']) assert.ok(!matchKeywords(title).some(k=>k.id==='orderbook'));
+for(const title of ['CEO steps down','Chairman to step down next month','CFO stepped down']) assert.ok(matchKeywords(title).some(k=>k.id==='resignation'));
+for(const title of ['Eclerx Services Buys Approx. 2% Equity In Step Down Subsidiary For $1.6 Million','merger of step-down subsidiaries']) assert.ok(!matchKeywords(title).some(k=>k.id==='resignation'),'a step-down subsidiary is a company tier, not a departure');
 
 const many=Array.from({length:3000},(_,i)=>({...news,id:`n${i}`,url:`https://example.test/n${i}`}));
 let yielded=0;

@@ -35,7 +35,7 @@ for(const c of fixture.cases){
  if(c.ticker==='KSB'){assert(event.sourceSummary.includes('3 Nov 2026'));assert(/unaudited standalone and consolidated quarterly financial results for the period ended September 2026/i.test(event.sourceSummary));assert(!/Trading window|Directors\/Officers/i.test(event.sourceSummary));}
  const stats={...briefStats(brief),companies};
  const html=renderBriefHtml(brief,{stats,dashboardUrl:'https://fixture.test',part:{investor:true,eventIds:clusters.map(c=>c.id),compact:true,summaryChars:100,index:1,total:1,supplements:false}});
- assert(html.replaceAll('&#39;',"'").replaceAll('&amp;','&').includes(event.sourceSummary),'The key terms are never cut by the 100-character packing tier');
+ assert(html.replace(/<\/?b(?: [^>]*)?>/g,'').replaceAll('&#39;',"'").replaceAll('&amp;','&').includes(event.sourceSummary),'The key terms are never cut by the 100-character packing tier (the bold lede is markup, not a cut)');
  if(c.ticker==='PURVA'){
   const original=rows.find(r=>r.content.format==='pdf');
   const mirror={...original,kind:'news',url:'https://fixture.test/verified-document-mirror',headline:'Mirror of the same announcement',content:{...original.content,facts:[{field:'event',value:'An alternate extraction of the same verified bytes'}]}};

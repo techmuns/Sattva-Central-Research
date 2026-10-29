@@ -96,6 +96,35 @@ export function explicitEvent(item) {
   }
   return null;
 }
+// A company's periodic results for one stated period are one development whatever each filing is
+// called: the results, the press or media release, the investor presentation or update, standalone
+// and consolidated versions, each exchange's copy. Only the filing's own words name the period. A
+// notice to consider results, an earnings call, a transcript, a voting result, a subsidiary's results
+// or a revised, corrected or resubmitted version never takes this identity, and neither does an
+// outcome that also names a transaction (27 October: Sona's results outcome carried the Escorts
+// Kubota acquisition and the DENSO joint ventures, which must stay their own development).
+const RESULTS_DOCUMENT=/\b(?:financial results?|results? (?:of|for)\b|(?:investor|earnings) (?:presentation|update))/i;
+const NOT_RESULTS_DOCUMENT=/\b(?:to consider|will consider|to approve|for consideration|intimation of (?:the )?board meeting|board meeting (?:is )?(?:scheduled|to be held|will be held)|prior intimation|trading window|conference call|earnings call|con[- ]?call|analysts?|investors? meet|transcripts?|audio|video|recording|webcast|resubmi\w*|e?-?voting|postal ballot|ballot|scrutini[sz]\w*|AGM|EGM|general meeting|results? of (?:its |the )?(?:material |wholly[- ]owned |step[- ]down )?subsidiar\w*)\b/i;
+const TRANSACTION=/\b(?:acqui\w+|agreements?|joint ventures?|JVs?|merger|amalgamat\w*|demerg\w*|slump sale|divest\w*|fund ?rais\w*|QIP|preferential|rights issue|buy-?back|orders?|contracts?|stake|scheme of arrangement|allot\w*)\b/i;
+const FISCAL_END={Q1:[-1,'06'],Q2:[-1,'09'],Q3:[-1,'12'],Q4:[0,'03'],H1:[-1,'09'],H2:[0,'03']};
+export function resultsPeriod(item) {
+  if(item.kind!=='filing'||!item.ticker||item.related)return null;
+  const text=clean([item.headline,item.dek,...factsFor(item).filter(f=>f.field==='event').map(f=>f.value)].join(' '))
+    .replace(/\bended\s+on\b/gi,'ended').replace(/\b(\d{1,2})\.(\d{1,2})\.(20\d{2})\b/g,'$1-$2-$3');
+  if(!RESULTS_DOCUMENT.test(text)||NOT_RESULTS_DOCUMENT.test(text)||TRANSACTION.test(text)||hasSourceChange(text))return null;
+  const periods=[...financialPeriodsIn(text),...[...text.matchAll(new RegExp('\\bresults? for (?:the )?('+dateText+')','ig'))].map(m=>m[1])].map(financialPeriod);
+  for(const period of fiscalPeriods(text)){
+    if(period.invalid)return null;
+    const [offset,month]=FISCAL_END[period.quarter||period.half]||[];
+    if(month)periods.push(`${Number(period.year)+offset}-${month}`);
+  }
+  return periods.length&&periods.every(p=>p&&/^20\d{2}-\d{2}$/.test(p)&&p===periods[0])?periods[0]:null;
+}
+export function sameResultsFiling(a,b) {
+  if(a.ticker!==b.ticker||!Number.isFinite(a.at)||!Number.isFinite(b.at)||Math.abs(a.at-b.at)>86400000)return false;
+  const x=resultsPeriod(a);
+  return !!x&&x===resultsPeriod(b);
+}
 export function sameExplicitEvent(a,b) {
   if(a.ticker!==b.ticker||!!a.related!==!!b.related||!Number.isFinite(a.at)||!Number.isFinite(b.at))return false;
   if(a.kind==='news'&&b.kind==='news'&&(a.eventId||b.eventId)&&a.eventId!==b.eventId)return false;
