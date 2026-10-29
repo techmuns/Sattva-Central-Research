@@ -2788,7 +2788,7 @@
       "pending": []
     },
     "isin:INE625G01013|Welspun Enterprises": {
-      "lastAttemptAt": "2026-10-23T09:50:50+00:00",
+      "lastAttemptAt": "2026-10-29T13:58:10+00:00",
       "error": "search-unavailable",
       "lastResultCount": 39,
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-29T13:11:12.949413+00:00"
+    "checkedAt": "2026-10-29T13:58:10.423866+00:00"
   }
 }
