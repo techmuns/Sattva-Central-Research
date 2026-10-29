@@ -31,3 +31,9 @@ __pycache__/
 *.session
 *.session-journal
 telegram-credentials*.json
+
+# Rebuilt from exact deployment inputs on GitHub; never retained source records.
+/public/data/capture-status.json
+/public/data/filings-health-plan.json
+/public/data/capture-status.json.tmp
+/public/data/filings-health-plan.json.tmp

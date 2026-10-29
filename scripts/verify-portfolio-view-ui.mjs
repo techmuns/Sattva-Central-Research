@@ -217,7 +217,16 @@ try {
       await page.waitForFunction(async () => (await import('/js/core/state.js')).state.scope === 'watchlist');
       await page.getByText('KISSHT announces dividend', { exact:true }).waitFor();
       assert.equal(await page.getByText('NEWCO announces dividend', { exact:true }).count(), 0, 'global Watchlist scope limits All Alerts to starred companies');
-      assert.equal(await page.locator('[data-watch="KISSHT"]').first().innerText(), '★', 'company stars keep editing the shared Watchlist');
+      // Scope publication can cover the retained table again while a late source
+      // settles. Hidden innerText is empty even though the saved star is present.
+      // Wait for the actual visible starred row; a missing membership or star
+      // still fails, rather than sampling that transient loading cover.
+      await page.waitForFunction(() => {
+        const star = document.querySelector('[data-watch="KISSHT"]');
+        return star?.checkVisibility() && star.innerText === '★';
+      });
+      assert.equal(await page.evaluate(async () => (await import('/js/core/watchlist.js')).all().some(company => company.ticker === 'KISSHT')), true,
+        'company stars keep editing the shared Watchlist');
       await page.locator('#scope-toggle-mount').getByRole('button', { name:'Portfolio',exact:true }).click();
       await page.getByText('NEWCO announces dividend', { exact:true }).waitFor();
     }

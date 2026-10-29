@@ -1,8 +1,11 @@
 import { latestExchangeArtifact, latestExchangeArtifactInfo } from './exchange-artifact.mjs';
 import { CORS, revalidate } from './http.mjs';
+import { boundedJson } from '../public/js/data/family-book-contract.js';
+
+const STATUS_TTL_S = 30;
 
 /** Verify the input a cold bulk/block read would select without transferring its entire archive. */
-export async function exchangeCaptureStatus(request, env, { fetchImpl = fetch, cache = caches.default } = {}) {
+export async function exchangeCaptureStatus(request, env, { fetchImpl = fetch, cache = caches.default, now = Date.now() } = {}) {
   try {
     const held = await cache.match(new Request(new URL('/api/bulk-block-deals', request.url)));
     if (held) {
@@ -15,10 +18,28 @@ export async function exchangeCaptureStatus(request, env, { fetchImpl = fetch, c
         ? { ok: true, capturedAt: null, artifactId }
         : { ok: false, capturedAt: null, artifactId: null, reason: 'retained-fallback' };
     }
-    const artifact = await latestExchangeArtifactInfo({ repo: env.GH_REPO, token: env.GH_DISPATCH_TOKEN, fetchImpl,
-      signal: AbortSignal.any([request.signal, AbortSignal.timeout(5000)]) });
-    return artifact ? { ok: true, capturedAt: null, artifactId: artifact.id }
-      : { ok: false, capturedAt: null, artifactId: null, reason: 'no-artifact' };
+    // Keep the former status route's 30-second upstream budget independently of
+    // prepared files. Always prefer the actual served bulk response above.
+    const key = new Request(new URL(`/api/_exchange-status-v1/${encodeURIComponent(env.GH_REPO || '')}`, request.url));
+    try {
+      const hit = await cache.match(key);
+      if (hit) {
+        const value = await boundedJson(hit, 4096), status = value?.status;
+        if (Number.isFinite(value?.checkedAt) && value.checkedAt <= now && now - value.checkedAt < STATUS_TTL_S * 1000 &&
+          status?.capturedAt === null && (status.ok === true && Number.isSafeInteger(status.artifactId) && status.artifactId > 0 ||
+            status.ok === false && status.artifactId === null && ['no-artifact', 'unverified'].includes(status.reason))) return status;
+      }
+    } catch { /* An unavailable metadata cache must not prevent a bounded live check. */ }
+    let status;
+    try {
+      const artifact = await latestExchangeArtifactInfo({ repo: env.GH_REPO, token: env.GH_DISPATCH_TOKEN, fetchImpl,
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(5000)]) });
+      status = artifact ? { ok: true, capturedAt: null, artifactId: artifact.id }
+        : { ok: false, capturedAt: null, artifactId: null, reason: 'no-artifact' };
+    } catch { status = { ok: false, capturedAt: null, artifactId: null, reason: 'unverified' }; }
+    try { await cache.put(key, Response.json({ checkedAt: now, status }, { headers: { 'cache-control': `max-age=${STATUS_TTL_S}` } })); }
+    catch { /* Cache storage is an optimization; retain the verified result or honest failure. */ }
+    return status;
   } catch {
     // Status is a small, bounded check. Failure cannot make the pool current or advance a date.
     return { ok: false, capturedAt: null, artifactId: null, reason: 'unverified' };

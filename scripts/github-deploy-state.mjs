@@ -32,7 +32,7 @@ export async function planDeployment({env=process.env,fetcher=fetch,prepared=pre
   if(Object.keys(previousPrepared).some(feature=>!Object.hasOwn(preparedIdentity,feature)))throw Error('A previously published prepared dataset is unavailable');
   // Tree IDs include every nested asset. No data blob downloads or Cloudflare
   // calls are needed when a collector changed no published input.
-  const signature=ref=>['public','worker','wrangler.jsonc'].map(path=>git('rev-parse',`${ref}:${path}`)).join(':');
+  const signature=ref=>['public','worker','wrangler.jsonc'].map(path=>git('rev-parse',`${ref}:${path}`)).join(':')+':'+git('ls-tree',ref,'--','scripts/prepare-capture-status.mjs');
   if(previous&&preparedSignature(previousPrepared)===preparedSignature(preparedIdentity)) {
     if(previous===head)return {changed:false};
     try{signature(previous);}catch{git('fetch','--depth=1','--filter=blob:none','origin',previous);}

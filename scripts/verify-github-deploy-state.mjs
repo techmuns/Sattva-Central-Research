@@ -31,6 +31,8 @@ try {
     const claim=requests.find(r=>r.body?.ref)?.body;assert.equal(claim.ref,env.GITHUB_SHA);assert.equal(claim.environment,DEPLOY_ENV);assert.equal(claim.auto_merge,false);
     assert.equal(requests.at(-1).body.state,'in_progress');previous=env.GITHUB_SHA;
   }
+  fs.mkdirSync(path.join(root,'scripts'));fs.writeFileSync(path.join(root,'scripts/prepare-capture-status.mjs'),'status preparation v1');env.GITHUB_SHA=commit('Changed status generator');
+  assert.equal((await plan({env,fetcher,git})).changed,true,'A generator-only fix must republish prepared metadata');previous=env.GITHUB_SHA;
   background=[{feature:'summaries',asset:{id:123}},{feature:'newsletter',asset:{id:124}}];requests=[];
   assert.equal((await plan({env,fetcher,git})).changed,true,'New prepared data publishes even when the main checkout did not change');
   assert.deepEqual(requests.find(r=>r.body?.ref).body.payload.prepared,{summaries:123,newsletter:124});
