@@ -6,8 +6,42 @@ import { prepareCaptureStatus, prepareHealthPlan } from './prepare-capture-statu
 import { CAPTURE_FILES, CAPTURE_STATUS_FILE, FILINGS_HEALTH_PLAN_FILE, captureStatus } from '../worker/capture-status-contract.mjs';
 import { handleCaptureStatus, handleFilingsHealth, healthFromPlan } from '../worker/capture-status.mjs';
 import { assessFilingsHealth, FILINGS_HEALTH_FILES, FILINGS_HEALTH_LIMITS } from '../public/js/data/filings-health-shared.js';
+import { exchangeCaptureStatus } from '../worker/exchange-deals.mjs';
 
 const now = Date.parse('2026-10-29T04:00:00Z'), stamp = offset => new Date(now + offset).toISOString();
+// Removing the large response cache must not multiply GitHub metadata requests.
+const edgeEntries = new Map();
+const edgeCache = { match: async key => edgeEntries.get(key.url)?.clone(), put: async (key, value) => {
+  assert.equal(value.headers.get('cache-control'), 'max-age=30'); edgeEntries.set(key.url, value.clone());
+} };
+let metadataCalls = 0, artifactId = 123, unavailable = false;
+const exchangeEnv = { GH_REPO: 'org/repo', GH_DISPATCH_TOKEN: 'fixture' };
+const metadataFetch = async url => {
+  metadataCalls++;
+  if (unavailable) return new Response('', { status: 503 });
+  return String(url).includes('/workflows/')
+    ? Response.json({ workflow_runs: [{ id: 1, event: 'push', head_branch: 'main', head_repository: { full_name: exchangeEnv.GH_REPO } }] })
+    : Response.json({ artifacts: [{ id: artifactId, name: 'exchange-deals', expired: false, size_in_bytes: 100 }] });
+};
+const exchangeRequest = new Request('https://family.example/api/capture-status');
+const exchangeAt = (at, request = exchangeRequest) => exchangeCaptureStatus(request, exchangeEnv, { cache: edgeCache, fetchImpl: metadataFetch, now: at });
+assert.equal((await exchangeAt(now)).artifactId, 123); assert.equal(metadataCalls, 2);
+artifactId = 456;
+assert.equal((await exchangeAt(now + 29999)).artifactId, 123); assert.equal(metadataCalls, 2);
+assert.equal((await exchangeAt(now + 30000)).artifactId, 456); assert.equal(metadataCalls, 4, 'artifact publications are detected after the original 30-second budget');
+assert.equal((await exchangeAt(now + 30001, new Request('https://another-family.example/api/capture-status'))).artifactId, 456);
+assert.equal(metadataCalls, 6, 'families and origins never share an exchange identity cache');
+exchangeEnv.GH_REPO = 'org/another-repo';
+assert.equal((await exchangeAt(now + 30002)).artifactId, 456); assert.equal(metadataCalls, 8, 'repository identity is part of the cache key');
+unavailable = true;
+assert.equal((await exchangeAt(now + 60002)).reason, 'unverified'); assert.equal(metadataCalls, 9);
+assert.equal((await exchangeAt(now + 60003)).reason, 'unverified'); assert.equal(metadataCalls, 9, 'failed checks retain the same bounded request budget');
+edgeEntries.set(new URL('/api/bulk-block-deals', exchangeRequest.url).href, new Response('retained bytes', { headers: { etag: '"exchange-999"' } }));
+assert.equal((await exchangeAt(now + 60004)).artifactId, 999); assert.equal(metadataCalls, 9, 'the actual served archive overrides cached metadata, including failures');
+edgeEntries.delete(new URL('/api/bulk-block-deals', exchangeRequest.url).href);
+edgeEntries.set(new URL(`/api/_exchange-status-v1/${encodeURIComponent(exchangeEnv.GH_REPO)}`, exchangeRequest.url).href, new Response('corrupt'));
+unavailable = false;
+assert.equal((await exchangeAt(now + 60005)).artifactId, 456); assert.equal(metadataCalls, 11, 'corrupt metadata cache cannot suppress the live check');
 const health = {
   company: { version: 1, createdAt: stamp(-60000), lastRunFinishedAt: stamp(-60000), requestedFrom: '2025-01-01', requestedTo: '2026-10-29',
     companies: [{ ticker: 'CHECKED' }, { ticker: 'NEW' }], sources: {

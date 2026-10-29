@@ -145,7 +145,7 @@ jobs:
       - name: Verify operational filing health
         run: node scripts/verify-filings-health.mjs && node scripts/verify-prepared-capture-status.mjs && node scripts/verify-announcement-directory-fallback.mjs
       - name: Verify compact status in the native Worker runtime
-        run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-prepared-status-runtime.mjs'
+        run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-prepared-status-runtime.mjs && node scripts/verify-exchange-worker-runtime.mjs'
       - name: Verify capture watchdog
         run: node scripts/verify-capture-watchdog.mjs
       - name: Verify retained combined corporate actions and dynamic scope

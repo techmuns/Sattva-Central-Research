@@ -19,7 +19,7 @@ const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(1
 const archive = Buffer.concat([local, name, file, central, name, end]);
 const bundle = await build({ stdin: { contents: `import {handleExchangeDeals, exchangeCaptureStatus} from './worker/exchange-deals.mjs';
   export default { fetch: (request, env, ctx) => new URL(request.url).pathname === '/api/capture-status'
-    ? exchangeCaptureStatus(request, env).then(value => Response.json(value)) : handleExchangeDeals(request, env, ctx) };`,
+    ? exchangeCaptureStatus(request, env, { now: Number(new URL(request.url).searchParams.get('at')) || Date.now() }).then(value => Response.json(value)) : handleExchangeDeals(request, env, ctx) };`,
   resolveDir: fileURLToPath(new URL('../', import.meta.url)) }, bundle: true, write: false, format: 'esm', platform: 'browser' });
 let calls = 0, archiveReads = 0, metadataAvailable = true;
 const mf = new Miniflare({ workers: [{ name: 'exchange-delivery-test', modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-05-23',
@@ -40,12 +40,18 @@ const mf = new Miniflare({ workers: [{ name: 'exchange-delivery-test', modules: 
 }] });
 try {
   const url = new URL('/api/bulk-block-deals', await mf.ready);
-  const statusUrl = new URL('/api/capture-status', url);
+  const statusUrl = new URL('/api/capture-status', url), now = Date.now();
+  statusUrl.searchParams.set('at', now);
   assert.deepEqual(await (await fetch(statusUrl)).json(), { ok: true, capturedAt: null, artifactId: 99 });
   assert.equal(calls, 2, 'cold status reads only trusted GitHub metadata');
   assert.equal(archiveReads, 0, 'cold status never downloads the trade history');
   metadataAvailable = false;
+  statusUrl.searchParams.set('at', now + 29999);
+  assert.deepEqual(await (await fetch(statusUrl)).json(), { ok: true, capturedAt: null, artifactId: 99 });
+  assert.equal(calls, 2, 'repeat readers share the original 30-second metadata budget');
+  statusUrl.searchParams.set('at', now + 30000);
   assert.deepEqual(await (await fetch(statusUrl)).json(), { ok: false, capturedAt: null, artifactId: null, reason: 'unverified' });
+  assert.equal(calls, 3, 'expiry checks the upstream again and preserves its failure');
   metadataAvailable = true;
   const response = await fetch(url);
   assert.equal(response.headers.get('x-sattva-exchange-fallback'), null);

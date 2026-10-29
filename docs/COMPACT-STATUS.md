@@ -11,6 +11,9 @@ A preparation failure fails publication and cannot advance the successful baseli
 coverage, failures, fallbacks and alert-pool revisions retain their previous meaning.
 Preparation and request times are separate fields. The exchange artifact's small
 identity check remains live because that artifact can advance without a site upload.
+Its separate 30-second metadata cache preserves the previous upstream request budget;
+the actual cached bulk/block response always takes precedence. Failed checks remain
+explicit failures, and expiry rechecks GitHub without downloading the archive.
 The browser's visible/focus/reconnect checks, watchdog, dispatch cooldowns and
 collection schedules are unchanged. No history file is rewritten or shortened.
 
