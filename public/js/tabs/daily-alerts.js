@@ -645,9 +645,12 @@ function paint(ctx) {
  * same pixel offset would now point at a different event. Keep the first visible row plus its
  * offset beneath the sticky header, and ask scoreTable to include that row in its first slice.
  */
-function captureTablePosition(root) {
+export function captureTablePosition(root) {
   const scroller = root.querySelector('[data-table-scroll]');
   if (!scroller) return null;
+  // Another feed can paint before the previous virtual-row measurement finishes.
+  // Keep that correction's original reading position, not its transient geometry.
+  if (positionHold?.root === root && positionHold.scroller === scroller) return positionHold.position;
   const top = scroller.scrollTop;
   const left = scroller.scrollLeft;
   const rendered = scroller.querySelectorAll('tbody tr[data-row-key]').length;
@@ -688,35 +691,42 @@ function restoreTablePosition(root, position) {
       return;
     }
     const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
-    scroller.scrollTop += anchor.getBoundingClientRect().top - boundary - position.offset;
+    const delta = anchor.getBoundingClientRect().top - boundary - position.offset;
+    if (Math.abs(delta) >= 0.5) scroller.scrollTop += delta;
   } finally {
     scroller.style.scrollBehavior = inlineBehavior;
   }
 }
 
 let positionFrame = 0;
+let positionHold = null;
 let releasePositionInput = null;
 function cancelPositionCorrection() {
   if (positionFrame) cancelAnimationFrame(positionFrame);
   positionFrame = 0;
+  positionHold = null;
   releasePositionInput?.(); releasePositionInput = null;
 }
-function restoreTablePositionAfterPaint(root, position) {
+export function restoreTablePositionAfterPaint(root, position) {
   cancelPositionCorrection();
   restoreTablePosition(root, position);
   if (!position?.key || position.top <= 1) return;
   const scroller = root.querySelector('[data-table-scroll]');
-  // Natural row measurements and receipt badges settle after the synchronous data paint.
-  // Correct once afterwards; new input always wins over this short bookkeeping window.
+  // ResizeObserver, virtual spacers and receipt badges can settle after two frames.
+  // Cover that short cascade without accumulating drift between overlapping paints.
+  // The window is bounded and fresh reader input always cancels it immediately.
   const inputs = ['wheel', 'pointerdown', 'touchstart', 'keydown', 'input', 'click'];
   for (const type of inputs) root.addEventListener(type, cancelPositionCorrection, { capture: true, passive: true });
   releasePositionInput = () => { for (const type of inputs) root.removeEventListener(type, cancelPositionCorrection, true); };
-  positionFrame = requestAnimationFrame(() => {
-    positionFrame = requestAnimationFrame(() => {
-      cancelPositionCorrection();
-      if (scroller?.isConnected && root.querySelector('[data-table-scroll]') === scroller) restoreTablePosition(root, position);
-    });
-  });
+  positionHold = { root, scroller, position };
+  let frames = 0;
+  const correct = () => {
+    if (!scroller?.isConnected || root.querySelector('[data-table-scroll]') !== scroller) { cancelPositionCorrection(); return; }
+    restoreTablePosition(root, position);
+    if (++frames < 8) positionFrame = requestAnimationFrame(correct);
+    else cancelPositionCorrection();
+  };
+  positionFrame = requestAnimationFrame(correct);
 }
 
 /**

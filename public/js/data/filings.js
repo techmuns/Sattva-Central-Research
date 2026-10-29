@@ -195,6 +195,11 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       // values for portfolio companies which have no ticker.
       names: new Map(),
       identities: new Map(),
+      // Stable entity id -> the capture key its identity is filed under now; see `newsIdentity`.
+      // `identityRevision` moves when an identity other keys' rows are read through changes: such
+      // a row is not described by its own bucket's entry in the rows() snapshot.
+      entityKeys: new Map(),
+      identityRevision: 0,
       // Companies the committed snapshot covers. They are not re-walked: the snapshot is the bulk
       // source and is refreshed on a schedule, and its age is reported as `capturedAt` rather than
       // hidden by 603 live requests.
@@ -381,7 +386,8 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       return [key, list, kind === 'news' ? state.identities.get(key) : null];
     });
     const exchangeRevision = kind === 'insider' ? exchangeDeals.revision() : null;
-    if (rowSnapshot?.state === state && rowSnapshot.exchangeRevision === exchangeRevision && parts.length === rowSnapshot.parts.length &&
+    if (rowSnapshot?.state === state && rowSnapshot.exchangeRevision === exchangeRevision &&
+      rowSnapshot.identityRevision === state.identityRevision && parts.length === rowSnapshot.parts.length &&
       parts.every((part, i) => part.every((value, j) => value === rowSnapshot.parts[i][j]))) return rowSnapshot.value;
     const out = [];
     for (const [key, list] of state.rows) {
@@ -393,14 +399,30 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
           // Keep fallback identity objects stable so repeated renders reuse the pure attribution
           // result. Reviewed snapshot/live identities replace this fallback when they arrive.
           if (!state.identities.has(key)) state.identities.set(key, { ticker, name: state.names.get(key) || row.company || row.query });
-          const identity = state.identities.get(key);
-          out.push(attributeNewsRow(row, identity));
+          out.push(attributeNewsRow(row, newsIdentity(state, key, row)));
         } else out.push(projected(row, ticker));
       }
     }
     const value = (kind === 'insider' ? exchangeDeals.combined(out) : out).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    rowSnapshot = { state, parts, value, exchangeRevision };
+    rowSnapshot = { state, parts, value, exchangeRevision, identityRevision: state.identityRevision };
     return value;
+  }
+
+  // A NEWS ROW IS READ UNDER THE IDENTITY ITS ENTITY ID BELONGS TO NOW, and only then under the key
+  // it was captured under — the order the retained archive reads it in (`withNewsHistory`). A
+  // ticker renamed under an unchanged ISIN (HEG -> HEGAM, 28 October 2026) leaves the old key's
+  // rows in the head for the rest of its window. Read by key they kept the old ticker while the
+  // archive's copies of the same articles took the new one, so the full history held two rows per
+  // article for one company and a period the head covers held one: two answers to whose row this
+  // is. Read here as the archive reads them, both are one company and dedupe to one row.
+  function newsIdentity(current, key, row) {
+    const owner = row.entityId ? current.entityKeys.get(row.entityId) : null;
+    return owner && current.identities.get(owner) || current.identities.get(key);
+  }
+  // A key's identity changed. Its own bucket's rows() part already says so; rows read through it
+  // from another key only do through the revision, so move it only when some entity names this key.
+  function readThrough(key) {
+    for (const owner of state.entityKeys.values()) if (owner === key) { state.identityRevision++; return; }
   }
 
   // WARM THE ATTRIBUTION OF EVERY HELD ROW IN TIME-SLICED CHUNKS. `rows()` attributes each row
@@ -418,9 +440,8 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
         const row = list[0] || {};
         current.identities.set(key, { ticker: row.ticker || (row.entityId ? null : key), name: current.names.get(key) || row.company || row.query });
       }
-      const identity = current.identities.get(key);
       for (const row of list) {
-        attributeNewsRow(row, identity);
+        attributeNewsRow(row, newsIdentity(current, key, row));
         if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); if (state !== current) return; }
       }
     }
@@ -531,8 +552,12 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
           }
           // Reopening News must not invalidate every article's attribution cache just because
           // the picker constructed equivalent identity objects. Real enrichment changes still do.
-          if (JSON.stringify(previous) !== JSON.stringify(merged)) state.identities.set(t, merged);
-        } else state.identities.set(t, item);
+          if (JSON.stringify(previous) !== JSON.stringify(merged)) { state.identities.set(t, merged); readThrough(t); }
+        } else {
+          state.identities.set(t, item);
+          // A filing feed reads no identity, so a scope label leaves its projection untouched.
+          if (kind === 'news') readThrough(t);
+        }
       }
     }
     state.wanted = wanted;
@@ -844,7 +869,8 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
         // then re-attributed every head row of all 116 portfolio identities — 80,762 rows on the
         // 2 October capture — and every cache keyed on those rows downstream missed at once.
         const held = state.identities.get(key);
-        if (held !== entity && JSON.stringify(held) !== JSON.stringify(entity)) state.identities.set(key, entity);
+        if (held !== entity && JSON.stringify(held) !== JSON.stringify(entity)) { state.identities.set(key, entity); readThrough(key); }
+        if (entity.entityId && state.entityKeys.get(entity.entityId) !== key) { state.entityKeys.set(entity.entityId, key); state.identityRevision++; }
         if (entity.name) state.names.set(key, entity.name);
       }
     }

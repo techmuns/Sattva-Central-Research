@@ -267,7 +267,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
+        run: node scripts/verify-reading-anchor-ui.mjs && node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
       - name: Verify private alert access, pagination and public-cache exclusion
         if: ${{ matrix.part == 2 }}
         env:
