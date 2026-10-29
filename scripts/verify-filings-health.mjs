@@ -28,7 +28,11 @@ const healthy = {
 };
 const assess = (value) => {
   const report = assessFilingsHealth(value, { now });
-  assert.deepEqual(healthFromPlan(prepareHealthPlan(value, { now }), { now }), report, 'Prepared health preserves the existing complete source assessment');
+  const plan = prepareHealthPlan(value, { now });
+  assert.deepEqual(healthFromPlan(plan, { now }), report, 'Prepared health preserves the existing complete source assessment');
+  const boundaries = new Set([now + 49 * 3600000]);
+  for (const steps of Object.values(plan.sources)) for (const { at } of steps) for (const delta of [-1, 0, 1]) if (at + delta >= now) boundaries.add(at + delta);
+  for (const at of boundaries) assert.deepEqual(healthFromPlan(plan, { now: at }), assessFilingsHealth(value, { now: at }), 'Existing failure fixtures retain their exact future ageing');
   return report;
 };
 assert.equal(assess(healthy).status, 'healthy');
