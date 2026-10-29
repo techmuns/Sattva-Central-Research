@@ -944,3 +944,38 @@ html[data-theme] [data-chatter-panel] [data-score-table] tbody tr { border-color
 /* NEW: a company that arrived on top while the AI Alerts list was open (tabs/ai-alerts.js, `steady`)
    — the same chip All Alerts gives an arrival. Cleared by the reader's own re-sort or filter. */
 .ai-new-chip { display: inline-block; margin-right: 6px; padding: 1px 5px; border-radius: 4px; background: rgb(var(--surface-indigo-100, 224 231 255)); color: rgb(var(--text-indigo-700, 67 56 202)); font-size: 9px; font-weight: 800; letter-spacing: 0.06em; line-height: 14px; text-transform: uppercase; vertical-align: 1px; }
+
+
+/* AI Alerts search (ui/ai-alert-search.js) — the same block as Glow's. */
+/* One clear control: the box has its own ×, so the browser's built-in one is hidden. */
+.ai-alert-search-box input[type="search"]::-webkit-search-cancel-button, .ai-alert-search-box input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.ai-alert-search { position: relative; }
+/* The typeahead drops from the box it belongs to (origin top), quick and once: it does not
+   re-animate while the reader types into an open list. */
+.ai-suggest { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: max(100%, 320px); max-width: min(420px, calc(100vw - 32px)); max-height: 320px; overflow-y: auto; padding: 4px; border-radius: 12px; background: rgb(var(--surface-white, 255 255 255)); box-shadow: 0 0 0 1px rgb(var(--edge-slate-200, 228 221 205)), 0 12px 28px -8px rgb(15 23 42 / 0.18); transform-origin: top left; }
+.ai-suggest:not([hidden]) { animation: ai-suggest-in 150ms cubic-bezier(0.23, 1, 0.32, 1); }
+@keyframes ai-suggest-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+.ai-suggest-option { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.ai-suggest-option[aria-selected="true"] { background: rgb(var(--surface-indigo-50, 238 242 255)); }
+.ai-suggest-name { overflow: hidden; color: rgb(var(--text-slate-900, 26 24 48)); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.ai-suggest-meta { color: rgb(var(--text-slate-500, 107 104 128)); font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+.ai-search-mark { border-radius: 3px; background: rgb(var(--surface-indigo-100, 224 231 255)); color: inherit; box-shadow: 0 0 0 1px rgb(var(--surface-indigo-100, 224 231 255)); }
+.ai-search-note { margin: -2px 0 10px; color: rgb(var(--text-slate-500, 107 104 128)); font-size: 12px; }
+.ai-search-note button { margin-left: 4px; border-radius: 6px; padding: 1px 2px; color: rgb(var(--text-indigo-700, 67 56 202)); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1); }
+.ai-search-note button:active { transform: scale(0.97); }
+.ai-search-note button:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .ai-suggest-option:hover { background: rgb(var(--surface-slate-50, 250 248 241)); }
+  .ai-suggest-option[aria-selected="true"]:hover { background: rgb(var(--surface-indigo-50, 238 242 255)); }
+}
+@media (prefers-reduced-motion: reduce) { .ai-suggest:not([hidden]) { animation: none; } }
+/* "↑ N new alerts": arrivals waiting while the reader is scrolled into the list. The slot takes no
+   height and sticks to the top of the view, so the pill floats over the list without moving it. */
+.ai-new-pill-slot { position: sticky; top: 12px; z-index: 30; display: flex; justify-content: center; height: 0; }
+.ai-new-pill { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px 0 12px; border: 0; border-radius: 999px; background: rgb(var(--surface-indigo-600, 79 70 229)); color: rgb(255 255 255); font-size: 12.5px; font-weight: 700; box-shadow: 0 8px 20px -6px rgb(15 23 42 / 0.35); cursor: pointer; animation: ai-pill-in 200ms cubic-bezier(0.23, 1, 0.32, 1); transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1); }
+.ai-new-pill svg { width: 14px; height: 14px; }
+.ai-new-pill:active { transform: scale(0.97); }
+.ai-new-pill:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 3px; }
+@keyframes ai-pill-in { from { opacity: 0; transform: translateY(-8px) scale(0.96); } to { opacity: 1; transform: none; } }
+@media (hover: hover) and (pointer: fine) { .ai-new-pill:hover { background: rgb(var(--surface-indigo-700, 67 56 202)); } }
+@media (prefers-reduced-motion: reduce) { .ai-new-pill { animation: none; } }

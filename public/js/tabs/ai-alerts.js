@@ -36,6 +36,7 @@ import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestAlertSignal, latestAlertEvent, sortAlertCards, matchesSearch } from '../ui/ai-alert-utils.js';
+import { rankSearch, suggestCompanies, highlightHtml } from '../ui/ai-alert-search.js';
 import { privatePortfolioContext, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState } from '../research/portfolio-bridge.js';
 export { relativeAge } from '../ui/ai-alert-utils.js';
 
@@ -63,6 +64,11 @@ let displayedCards = [];
 let cardGrid = null;
 let resetCardScroll = false;
 let query = '';
+// The search's own state: whether the alerts that merely MENTION a named company are shown, the
+// last ranking (so the event-type counts describe the same results), and the typeahead's cursor.
+let includeMentions = false;
+let lastSearch = null;
+let suggestions = [], suggestActive = -1, suggestOpen = false;
 let normalSavedReading = null;
 export function getSavedView() {
   return { aiPriority: filter, aiQuery: query, aiSort: sortOrder, aiEventTypes: [...eventFilters.selected], aiHideRoutine: eventFilters.hideRoutine };
@@ -142,11 +148,13 @@ function steadyCandidates(candidates, signature) {
   const missing = [...steady.held].filter(([key]) => !present.has(key)).map(([, card]) => card);
   return missing.length ? [...candidates, ...missing] : candidates;
 }
-function steadyOrder(sorted, signature, candidates) {
+// Whether the reader is at the top of the list: its first row is on screen or below it.
+const readerAtTop = ctx => { const results = ctx?.root.querySelector('[data-ai-results]'); return !results || results.getBoundingClientRect().top >= -4; };
+function steadyOrder(sorted, signature, candidates, atTop = true) {
   const held = new Map(candidates.map(card => [listKey(card), card]));
   if (!steady || steady.signature !== signature || steady.day !== report?.day) {
     steady = { signature, day: report?.day, keys: sorted.map(listKey), signals: new Map(sorted.map(card => [listKey(card), signalOf(card)])),
-      fresh: new Set(), held, locked: false, arrived: 0 };
+      fresh: new Set(), held, locked: false, arrived: 0, waiting: 0, reveal: false };
     return sorted;
   }
   steady.held = held;
@@ -155,16 +163,27 @@ function steadyOrder(sorted, signature, candidates) {
     for (const card of sorted) steady.signals.set(listKey(card), signalOf(card));
     return sorted;
   }
+  // A reader scrolled into the list is not interrupted at all: a new company WAITS behind the
+  // "new alerts" pill (nothing is inserted above them — in Detailed's two-column grid one card on
+  // top re-flows every card below it into the other column), and a listed company with a newer
+  // alert is marked NEW where it stands. At the top, or on the pill, arrivals stack on top.
+  const holdBack = !atTop && !steady.reveal;
   const placed = new Set(steady.keys), arrived = [], arrivedKeys = new Set(), byKey = new Map();
+  let waiting = 0;
   for (const card of sorted) {
     const key = listKey(card), signal = signalOf(card), was = steady.signals.get(key);
     byKey.set(key, card);
-    if (!placed.has(key) || (signal && was !== undefined && signal > was)) { arrived.push(card); arrivedKeys.add(key); }
+    const isNew = !placed.has(key), newer = !isNew && signal && was !== undefined && signal > was;
+    if (isNew && holdBack) { waiting++; continue; }
+    if (isNew || (newer && !holdBack)) { arrived.push(card); arrivedKeys.add(key); }
+    else if (newer) steady.fresh.add(key);
     steady.signals.set(key, signal);
   }
   const next = [...arrived, ...steady.keys.filter(key => byKey.has(key) && !arrivedKeys.has(key)).map(key => byKey.get(key))];
   for (const key of arrivedKeys) steady.fresh.add(key);
   steady.arrived += arrived.length;
+  steady.waiting = waiting;
+  steady.reveal = false;
   steady.keys = next.map(listKey);
   return next;
 }
@@ -311,6 +330,15 @@ export function render(ctx) {
     const reading = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
     for (const type of reading) window.addEventListener(type, lockSteady, { passive: true });
     unsubs.push(() => { for (const type of reading) window.removeEventListener(type, lockSteady); });
+    // Scrolling back up to the top lets waiting arrivals in on its own. Only a count is read per
+    // scroll; a paint is asked for once, and only while something is waiting.
+    let revealFrame = 0;
+    const revealAtTop = () => {
+      if (!steady?.waiting || revealFrame) return;
+      revealFrame = requestAnimationFrame(() => { revealFrame = 0; if (ctxRef && steady?.waiting && readerAtTop(ctxRef)) paint(ctxRef); });
+    };
+    window.addEventListener('scroll', revealAtTop, { passive: true });
+    unsubs.push(() => { window.removeEventListener('scroll', revealAtTop); cancelAnimationFrame(revealFrame); });
     unsubs.push(onCaptureLanded(sourceChanged));
     unsubs.push(alerts.onChange(sourceChanged));
     unsubs.push(onPortfolioConnection((connected) => {
@@ -529,10 +557,21 @@ function paint(ctx) {
   const signature = viewSignature(ctx);
   if (resetCardScroll) steady = null;
   const candidates = steadyCandidates(query.trim() || eventFilters.selected.length ? report?.allCards || [] : report?.cards || [], signature);
-  const matches = candidates.map(eventView).filter(card => card && matchesSearch(card, query));
+  const viewed = candidates.map(eventView).filter(Boolean);
+  // The company first: a query that names companies shows those companies, best match first, and
+  // keeps the alerts that only mention it one click away (ui/ai-alert-search.js).
+  const search = query.trim() ? rankSearch(viewed, query, { includeMentions }) : null;
+  lastSearch = search && { keys: new Set(search.cards.map(listKey)) };
+  const matches = search ? search.cards : viewed;
   displayedCards = matches;
   const arrivedBefore = steady?.arrived || 0;
-  const cards = report ? steadyOrder(sortAlertCards(filteredCards(matches), effectiveSort()), signature, candidates) : [];
+  const sorted = sortAlertCards(filteredCards(matches), effectiveSort());
+  // Search results read strongest match first; the chosen sort breaks ties.
+  const relevance = search && new Map(search.cards.map(card => [listKey(card), search.score(card)]));
+  const ranked = relevance ? sorted.map((card, i) => ({ card, i, score: relevance.get(listKey(card)) || 0 }))
+    .sort((a, b) => b.score - a.score || a.i - b.i).map(entry => entry.card) : sorted;
+  const waitingBefore = steady?.waiting || 0;
+  const cards = report ? steadyOrder(ranked, signature, candidates, readerAtTop(ctx)) : [];
   // The first completed read — with its holding sizes, which the default sort reads — establishes
   // the list; from then on it holds still.
   if (report && !collecting && !sizesLoading && awaitingBook === null && steady) steady.locked = true;
@@ -544,13 +583,25 @@ function paint(ctx) {
       <div data-ai-toolbar><div data-ai-controls class="ai-alert-toolbar">
         <div data-ai-priorities class="ai-alert-priorities" role="group" aria-label="Filter AI Alerts by priority"></div>
         <div class="ai-alert-tools">${searchMarkup()}<div data-ai-view-controls class="ai-alert-view-controls text-xs text-slate-500"></div></div>
-      </div><div data-ai-filter-summary></div></div><span class="sr-only" data-ai-arrivals role="status" aria-live="polite" aria-atomic="true"></span><div data-ai-results></div></div>`;
+      </div><div data-ai-filter-summary></div></div><div data-ai-search-note></div><div data-ai-new-pill class="ai-new-pill-slot"></div><span class="sr-only" data-ai-arrivals role="status" aria-live="polite" aria-atomic="true"></span><div data-ai-results></div></div>`;
     const input = ctx.root.querySelector('[data-ai-search]');
     input.value = query;
     input.addEventListener('input', () => {
       query = input.value;
+      includeMentions = false;
       resetCardScroll = true;
       paint(ctxRef);
+      openSuggestions();
+    });
+    input.addEventListener('focus', openSuggestions);
+    input.addEventListener('blur', closeSuggestions);
+    input.addEventListener('keydown', onSearchKey);
+    const list = ctx.root.querySelector('[data-ai-suggest]');
+    // Pressing an option must not blur the input first, or the list closes under the pointer.
+    list.addEventListener('pointerdown', event => event.preventDefault());
+    list.addEventListener('click', event => {
+      const option = event.target.closest('[data-ai-suggest-index]');
+      if (option) pickSuggestion(Number(option.dataset.aiSuggestIndex));
     });
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
@@ -566,6 +617,10 @@ function paint(ctx) {
     ['[data-ai-priorities]', toolbar.priorities],
     ['[data-ai-view-controls]', toolbar.view],
     ['[data-ai-filter-summary]', report ? eventFilterSummary() : ''],
+    ['[data-ai-search-note]', report ? searchNote(search) : ''],
+    ['[data-ai-new-pill]', steady?.waiting ? `<button type="button" class="ai-new-pill" data-ai-reveal>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+      ${steady.waiting} new ${steady.waiting === 1 ? 'alert' : 'alerts'}</button>` : ''],
   ]) {
     const node = ctx.root.querySelector(selector);
     reconcileMarkup(node, markup);
@@ -594,10 +649,9 @@ function paint(ctx) {
     const delta = anchor.getBoundingClientRect().top - anchorTop;
     if (Math.abs(delta) > 1) window.scrollBy(0, delta);
   }
-  if (arrivedNow > 0) {
-    const live = ctx.root.querySelector('[data-ai-arrivals]');
-    if (live) live.textContent = `${arrivedNow} new ${arrivedNow === 1 ? 'alert' : 'alerts'} added at the top of the list.`;
-  }
+  const live = ctx.root.querySelector('[data-ai-arrivals]');
+  if (live && arrivedNow > 0) live.textContent = `${arrivedNow} new ${arrivedNow === 1 ? 'alert' : 'alerts'} added at the top of the list.`;
+  else if (live && (steady?.waiting || 0) > waitingBefore) live.textContent = `${steady.waiting} new ${steady.waiting === 1 ? 'alert is' : 'alerts are'} waiting at the top of the list.`;
 }
 
 /**
@@ -623,14 +677,96 @@ function searchMarkup() {
     <label for="ai-alert-search" class="sr-only">Search AI Alerts</label>
     <div class="ai-alert-search-box rounded-xl bg-white ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-indigo-500">
       <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <input id="ai-alert-search" data-ai-search type="search" autocomplete="off" placeholder="Search alerts…" class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400">
+      <input id="ai-alert-search" data-ai-search type="search" autocomplete="off" spellcheck="false" placeholder="Search a company or topic…"
+        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ai-alert-suggest"
+        class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400">
       <button type="button" data-ai-clear aria-label="Clear search" title="Clear search" class="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-indigo-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     </div>
+    <div id="ai-alert-suggest" data-ai-suggest class="ai-suggest" role="listbox" aria-label="Companies" hidden></div>
   </div>`;
+}
+
+// THE TYPEAHEAD. The companies the words name, strongest first, from the alerts in this view; the
+// arrows move, Enter picks, Escape closes (and, closed, clears). Picking a company searches for it by
+// name, which the ranking reads as that company exactly. Typing never moves focus.
+function suggestionPool() {
+  return filteredCards(report?.allCards || []);
+}
+function openSuggestions() {
+  const input = ctxRef?.root.querySelector('[data-ai-search]');
+  if (!input || document.activeElement !== input) return;
+  suggestions = query.trim() ? suggestCompanies(suggestionPool(), query) : [];
+  // One suggestion that already IS the query has nothing left to offer.
+  const settled = suggestions.length === 1 && suggestions[0].score === 100 && suggestions[0].card.company.trim().toLowerCase() === query.trim().toLowerCase();
+  suggestOpen = suggestions.length > 0 && !settled;
+  suggestActive = suggestOpen ? Math.min(Math.max(suggestActive, -1), suggestions.length - 1) : -1;
+  renderSuggestions();
+}
+function closeSuggestions() {
+  suggestOpen = false; suggestActive = -1;
+  renderSuggestions();
+}
+function renderSuggestions() {
+  const root = ctxRef?.root;
+  const list = root?.querySelector('[data-ai-suggest]');
+  const input = root?.querySelector('[data-ai-search]');
+  if (!list || !input) return;
+  input.setAttribute('aria-expanded', String(suggestOpen));
+  if (!suggestOpen) { list.hidden = true; input.removeAttribute('aria-activedescendant'); return; }
+  reconcileMarkup(list, suggestions.map(({ card }, i) => `<div role="option" id="ai-suggest-${i}" data-ai-suggest-index="${i}" class="ai-suggest-option" aria-selected="${i === suggestActive}">
+      <span class="ai-suggest-name">${highlightHtml(card.company, query)}</span>
+      <span class="ai-suggest-meta">${highlightHtml(card.ticker || (card.familyPrivate ? 'Private company' : 'No ticker'), query)}${card.badge?.label ? ` · ${escapeHtml(card.badge.label)}` : ''}</span>
+    </div>`).join(''));
+  list.hidden = false;
+  if (suggestActive >= 0) input.setAttribute('aria-activedescendant', `ai-suggest-${suggestActive}`);
+  else input.removeAttribute('aria-activedescendant');
+  list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+}
+function pickSuggestion(index) {
+  const pick = suggestions[index];
+  if (!pick || !ctxRef) return;
+  query = pick.card.company;
+  includeMentions = false;
+  const input = ctxRef.root.querySelector('[data-ai-search]');
+  if (input) input.value = query;
+  closeSuggestions();
+  resetCardScroll = true;
+  paint(ctxRef);
+}
+function onSearchKey(event) {
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    if (!suggestOpen) openSuggestions();
+    if (!suggestOpen) return;
+    event.preventDefault();
+    const n = suggestions.length;
+    suggestActive = event.key === 'ArrowDown' ? (suggestActive + 1) % n : (suggestActive - 1 + n) % n;
+    renderSuggestions();
+  } else if (event.key === 'Enter') {
+    if (suggestOpen && suggestActive >= 0) { event.preventDefault(); pickSuggestion(suggestActive); }
+    else closeSuggestions();
+  } else if (event.key === 'Escape') {
+    if (suggestOpen) { event.preventDefault(); closeSuggestions(); }
+    else if (query) { event.preventDefault(); clearSearch(); }
+  } else if (event.key === 'Tab') closeSuggestions();
+}
+
+// When a query names companies, the alerts that only mention it are counted here, a click away.
+function searchNote(search) {
+  // No company in this view is named by the words (a topic, or a company outside this view): say
+  // that what follows mentions them, so a reader never takes a mention for the company itself.
+  if (search && !search.named && search.cards.length) return `<p class="ai-search-note">Alerts that mention “${escapeHtml(query.trim())}”</p>`;
+  if (!search?.named || !search.mentions.length) return '';
+  const n = search.mentions.length;
+  const alerts = n === 1 ? '1 alert that only mentions it' : `${n} alerts that only mention it`;
+  const label = includeMentions ? `Hide the ${alerts}` : `Also show ${n === 1 ? '1 alert that mentions it' : `${n} alerts that mention it`}`;
+  return `<p class="ai-search-note">Best ${search.cards.length - (includeMentions ? n : 0) === 1 ? 'match' : 'matches'} for “${escapeHtml(query.trim())}”.
+    <button type="button" data-ai-mentions aria-pressed="${includeMentions}">${label}</button></p>`;
 }
 
 function clearSearch() {
   query = '';
+  includeMentions = false;
+  closeSuggestions();
   resetCardScroll = true;
   const input = ctxRef?.root.querySelector('[data-ai-search]');
   if (input) input.value = '';
@@ -952,7 +1088,7 @@ function cardMarkup(card, scope, day, archived = false) {
       <div class="flex-1 p-5">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <h3 class="font-display truncate text-lg font-extrabold leading-tight text-slate-900">${escapeHtml(card.company)}</h3>
+            <h3 class="font-display truncate text-lg font-extrabold leading-tight text-slate-900">${query.trim() ? highlightHtml(card.company, query) : escapeHtml(card.company)}</h3>
             <div class="mt-0.5 truncate text-[11px] font-bold uppercase tracking-wider text-slate-400">
               ${isNew ? NEW_CHIP : ''}${escapeHtml(card.ticker || 'No exchange ticker')}${card.sector ? ` · ${escapeHtml(card.sector)}` : ''}${card.holding ? ' · In portfolio' : ''}
             </div>
@@ -1216,6 +1352,15 @@ function wire(ctx) {
   });
   click('[data-ai-reset-events]', () => { eventFilters = { selected: [], hideRoutine: false }; changeEventFilters(ctxRef); });
   click('[data-ai-empty-clear]', clearSearch);
+  click('[data-ai-mentions]', () => { includeMentions = !includeMentions; resetCardScroll = true; paint(ctxRef); });
+  click('[data-ai-new-pill]', (event) => {
+    if (!event.target.closest('[data-ai-reveal]') || !steady) return;
+    // Take the reader to the top of the list, then let what was waiting stack on top in view.
+    const results = ctx.root.querySelector('[data-ai-results]');
+    if (results) window.scrollTo({ top: Math.max(0, results.getBoundingClientRect().top + window.scrollY - 140) });
+    steady.reveal = true;
+    paint(ctxRef);
+  });
   click('[data-ai-controls]', (event) => {
     const button = event.target.closest('[data-ai-filter]');
     if (!button) return;

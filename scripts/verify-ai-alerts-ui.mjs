@@ -275,7 +275,7 @@ try {
   assert.match(await renderedText(card('A00').locator('[data-ai-context]')), /Related context/);
   assert.equal(await card('A00').locator('[data-ai-context]').getAttribute('title'), 'Context only; it does not add alert priority.');
   assert.equal(await card('A10').count(), 0, 'target starts beyond the first page');
-  const search = page.getByRole('searchbox', { name: 'Search AI Alerts' });
+  const search = page.getByRole('combobox', { name: 'Search AI Alerts' });
   await search.fill('lithium supply');
   assert.equal(await page.locator('[data-ai-card]').count(), 1);
   assert.equal(await card('A10').count(), 1, 'search finds hidden evidence beyond page one');
