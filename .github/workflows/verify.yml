@@ -220,7 +220,8 @@ jobs:
     runs-on: ubuntu-latest
     # The complete suite now exceeds one runner's 30-minute budget. Keep every
     # check, split the independent fixtures, and require all three parts below.
-    timeout-minutes: 20
+    # Retain every full-history fixture; the growing browser suite needs this budget.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
