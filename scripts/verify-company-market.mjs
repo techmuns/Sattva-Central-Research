@@ -79,7 +79,7 @@ const fetcher = async url => {
   assert(String(url).endsWith(`/${revision}/public/data/company-quotes.json`));
   return Response.json(quotes);
 };
-const request = new Request('https://glow.test/api/technicals/prices');
+const request = new Request('https://sattva.test/api/technicals/prices');
 const response = await handleTechnicals(request, {}, { fetcher, edgeCache: null });
 assert.equal(response.status, 200); assert.deepEqual(await response.json(), quotes);
 assert.equal(response.headers.get('x-sattva-revision'), revision);
