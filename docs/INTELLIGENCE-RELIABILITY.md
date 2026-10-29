@@ -615,3 +615,18 @@ Optional story-check status changes do not invalidate the evidence revision or r
 and ranking. Failed checks remain visible in the status heading; new source records and accepted
 grouping decisions still update the complete view. Tests distinguish status publications from
 actual decision changes and verify that a status-only update performs no new assembly.
+
+### CMP on opening and market-open continuity (29 October 2026)
+
+Quote runners establish ownership from 06:00 IST on trading weekdays and queue one
+successor before exiting. Pre-open work prepares identities; broker sampling still
+uses the existing exchange window and durable source budgets. A runner already
+waiting before 09:15 must start minute sampling when the market opens. Scheduled
+starts remain a fallback and are subject to GitHub availability.
+
+Opening and returning readers automatically check the shared quote snapshot every
+15 visible seconds. Saved source prices can paint during the network read; a late
+disk response cannot replace a newer network result. Upstox prices older than two
+minutes during trading show Saved with the actual quote time, even after a 304.
+Outages retain usable prices and explicit partial coverage. This is sampled CMP,
+not a tick-by-tick feed or a guarantee that every issuer trades each minute.

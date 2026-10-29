@@ -20,3 +20,20 @@ const slowArchive=fixture();let archiveStarted=false,archiveFinished=false,hando
 slowArchive.local.publishArchive=async()=>{archiveStarted=true;const before=slowArchive.stats().quotes;await delay(40);assert(slowArchive.stats().quotes>before,'History publication does not block minute sampling');archiveFinished=true;};
 slowArchive.options.archiveInterval=25;slowArchive.options.handover=async()=>{handovers++;};await runBreakoutRunner(slowArchive.local,slowArchive.options);assert(archiveStarted&&archiveFinished);assert.equal(handovers,1);assert(slowArchive.stats().publications>=3,'Current generations publish independently of slower history');
 console.log('PASS GitHub quote orchestration: acknowledged history before source work, independent minute collection during slow fallback, retained partial progress and no continuing source work after publication failure');
+
+// Reproduce an owner starting before 09:15, without waiting on a real market.
+const open=Date.parse('2026-10-29T09:15:00+05:30'),wall=performance.now(),warmEvents=[],warmState=new Map();
+const warmNow=()=>open-30000+Math.floor((performance.now()-wall)*1000);
+const warmed={storage:{get:async key=>warmState.get(key),put:async(key,value)=>warmState.set(key,value)},
+ store:{readFallback:()=>({version:1,state:'complete',rows:[],targets:[]})},
+ client:async input=>{if(input.action==='inventory')warmEvents.push(['inventory',warmNow()]);return {ok:true};},beginCycle:()=>{},
+ primary:{wake:async()=>{assert(warmNow()>=open,'No broker sampling before the exchange opens');warmEvents.push(['quote',warmNow()]);}},
+ publish:async()=>({ok:true})};
+await runBreakoutRunner(warmed,{now:warmNow,runWindow:120000,minuteInterval:10000,publishInterval:15000,
+ sleep:ms=>delay(Math.max(1,ms/1000)),handover:async()=>warmEvents.push(['handover',warmNow()]),
+ discover:async()=>({targets:[{ticker:'TEST'}],discoveryFailed:false}),
+ collect:async()=>{assert(warmNow()>=open);warmEvents.push(['fallback',warmNow()]);return {};}});
+assert(warmEvents.some(([kind,at])=>kind==='inventory'&&at<open),'Prepare identities before opening');
+assert(warmEvents.some(([kind,at])=>kind==='quote'&&at>=open&&at<open+60000),'A pre-open owner starts quotes within the first minute');
+assert.equal(warmEvents.filter(([kind])=>kind==='handover').length,1,'Queue only one successor');
+console.log('PASS pre-open runner stays alive, warms identities and starts minute quotes across the opening boundary');

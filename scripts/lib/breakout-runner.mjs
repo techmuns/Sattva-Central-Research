@@ -1,19 +1,30 @@
 import {marketWindow,BREAKOUT_INTERVAL_MS} from '../../public/js/data/breakout-live-shared.js';
+import {quoteRunnerActive} from './breakout-session.mjs';
 import {prepareBreakoutCapture,collectBreakouts} from '../collect-breakouts.mjs';
 
 // One runner owns the saved store. The independent loops retain minute quotes
 // while the slower fallback walk waits on its providers. Publications serialize.
 export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms)),runWindow=45*60000,minuteInterval=60000,publishInterval=60000,archiveInterval=15*60000,collect=collectBreakouts,notify=async()=>{},handover=async()=>{},token='',checkLevels=async()=>{}}={}) {
  if(typeof discover!=='function'||!Number.isSafeInteger(runWindow)||runWindow<1||runWindow>50*60000)throw Error('Invalid quote runner window');
- let stopped=false,firstError=null,partial=false,fallbackCycle=0,version=0,publishedVersion=-1,minuteVersion=0;const started=now(),deadline=started+runWindow,active=marketWindow(started).collect;
+ let stopped=false,firstError=null,partial=false,fallbackCycle=0,version=0,publishedVersion=-1,minuteVersion=0;const started=now(),deadline=started+runWindow,active=quoteRunnerActive(started);
  const wait=async ms=>{let left=ms;while(left>0&&!stopped){const part=Math.min(left,1000);await sleep(part);left-=part;}};
  const publish=async()=>{const revision=version,saved=await local.publish();publishedVersion=revision;if(!local.publishArchive)try{await notify(saved);}catch{console.warn('Prepared quotes saved; automatic static delivery request was unavailable. Scheduled deployment checks remain active.');}return saved;};
  const archive=async()=>{try{const saved=await local.publishArchive();await notify(saved);}catch{partial=true;console.warn('Historical reader publication is delayed; the complete restart history remains in the live checkpoint.');}};
  const levels=async()=>{try{const result=await checkLevels();partial||=result?.failed===true;}catch{partial=true;console.warn('Private price-level checks are unavailable; independent stock-price sampling continues.');}};
  const guard=task=>task.catch(error=>{firstError||=error;stopped=true;});
  async function fallback(){
+  let warmedAt = -Infinity;
   do{
    const at=now(),previous=local.store.readFallback(),state=await local.storage.get('github-breakout-fallback')||{};
+   if(active && !marketWindow(at).collect){
+    // Warm the current inventory without fetching quotes outside exchange hours.
+    if(at-warmedAt>=BREAKOUT_INTERVAL_MS)try{
+     const targets=await discover(previous);
+     await local.client({action:'inventory',targets:targets.targets,discoveryFailed:targets.discoveryFailed});
+     warmedAt=at;
+    }catch{partial=true;warmedAt=at;}
+    await wait(Math.min(minuteInterval,Math.max(1,deadline-now())));continue;
+   }
    const last=state.lastAttemptAt||Date.parse(previous.startedAt)||0;
    if(last>at-BREAKOUT_INTERVAL_MS&&active){await wait(Math.min(last+BREAKOUT_INTERVAL_MS-at,Math.max(1,deadline-at)));continue;}
    try{
@@ -28,17 +39,17 @@ export async function runBreakoutRunner(local,{discover,now=Date.now,sleep=ms=>n
    }catch{partial=true;await local.storage.put('github-breakout-fallback',{lastAttemptAt:at,lastCompletedAt:now(),reason:'unavailable',failed:true});console.warn('Fallback collection is unavailable; independent minute sampling continues.');}
    version++;if(!active)break;
    await wait(Math.max(1,Math.min(at+BREAKOUT_INTERVAL_MS,deadline)-now()));
-  }while(!stopped&&now()<deadline-10*60000);
+  }while(!stopped&&now()<deadline && quoteRunnerActive(now()) && (!marketWindow(now()).collect || now()<deadline-10*60000));
  }
  await publish(); // Verify retained history on GitHub before opening source work.
  if(!active){await levels();await fallback();await local.primary.wake();await publish();if(local.publishArchive)await archive();return {partial};}
  try{await handover();}catch{console.warn('The successor could not be confirmed; deployment completion and the schedule will recheck runner ownership.');}
  await Promise.all([
   guard(fallback()),
-  guard((async()=>{while(!stopped&&now()<deadline){const at=now();await levels();version++;await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
-  guard((async()=>{while(!stopped&&now()<deadline){const at=now();await local.primary.wake();version++;minuteVersion++;const state=await local.primary.status?.();if(state)console.log('Minute quote coverage:',JSON.stringify({reason:state.reason,saved:state.saved,failed:state.failed,completedAt:state.completedAt}));await wait(Math.max(1,Math.min(minuteInterval,(state?.nextAt||at+minuteInterval)-now())));}})()),
-  guard((async()=>{let delivered=0,last=now();while(!stopped&&now()<deadline){if(minuteVersion===delivered&&now()-last<publishInterval){await wait(Math.min(1000,minuteInterval,publishInterval,Math.max(1,deadline-now())));continue;}if(!stopped&&now()<deadline){const revision=minuteVersion;await publish();delivered=revision;last=now();}}})()),
-  ...(local.publishArchive?[guard((async()=>{while(!stopped&&now()<deadline){await wait(Math.min(archiveInterval,Math.max(1,deadline-now())));if(!stopped&&now()<deadline)await archive();}})())]:[]),
+  guard((async()=>{while(!stopped&&now()<deadline && quoteRunnerActive(now())){const at=now();if(marketWindow(at).collect)await levels();version++;await wait(Math.max(1,minuteInterval-(now()-at)));}})()),
+  guard((async()=>{while(!stopped&&now()<deadline && quoteRunnerActive(now())){const at=now();if(!marketWindow(at).collect){await wait(minuteInterval);continue;}await local.primary.wake();version++;minuteVersion++;const state=await local.primary.status?.();if(state)console.log('Minute quote coverage:',JSON.stringify({reason:state.reason,saved:state.saved,failed:state.failed,completedAt:state.completedAt}));await wait(Math.max(1,Math.min(minuteInterval,(state?.nextAt||at+minuteInterval)-now())));}})()),
+  guard((async()=>{let delivered=0,last=now();while(!stopped&&now()<deadline){if(!marketWindow(now()).collect){await wait(Math.min(minuteInterval,Math.max(1,deadline-now())));continue;}if(minuteVersion===delivered&&now()-last<publishInterval){await wait(Math.min(1000,minuteInterval,publishInterval,Math.max(1,deadline-now())));continue;}if(!stopped&&now()<deadline && marketWindow(now()).collect){const revision=minuteVersion;await publish();delivered=revision;last=now();}}})()),
+  ...(local.publishArchive?[guard((async()=>{while(!stopped&&now()<deadline){await wait(Math.min(archiveInterval,Math.max(1,deadline-now())));if(!stopped&&now()<deadline && marketWindow(now()).collect)await archive();}})())]:[]),
  ]);
  stopped=true;
  if(publishedVersion!==version||firstError)await publish();
