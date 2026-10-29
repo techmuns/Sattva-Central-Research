@@ -21,7 +21,7 @@ on:
   schedule:
     - cron: '2,17,32,47 * * * *'
     # Establish ownership before the open even when scheduled starts are delayed.
-    - cron: '11 0 * * 1-5'
+    - cron: '41 0 * * 1-5'
   workflow_dispatch:
     inputs:
       source:
