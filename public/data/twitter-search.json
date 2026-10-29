@@ -2776,7 +2776,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0JA001018|Venus Pipes & Tubes": {
-      "lastAttemptAt": "2026-10-23T07:16:22+00:00",
+      "lastAttemptAt": "2026-10-29T10:27:01+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0JA001018|VENUSPIPES": {
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-29T09:56:41.857072+00:00"
+    "checkedAt": "2026-10-29T10:27:01.174517+00:00"
   }
 }
