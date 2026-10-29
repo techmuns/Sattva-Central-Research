@@ -68,8 +68,13 @@ try{
   assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'),'A1');
   book[0].weightPct=90;book[1].weightPct=10;
   await page.evaluate(async()=> (await import('/js/data/holding-sizes.js')).readHoldingSizes(undefined,{force:true}));
-  await page.waitForFunction(()=>document.querySelector('[data-ai-card]')?.dataset.ticker==='A0');
+  // A background size change updates the figures in place and moves no card: the list holds still
+  // while it updates (tabs/ai-alerts.js, `steady`). The reader's own re-sort reads the new sizes.
+  await page.waitForFunction(()=>/^90% /.test(document.querySelector('[data-ai-card][data-ticker="A0"] [data-ai-holding-size]')?.textContent||''));
+  assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'),'A1','background weights move no card');
   assert.equal(await page.locator('[data-ai-sort]').inputValue(),'holdings','background weights retain the chosen sort');
+  await page.locator('[data-ai-sort]').selectOption('newest');await page.locator('[data-ai-sort]').selectOption('holdings');
+  await page.waitForFunction(()=>document.querySelector('[data-ai-card]')?.dataset.ticker==='A0');
   await page.evaluate(()=>window.refreshSizes());assert(checks>=2,'manual revalidation checks the source');
   failed=true;await page.evaluate(()=>window.refreshSizes());
   assert.equal(await page.locator('[data-ai-holding-size]').count(),0);

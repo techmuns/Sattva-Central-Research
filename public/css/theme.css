@@ -940,3 +940,7 @@ html[data-theme] [data-chatter-panel] [data-score-table] tbody tr { border-color
 .ai-card-price-status { margin-top: 2px; color: var(--ink-400); font-size: 10px; font-weight: 400; line-height: 1.4; overflow-wrap: anywhere; }
 .ai-card-price[data-price-stale="true"] .ai-card-price-status { color: rgb(var(--text-amber-700, 180 83 9)); }
 @media (max-width: 420px) { .ai-card-price { max-width: 120px; } .ai-card-price-value { font-size: 15px; } }
+
+/* NEW: a company that arrived on top while the AI Alerts list was open (tabs/ai-alerts.js, `steady`)
+   — the same chip All Alerts gives an arrival. Cleared by the reader's own re-sort or filter. */
+.ai-new-chip { display: inline-block; margin-right: 6px; padding: 1px 5px; border-radius: 4px; background: rgb(var(--surface-indigo-100, 224 231 255)); color: rgb(var(--text-indigo-700, 67 56 202)); font-size: 9px; font-weight: 800; letter-spacing: 0.06em; line-height: 14px; text-transform: uppercase; vertical-align: 1px; }

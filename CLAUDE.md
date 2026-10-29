@@ -2783,6 +2783,16 @@ contract does not cover: a tab the shell decided not to mount.
 
 ## AI Alerts — the explainable priority layer
 
+**The list holds still while it updates (29 October 2026; Glow's user: "update silently in the back and
+things stack on top").** The order follows the ranking only until the first completed read (with holding
+sizes) or the reader's first scroll/touch/key/click; then a background update never moves a listed card:
+content updates in place, a new company — or one whose latest material signal is newer — stacks on top
+marked NEW (announced politely), and only the reader's own sort, filter, search or scope change re-sorts.
+A card a read in flight has not re-reported is kept until the read completes. During a re-check the
+ranking scores each `pending` source as its last completed read left it (`lastSettledFeeds`), so badges
+and context do not flip; the status pill still shows the real states. A private-bridge RECONNECT
+(`fn(-1, { reconnect: true })`) keeps the public list and re-reads sizes quietly; a sign-out blanks it.
+
 **Scope switches paint at once (29 October 2026).** The tab keeps each scope's last view in memory
 (same IST day, membership and session; cleared on any private-book invalidation) and, the first time,
 narrows the ranked Universe view (`narrowReport`, provisional: replaced, never merged). Feed rows are
