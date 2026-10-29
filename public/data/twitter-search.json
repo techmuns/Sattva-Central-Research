@@ -41,40 +41,45 @@
       "lastDiscoveryAt": "2026-10-12T22:32:50+00:00"
     },
     "isin:INE674K01013|ABCAPITAL": {
-      "lastAttemptAt": "2026-10-23T12:25:00+00:00",
-      "error": null,
-      "lastResultCount": 30,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 103,
+      "targetThrough": "2026-10-29T16:20:30+00:00",
+      "pending": [
+        {
+          "from": "2026-09-13T20:36:48+00:00",
+          "to": "2026-10-06T18:28:39+00:00"
+        },
+        {
+          "from": "2026-10-06T18:28:39+00:00",
+          "to": "2026-10-29T16:20:30+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-23T12:25:00+00:00",
       "lastSuccessAt": "2026-09-15T20:36:48+00:00"
     },
     "isin:INE679V01027|Aditya Vision": {
-      "lastAttemptAt": "2026-10-23T12:25:00+00:00",
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
       "error": null,
-      "lastResultCount": 59,
-      "lastSuccessAt": "2026-10-23T12:25:00+00:00",
+      "lastResultCount": 32,
+      "lastSuccessAt": "2026-10-29T16:20:30+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0ALI01010|Advait Energy Transitions": {
-      "lastAttemptAt": "2026-10-23T12:25:00+00:00",
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
       "error": null,
-      "lastResultCount": 72,
-      "lastSuccessAt": "2026-10-23T12:25:00+00:00",
+      "lastResultCount": 20,
+      "lastSuccessAt": "2026-10-29T16:20:30+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0ALI01010|ADVAIT": {
-      "lastAttemptAt": "2026-10-23T12:25:00+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
+      "error": null,
+      "lastResultCount": 50,
       "targetThrough": "2026-09-15T20:36:48+00:00",
       "pending": [
-        {
-          "from": "2026-09-06T20:36:48.830627+00:00",
-          "to": "2026-09-09T02:36:48.622970+00:00"
-        },
         {
           "from": "2026-09-09T02:36:48.622970+00:00",
           "to": "2026-09-11T08:36:48.415313+00:00"
@@ -88,18 +93,18 @@
           "to": "2026-09-15T20:36:48+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-23T12:25:00+00:00"
+      "lastDiscoveryAt": "2026-10-29T16:20:30+00:00"
     },
     "isin:INE914E01040|Alankit": {
-      "lastAttemptAt": "2026-10-23T12:25:00+00:00",
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
       "error": null,
-      "lastResultCount": 7,
-      "lastSuccessAt": "2026-10-23T12:25:00+00:00",
+      "lastResultCount": 10,
+      "lastSuccessAt": "2026-10-29T16:20:30+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE914E01040|ALANKIT": {
-      "lastAttemptAt": "2026-10-23T12:25:00+00:00",
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
       "error": "search-unavailable",
       "lastResultCount": 20,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
@@ -2427,17 +2432,13 @@
       "pending": []
     },
     "isin:INE049B01025|Wockhardt": {
-      "lastAttemptAt": "2026-10-23T11:52:55+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 51,
-      "targetThrough": "2026-10-03T05:24:56+00:00",
-      "pending": [
-        {
-          "from": "2026-09-28T17:24:56.228683+00:00",
-          "to": "2026-10-03T05:24:56+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-13T20:29:00+00:00"
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
+      "error": null,
+      "lastResultCount": 57,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-10-29T16:20:30+00:00",
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE049B01025|WOCKPHARMA": {
       "lastAttemptAt": "2026-10-23T12:25:00+00:00",
@@ -2804,10 +2805,10 @@
       "pending": []
     },
     "isin:INE274C01019|Wendt (India)": {
-      "lastAttemptAt": "2026-10-23T10:57:46+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 8,
-      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
+      "lastAttemptAt": "2026-10-29T16:20:30+00:00",
+      "error": null,
+      "lastResultCount": 57,
+      "lastSuccessAt": "2026-10-29T16:20:30+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2818,8 +2819,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 246,
-    "checkedAt": "2026-10-29T15:38:06.561727+00:00"
+    "attempted": 8,
+    "incomplete": 242,
+    "checkedAt": "2026-10-29T16:20:30.436670+00:00"
   }
 }
