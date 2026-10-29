@@ -51,7 +51,7 @@ function releaseCacheKey() {
 
 // Compose this UI revision without editing another release's version marker.
 function appReleaseCacheKey() {
-  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-reorder-research-tabs-v2-lift-manager-images-v2-all-investors-clean-layout-v1-investors-audience-first-v1-my-managers-clean-heading-v1-all-investors-clean-heading-v1-screens-label-v1-ai-alerts-instant-scope-v1`;
+  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-reorder-research-tabs-v2-lift-manager-images-v2-all-investors-clean-layout-v1-investors-audience-first-v1-my-managers-clean-heading-v1-all-investors-clean-heading-v1-screens-label-v1-ai-alerts-instant-scope-v1-ai-alerts-steady-list-v1-ai-alerts-search-v1-ai-alerts-new-pill-v1`;
 }
 
 // Keep the News presentation release independent of other UI version markers.

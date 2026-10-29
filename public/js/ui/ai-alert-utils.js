@@ -1,6 +1,7 @@
 // Display helpers keep calendar ages independent of a cached report's collection date.
 import { isRelatedNewsContext } from '../data/company-news-attribution.js';
 import { isMaterialStoryUpdate, compareStoryRecency } from '../data/alert-stories-shared.js';
+import { searchScore } from './ai-alert-search.js';
 const DAY_MS = 86_400_000;
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 export const currentDay = (now = Date.now()) => new Date(now + 5.5 * 3600_000).toISOString().slice(0, 10);
@@ -65,23 +66,11 @@ export function sortAlertCards(cards, order = 'newest') {
     b.score - a.score || String(a.key || a.ticker || a.entityId || a.company).localeCompare(String(b.key || b.ticker || b.entityId || b.company)));
 }
 
-function normalize(value) {
-  return String(value ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-}
-
-/** Search every event, including evidence below the card's three-row preview. */
+/**
+ * Whether a query shows this card at all — the one definition, from ui/ai-alert-search.js: the
+ * company first, then words found together in one line of its evidence, never words scattered
+ * across different reports. The tab ranks and groups with `rankSearch` from the same module.
+ */
 export function matchesSearch(card, query) {
-  const words = normalize(query).split(' ').filter(Boolean);
-  if (!words.length) return true;
-  const text = normalize([
-    card.company, card.ticker, card.sector, card.insight, card.contextSummary, card.badge?.label,
-    // The KPIs in play and the item that names each, so "order book" or "capacity" finds the cards.
-    card.kpis?.groupLabel, ...(card.kpis?.items || []).flatMap((item) => [item.name, item.triggerLabel]),
-    ...(card.feedLabels || []),
-    ...(card.confluence || []).flatMap((pattern) => [pattern.label, pattern.short, pattern.detail]),
-    ...(card.sourceEvents || card.events || []).flatMap((event) => [event.company, event.ticker, event.headline, event.detail, event.feedLabel, event.feed, event.day, formatDay(event.day), event.time]),
-    ...(card.contextEvents || []).flatMap((event) => [event.headline, event.detail, event.feedLabel, event.metric, event.day]),
-    ...(card.upcomingEvents || []).flatMap((event) => [event.headline, event.detail, event.feedLabel, event.day]),
-  ].join(' '));
-  return words.every((word) => text.includes(word));
+  return searchScore(card, query) > 0;
 }

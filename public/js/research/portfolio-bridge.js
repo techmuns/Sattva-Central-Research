@@ -89,7 +89,10 @@ function ensureTarget() {
         const reloaded = transportReady || managersSupported || positionSizesSupported || priceLevelsSupported;
         transportReady = false;
         lastPositionReply = null;
-        if (reloaded) for (const fn of invalidations) fn(-1);
+        // A restarted connection for the same session, not a sign-out: the book is kept (only
+        // auth-required clears it), so listeners may keep public evidence on screen while the
+        // private readings are asked for again.
+        if (reloaded) for (const fn of invalidations) fn(-1, { reconnect: true });
         if (state !== 'unavailable') setConnection('connecting');
         connectPortfolio();
       } else if (Number.isSafeInteger(event.data.version)) {

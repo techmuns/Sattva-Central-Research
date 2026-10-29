@@ -735,6 +735,10 @@ function positionSnapshotIndex({ holdings, sizes }) {
  * unexercised most days.
  */
 const rankCache = [];
+// The last completed read of the sources (feed rows only: ids, statuses, freshness — no evidence and
+// nothing private), so a re-check can rank as that read left them. Sources are collected once for
+// every scope, so one record serves all three. See `rankSteps`.
+let lastSettledFeeds = null;
 const sameRows = (left, right) => left.length === right.length && left.every((row, i) => row === right[i]);
 export function clearRankingCache() { rankCache.length = 0; lastPositionIndex = null; }
 
@@ -743,15 +747,25 @@ export function clearRankingCache() { rankCache.length = 0; lastPositionIndex = 
 // Universe ranking (~1s of CPU here, once per partial publication) no longer lands as one task.
 // The generator yields once per card in each pass; a driver decides whether a yield costs
 // anything. Nothing about the result depends on the driver: same events, same order, same cards.
-function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all(), sectorKpis = kpiImpact.snapshot() } = {}) {
+function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all(), sectorKpis = kpiImpact.snapshot(), settledFeeds = null } = {}) {
   const day = report?.day || generalAlerts.today();
   const events = report?.events || [];
+  // A RE-CHECK IS NOT AN UNREAD SOURCE. While a background re-check is in flight every source reads
+  // `pending`, and scoring a pending source as unread docked its events ten points and dropped the
+  // context it supplied — so every refresh flipped badges (Must see → Important → Must see) and grew
+  // and shrank cards as each source answered. The records on screen are the ones the last completed
+  // read confirmed, so until a source answers again it is ranked as that read left it. Only the
+  // ranking sees this; the report's own feed rows, its pending count and the status pill do not.
+  const rankFeeds = (report?.feeds || []).map(feed => {
+    const prior = feed.status === 'pending' && settledFeeds?.day === day ? settledFeeds.feeds.get(feed.id) : null;
+    return prior ? { ...feed, status: prior.status, reachesToday: prior.reachesToday } : feed;
+  });
   const { token, email, orgId } = getHostContext().session;
   // Source records are immutable publications. Compare every reference, not counts/timestamps;
   // a same-ID correction publishes a new record. Copy arrays so in-place additions/removals
   // cannot defeat the comparison. Small membership and health values are compared by content.
   const input = { storyRevision: storyGrouping.revision(), day, scope: report?.scope || 'universe', events,
-    health: JSON.stringify((report?.feeds || []).map(feed => [feed.id, feed.status, feed.reachesToday])),
+    health: JSON.stringify(rankFeeds.map(feed => [feed.id, feed.status, feed.reachesToday])),
     book: JSON.stringify(holdings), positions: JSON.stringify(positionSizes),
     insights: insightCompanies, kpis: sectorKpis, session: JSON.stringify([token, email, orgId]) };
   const cached = rankCache.find(entry => entry.input.storyRevision === input.storyRevision && entry.input.day === day && entry.input.scope === input.scope &&
@@ -761,7 +775,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   if (cached) {
     const result = { ...cached.result, pending: report?.pending || 0, feeds: report?.feeds || [],
       meta: { ...cached.result.meta, cacheSavedAt: report?.cacheSavedAt || null } };
-    rankingOptions.set(result, { holdings, positionSizes, insightCompanies });
+    rankingOptions.set(result, { holdings, positionSizes, insightCompanies, settledFeeds });
     rankingEvidence.set(result, rankingEvidence.get(cached.result));
     return result;
   }
@@ -769,7 +783,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   // Private weights never come from the persisted names-only coverage list.
   const weights = positionSizes?.sizes.complete
     ? positionSnapshotIndex({ ...positionSizes, holdings: positionSizes.holdings || holdings }) : new Map();
-  const feedById = new Map((report?.feeds || []).map((feed) => [feed.id, feed]));
+  const feedById = new Map(rankFeeds.map((feed) => [feed.id, feed]));
   const holdingByTicker = new Map(
     (holdings || [])
       .filter((holding) => holding.ticker)
@@ -796,7 +810,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
     if (list) list.push(event);
     else grouped.set(ticker, [event]);
   }
-  const supportedReport = { ...report, events: supportedEvents };
+  const supportedReport = { ...report, feeds: rankFeeds, events: supportedEvents };
   const recentCount = [...grouped.values()].reduce((sum, list) => sum + list.length, 0);
 
   let cards = [];
@@ -945,11 +959,11 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
       correlated: surfaced.filter((card) => card.confluence?.length).length,
       important: surfaced.filter((card) => card.priority === 'important').length,
       marketWideExcluded: marketWide,
-      staleFeeds: (report?.feeds || []).filter((feed) => feed.status !== 'ok' || feed.reachesToday === false).length,
+      staleFeeds: rankFeeds.filter((feed) => feed.status !== 'ok' || feed.reachesToday === false).length,
       cacheSavedAt: report?.cacheSavedAt || null,
     },
   };
-  rankingOptions.set(result, { holdings, positionSizes, insightCompanies });
+  rankingOptions.set(result, { holdings, positionSizes, insightCompanies, settledFeeds });
   rankingEvidence.set(result, windowEvidence);
   // Bound private, in-memory derivations; alternate partial/final envelopes must not evict
   // each other's identical evidence on every notification.
@@ -1126,7 +1140,8 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
   // arrives with its evidence also arrives with its KPI line. A failed read resolves to null and the
   // cards simply carry none — and `kpiImpact.status()` says the file could not be read.
   const kpiRead = kpiImpact.load();
-  const options = (insightCompanies = screenerInsights.all()) => ({ holdings: book, positionSizes, insightCompanies });
+  const settledFeeds = lastSettledFeeds;
+  const options = (insightCompanies = screenerInsights.all()) => ({ holdings: book, positionSizes, insightCompanies, settledFeeds });
   // PARTIALS ARE RANKED IN SLICES, AND THE LATEST ONE WINS. Feeds settle over several seconds
   // and the general collector publishes progress as they do; ranking every publication of the
   // whole Universe synchronously was five one-second tasks on one open (profiled). A publication
@@ -1162,6 +1177,9 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
   });
   closed = true;
   queued = null;
+  if (report && report.pending === 0 && Array.isArray(report.feeds)) {
+    lastSettledFeeds = { day: report.day, feeds: new Map(report.feeds.map(feed => [feed.id, { status: feed.status, reachesToday: feed.reachesToday }])) };
+  }
   if (typeof window !== 'undefined' && isCurrent()) {
     const first = shiftDay(report.day || generalAlerts.today(), -(WINDOW_DAYS - 1));
     // The window's reviewable evidence is picked in slices: over a Universe history this filter was

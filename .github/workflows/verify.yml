@@ -179,7 +179,7 @@ jobs:
       - name: Verify the precomputed alert pool is exact and stands aside honestly
         run: node scripts/verify-announcement-delivery.mjs && node scripts/verify-alert-pool-cache.mjs && node scripts/verify-alert-pool-delivery.mjs && node --max-old-space-size=4096 scripts/verify-alert-pool.mjs
       - name: Verify AI alert search, calendar dates and the KPIs in play
-        run: node scripts/verify-ai-alerts.mjs && node scripts/verify-ai-alert-types.mjs && node scripts/verify-alert-timeline.mjs && node scripts/verify-alert-capacity.mjs && node scripts/verify-kpi-impact.mjs
+        run: node scripts/verify-ai-alerts.mjs && node scripts/verify-ai-alert-search.mjs && node scripts/verify-ai-alert-types.mjs && node scripts/verify-alert-timeline.mjs && node scripts/verify-alert-capacity.mjs && node scripts/verify-kpi-impact.mjs
       - name: Verify material alert lifecycle and optional social coverage
         run: node scripts/verify-alert-reliability.mjs && python3 scripts/verify-twitter-collection.py
       - name: Syntax-check JavaScript
