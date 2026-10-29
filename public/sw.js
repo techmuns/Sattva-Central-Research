@@ -24,7 +24,7 @@
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
 const CACHE_NAME = `${CACHE_PREFIX}2026-10-21-momentum-open-interest-v1-momentum-response-cpu-v1-momentum-packed-reader-v1`;
-const CMP_RELEASE = '2026-10-29-cmp-opening-v1';
+const CMP_RELEASE = '2026-10-29-cmp-opening-v2';
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/js/core/json-worker.js', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];

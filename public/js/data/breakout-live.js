@@ -8,6 +8,7 @@ const SNAPSHOT_KEY = 'sattva:breakout-snapshot:v1';
 let capture = null, pending = null, failed = false;
 let byTicker = new Map();
 let restorePending = null;
+let watchers = 0, retainPending = false;
 function adopt(value) {
   capture = value;
   byTicker = new Map((capture?.rows || []).map(row => [row.ticker, row]));
@@ -30,8 +31,10 @@ async function restoreCapture() {
   try {const packet=(await readEntry(SNAPSHOT_KEY))?.value;if(packet)return await snapshotCapture(packet);}catch{/* Try the preceding reader's last good capture. */}
   const stored=(await readEntry(KEY))?.value;validate(stored);return stored;
 }
-export function refresh() {
-  if (pending) return pending;
+export function refresh() { return refreshPrices(false); }
+function refreshPrices(automatic) {
+  if (pending) { if (!automatic) retainPending = true; return pending; }
+  retainPending = !automatic;
   if (!capture && !restorePending) {
     restorePending = restoreCapture().then(value => { if (!capture) { adopt(value); subscribers.forEach(fn => fn()); } }).catch(() => {}).finally(() => { restorePending = null; });
   }
@@ -39,6 +42,10 @@ export function refresh() {
     try {
       try {adopt(await readSnapshot());}
       catch {
+        // An unmounted automatic reader may finish its current request, but must
+        // not start a second transport. Other mounted readers or an explicit
+        // refresh can still own this shared check.
+        if (!retainPending && !watchers) return { skipped: true };
         // Older deployments and paged generations keep their existing reader.
         const result=await conditionalJson('/api/breakouts',{key:KEY,signal:AbortSignal.timeout(15000),validate});
         adopt(result.value);
@@ -50,7 +57,7 @@ export function refresh() {
     }
     subscribers.forEach(fn => fn());
     return { ...liveCoverage(capture, capture?.targets || []), partial: failed || liveCoverage(capture, capture?.targets || []).partial };
-  })().finally(() => { pending = null; });
+  })().finally(() => { pending = null; retainPending = false; });
   return pending;
 }
 export function quote(ticker) { return byTicker.get(ticker) || null; }
@@ -114,12 +121,14 @@ export function coverageFor(tickers) {
 }
 // Lifecycle belongs to the visible view; shared reads are coalesced across table and popup.
 export function watch(fn) {
-  const check = () => { if (document.visibilityState !== 'hidden') void refresh(); };
+  watchers++;
+  let stopped = false;
+  const check = () => { if (!stopped && document.visibilityState !== 'hidden') void refreshPrices(true); };
   const off = onChange(fn);
   const timer = setInterval(check, 15000);
   document.addEventListener('visibilitychange', check);
   window.addEventListener('focus', check); window.addEventListener('online', check);
   check();
-  return () => { off(); clearInterval(timer); document.removeEventListener('visibilitychange', check);
+  return () => { if (stopped) return; stopped = true; watchers--; off(); clearInterval(timer); document.removeEventListener('visibilitychange', check);
     window.removeEventListener('focus', check); window.removeEventListener('online', check); };
 }

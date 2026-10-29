@@ -7,7 +7,7 @@ import {gzipSync} from 'node:zlib';
 import {BREAKOUT_REPO} from '../public/js/data/breakout-live-shared.js';
 const {chromium}=await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root=resolve('public'),at=Date.parse('2026-10-29T09:46:00+05:30');
-let quoteAt=at,price=870.25,blocked=true,failed=false,upgraded=false,reads=0;
+let quoteAt=at,price=870.25,blocked=true,failed=false,upgraded=false,reads=0,compatibility=0;
 const held=[];
 const quote=(value,time)=>({ticker:'SKYGOLD',price:value,prevClose:858.3,volume:1000,quoteAt:new Date(time).toISOString(),checkedAt:new Date(time).toISOString(),sessionDate:new Date(time+19800000).toISOString().slice(0,10),provider:'Upstox',exchange:'NSE'});
 const capture=row=>({version:1,state:'complete',rows:[row],targets:['SKYGOLD'],failures:[],discoveryFailed:false,completedAt:row.checkedAt});
@@ -17,7 +17,7 @@ import {writeEntry} from '/js/core/store.js';
 import {watchWorkerChanges} from '/js/core/app-updates.js';
 if(location.search.includes('seed'))await writeEntry('sattva:breakout-capture:v1',{value:${JSON.stringify(capture(quote(858.3,at-18*3600000)))}});
 const render=()=>{const info=prices.priceInfo({ticker:'SKYGOLD'});reading.textContent=JSON.stringify(info);};
-prices.watch(render);render();
+window.disposePrices=prices.watch(render);render();
 watchWorkerChanges(navigator.serviceWorker,()=>location.reload());
 await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;window.ready=true;
 </script>`;
@@ -34,7 +34,7 @@ const server=createServer((req,res)=>{
   };
   if(blocked)held.push(send);else send();return;
  }
- if(path==='/api/breakouts'){res.writeHead(503,{'content-type':'application/json'}).end('{}');return;}
+ if(path==='/api/breakouts'){compatibility++;res.writeHead(503,{'content-type':'application/json'}).end('{}');return;}
  if(path==='/'||path==='/index.html'){res.setHeader('content-type','text/html');res.end(html);return;}
  if(path==='/sdk-fixture.js'){res.end('/* local fixture */');return;}
  try{
@@ -80,6 +80,13 @@ try{
  await page.waitForFunction(()=>JSON.parse(reading.textContent||'{}').price===871&&!JSON.parse(reading.textContent||'{}').stale);
  failed=true;await page.clock.runFor(15000);
  await page.waitForFunction(()=>JSON.parse(reading.textContent||'{}').price===871&&JSON.parse(reading.textContent||'{}').stale);
+ blocked=true;await page.clock.runFor(15000);
+ for(let i=0;!held.length&&i<200;i++)await new Promise(done=>setTimeout(done,5));
+ assert(held.length,'Hold a snapshot across teardown');
+ await page.evaluate(()=>window.disposePrices());const beforeDisposed=compatibility;
+ failed=true;blocked=false;held.splice(0).forEach(send=>send());
+ await new Promise(done=>setTimeout(done,100));
+ assert.equal(compatibility,beforeDisposed,'A failed in-flight snapshot cannot start a compatibility request after the final reader leaves');
  assert.deepEqual(errors,[]);
  console.log('PASS CMP: saved-first opening during a blocked network, current price arrival, real warm-session upgrade, source expiry after 304, hidden pause, focus recovery and last-good prices during failure');
 }finally{blocked=false;held.splice(0).forEach(send=>send());await browser.close();await new Promise(done=>server.close(done));}
