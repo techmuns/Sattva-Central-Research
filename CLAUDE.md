@@ -360,8 +360,11 @@ Bulk/Block Deal retains the `insider-trades` route and all four disclosure categ
 Earnings contains Results (the existing Earnings Hub reader, selected by default) and Concall,
 in that order. Both keep their existing routes, reader controls and data lifecycles.
 News contains Market News (the existing News reader, selected by default), Private Market News,
-and Public Chatter. Private Market News is explicitly scope-independent: Inc42 reports private
-Indian startup funding, which has no listed-equity portfolio/Watchlist mapping. Its archive loads
+and Public Chatter. Private Market News follows the scope switch (ported from Glow, 29 October
+2026): Universe lists every Inc42 funding record, Portfolio only rounds of the family's private
+companies (the book's unlisted lines, `js/data/private-companies.js`), Watchlist rounds of watched
+companies — exact normalised company names only, never a substring; Portfolio and Watchlist open on
+All captured history. `verify-private-companies.mjs` and the Private Market UI suite check it. Its archive loads
 only when opened and retains all captured public table fields, dates, source links and footnotes.
 Its `news-section` group ID stays distinct from the saved `news` reader route, so selecting
 Market News from Public Chatter changes readers normally. Both retain their existing routes,

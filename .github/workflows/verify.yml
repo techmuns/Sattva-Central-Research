@@ -46,7 +46,7 @@ jobs:
       - name: Verify investor quarterly evidence and aggregation
         run: node scripts/verify-super-investors.mjs && node scripts/verify-holdings-integrity.mjs && node scripts/verify-investor-changes.mjs && node scripts/verify-managers.mjs && node scripts/verify-manager-reader.mjs && node scripts/verify-public-holdings.mjs && node scripts/verify-investor-publishing.mjs && node scripts/verify-super-investor-capture.mjs
       - name: Verify private funding tables, budgets, history and publication
-        run: node scripts/verify-private-market-news.mjs
+        run: node scripts/verify-private-market-news.mjs && node scripts/verify-private-companies.mjs
       - name: Verify refresh ownership and source targeting
         run: node scripts/verify-refresh.mjs
       - name: Verify evidence-based public chatter summaries

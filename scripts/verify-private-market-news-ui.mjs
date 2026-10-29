@@ -13,6 +13,14 @@ capture.articles=[{url:sourceUrl,title:'Fixture funding this week',status:'ok',p
 const variants=['Series A1','series A','Series A**','Seed funding','Seed Round','$1 Mn','bp Ventures','Pre-Series A','pre–Series A','Credit','Debt'];
 const row=(i,round=variants[i]||'Series A')=>({id:i.toString(16).padStart(24,'0'),company:`Fixture Company ${i}`,date:i===499?'01 Jan 2020':'16 Oct 2026',dateISO:i===499?'2020-01-01':'2026-10-16',sector:i%2?'AI':'Health Tech',subsector:'Software',businessModel:'B2B',amount:'$11.4 Mn *',round,investors:i===499?'Older History Investor':'Fixture Investor',leadInvestor:'Fixture Investor',sourceFields:{Date:'16 Oct 2026',Name:`Fixture Company ${i}`,'Funding Round Type':round},sourceUrl:i===499?'https://inc42.com/buzz/older-funding-this-week/':sourceUrl,sourceTitle:'Fixture funding this week',publishedAt:i===499?'2020-01-04T09:00:00+05:30':'2026-10-17T09:00:00+05:30',firstSeenAt:capture.generatedAt,updatedAt:capture.generatedAt,revisions:[]});
 capture.deals=Array.from({length:500},(_,i)=>row(i));
+// The family book as resolve-portfolio-companies.mjs writes it: one private company named as the deal
+// is, one matched through its legal name, one with no captured round, plus a warrant line and a listed
+// line that are not private companies.
+const holdings=[{isin:'INE000F00003',name:'Fixture Company 3',bookName:'Fixture Company 3 Ltd',ticker:null,listed:false,reason:'unlisted — private company, held directly'},
+  {isin:'INE000F00007',name:'Fixture Brand',bookName:'Fixture Company 7 Private Limited',ticker:null,listed:false,reason:'unlisted — private company, held directly'},
+  {isin:'INE000F00099',name:'Unfunded Holding',bookName:'Unfunded Holding Ltd',ticker:null,listed:false,reason:'unlisted — private company, held directly'},
+  {isin:'INE000F00005',name:'Fixture Company 5 — warrants',bookName:'Fixture Company 5 Warrants',ticker:null,listed:false,reason:'warrants, not the equity line'},
+  {isin:'INE000F00009',name:'Fixture Company 9',bookName:'Fixture Company 9 Ltd',ticker:'FIX9',listed:true}];
 const index=readFileSync('public/index.html','utf8');
 const overlays=index.slice(index.indexOf('    <div id="drill-overlay"'),index.indexOf('    <!--',index.indexOf('id="workspace-content"')));
 const html=`<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"><main id="root"></main>${overlays}<script type="module">
@@ -20,14 +28,14 @@ import * as tab from '/js/tabs/private-market-news.js';import * as feed from '/j
 import {watchWorkerChanges} from '/js/core/app-updates.js';import {enterView,captureTableReading} from '/js/core/view-reading.js';
 const root=document.querySelector('#root'),saved=JSON.parse(sessionStorage.getItem('funding-reading')||'null');
 enterView({root,key:'funding-fixture',preset:saved?{reading:saved}:null});
-window.fixture={tab,feed};tab.render({root,scope:'watchlist'});
+window.fixture={tab,feed};tab.render({root,scope:'universe'});
 if(location.search.includes('worker-upgrade')){watchWorkerChanges(navigator.serviceWorker,()=>{sessionStorage.setItem('funding-reading',JSON.stringify(captureTableReading(root)));location.reload();});await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;}
 window.fixtureReady=true;</script>`;
 const server=createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
   res.setHeader('cache-control','no-cache');
   if(pathname==='/'||pathname==='/index.html'){res.setHeader('content-type','text/html');res.end(html);return;}
-  if(pathname==='/data/portfolio-companies.json'){res.setHeader('content-type','application/json');res.end('[]');return;}
+  if(pathname==='/data/portfolio-companies.json'){res.setHeader('content-type','application/json');res.end(JSON.stringify({holdings}));return;}
   if(pathname==='/sdk-fixture.js'){res.setHeader('content-type','text/javascript');res.end('/* fixture */');return;}
   if(pathname==='/data/private-market-news.json'){reads++;res.setHeader('content-type','application/json');if(unavailable){res.writeHead(503);res.end('{}');}else res.end(JSON.stringify(capture));return;}
   const path=resolve(root,`.${pathname}`);if(!path.startsWith(root+sep)){res.writeHead(404);res.end();return;}
@@ -101,8 +109,23 @@ try{
   await page.getByPlaceholder('Search company, investor, sector or round...').fill('Fixture Investor');
   await page.evaluate(()=>{window.fixture.tab.destroy();window.fixture.tab.render({root:document.querySelector('#root'),scope:'portfolio'});});
   await page.getByRole('heading',{name:'Private Market',exact:true}).waitFor();assert.equal(await search.inputValue(),'Fixture Investor');
+  // Portfolio is the family's own private companies, matched by exact name, labelled on the row.
+  await page.getByText('Family holding',{exact:true}).waitFor();
+  await page.getByText('Family holding · Fixture Brand').waitFor();
+  assert.equal(await page.getByText('Family holding · Fixture Company 3').count(),0,'A row named as the holding is not named twice');
+  assert.deepEqual((await page.locator('tbody tr[data-row-key]').evaluateAll(rows=>rows.map(r=>r.dataset.rowKey))).sort(),[capture.deals[3].id,capture.deals[7].id],'Portfolio keeps only the family companies, a legal-name match joining its brand');
+  assert.equal(await page.getByRole('combobox',{name:'Funding period',exact:true}).inputValue(),'all','Portfolio opens on all captured history');
+  assert.match(await page.locator('main').innerText(),/2 of 3 have a captured round/,'The denominator names every private company, never warrants or a listed line');
+  await page.getByRole('combobox',{name:'Sectors',exact:true}).selectOption('all');await rounds.selectOption('all');await search.fill('');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(),2,'Clearing every filter still shows only the family companies');
+  assert(!(await page.locator('main').innerText()).includes('Fixture Company 30'),'Exact names only: no prefix match');
+  assert(!(await page.locator('main').innerText()).includes('Fixture Company 5'),'Warrants on a listed company are not a private company');
+  await page.evaluate(()=>{window.fixture.tab.destroy();window.fixture.tab.render({root:document.querySelector('#root'),scope:'watchlist'});});
+  await page.getByText('None of your watchlist companies appears in the captured funding records.').waitFor();
+  await page.evaluate(()=>{window.fixture.tab.destroy();window.fixture.tab.render({root:document.querySelector('#root'),scope:'universe'});});
+  await page.waitForFunction(()=>document.querySelectorAll('tbody tr[data-row-key]').length>2);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Wide funding columns stay inside their scroller');
   mkdirSync('.cache/private-market',{recursive:true});await page.screenshot({path:'.cache/private-market/reader-light.png',fullPage:true});
   await page.emulateMedia({colorScheme:'dark'});await page.evaluate(()=>document.documentElement.dataset.theme='dark');await page.screenshot({path:'.cache/private-market/reader-dark.png',fullPage:true});
-  assert.deepEqual(errors,[]);assert(reads>=4);console.log('PASS private funding browser: canonical round options, native warm-worker upgrade and saved-filter migration, exact grouped export, raw amount/footnotes, complete retained rows, filters/focus across arrivals and failures, source coverage and contained table.');
+  assert.deepEqual(errors,[]);assert(reads>=4);console.log('PASS private funding browser: canonical round options, native warm-worker upgrade and saved-filter migration, exact grouped export, raw amount/footnotes, complete retained rows, filters/focus across arrivals and failures, Portfolio/Watchlist/Universe scope by exact name, source coverage and contained table.');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

@@ -5951,9 +5951,11 @@ company-news `storyText` so pooled and direct readers classify the same supplied
 ## Private Market News — Inc42 Funding Galore (21 October 2026)
 
 `data/private-market-news.json` is a lazy, public factual funding-table capture. News
-places Private Market between Public Market and Public Chatter. The reader is
-scope independent: private startups have no reliable listed-portfolio/Watchlist
-identity mapping. This is Inc42's Indian startup funding coverage, not an exhaustive
+places Private Market between Public Market and Public Chatter. The reader follows
+the scope switch by EXACT company name, since a funding record carries no ISIN:
+Universe is every record, Portfolio the rounds of the book's unlisted private companies
+(`listed: false` lines that are not warrants, via `js/data/private-companies.js`, with a
+reviewed brand per ISIN) and Watchlist the rounds of watched companies. This is Inc42's Indian startup funding coverage, not an exhaustive
 global VC/PE transaction database. The separate weekly delivery and invested-fund mapping now follow
 `docs/PRIVATE-MARKETS-INTELLIGENCE.md`.
 
