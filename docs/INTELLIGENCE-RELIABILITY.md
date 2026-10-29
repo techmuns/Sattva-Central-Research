@@ -630,3 +630,7 @@ disk response cannot replace a newer network result. Upstox prices older than tw
 minutes during trading show Saved with the actual quote time, even after a 304.
 Outages retain usable prices and explicit partial coverage. This is sampled CMP,
 not a tick-by-tick feed or a guarantee that every issuer trades each minute.
+
+When the last automatic quote reader unmounts, its outstanding request may finish,
+but a later failure cannot start another compatibility request. Other mounted
+readers and explicit refreshes retain ownership of their shared check.
