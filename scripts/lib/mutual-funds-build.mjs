@@ -19,7 +19,7 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
         if (!scheme.schemeName || !Array.isArray(scheme.holdings) || (!scheme.holdings.length && scheme.validatedNoIndianHoldings!==true)) continue;
         // Exact disclosed names are stable; sheet order / generated d-AMC-N codes are not.
         const id = fundKey(snapshot.amcSlug,scheme.schemeName);
-        if (!schemes.has(id)) schemes.set(id,{id,name:scheme.schemeName,amc:snapshot.amc,months:new Map()});
+        if (!schemes.has(id)) schemes.set(id,{id,name:scheme.schemeName,amc:snapshot.amc,...Object.fromEntries(['classification','category','assetClass'].filter(k=>typeof scheme[k]==='string').map(k=>[k,scheme[k]])),months:new Map()});
         const fund=schemes.get(id);
         const own=monthKey(scheme.asOf);
         if (own && own!==month) { warnings.push(`${id}:${month}:date-mismatch`); continue; }
@@ -64,7 +64,8 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
             pctOfAum:h && number(h.pctToNav)!==null && h.pctToNav>=0 && h.pctToNav<=100 ? h.pctToNav : !h&&m.complete?0:null,
             checkedAt:m.checkedAt || null,sourceUrl:m.sourceUrl || null,absenceVerified:!h&&m.complete};
         }
-        companies.get(isin).funds.push({id:fund.id,name:fund.name,amc:fund.amc,months});
+        const {months:reports,...metadata}=fund;
+        companies.get(isin).funds.push({...metadata,months});
       }
     }
   }

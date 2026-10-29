@@ -24,7 +24,7 @@ const merged=retainSeedObservations([corrected],[{company:dated}])[0];
 assert.equal(merged.funds[0].months['2026-08'].shares,0,'A newer confirmed nil holding supersedes the dated seed');
 assert.equal(retainSeedObservations([],[{company:dated}]).length,1,'Historical seed companies survive leaving the current source window');
 const seedFiles=fs.readdirSync('public/data/mutual-funds/companies').filter(f=>f.endsWith('.json'));
-for(const file of seedFiles){const seed=JSON.parse(fs.readFileSync(`public/data/mutual-funds/companies/${file}`));const result=projectCompany(retainSeedObservations([],[seed])[0],{now:Date.parse('2026-09-20T12:00:00Z')});assert.equal(result.totalShares,seed.company.totalShares);assert.equal(result.netChange,seed.company.netChange);}
+for(const file of seedFiles){const seed=JSON.parse(fs.readFileSync(`public/data/mutual-funds/companies/${file}`));const result=projectCompany(retainSeedObservations([],[seed])[0],{now:Date.parse('2026-09-20T12:00:00Z')});assert.equal(result.totalShares,seed.company.totalShares);if(Object.values(result.excludedFunds).every(n=>n===0))assert.equal(result.netChange,seed.company.netChange);assert.equal(result.funds.length,seed.company.funds.length,'Exclusions retain raw source history');}
 console.log(`PASS retained seed capture: newer observations win, missing sources retain history, and ${seedFiles.length} portfolio totals survive normalization`);
 const books=Array.from({length:7},(_,i)=>({...dated,isin:`INE123A0101${i}`,funds:[{...dated.funds[0],months:Object.fromEntries(Array.from({length:8},(_,m)=>[`2026-0${m+1}`,{shares:100,checkedAt:'2026-09-20T08:00:00Z',sourceUrl:'https://example.test/'+('a'.repeat(100))}]))}]}));
 let inFlight=0,peak=0;const parts=new Map(),acknowledged=new Set();

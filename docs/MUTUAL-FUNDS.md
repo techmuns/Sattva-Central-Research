@@ -30,12 +30,30 @@ they carry the underlying equity ISIN. Instruments whose cash/derivative section
 remain withheld. Duplicate scheme/ISIN observations and inconsistent historical
 month labels are recorded as validation findings rather than guessed.
 
-Net change is additions minus reductions **only for schemes reporting both adjacent calendar
+Company Holdings activity defaults to equity and hybrid schemes, with **arbitrage and fixed
+income excluded**, without a toggle. `mutual-funds-activity.js` applies the same eligibility
+policy to public and private projections. A source category or explicit scheme-name category
+establishes eligibility; owning an equity ISIN or carrying a generic Growth name does not.
+Arbitrage overrides broad Equity/Hybrid labels. Unverified categories and other mandates are
+excluded and counted separately. Hybrid schemes remain eligible even where their descriptions
+mention debt; their hedged/unhedged split is unavailable, so this is not measured unhedged exposure.
+
+Net change is additions minus reductions **only for eligible schemes reporting both adjacent calendar
 months**. A missing scheme report or missing quantity is unknown, not zero. A stock absent from a
 captured scheme can be represented as zero only where the scheme's parsed NAV weights reconcile
 within 95–105%; otherwise its absence is unverified. This is a parsing safeguard, not independent
 certification that the AMC's report is exhaustive. Corporate actions can change share counts without
 cash trading. New positions show “New”, not a percentage calculated by dividing by zero.
+
+The bold Insight summary starts with net buying/selling shares and the two largest net buying
+and selling fund houses. Opposing moves across a house's eligible schemes are netted first.
+Fund counts, pending comparisons and exclusions sit beneath it; the drill-down shows eligible
+schemes and retains the largest individual scheme moves. Net Volume and Excel use this same net.
+Excluded raw observations remain in retained history and the API. MF shares held and ownership
+continue to include all captured schemes, as their tooltip states. `activityBasis` versions the
+projection; legacy summary activity is withheld until normal publication re-projects retained
+observations, even with unchanged source revisions. Detail reads can re-project their bounded
+saved monthly facts. Neither operation advances source check times or certifies coverage.
 
 “MF shares held” sums quantities reported for the displayed month and is explicitly subject to
 coverage. The MF ownership column equals those shares ÷ company shares outstanding × 100.

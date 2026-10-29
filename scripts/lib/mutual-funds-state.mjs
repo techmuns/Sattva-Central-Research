@@ -9,6 +9,7 @@ import { sealForReader,hash } from '../../worker/mutual-funds-seal.mjs';
 import { localMutualFunds } from './mutual-funds-local.mjs';
 import { scannerOperationalStatus } from '../../worker/mutual-funds-scanner-model.mjs';
 import { MF_TABLES } from '../../worker/mutual-funds-export.mjs';
+import {summaryOf} from '../../worker/mutual-funds-model.mjs';
 import {sealBackgroundView} from './github-background-views.mjs';
 import {sealBackgroundState} from './github-background-seal.mjs';
 
@@ -107,8 +108,10 @@ export async function buildSnapshot(local,recipient,{env=process.env,out=path.re
   const prepared=value=>({gzip:gzipSync(Buffer.from(JSON.stringify(value))).toString('base64')});
   for(const isin of ids) {
     const company=local.primary.company(isin),merged=local.scanner.company(isin),part=mfPart(isin);
-    const summary=local.primary.read([isin],'').rows[0];if(summary)primaryRows.push(summary);
-    const privateSummary=local.scanner.read([isin],'').rows[0];if(privateSummary)privateRows.push(privateSummary);
+    // Re-project retained observations even when their source revision has not
+    // changed. A saved pre-policy summary must never survive a normal publish.
+    const summary=local.primary.read([isin],'').rows[0];if(company)primaryRows.push({...summary,...summaryOf(company)});
+    const privateSummary=local.scanner.read([isin],'').rows[0];if(merged)privateRows.push({...privateSummary,...summaryOf(merged)});
     for(const [current,store,parts] of [[company,local.primary,publicParts],[merged,local.scanner,privateParts]]) {
       if(!current)continue;
       if(!parts.has(part))parts.set(part,{});

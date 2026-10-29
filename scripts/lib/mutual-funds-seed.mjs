@@ -7,7 +7,7 @@ export function retainSeedObservations(companies,seeds) {
   const retained=new Map();
   for(const {company:c} of seeds) {
     if(!c)continue;
-    const funds=c.funds.map(f=>({id:f.id,name:f.name,amc:f.amc,months:Object.fromEntries(Object.entries(f.months).map(([month,p])=>[month,{
+    const funds=c.funds.map(f=>({id:f.id,name:f.name,amc:f.amc,...Object.fromEntries(['classification','category','assetClass'].filter(k=>typeof f[k]==='string').map(k=>[k,f[k]])),months:Object.fromEntries(Object.entries(f.months).map(([month,p])=>[month,{
       shares:p.shares,valueCr:p.valueCr,pctOfAum:p.pctOfAum,checkedAt:p.checkedAt,sourceUrl:p.sourceUrl,absenceVerified:p.absenceVerified
     }]))}));
     retained.set(c.isin,{isin:c.isin,name:c.name,ticker:c.ticker,sector:c.sector,denominator:c.denominator,funds});

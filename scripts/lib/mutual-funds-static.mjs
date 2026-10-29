@@ -8,6 +8,13 @@ import {backgroundContract} from '../../worker/github-background-contract.mjs';
 import {localMutualFunds} from './mutual-funds-local.mjs';
 import {restoreState,buildSnapshot,MF_LOCAL_FILE} from './mutual-funds-state.mjs';
 const configuration=env=>({...env,BACKGROUND_STATE_KEY:env.MF_STATE_KEY});
+export function mutualFundsPublicationEnv(env) {
+  const source=env.MF_SOURCE_SHA||env.GITHUB_SHA;
+  if(!/^[a-f0-9]{40}$/.test(source||''))throw Error('Invalid ownership source commit');
+  // A queued run's event SHA can precede its main checkout. Bind the encrypted
+  // bundle to the reviewed code actually executed; transport still verifies HEAD.
+  return {...env,GITHUB_SHA:source};
+}
 export async function restoreStaticMutualFunds({env=process.env,fetcher=fetch,file=MF_LOCAL_FILE,legacyClient,onProgress}={}) {
   const config=configuration(env),transport=githubBackgroundRelease('mutual-funds',{env:config,fetcher}),snapshot=await transport.latest();
   if(!snapshot)return restoreState({env,fetcher,file,legacyClient,onProgress});
@@ -17,6 +24,7 @@ export async function restoreStaticMutualFunds({env=process.env,fetcher=fetch,fi
   const local=localMutualFunds(file);try{if(local.db.prepare('PRAGMA quick_check').get().quick_check!=='ok')throw Error('Ownership restart database invalid');}finally{local.close();}
 }
 export async function publishStaticMutualFunds(recipient,{env=process.env,fetcher=fetch,file=MF_LOCAL_FILE,out=path.resolve('.cache/mutual-funds/static-publish'),...options}={}) {
+  env=mutualFundsPublicationEnv(env);
   const config=configuration(env),transport=githubBackgroundRelease('mutual-funds',{env:config,fetcher,...options});
   const built=await buildSnapshot(localMutualFunds(file),recipient,{env,out,file,staticViews:true,partBytes:3*1024*1024});
   const {state,...head}=built.manifest;head.files=Object.fromEntries(Object.entries(head.files).filter(([name])=>name!==state));

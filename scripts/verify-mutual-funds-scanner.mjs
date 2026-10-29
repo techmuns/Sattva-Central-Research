@@ -12,7 +12,7 @@ let clock=Date.parse('2026-09-21T01:00:00Z');const isin='INE090A01021',url='http
 // Synthetic markup only; no copied provider pages or private portfolios in Git.
 const row=(slug,name,action,prior,current,delta)=>`<tr><td><a href="/fund/${slug}">${name}</a><span>HDFC</span></td><td>${action}</td><td>${prior}</td><td>${current}</td><td>${delta}</td><td>—</td></tr>`;
 const html=(rows,count=1)=>`<html><head><link rel="canonical" href="${url}"><meta name="description" content="Holdings — ${count} schemes, share counts"></head><body><span>${isin}</span> · fund activity <table><thead><tr>${['Fund','Action','July 2026','August 2026','Δ shares','Value (₹Cr)'].map(v=>`<th>${v}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></body></html>`;
-const sample=html(row('hdfc-fixture','HDFC Fixture Fund','increased','100','150','+50'));
+const sample=html(row('hdfc-fixture','HDFC Equity Fixture Fund','increased','100','150','+50'));
 const parse=s=>parseScannerStock(s,{isin,url,checkedAt:new Date(clock).toISOString(),now:clock});
 let page=parse(sample);assert.equal(page.funds[0].months['2026-08'].shares,150);
 for(const malformed of [sample.replace(isin,'INE040A01034'),sample.replace('August 2026','October 2026'),sample.replace('+50','+60'),sample.replace('1 schemes','2 schemes'),sample.replace('</html>',''),html(row('a','A','held','100','100','0')+row('a','A','held','100','100','0'),2)])assert.throws(()=>parse(malformed));
@@ -22,7 +22,7 @@ const catalogue=parseScannerCatalogue(catHTML);assert.equal(scannerStockUrl(cata
 assert.equal(scannerStockUrl([{name:'The North & South Bank Ltd.',url}],{name:'N&S Bank',aliases:['North and South Bank Ltd']}),url,'Company aliases survive articles and ampersand formatting');
 assert.equal(scannerStockUrl([{name:'Fixture Electrical Eqp Ltd',url}],{name:'Fixture Electrical Equipments Ltd'}),url,'Common source abbreviations can discover a page; its exact ISIN is still mandatory');
 
-const primary={isin,name:'Fixture Bank',month:'2026-08',funds:[{id:'hdfc:hdfc fixture fund',name:'HDFC Fixture Fund',amc:'HDFC',months:{'2026-07':{shares:100},'2026-06':{shares:75}}}]};
+const primary={isin,name:'Fixture Bank',month:'2026-08',funds:[{id:'hdfc:hdfc fixture fund',name:'HDFC Equity Fixture Fund',amc:'HDFC',months:{'2026-07':{shares:100},'2026-06':{shares:75}}}]};
 let combined=supplementCompany(primary,page,{now:clock});assert.equal(combined.funds.length,1);assert.equal(combined.totalShares,150);assert.equal(combined.netChange,50);assert.equal(combined.funds[0].months['2026-06'].shares,75);
 const verified=structuredClone(primary);verified.funds[0].months['2026-08']={shares:0,absenceVerified:true};assert.equal(supplementCompany(verified,page,{now:clock}).totalShares,0,'Verified primary absence wins over a backup');
 const duplicate=structuredClone(page);duplicate.funds.push({...duplicate.funds[0],id:'scanner:another-slug'});assert.equal(supplementCompany(primary,duplicate,{now:clock}).totalShares,null,'Ambiguous duplicate backup schemes are withheld');

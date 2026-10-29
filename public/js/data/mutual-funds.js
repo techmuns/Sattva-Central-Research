@@ -1,15 +1,16 @@
 import {readableOwnership} from './mutual-funds-ownership.js';
-import { conditionalJson,revalidatedJson,readEntry,writeEntry } from '../core/store.js';
+import {sourceFreshness} from './mutual-funds-freshness.js';
+import { conditionalJson,revalidatedJson,readEntry,readEntries,writeEntry } from '../core/store.js';
 import * as coverage from './coverage.js';
 import * as watchlist from '../core/watchlist.js';
 import { filterByScope } from './scope.js';
 import {authHeaders,hostToken,onHostContext} from '../core/host-context.js';
 import {boundedJson} from './family-book-contract.js';
 const snapshots=new Map(), pending=new Map(), rowsByIsin=new Map();
-let latestMeta={}, lastDetail=null;
+let latestMeta={viewIncomplete:true}, lastDetail=null;
 const privateRows=new Map(),privatePending=new Map(),sessionListeners=new Set(),updateListeners=new Set();
 let privateMeta=null,generation=0;
-export const meta=()=>({...latestMeta,...(hostToken()?privateMeta:{supplementAccess:'no-session'}),revalidating:pending.size>0||privatePending.size>0});
+export const meta=()=>({...latestMeta,...(hostToken()?privateMeta:{supplementAccess:'no-session'}),publicRevalidating:pending.size>0,revalidating:pending.size>0||privatePending.size>0});
 export const all=()=>[...new Map([...rowsByIsin,...(hostToken()?privateRows:[])]).values()].map(row=>readableOwnership(row));
 export const onSessionChange=fn=>{sessionListeners.add(fn);return()=>sessionListeners.delete(fn);};
 export const onUpdate=fn=>{updateListeners.add(fn);return()=>updateListeners.delete(fn);};
@@ -44,76 +45,105 @@ export async function load(scope='portfolio',options={}) {
         else privateMeta={...privateMeta,supplementReadFailed:true};
       }
     })().finally(()=>{if(epoch===generation){privatePending.delete(key);notify();}});
-    privatePending.set(key,request);
+    privatePending.set(key,request);queueMicrotask(notify);
   }
   await privatePending.get(key);
   return {...result,rows:ids.map(id=>hostToken()&&privateRows.get(id)||rowsByIsin.get(id)).filter(Boolean),meta:meta()};
 }
 function adopt(payload, {fallback=false}={}) {
+  let changed=false;
   for(const row of payload.rows) if(!fallback || !rowsByIsin.has(row.isin)) {
     // A changed primary capture must be visible immediately, even while the
     // authenticated supplemental read is still in flight.
-    if(JSON.stringify(rowsByIsin.get(row.isin))!==JSON.stringify(row))privateRows.delete(row.isin);
-    rowsByIsin.set(row.isin,row);
+    if(JSON.stringify(rowsByIsin.get(row.isin))!==JSON.stringify(row)){privateRows.delete(row.isin);rowsByIsin.set(row.isin,row);changed=true;}
   }
+  return changed;
 }
 const local=()=>['localhost','127.0.0.1'].includes(location.hostname);
 export function scopedRows(scope='portfolio',holdings=coverage.holdings()) {
   const rows=all();
-  if(scope==='portfolio') { const map=new Map(rows.map(r=>[r.isin,r]));return holdings.map(h=>({...map.get(h.isin),isin:h.isin,ticker:h.ticker,name:h.name,sector:h.sector,missing:!map.has(h.isin)})); }
+  if(scope==='portfolio') { const map=new Map(rows.map(r=>[r.isin,r]));return holdings.map(h=>({...map.get(h.isin),isin:h.isin,ticker:h.ticker,name:h.name,sector:h.sector,missing:!map.has(h.isin),checking:!map.has(h.isin)&&(pending.size>0||privatePending.size>0)})); }
   const scoped=filterByScope(rows,scope,holdings);
-  if(scope==='watchlist'){const byTicker=new Map(scoped.map(r=>[r.ticker,r]));return watchlist.all().map(h=>byTicker.get(h.ticker)||{ticker:h.ticker,name:h.name||h.ticker,missing:true});}
+  if(scope==='watchlist'){const byTicker=new Map(scoped.map(r=>[r.ticker,r]));return watchlist.all().map(h=>byTicker.get(h.ticker)||{ticker:h.ticker,name:h.name||h.ticker,missing:true,checking:pending.size>0||privatePending.size>0});}
   return scoped;
+}
+async function restorePublic(key,ids) {
+  const name=`mf-snapshot:${key}`,universe='mf-snapshot:universe';
+  const saved=snapshots.has('universe')?null:await readEntries([...new Set([name,universe])]);
+  if(snapshots.has(key))return; // A late disk read cannot roll back a fresh response.
+  const value=snapshots.get('universe')||saved?.get(name)?.value||saved?.get(universe)?.value;
+  if(!Array.isArray(value?.rows))return;
+  const wanted=ids&&new Set(ids),payload=wanted?{...value,rows:value.rows.filter(row=>wanted.has(row.isin))}:value;
+  adopt(payload,{fallback:true});snapshots.set(key,payload);
+  latestMeta={...(!latestMeta.checkedAt?{...payload.meta,origin:'store'}:latestMeta),viewIncomplete:!!latestMeta.readFailed};
+  notify();
 }
 function loadPublic(scope='portfolio', {holdings=coverage.holdings(),refresh=true}={}) {
   const ids=scope==='portfolio'?[...new Set(holdings.map(h=>h.isin).filter(id=>/^IN[A-Z0-9]{10}$/.test(id)))].sort():null;
   const key=ids?ids.join(','):'universe';
   if(pending.has(key))return pending.get(key);
   if(!refresh&&snapshots.has(key))return Promise.resolve(snapshots.get(key));
+  // Disk restoration and revalidation start independently. Slow/blocked IndexedDB
+  // must not put its six-second open deadline in front of the network request.
+  if(!snapshots.has(key))void restorePublic(key,ids);
   const promise=(async()=>{
-    // Restore the existing public snapshot before asking the network. This is
-    // the same cache previously consulted only after a full request timeout.
-    if(!snapshots.has(key)) {
-      const saved=await readEntry(`mf-snapshot:${key}`);
-      if(Array.isArray(saved?.value?.rows)) {
-        adopt(saved.value,{fallback:true});snapshots.set(key,saved.value);
-        if(!latestMeta.checkedAt)latestMeta={...saved.value.meta,origin:'store'};
-        notify();
-      }
-    }
     try {
       let payload,fallback=false,readFailed=false;
       if(local()) payload=await revalidatedJson('data/mutual-funds/index.json');
       else {
-        const rows=[];let meta={};
-        // Scope reads stay bounded even when the live book grows beyond one API page.
+        const rows=[];let meta={},walkId=null;
         const batches=ids?Array.from({length:Math.ceil(ids.length/250)},(_,i)=>ids.slice(i*250,(i+1)*250)):[null];
         for(const batch of batches) {
-          let cursor='';
+          let cursor='';const seen=new Set();
           do {
+            if(seen.has(cursor))throw Error('Mutual fund pagination repeated');seen.add(cursor);
             const params=new URLSearchParams(batch?{isins:batch.join(',')}:{cursor});
             const cacheKey=`mf:${batch?.join(',')||'universe'}:${cursor}`;
+            const validate=value=>{
+              if(!Array.isArray(value?.rows)||value.rows.length>250||value.rows.some(row=>!/^IN[A-Z0-9]{10}$/.test(row?.isin||'')||batch&&!batch.includes(row.isin))||new Set(value.rows.map(row=>row.isin)).size!==value.rows.length)throw Error('Invalid mutual fund page');
+              if(value.nextCursor&&(batch||!value.rows.some(row=>row.isin===value.nextCursor)||cursor&&value.nextCursor<=cursor))throw Error('Invalid mutual fund cursor');
+            };
             let result;
-            try{result=await conditionalJson(`/api/mutual-funds?${params}`,{key:cacheKey,signal:AbortSignal.timeout(15000)});}
-            catch(error){const saved=await readEntry(cacheKey);if(!saved?.value?.rows)throw error;result={value:saved.value};readFailed=true;}
-            if(!Array.isArray(result.value?.rows))throw Error('Mutual fund response unavailable');
+            try{result=await conditionalJson(`/api/mutual-funds?${params}`,{key:cacheKey,cacheWaitMs:40,validate,signal:AbortSignal.timeout(15000)});}
+            catch(error){const saved=await readEntry(cacheKey,{waitMs:40});if(!saved?.value?.rows)throw error;result={value:saved.value};readFailed=true;}
+            validate(result.value);
+            const saved=snapshots.get(key)||snapshots.get('universe'),snapshotId=result.value.meta?.publicSnapshotId;
+            if(walkId&&snapshotId!==walkId)throw Error('Mutual fund publication changed during the read');
+            if(snapshotId)walkId=snapshotId;
+            // The prepared file digest covers the ENTIRE public index. One probe
+            // can validate a complete saved view without downloading every page.
+            if(!readFailed&&/^[a-f0-9]{64}$/.test(snapshotId||'')&&saved?.meta?.publicSnapshotId===snapshotId) {
+              const wanted=ids&&new Set(ids),reused={rows:wanted?saved.rows.filter(row=>wanted.has(row.isin)):saved.rows,meta:result.value.meta};
+              adopt(reused);snapshots.set(key,reused);void writeEntry(`mf-snapshot:${key}`,{value:reused});
+              latestMeta={...reused.meta,readFailed:false,viewIncomplete:false,origin:'live'};
+              return {...reused,meta:latestMeta};
+            }
             rows.push(...result.value.rows);meta=result.value.meta;cursor=result.value.nextCursor||'';
+            const changed=adopt(result.value);
+            latestMeta={...meta,readFailed,origin:readFailed?'store':'live',viewIncomplete:!snapshots.has(key)};
+            if(changed)notify(); // Show each verified page without waiting for later pages or private reads.
           }while(cursor);
         }
         payload={rows,meta};
         if(!rows.length&&!meta?.checkedAt){payload=await revalidatedJson('data/mutual-funds/index.json');fallback=true;}
       }
       if(!Array.isArray(payload?.rows))throw Error('Mutual fund capture unavailable');
-      adopt(payload,{fallback});snapshots.set(key,payload);if(!readFailed&&!fallback)writeEntry(`mf-snapshot:${key}`,{value:payload});latestMeta={...payload.meta,readFailed,origin:readFailed?'store':fallback||local()?'snapshot':'live'};return {...payload,meta:latestMeta};
+      adopt(payload,{fallback});
+      if(!fallback){snapshots.set(key,payload);if(!readFailed)void writeEntry(`mf-snapshot:${key}`,{value:payload});}
+      latestMeta={...payload.meta,readFailed,viewIncomplete:fallback,origin:readFailed?'store':fallback||local()?'snapshot':'live'};
+      return {...payload,meta:latestMeta};
     }catch(error) {
-      latestMeta={...latestMeta,readFailed:true};
+      // A failed walk may have adopted a newer first page over an older complete
+      // cache. Keep those readings, but never export that unverified mixture.
+      latestMeta={...latestMeta,readFailed:true,viewIncomplete:true};
       if(snapshots.has(key))return {...snapshots.get(key),meta:latestMeta};
-      const saved=await readEntry(`mf-snapshot:${key}`);
-      if(saved?.value?.rows){adopt(saved.value,{fallback:true});snapshots.set(key,saved.value);latestMeta={...saved.value.meta,readFailed:true};return {...saved.value,meta:latestMeta};}
-      try {const seed=await revalidatedJson('data/mutual-funds/index.json');adopt(seed,{fallback:true});snapshots.set(key,seed);latestMeta={...seed.meta,readFailed:true};return {...seed,meta:latestMeta};}
+      // Successfully read pages stay visible after a later failure. Do not
+      // describe an incomplete first visit as a complete saved universe.
+      if(rowsByIsin.size){const wanted=ids&&new Set(ids);return {rows:[...rowsByIsin.values()].filter(row=>!wanted||wanted.has(row.isin)),meta:latestMeta};}
+      try {const {value:seed}=await conditionalJson('data/mutual-funds/index.json',{key:'mf:legacy-seed',cacheWaitMs:40});adopt(seed,{fallback:true});latestMeta={...seed.meta,readFailed:true,viewIncomplete:true};return {...seed,meta:latestMeta};}
       catch {throw error;}
     }
-  })().finally(()=>{pending.delete(key);notify();});pending.set(key,promise);return promise;
+  })().finally(()=>{pending.delete(key);notify();});pending.set(key,promise);queueMicrotask(notify);return promise;
 }
 export async function detail(isin,month=null) {
   if(hostToken()&&!local()) {
@@ -154,6 +184,11 @@ async function detailPublic(isin,month=null) {
 }
 export function health(m=meta(),now=Date.now()) {
   if(m.readFailed)return 'Read failed · showing saved disclosures';
+  if(m.amcs?.length) {
+    const h=sourceFreshness(m,now);
+    if(h.state==='stale')return 'Source checks overdue';
+    return h.state==='partial'?`Partial coverage · ${h.currentAmcs}/${h.totalAmcs} AMCs reported`:'Latest reported disclosures';
+  }
   if(!m.checkedAt)return 'Source checks pending';
   const age=now-Date.parse(m.checkedAt);
   if(!Number.isFinite(age)||age < -60000||age>45*60000)return 'Source checks overdue';

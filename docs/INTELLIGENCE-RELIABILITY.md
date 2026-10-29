@@ -538,8 +538,12 @@ A recovery source's success cannot certify exhaustive exchange coverage.
 
 ## Mutual-fund returns and category comparisons
 
-Company Holdings retains the authenticated Sattva ownership reader. All Schemes and Category
-Performance use the public AmfiBeas NAV snapshot independently of company scope. They retain
+Company Holdings retains the authenticated Sattva ownership reader. Activity uses verified
+equity/hybrid schemes by default; arbitrage, fixed income and unverified categories are excluded
+from net, additions, reductions, leaders and Net Volume. Exclusion counts and missing comparisons
+remain explicit. Reported total ownership and raw source history remain intact. Projection
+upgrades cannot advance source check dates or reuse unfiltered legacy activity. All Schemes and
+Category Performance use the public AmfiBeas NAV snapshot independently of company scope. They retain
 its NAV date, source cohorts, plan and option; no index comparison or average of displayed
 rows is substituted. Conflicting published cohort statistics are withheld. Schemes without a
 source cohort identity cannot establish category statistics. Direct plans take display preference,

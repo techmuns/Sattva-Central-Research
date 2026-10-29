@@ -4746,6 +4746,11 @@ summaries; only the visible card headline can carry its optional factual summary
 AI Alerts is the default first tab; Ask Research keeps its existing route and availability.
 Mutual Funds preserves Company Holdings as its default, with All Schemes and Category Performance
 from the same dated public AmfiBeas snapshot. Portfolio sizes never enter that public cache.
+Company Holdings (ported from Glow, 29 October 2026): activity counts verified equity/hybrid
+schemes only (arbitrage, fixed income and unverified categories are excluded and counted), the
+bold insight line names the largest net buying/selling fund houses, and Net Volume (Crores) values
+the net share change at the displayed CMP as a signed estimate, not executed cash flow. See
+`docs/MUTUAL-FUNDS.md`; `verify-mutual-funds-directional.mjs` and `-reading.mjs` are the tests.
 
 ### Investor relevance across Corporate Announcements, News and All Alerts (October 2026)
 
