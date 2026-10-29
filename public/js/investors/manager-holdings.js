@@ -33,7 +33,7 @@ export function renderManagerHoldings(ctx, { view = {}, onView = () => {}, toolb
       { label: 'Source period / marks', get: row => sourcePeriod(row.manager) },
     ];
     const eligible = () => managers.meta()?.sourceRevision === snapshot.sourceRevision;
-    table = scoreTable({ rows, key: row => row.id, name: row => row.security, sub: row => `${row.manager.name} · ${row.isin || 'identifier unstated'}`,
+    table = scoreTable({ companyMarket: true, rows, key: row => row.id, name: row => row.security, sub: row => `${row.manager.name} · ${row.isin || 'identifier unstated'}`,
       watchKey: row => row.ticker || null, watchName: row => row.security, showAvatar: false, showBookmarks: false, showWatchFilter: 'selected',
       dense: true, nameMaxPx: 260, stickyHead: 'max(320px, calc(100vh - 330px))', initialView: view, toolbarControls,
       searchable: row => `${row.security} ${row.manager.name} ${row.isin || ''} ${row.ticker || ''} ${row.assetClass || ''}`,
@@ -43,7 +43,7 @@ export function renderManagerHoldings(ctx, { view = {}, onView = () => {}, toolb
       emptyMessage: 'No matching security holdings in the connected workbook. Private fund capital is available in Overview.',
       onExport: selected => {
         if (!eligible()) return;
-        exportRows({ filename: 'sattva-manager-holdings', sheetName: 'Holdings', rows: selected, canExport: eligible,
+        exportRows({ companyMarket: true, filename: 'sattva-manager-holdings', sheetName: 'Holdings', rows: selected, canExport: eligible,
           columns: [{ key: 'security', header: 'Security', get: row => row.security }, { key: 'manager', header: 'Manager', get: row => row.manager.name },
             ...['isin', 'ticker', 'quantity', 'marketValue', 'costBasis', 'weightPct', 'assetClass'].map(key => ({ key, header: key, get: row => row[key] ?? null })),
             { key: 'source', header: 'Source and scope', width: 80, get: row => `${sourcePeriod(row.manager)}; ${ctx.scope}; checked ${snapshot.checkedAt}; ${snapshot.coverage.note}` }] });

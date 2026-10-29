@@ -89,6 +89,7 @@ export function renderFiled(ctx, { disposers = [], section = 'institutions', onS
   const filing = isFiling(fund);
 
   const table = scoreTable({
+    companyMarket: true,
     rows,
     bookmarkDate: () => label0,
     bookmarkSource: () => fund.name,
@@ -949,7 +950,7 @@ async function exportFund(visible, fund) {
         { header: 'Why no ticker', key: 'u', width: 40, get: (r) => (r.__banner ? '' : r.ticker ? '' : r.unresolvedReason || '') },
       ];
 
-  await exportRows({
+  await exportRows({ companyMarket: true,
     filename: `sattva-${fund.investorId}-holdings`,
     sheetName: filing ? 'Filed holdings' : 'Fund portfolio',
     columns: [

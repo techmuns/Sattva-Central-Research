@@ -137,6 +137,7 @@ function paint(ctx) {
   const subjects = [...subjectCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
   const table = scoreTable({
+    companyMarket: true,
     rows,
     key: feed.rowKey,
     // THE STAR MARKS THE COMPANY, NOT THE ROW. `key` is the filing's identity; the watch key is the

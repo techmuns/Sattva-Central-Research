@@ -42,6 +42,7 @@ import { researchPriceHistory, retainedPriceHistory } from './lib/research-price
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { abdiRanaldoSpreadPct, amihudImpactPct, liquidityTier } from "./lib/liquidity-estimators.mjs";
+import { writeCompanyQuotes } from './lib/company-quotes.mjs';
 
 const IMPACT_COST_ORDER_SIZE_RUPEES = 5e7;   // ₹5 crore — standardized institutional position
 
@@ -425,6 +426,7 @@ function flush(scraped, indexBars, failures) {
     companies: results,
   };
   writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
+  if (!TECH_LIMIT) writeCompanyQuotes(payload, resolve(__dirname, '../public/data/company-quotes.json'));
 }
 
 /**

@@ -477,7 +477,7 @@ function openHistoryCatalogue(ctx) {
     historyCatalogueOff?.();
     const resolved = chatter.resolveArchiveTopics(value);
     const rows = chatter.forScope(ctx.scope, resolved.filter(row => row.ticker));
-    const table = scoreTable({ rows, key: row => row.slug, name: row => row.name, sub: row => row.ticker || row.slug,
+    const table = scoreTable({ companyMarket: true, rows, key: row => row.slug, name: row => row.name, sub: row => row.ticker || row.slug,
       nameLabel: 'Company / topic', showRank: false, showAvatar: false, showWatchFilter: false,
       watchKey: () => null, searchable: row => `${row.name} ${row.ticker || ''} ${row.slug}`,
       initialSort: { key: 'Latest mention', dir: 'desc' }, initialView: view,
@@ -671,6 +671,7 @@ function exportChatterRows(rows) {
   ];
 
   return exportRows({
+    companyMarket: true,
     filename: `sattva-public-chatter-coverage-${todayStamp()}`,
     sheetName: 'Coverage',
     columns,
@@ -728,6 +729,7 @@ const sentimentFilter = () => ({
 function buildCoveredTable(rows) {
   if (!rows.length) return null;
   const table = scoreTable({
+    companyMarket: true,
     rows,
     key: (r) => r.slug,
     watchKey: (r) => r.ticker,

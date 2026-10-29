@@ -84,7 +84,7 @@ const git = (...args) => execFileSync('git', args, { cwd: scratch, encoding: 'ut
 try {
   git('init', '-b', 'fixture-base'); git('config', 'user.name', 'Local fixture'); git('config', 'user.email', 'fixture@example.test');
   mkdirSync(join(scratch, 'public/data'), { recursive: true });
-  const files = ['technicals', 'price-move-checks', 'atr-history', 'earnings-live', 'mc-ticker-map', 'result-returns', 'earnings-calendar', 'concall-scans', 'super-investors'];
+  const files = ['technicals', 'company-quotes', 'price-move-checks', 'atr-history', 'earnings-live', 'mc-ticker-map', 'result-returns', 'earnings-calendar', 'concall-scans', 'super-investors'];
   for (const name of files) writeFileSync(join(scratch, `public/data/${name}.json`), '{}\n');
   git('add', 'public/data'); git('commit', '-m', 'Fixture baseline');
   git('switch', '-c', 'fixture-upstream'); writeFileSync(join(scratch, 'other-source.json'), '{}\n'); git('add', 'other-source.json'); git('commit', '-m', 'Unrelated upstream capture');

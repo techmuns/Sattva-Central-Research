@@ -129,6 +129,7 @@ jobs:
           name: technicals-data
           path: |
             public/data/technicals.json
+            public/data/company-quotes.json
             public/data/atr-history.json
             public/data/price-move-checks.json
             public/data/technical-history-recovery.json
@@ -146,6 +147,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/technicals.json
+          [ -f public/data/company-quotes.json ] && git add public/data/company-quotes.json || true
           # The technicals scraper also updates its verification checkpoint. Leaving it unstaged
           # made the next fetch/rebase fail after an otherwise successful 20-minute collection.
           [ -f public/data/price-move-checks.json ] && git add public/data/price-move-checks.json || true

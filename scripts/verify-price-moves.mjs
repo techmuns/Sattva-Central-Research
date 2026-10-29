@@ -20,6 +20,7 @@
 // helpers the scrape uses. Everything else in the file is left byte-for-byte.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { writeCompanyQuotes } from './lib/company-quotes.mjs';
 import { verifyMoves, loadChecks, saveChecks, CHECKS_PATH, SOURCE_LABEL } from './lib/muns-market-data.mjs';
 import { marketBreadth, priceDateOf } from './lib/technicals-file.mjs';
 
@@ -64,4 +65,5 @@ payload.market_breadth = marketBreadth(rows);
 payload.price_date = priceDateOf(rows);
 payload.price_date_rows = rows.filter((r) => r.bar_date === payload.price_date).length;
 writeFileSync(TECHNICALS_PATH, JSON.stringify(payload) + '\n');
+writeCompanyQuotes(payload, new URL('../public/data/company-quotes.json', import.meta.url));
 console.log(`Wrote ${TECHNICALS_PATH}: ${payload.move_verification.checked} of ${summary.flagged} flagged moves now carry the endpoint's figure.`);

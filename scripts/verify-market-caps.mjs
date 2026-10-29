@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { parseMarketCapScreen, parseMarketCapCompany, marketCapDirectoryChecks } from './lib/market-caps.mjs';
 import { buildCompanyProfiles, inMcapRange, parseMcapRange, formatMarketCap, marketCapPriceDate } from '../public/js/data/company-profile.js';
@@ -14,11 +14,11 @@ const entities = [
   { isin: 'INE0V9N01017', ticker: 'PRIZOR', exchanges: ['NSE'] },
   { isin: 'INE658D01029', ticker: 'SIMPLEXCAS', bseCode: '513472', exchanges: ['BSE'] },
 ];
-const row = (key, cr) => `<tr data-row-company-id="123"><td>1</td><td><a href="/company/${key}/">Company</a></td><td>${cr}</td></tr>`;
-const screen = ({ page = 1, total = 25, keys = ['MAIN', 'PRIZOR', '513472'], cap = 1000 } = {}) => `<html>
+const row = (key, cr, cmp = null) => `<tr data-row-company-id="123"><td>1</td><td><a href="/company/${key}/">Company</a></td><td>${cr}</td>${cmp == null ? '' : `<td>${cmp}</td>`}</tr>`;
+const screen = ({ page = 1, total = 25, keys = ['MAIN', 'PRIZOR', '513472'], cap = 1000, cmp = null } = {}) => `<html>
   <div>${total} results found: Showing page ${page} of ${Math.ceil(total / 25)}</div>
-  <table class="data-table"><thead><tr><th>S.No.</th><th>Company</th><th data-tooltip="Market Capitalization">Mar Cap Rs.Cr.</th></tr></thead>
-  <tbody>${Array.from({ length: Math.min(25, total - (page - 1) * 25) }, (_, i) => row(keys[i] || `OTHER${i}`, cap)).join('')}</tbody></table>
+  <table class="data-table"><thead><tr><th>S.No.</th><th>Company</th><th data-tooltip="Market Capitalization">Mar Cap Rs.Cr.</th>${cmp == null ? '' : '<th data-tooltip="Current Price">CMP Rs.</th>'}</tr></thead>
+  <tbody>${Array.from({ length: Math.min(25, total - (page - 1) * 25) }, (_, i) => row(keys[i] || `OTHER${i}`, cap, cmp)).join('')}</tbody></table>
   <textarea name="query">Market Capitalization &gt;1</textarea></html>`;
 const page = (key = 'PRIZOR', value = '1,468') => `<html><div id="top"><a href="https://www.nseindia.com/get-quotes/equity?symbol=${key}">NSE</a>
   <div class="ink-600 font-size-11 font-weight-500">13 Oct - close price</div>
@@ -120,7 +120,7 @@ try {
   // Simulate the next scheduled attempt after the persisted cooldown has expired.
   partial.coverage.retryAt = '1970-01-01T00:00:00Z';
   writeFileSync(join(tmp, 'market-caps.json'), JSON.stringify(partial));
-  const recovered = run({ 1: screen({ cap: 1550.12 }) });
+  const recovered = run({ 1: screen({ cap: 1550.12, cmp: 123.45 }) });
   assert.equal(recovered.coverage.known, 3);
   assert.equal(recovered.coverage.checked, 3);
   assert.equal(recovered.coverage.screenComplete, true);
@@ -128,12 +128,16 @@ try {
   assert.equal(recovered.entries.find(e => e.ticker === 'PRIZOR').cr, 1550.12);
   assert(recovered.entries.some(e => e.isin === delisted.isin));
   const oldCheck = recovered.entries.find(e => e.ticker === 'PRIZOR').checkedAt;
+  assert.equal(recovered.entries.find(e => e.ticker === 'PRIZOR').cmp, 123.45);
+  const quoteCheck = recovered.entries.find(e => e.ticker === 'PRIZOR').cmpCheckedAt;
+  assert.equal(quoteCheck, oldCheck, 'a new CMP retains its actual source observation time');
   const failedPage = run({ 1: screen({ keys: ['MAIN', '513472'] }), company: 404 });
   const saved = failedPage.entries.find(e => e.ticker === 'PRIZOR');
   assert.equal(saved.cr, 1550.12);
   assert.equal(saved.checkedAt, oldCheck);
   assert.equal(saved.error, 'HTTP 404');
   assert.equal(saved.checkState, 'failed');
+  assert.equal(saved.cmp, 123.45); assert.equal(saved.cmpCheckedAt, quoteCheck, 'a failed source read retains the earlier CMP and its time');
   assert.equal(failedPage.coverage.directRead, 1);
   assert.equal(failedPage.coverage.directFailures, 1);
   assert.equal(failedPage.coverage.directUnavailable, 0);
@@ -143,6 +147,7 @@ try {
   assert.equal(refreshed.cr, 1468);
   assert.equal(refreshed.priceDateLabel, '13 Oct - close price');
   assert.equal(refreshed.error, null);
+  assert.equal(refreshed.cmp, 123.45); assert.equal(refreshed.cmpCheckedAt, quoteCheck, 'a cap-only success cannot re-date the saved CMP');
   const noFigure = page().replace('Market Cap ₹ <span class="number">1,468', 'Unknown ₹ <span class="number">1,468');
   const unavailable = run({ 1: screen({ keys: ['MAIN', '513472'] }), company: noFigure });
   assert.equal(unavailable.entries.find(e => e.ticker === 'PRIZOR').checkState, 'unavailable');

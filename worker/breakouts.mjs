@@ -101,11 +101,13 @@ async function dailyResponse(source, delivery, ttl, revision = null) {
   return new Response(body,{headers});
 }
 const REVISION = /^[a-f0-9]{40}$/;
-const DAILY_FILES = {'/api/technicals':'technicals.json','/api/technicals/atr-history':'atr-history.json','/api/technicals/source':'technicals-source.json'};
-async function dailyRevision(origin,fetcher,edgeCache) {
-  const key=new Request(new URL('/api/technicals/revision',origin));
+const DAILY_FILES = {'/api/technicals':'technicals.json','/api/technicals/prices':'company-quotes.json','/api/technicals/atr-history':'atr-history.json','/api/technicals/source':'technicals-source.json'};
+async function dailyRevision(origin,fetcher,edgeCache,file='technicals.json') {
+  const keyUrl = new URL('/api/technicals/revision',origin);
+  if (file !== 'technicals.json') keyUrl.searchParams.set('file', file);
+  const key=new Request(keyUrl);
   try { const cached=await edgeCache?.match(key);if(cached){const value=await boundedJson(cached,2000);if(REVISION.test(value.sha))return value.sha;} } catch { /* Recheck the fixed repository. */ }
-  const commits=await boundedJson(await fetcher('https://api.github.com/repos/techmuns/Sattva-Central-Research/commits?path=public%2Fdata%2Ftechnicals.json&per_page=1&sha=main',{
+  const commits=await boundedJson(await fetcher(`https://api.github.com/repos/techmuns/Sattva-Central-Research/commits?path=public%2Fdata%2F${file}&per_page=1&sha=main`,{
     headers:{accept:'application/vnd.github+json','user-agent':'SattvaResearch'},redirect:'manual',signal:AbortSignal.timeout(10000)}),64000);
   const sha=commits?.[0]?.sha;if(!REVISION.test(sha || ''))throw Error('Daily revision unavailable');
   if(edgeCache)await edgeCache.put(key,Response.json({sha},{headers:{'cache-control':'public, max-age=900'}})).catch(()=>{});
@@ -113,7 +115,7 @@ async function dailyRevision(origin,fetcher,edgeCache) {
 }
 export async function handleTechnicals(request, env, { fetcher = fetch, edgeCache = globalThis.caches?.default } = {}) {
   if (request.method !== 'GET') return reply({ ok: false, reason: 'method' }, 405);
-  const url=new URL(request.url),file=DAILY_FILES[url.pathname],companion=url.pathname!=='/api/technicals';
+  const url=new URL(request.url),file=DAILY_FILES[url.pathname],companion=!['/api/technicals','/api/technicals/prices'].includes(url.pathname);
   if(!file || (companion && !REVISION.test(url.searchParams.get('revision') || ''))) return reply({ok:false,reason:'daily-revision-required'},400);
   const keyUrl=new URL(url.pathname,url.origin);
   if(companion)keyUrl.searchParams.set('revision',url.searchParams.get('revision'));
@@ -121,7 +123,7 @@ export async function handleTechnicals(request, env, { fetcher = fetch, edgeCach
   try {
     const cached = await edgeCache?.match(key).catch(()=>null);
     if (cached) return revalidate(request,cached,'edge');
-    const revision=companion ? url.searchParams.get('revision') : await dailyRevision(url.origin,fetcher,edgeCache);
+    const revision=companion ? url.searchParams.get('revision') : await dailyRevision(url.origin,fetcher,edgeCache,file);
     const source = await fetcher(`https://raw.githubusercontent.com/techmuns/Sattva-Central-Research/${revision}/public/data/${file}`, {
       // Workerd supports manual redirects, not redirect:'error'. Non-2xx responses
       // are rejected by dailyResponse; never follow a different source location.
@@ -133,7 +135,7 @@ export async function handleTechnicals(request, env, { fetcher = fetch, edgeCach
     return result;
   } catch {
     if(companion)return reply({ok:false,reason:'daily-companion-unavailable'},503);
-    try { return await dailyResponse(await env.ASSETS.fetch(new Request(new URL('/data/technicals.json',request.url))),'deployed-fallback',0); }
+    try { return await dailyResponse(await env.ASSETS.fetch(new Request(new URL(`/data/${file}`,request.url))),'deployed-fallback',0); }
     catch { return reply({ok:false,reason:'daily-file-unavailable'},503); }
   }
 }

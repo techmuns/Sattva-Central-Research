@@ -24,6 +24,7 @@ export function parseMarketCapScreen(html) {
   if (!table) bad('screen table missing');
   const headers = [...table.matchAll(/<th\b([^>]*)>([\s\S]*?)<\/th>/gi)];
   const index = headers.findIndex(m => /data-tooltip="Market Capitalization"/i.test(m[1]));
+  const priceIndex = headers.findIndex(m => /data-tooltip="Current Price"/i.test(m[1]));
   if (index < 0 || !/Rs\.Cr\./i.test(headers[index][2])) bad('market-cap units changed');
   const rows = [];
   for (const match of table.matchAll(/<tr\b[^>]*data-row-company-id="\d+"[^>]*>([\s\S]*?)<\/tr>/gi)) {
@@ -31,7 +32,8 @@ export function parseMarketCapScreen(html) {
     const link = /href="(\/company\/(id\/)?([A-Z0-9&._-]+)\/(?:consolidated\/)?)"/i.exec((cells[1] || '').replace(/&amp;/g, '&'));
     const cr = parseCrore(plain(cells[index]));
     if (!link || !cr) bad(`invalid company or market cap: ${plain(cells[1])} / ${plain(cells[index])}`);
-    rows.push({ key: `${link[2] ? 'ID:' : ''}${link[3].toUpperCase()}`, cr, sourceUrl: `https://www.screener.in${link[1]}` });
+    const cmp = priceIndex >= 0 && /\bRs\.\s*$/i.test(plain(headers[priceIndex][2])) ? parseCrore(plain(cells[priceIndex])) : null;
+    rows.push({ key: `${link[2] ? 'ID:' : ''}${link[3].toUpperCase()}`, cr, cmp, sourceUrl: `https://www.screener.in${link[1]}` });
   }
   const { 1: total, 2: page, 3: pages } = info;
   if (rows.length !== Math.min(25, +total - (+page - 1) * 25)) bad('incomplete screen page');
@@ -53,10 +55,12 @@ export function parseMarketCapCompany(html, company, checkedAt) {
   const value = plain(item?.[1]);
   const cr = parseCrore(/^Market Cap\s+₹\s+([\d,.]+)\s+Cr\./.exec(value)?.[1]);
   if (!cr) bad('company market cap unavailable', 'unavailable');
+  const priceItem = [...top.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].find(m => /^Current Price\b/.test(plain(m[1])));
+  const cmp = parseCrore(/^Current Price\s+₹\s+([\d,.]+)/.exec(plain(priceItem?.[1]))?.[1]);
   const clock = /<div class="ink-600 font-size-11 font-weight-500">([\s\S]*?)<\/div>/i.exec(top)?.[1];
   const priceDateLabel = plain(clock) || null;
   const priceAsOf = marketCapPriceDate(priceDateLabel);
   if (/\b\d{4}\b/.test(priceDateLabel || '') && !priceAsOf) bad('invalid complete source price date');
   if (priceAsOf && priceAsOf > new Date(Date.parse(checkedAt) + 5.5 * 3600_000).toISOString().slice(0, 10)) bad('future source price date');
-  return { cr, checkedAt, priceDateLabel, priceAsOf, source: 'Screener', sourceUrl: `https://www.screener.in/company/${nse ? company.ticker : company.bseCode}/` };
+  return { cr, cmp, checkedAt, priceDateLabel, priceAsOf, source: 'Screener', sourceUrl: `https://www.screener.in/company/${nse ? company.ticker : company.bseCode}/` };
 }

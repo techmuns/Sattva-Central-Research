@@ -2198,6 +2198,19 @@ links and controls keep their own interactions. A completed drag must not trigge
 Verify with `verify-column-order-ui.mjs`, `verify-column-order-upgrade-ui.mjs`, and the shared
 workspace UI/runtime suites (two devices, offline retry, reset and returning-cache upgrade).
 
+### CMP and market cap on company tables (ported from Glow, 29 October 2026)
+
+`scoreTable({ companyMarket: true })` and `exportRows({ companyMarket })` add a CMP and a market-cap
+column as a pair (`ui/company-market-columns.js`), keeping a table's own price column where it has one
+(`cmpLabel`, e.g. Earnings and Screens' `Price`). Values come from `data/company-market.js`: the
+minute capture, else `company-quotes.json` (a small projection of the completed-session technicals,
+written by every technicals writer and served at `/api/technicals/prices`), else the public cap
+collector's saved Screener price. ISIN, NSE symbol and BSE code decide the join; contradictory
+identifiers withhold both values, and a missing value is a dash with its reason, never zero. A cap is
+shares × CMP only when the share count was observed in the same IST session; otherwise the captured
+cap is used and labelled. Screens owns its quote poller (`watchPrices: false`). See
+`docs/COMPANY-MARKET-COLUMNS.md`; `verify-company-market.mjs` and `verify-company-market-ui.mjs` are the tests.
+
 ### Performance on large tables
 
 Large scrollable tables now use the measured window in `ui/windowed-list.js` (the legacy

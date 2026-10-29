@@ -45,7 +45,7 @@ function renderCell(cell, entry) {
 }
 
 export function wireChatterHighlights(root, rows, openMention) {
-  const entries = new Map(rows.map(row => [row.slug, row])), visible = new Set(), observed = new WeakSet();
+  const entries = new Map(rows.map(row => [row.slug, row])), visible = new Set(), observed = new Set();
   let disposed = false;
   const draw = slug => {
     for (const cell of visible) if (cell.isConnected && cell.dataset.chatterHighlights === slug) renderCell(cell, entries.get(slug));
@@ -83,13 +83,16 @@ export function wireChatterHighlights(root, rows, openMention) {
     pump();
   }, { root: root.querySelector('[data-table-scroll]'), rootMargin: '80px 0px' });
   const scan = () => {
+    for (const cell of observed) if (!root.contains(cell)) {
+      observer.unobserve(cell); observed.delete(cell); visible.delete(cell);
+    }
     for (const cell of root.querySelectorAll('[data-chatter-highlights]')) if (!observed.has(cell)) {
       observed.add(cell); observer.observe(cell);
     }
   };
-  // The table mounts a bounded window and replaces that window on search, sort and scroll.
+  // Window changes replace rows; quote updates can replace cells inside an existing row.
   const mutations = new MutationObserver(scan);
-  mutations.observe(root.querySelector('tbody'), { childList: true });
+  mutations.observe(root.querySelector('tbody'), { childList: true, subtree: true });
   const changed = () => {
     for (const cell of visible) if (cell.isConnected) renderCell(cell, entries.get(cell.dataset.chatterHighlights));
     pump();

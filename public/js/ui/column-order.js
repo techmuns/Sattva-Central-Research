@@ -63,6 +63,16 @@ export function installColumnOrder(root = document) {
       const saved = state.saved[node.key] || [];
       const rank = new Map(saved.map((key, index) => [key, index]));
       node.ordered = [...node.children].sort((a, b) => (rank.get(a.key) ?? Infinity) - (rank.get(b.key) ?? Infinity));
+      // Newly added market fields join their existing counterpart in an older saved layout.
+      // Once the reader explicitly orders the new field, that saved choice wins.
+      for (const child of node.children) {
+        if (rank.has(child.key)) continue;
+        const before = child.cell?.dataset.columnBefore, after = child.cell?.dataset.columnAfter;
+        const anchor = node.ordered.find(item => item !== child && item.label === (before || after));
+        if (!anchor) continue;
+        node.ordered.splice(node.ordered.indexOf(child), 1);
+        node.ordered.splice(node.ordered.indexOf(anchor) + (after ? 1 : 0), 0, child);
+      }
       for (const child of node.ordered) {
         if (child.children.length) walk(child);
         else for (let i = child.start; i < child.end; i++) order.push(i);

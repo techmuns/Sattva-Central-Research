@@ -104,7 +104,7 @@ export function openManager(id, ctx = { scope: 'portfolio' }) {
     ? 'These fund units, combined across custodians; also included in custodian holdings.' : 'This custodian’s holdings, combined across its Family accounts.';
   const note = () => `<p class="mb-4 text-xs leading-relaxed text-slate-500">${esc(sourcePeriod(manager))}. ${esc(scopeNote)} ${ctx.scope === 'watchlist' && manager.kind !== 'fund' ? `Watchlist securities only.${manager.kind === 'custodian' ? ' Weights use the complete custodian book.' : ''}` : ''}</p>`;
   const tableTab = (id, title, rows, columns, sub) => ({ id, label: title,
-    render() { panelStop?.(); panelStop = null; const table = scoreTable({ rows, key: r => r.id || r.isin, name: r => r.security,
+    render() { panelStop?.(); panelStop = null; const table = scoreTable({ companyMarket: true, rows, key: r => r.id || r.isin, name: r => r.security,
       sub: sub || (r => r.isin), watchKey: r => r.ticker || null, watchName: r => r.security,
       showAvatar: false, showBookmarks: false, dense: true, stickyHead: '480px', fillMode: 'scroll',
       initialView: views[id], searchable: r => `${r.security} ${r.isin} ${r.ticker || ''} ${r.date || ''}`, columns,
@@ -158,7 +158,7 @@ export function openManager(id, ctx = { scope: 'portfolio' }) {
 function exportManager(rows, manager, snapshot, title, scope, range) {
   if (managers.meta()?.sourceRevision !== snapshot.sourceRevision) return;
   const keys = manager.kind !== 'fund' && !['Holdings', 'Units'].includes(title) ? ['date', 'dateSheet', 'security', 'isin', 'side', 'quantity', 'amount', 'unitPrice', 'transfer'] : ['security', 'isin', 'quantity', 'marketValue', 'costBasis', 'weightPct', 'assetClass'];
-  return exportRows({ filename: `sattva-${manager.id}-${title.toLowerCase().replaceAll(' ', '-')}`, sheetName: title,
+  return exportRows({ companyMarket: manager.kind !== 'fund', filename: `sattva-${manager.id}-${title.toLowerCase().replaceAll(' ', '-')}`, sheetName: title,
     rows, canExport: () => managers.meta()?.sourceRevision === snapshot.sourceRevision, columns: [...keys.map(key => ({ key, header: key, get: r => r[key] ?? null })),
       { key: 'basis', header: 'Source and scope', width: 80, get: () => `${manager.name}; ${scope}${range ? `; ${range.from || 'All retained history'} to ${range.to}` : ''}; ${sourcePeriod(manager)}; checked ${snapshot.checkedAt}; ${snapshot.coverage.note}` }] });
 }

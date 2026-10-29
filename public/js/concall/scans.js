@@ -329,6 +329,7 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
   const paintedReadyVersion = readyVersion;
 
   const table = scoreTable({
+    companyMarket: true,
     rows,
     key: rowKey,
     // THE STAR MARKS THE COMPANY, NOT THE ROW. `key` above identifies the row and is not a ticker
@@ -884,7 +885,7 @@ async function exportScans(rows, m) {
       `published bands. "pending" means the call is listed but not yet analysed — it is not a zero. Transcript-backed Deep Dive ` +
       `result/view/headline fields are copied only onto an exact, unambiguous call and are separately labelled; no score is inferred.`,
   };
-  await exportRows({
+  await exportRows({ companyMarket: true,
     filename: 'sattva-concall-scans',
     sheetName: 'Concall Scans',
     columns: [

@@ -2,6 +2,7 @@
 import {readFileSync,writeFileSync,renameSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {recoverTechnicals} from './lib/technical-recovery.mjs';
+import {writeCompanyQuotes} from './lib/company-quotes.mjs';
 const data=resolve('public/data/technicals.json'),state=resolve('public/data/technical-history-recovery.json');
 const atomic=(path,value)=>{writeFileSync(path+'.pending',JSON.stringify(value)+'\n');renameSync(path+'.pending',path);};
 let ledger={};try{ledger=JSON.parse(readFileSync(state,'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
@@ -13,4 +14,6 @@ const result=await recoverTechnicals(JSON.parse(readFileSync(data,'utf8')),ledge
     if(status.requests!==reported && status.requests%25===0){reported=status.requests;console.log(JSON.stringify(status));}
   },
 });
+// The CMP / market-cap columns read a small projection of the completed-session quotes.
+writeCompanyQuotes(JSON.parse(readFileSync(data,'utf8')),resolve('public/data/company-quotes.json'));
 console.log(JSON.stringify(result.summary));

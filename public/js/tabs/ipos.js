@@ -43,6 +43,7 @@ export function render(ctx) {
     const status = busy ? 'Checking sources…' : m.liveFailed ? 'Live sources unavailable · retained captures shown' : m.degraded ? 'Partial / dated coverage' : 'Sources checked';
     const options = (key, label) => ({ label, options: [{ value: 'all', label: `All ${label.toLowerCase()}` }, ...[...new Set(feed.rows().map((r) => r[key] || 'Not supplied'))].sort().map((v) => ({ value: v, label: v }))], match: (r, v) => (r[key] || 'Not supplied') === v });
     const table = mode === 'directory' ? directoryTable(feed.companies(), view) : scoreTable({
+      companyMarket: true,
       rows, key: ipoKey, watchKey: (r) => r.ticker || null, watchName: (r) => r.company,
       name: (r) => r.company, sub: (r) => r.ticker || r.isin || (r.board ? `${r.board} public issue` : 'Public issue filing'),
       showRank: false, showWatchFilter: false, sharedColumnLayout: 'ipos', dense: true, nameMaxPx: 280,
@@ -67,7 +68,7 @@ export function render(ctx) {
       countNoun: 'filings', exportName: 'sattva-ipo-filings',
       emptyMessage: 'No captured filings match these filters. This is not proof that no IPO or filing exists. Try All captured or another search.',
       onExport: async (visible, filename) => {
-        const success = await exportSheets({ filename: `${filename}-${todayStamp()}`, banner: `${status}. Source check: ${stamp(m.checkedAt)}. Captured public-issue documents, not a complete IPO universe or confirmation an offer is open.`, sheets: [{ name: 'IPO filings', rows: visible, columns: [
+        const success = await exportSheets({ filename: `${filename}-${todayStamp()}`, banner: `${status}. Source check: ${stamp(m.checkedAt)}. Captured public-issue documents, not a complete IPO universe or confirmation an offer is open.`, sheets: [{ name: 'IPO filings', companyMarket: true, rows: visible, columns: [
           { header: 'Filed (IST)', key: 'date', get: (r) => r.filingDate || 'Date not supplied', width: 18 },
           { header: 'Publisher document date (not filing date)', key: 'documentDate', get: (r) => r.documentDate || 'Not supplied', width: 26 },
           { header: 'Company', key: 'company', get: (r) => r.company, width: 40 },
