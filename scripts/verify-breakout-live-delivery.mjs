@@ -51,10 +51,13 @@ try{
  const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,BREAKOUT_LIVE_DELIVERY:'github-release',ASSETS:{fetch(){throw Error('Current prices must not await a website deployment');}},CAPTURE_REGISTRY:{getByName(){throw Error('No Cloudflare capture work');}}};
  const read=pathname=>handleBreakouts(new Request('https://fixture.research'+pathname),worker,{fetcher,edgeCache:cache,now:()=>at});
  let response=await read('/api/breakouts'),capture=await response.json();assert.equal(response.status,200);assert.equal(capture.rows.length,600);assert.equal(capture.health.checked,600);assert.equal(capture.delivery,'github-release');assert.equal(capture.primarySchedule.overdue,false,'A GitHub runner does not need a retired Cloudflare alarm');
- const NativeInflation=globalThis.DecompressionStream;let packet;
+ const NativeInflation=globalThis.DecompressionStream;let packet,packetTag;
  try {globalThis.DecompressionStream=class {constructor(){throw Error('The server must not inflate current quote evidence');}};
-  const packed=await read('/api/breakouts/snapshot');assert.equal(packed.status,200);packet=await packed.json();assert.equal(packet.format,'gzip-json');
-  const unchanged=await handleBreakouts(new Request('https://fixture.research/api/breakouts/snapshot',{headers:{'if-none-match':packed.headers.get('etag')}}),worker,{fetcher,edgeCache:cache,now:()=>at});assert.equal(unchanged.status,304);assert.equal(await unchanged.text(),'');
+  const packed=await read('/api/breakouts/snapshot');assert.equal(packed.status,200);packetTag=packed.headers.get('etag');packet=await packed.json();assert.equal(packet.format,'gzip-json');
+  const decrypt=crypto.subtle.decrypt;
+  try{crypto.subtle.decrypt=()=>{throw Error('An unchanged quote must not repeat payload decryption');};
+   const unchanged=await handleBreakouts(new Request('https://fixture.research/api/breakouts/snapshot',{headers:{'if-none-match':packetTag}}),worker,{fetcher,edgeCache:cache,now:()=>at});assert.equal(unchanged.status,304);assert.equal(await unchanged.text(),'');
+  }finally{crypto.subtle.decrypt=decrypt;}
  } finally {globalThis.DecompressionStream=NativeInflation;}
  assert.deepEqual((await snapshotCapture(packet,at)).rows,capture.rows,'All 600 selected quotes survive compressed delivery');
  assert.equal((await snapshotCapture(packet,at+3*60000)).primarySchedule.overdue,true,'Stored compressed evidence cannot invent source freshness');
@@ -64,6 +67,7 @@ try{
  at+=60000;runtime.store.primarySave({at,completedAt:at,targets:tickers,rows:rows.map(row=>({...row,price:112,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString()})),failures:[],discoveryFailed:false});
  await runtime.storage.put('upstox-minute-timer',{started:true,lastAttemptAt:at,nextAt:at+60000,completedAt:at,reason:'ok',saved:600,failed:0});
  await runtime.publish();response=await read('/api/breakouts');capture=await response.json();assert.equal(capture.rows[0].price,112,'An existing reader receives a new generation without a static redeployment');assert.equal(capture.health.checked,600);
+ const changed=await handleBreakouts(new Request('https://fixture.research/api/breakouts/snapshot',{headers:{'if-none-match':packetTag}}),worker,{fetcher,edgeCache:cache,now:()=>at});assert.equal(changed.status,200);assert.notEqual(changed.headers.get('etag'),packetTag);assert.equal((await snapshotCapture(await changed.json(),at)).rows[0].price,112,'An earlier generation validator cannot hide a new source quote');
  const expectedHistory=runtime.store.history('T0');
  at+=3*60000;response=await read('/api/breakouts/health');assert.equal(response.status,503);assert.equal((await response.json()).primarySchedule.overdue,true,'Cached generations age honestly when a runner stops');
  cacheEntries.clear();ignoreRange=true;await assert.rejects(readLiveBreakouts(worker,'https://fixture.research',{fetcher,edgeCache:cache,now:at}),/range/);ignoreRange=false;

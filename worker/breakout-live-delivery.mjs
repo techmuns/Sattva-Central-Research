@@ -1,4 +1,4 @@
-import {packedBreakoutResponse} from './breakout-packed-response.mjs';
+import {packedBreakoutResponse,unchangedPackedBreakouts} from './breakout-packed-response.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {mfRepo} from './mutual-funds-github.mjs';
 import {openForReader,decode64,hash} from './mutual-funds-seal.mjs';
@@ -35,6 +35,7 @@ export async function readLiveBreakouts(env,origin,{fetcher=fetch,edgeCache=glob
     return Response.json(asset,{headers:{'cache-control':'public, max-age=15'}});
   });
   const asset=await metadata.json();if(asset.missing)throw Error('Live quote publication unavailable');
+  if(packedRequest){const unchanged=unchangedPackedBreakouts(packedRequest,asset.id);if(unchanged)return unchanged;}
   async function range(start,end){
     let url=asset.browser_download_url;
     for(let redirects=0;redirects<3;redirects++){
@@ -66,7 +67,7 @@ export async function readLiveBreakouts(env,origin,{fetcher=fetch,edgeCache=glob
   });
   const context=`${repo}:github-prepared:${FEATURE}:head.json:v1`;
   const plain=await openForReader(await envelopeResponse.json(),env.GH_DISPATCH_TOKEN,context);
-  if(packedRequest)return packedBreakoutResponse(plain,packedRequest);
+  if(packedRequest)return packedBreakoutResponse(plain,packedRequest,asset.id);
   const packed=await boundedJson(new Response(plain),MAX_VIEWS);
   if(packed.format!=='gzip-json'||typeof packed.gzip!=='string'||packed.gzip.length>MAX_VIEWS)throw Error('Invalid prepared quotes');
   const head=await boundedJson(new Response(new Response(decode64(packed.gzip)).body.pipeThrough(new DecompressionStream('gzip'))),5*1024*1024);
