@@ -2764,15 +2764,15 @@
       "error": "search-unavailable"
     },
     "isin:INE092A01019|TATACHEM": {
-      "lastAttemptAt": "2026-10-23T05:07:35+00:00",
+      "lastAttemptAt": "2026-10-29T08:44:34+00:00",
       "error": "search-unavailable"
     },
     "isin:INE011K01018|Tega Industries": {
-      "lastAttemptAt": "2026-10-23T05:40:25+00:00",
+      "lastAttemptAt": "2026-10-29T09:25:53+00:00",
       "error": "search-unavailable"
     },
     "isin:INE011K01018|TEGA": {
-      "lastAttemptAt": "2026-10-23T06:27:10+00:00",
+      "lastAttemptAt": "2026-10-29T09:56:41+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0JA001018|Venus Pipes & Tubes": {
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-29T07:37:44.879485+00:00"
+    "checkedAt": "2026-10-29T09:56:41.857072+00:00"
   }
 }

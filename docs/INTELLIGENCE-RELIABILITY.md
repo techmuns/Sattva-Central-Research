@@ -638,3 +638,10 @@ not a tick-by-tick feed or a guarantee that every issuer trades each minute.
 When the last automatic quote reader unmounts, its outstanding request may finish,
 but a later failure cannot start another compatibility request. Other mounted
 readers and explicit refreshes retain ownership of their shared check.
+
+Unchanged quote checks use the immutable GitHub asset ID before reading/decrypting
+the payload again. A new asset always invalidates that validator. The original
+source clocks still determine freshness after 304; transport checks do not move
+them. Glow caches each encrypted generation separately from the short-lived head
+pointer and opens its already parsed envelope directly. Retain authentication,
+fixed-source range/hash checks and ciphertext-only edge caches.
