@@ -8,7 +8,9 @@ const reply = (body, status = 200) => Response.json(body, { status, headers: { .
 async function prepared(request, env, file, limit, now) {
   // A clean internal asset request cannot forward a reader credential or select
   // another deployment. Static assets belong to this exact uploaded generation.
-  const value = await boundedJson(await env.ASSETS.fetch(new Request(new URL(file, request.url))), limit);
+  const response = await env.ASSETS.fetch(new Request(new URL(file, request.url)));
+  if (!response.ok) { await response.body?.cancel(); throw Error('Prepared status unavailable'); }
+  const value = await boundedJson(response, limit);
   if (value?.version !== 1 || !Number.isFinite(Date.parse(value.preparedAt)) || Date.parse(value.preparedAt) > now) throw Error('Prepared status unavailable');
   return value;
 }
@@ -47,5 +49,9 @@ export async function handleFilingsHealth(request, env, ctx, { now = Date.now() 
     const value = await prepared(request, env, FILINGS_HEALTH_PLAN_FILE, HEALTH_PLAN_BYTES, now);
     const report = healthFromPlan(value, { now });
     return reply(report, report.ok ? 200 : 503);
-  } catch { return reply({ version: 1, ok: false, status: 'critical', reason: 'prepared-health-unavailable', checkedAt: new Date(now).toISOString() }, 503); }
+  } catch {
+    return reply({ version: 1, ok: false, status: 'critical', reason: 'prepared-health-unavailable', checkedAt: new Date(now).toISOString(),
+      limits: FILINGS_HEALTH_LIMITS, sources: Object.keys(FILINGS_HEALTH_FILES), critical: 1, warnings: 0,
+      findings: [{ source: 'preparation', code: 'prepared-health-unavailable', severity: 'critical', count: 1, affected: [] }] }, 503);
+  }
 }

@@ -77,7 +77,12 @@ assert.equal(reads.length, 3);
 for (const failure of ['missing', 'corrupt']) {
   missing = failure === 'missing'; corrupt = failure === 'corrupt';
   assert.equal((await handleCaptureStatus(request('capture-status'), env, {}, options)).status, 503);
-  assert.equal((await handleFilingsHealth(request('filings-health'), env, {}, { now })).status, 503);
+  const failedHealth = await handleFilingsHealth(request('filings-health'), env, {}, { now });
+  assert.equal(failedHealth.status, 503);
+  const report = await failedHealth.json();
+  assert.equal(report.critical, 1); assert.equal(report.warnings, 0);
+  assert.equal(report.findings[0].severity, 'critical');
+  assert.deepEqual(report.sources, Object.keys(FILINGS_HEALTH_FILES));
 }
 missing = corrupt = false;
 // Same endpoint after a new publication or Worker restart immediately sees its new manifest.
