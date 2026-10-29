@@ -61,8 +61,12 @@ try{
  await page.waitForFunction(()=>window.ready&&navigator.serviceWorker.controller);
  // Stop seeding before reloading a warm, immutable old module graph.
  await page.goto(origin);await page.waitForFunction(()=>window.ready);
- await page.clock.runFor(121000);
- assert.equal(await page.evaluate(()=>JSON.parse(reading.textContent||'{}').stale),false,'Old reader reproduces the overly generous minute-price freshness');
+ await page.waitForFunction(()=>JSON.parse(reading.textContent||'{}').price===870.25&&!JSON.parse(reading.textContent||'{}').stale);
+ await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
+ await page.clock.fastForward(121000);
+ await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
+ const oldReading=await page.evaluate(async()=>{const live=await import('/js/data/breakout-live.js');return {info:JSON.parse(reading.textContent||'{}'),failed:live.unavailable(),now:Date.now(),usesMinuteExpiry:live.priceInfo.toString().includes(' || minuteStale'),capture:live.snapshot()};});
+ assert.equal(oldReading.info.stale,false,JSON.stringify(oldReading));
  assert((await page.evaluate(()=>caches.keys())).some(key=>key.includes('previous-cmp-release')));
  upgraded=true;await page.evaluate(async()=>(await navigator.serviceWorker.getRegistration()).update());
  await page.waitForFunction(()=>JSON.parse(reading.textContent||'{}').price===870.25&&JSON.parse(reading.textContent||'{}').stale===true);
