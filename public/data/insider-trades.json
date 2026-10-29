@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-29T00:56:03.835Z",
-  "oldestDataAt": "2026-10-29T00:56:03.835Z",
+  "capturedAt": "2026-10-29T06:32:30.029Z",
+  "oldestDataAt": "2026-10-29T06:32:30.029Z",
   "from": "2025-10-29",
   "to": "2026-10-29",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-29T00:56:03.835Z",
+      "capturedAt": "2026-10-29T06:32:30.029Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-29T00:56:03.835Z",
+      "capturedAt": "2026-10-29T06:32:30.029Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-27",
-      "oldestDate": "2026-10-08",
+      "latestDate": "2026-10-28",
+      "oldestDate": "2026-10-09",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-29T00:56:03.835Z",
+      "capturedAt": "2026-10-29T06:32:30.029Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-29T00:56:03.835Z",
+      "capturedAt": "2026-10-29T06:32:30.029Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2038,
+  "withRows": 2039,
   "emptyCount": 0,
-  "rowCount": 22804,
+  "rowCount": 22808,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -404867,6 +404867,21 @@
     "KHERIAAUTO": [
       {
         "ticker": "KHERIAAUTO",
+        "date": "2026-10-28",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Kheria Autocomp",
+          "Insider": "Sushma Kheria",
+          "Transaction": "Acquisition",
+          "Trade Shares": "7200",
+          "Broadcast Date": "2026-10-28",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "KHERIAAUTO",
         "date": "2026-10-22",
         "url": "https://www.screener.in/trades/bulk/?o=-2",
         "sourceId": "bulk",
@@ -432787,6 +432802,21 @@
     "SHEETAL": [
       {
         "ticker": "SHEETAL",
+        "date": "2026-10-28",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Sheetal Univer.",
+          "Insider": "Hiren Vallabhbhai Patel",
+          "Transaction": "Acquisition",
+          "Trade Shares": "850000",
+          "Broadcast Date": "2026-10-28",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SHEETAL",
         "date": "2026-10-14",
         "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
         "sourceId": "insiders",
@@ -435121,6 +435151,38 @@
           "Trade %": "0.49",
           "Mode": "Market",
           "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "SIDDHIKA": [
+      {
+        "ticker": "SIDDHIKA",
+        "date": "2026-10-28",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Siddhika Coatins",
+          "Insider": "Counter Cyclical Investment Private Limited (PMS) through its clients",
+          "Transaction": "Acquisition",
+          "Trade Shares": "6500",
+          "Broadcast Date": "2026-10-28",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SIDDHIKA",
+        "date": "2026-10-28",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Siddhika Coatins",
+          "Insider": "Counter Cyclical Investments Pvt Ltd (PMS) through its clients",
+          "Transaction": "Acquisition",
+          "Trade Shares": "17000",
+          "Broadcast Date": "2026-10-28",
           "Source": "Screener.in"
         }
       }
