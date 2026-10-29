@@ -2728,8 +2728,8 @@
       "pending": []
     },
     "isin:INE00GO01025|LEAPIND": {
-      "lastAttemptAt": "2026-10-23T00:13:31+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-29T01:50:53+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 25,
       "lastSuccessAt": "2026-10-23T00:13:31+00:00",
       "targetThrough": null,
@@ -2820,6 +2820,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-29T01:18:59.624362+00:00"
+    "checkedAt": "2026-10-29T01:50:53.524486+00:00"
   }
 }
