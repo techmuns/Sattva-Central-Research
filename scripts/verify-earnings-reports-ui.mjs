@@ -224,7 +224,9 @@ try {
   const workbook = readWorkbook(readFileSync(await download.path()))['Latest Results'];
   assert.equal(workbook.length, 3, 'the filtered export contains its header, provenance banner and one eligible result');
   assert.equal(workbook[2][1], 'FILTERCON');
-  assert.equal(workbook[2][15], 'Consolidated');
+  const basisIndex = workbook[0].indexOf('Basis');
+  assert(basisIndex >= 0, 'the export retains the reporting basis header');
+  assert.equal(workbook[2][basisIndex], 'Consolidated');
   await filtersPage.getByRole('button', { name: 'Calendar', exact: true }).click();
   await filtersPage.getByRole('heading', { name: 'Earnings Calendar', exact: true }).waitFor();
   await filtersPage.getByRole('button', { name: 'Reported', exact: true }).click();
