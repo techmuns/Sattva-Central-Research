@@ -1,13 +1,15 @@
 import { escapeHtml } from '../core/dom.js';
 import { formatRupee } from '../core/format.js';
+import * as shareMarketCap from '../data/share-market-cap.js';
 import * as live from '../data/breakout-live.js';
 import * as technicals from '../data/technicals.js';
 import { reconcileMarkup } from './reconcile-markup.js';
 
 // Read the shared snapshot once per view, never once per card or directly from a broker.
-export function alertPriceHtml(ticker) {
+export function alertPriceHtml(ticker, { variant = 'card' } = {}) {
   const company = technicals.byTicker(ticker)?.company || { ticker };
   const info = live.priceInfo(company);
+  if (variant === 'compact') return compactPriceHtml(ticker, info);
   const available = Number.isFinite(info.price) && info.price > 0;
   const change = available && Number.isFinite(info.change) ? info.change : null;
   const direction = change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral';
@@ -21,6 +23,24 @@ export function alertPriceHtml(ticker) {
   </div>`;
 }
 
+const crore = (value) => `₹${Math.round(value).toLocaleString('en-IN')} Cr`;
+/**
+ * The Compact row's CMP and market cap: two grid cells under one node, so the watcher below patches
+ * both when the quote moves. Market cap is shares outstanding × this CMP
+ * (`share-market-cap.marketCap`), and an em dash where no share count or price is held.
+ */
+function compactPriceHtml(ticker, info) {
+  const available = Number.isFinite(info.price) && info.price > 0;
+  const change = available && Number.isFinite(info.change) ? info.change : null;
+  const direction = change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral';
+  const cap = available ? shareMarketCap.marketCap(ticker, info.price) : null;
+  return `<div class="ai-compact-market" data-ai-price data-price-variant="compact" data-price-ticker="${escapeHtml(ticker || '')}" data-price-stale="${info.stale}">
+    <div class="ai-compact-cmp" title="${escapeHtml(live.priceCaption(info))}"><div class="ai-compact-cmp-value" data-ai-cmp>${available ? escapeHtml(formatRupee(info.price, { decimals: 2 })) : '—'}</div>
+      <div class="ai-compact-change" data-direction="${direction}">${change == null ? '' : `${change > 0 ? '+' : ''}${change.toFixed(2)}%`}</div></div>
+    <div class="ai-compact-mcap" data-ai-mcap title="${escapeHtml(cap ? `Market cap: ${cap.basis}` : 'Market cap unavailable: no share count or price is held for this company.')}">${cap ? escapeHtml(crore(cap.value)) : '—'}</div>
+  </div>`;
+}
+
 export function watchAlertPrices(root) {
   let stopped = false;
   const update = () => {
@@ -28,7 +48,7 @@ export function watchAlertPrices(root) {
     for (const node of root.querySelectorAll('[data-ai-price]')) {
       // Patch only the quote: evidence, focus, ranking and timeline scroll keep their nodes.
       const template = document.createElement('template');
-      template.innerHTML = alertPriceHtml(node.dataset.priceTicker);
+      template.innerHTML = alertPriceHtml(node.dataset.priceTicker, { variant: node.dataset.priceVariant || 'card' });
       const next = template.content.firstElementChild;
       node.title = next.title;
       node.dataset.priceStale = next.dataset.priceStale;
@@ -37,7 +57,8 @@ export function watchAlertPrices(root) {
   };
   const offDaily = technicals.onChange(update);
   const offLive = live.watch(update);
+  const offShares = shareMarketCap.onChange(update);
   // Prepared alerts stay independent of full technical-history downloads. The shared
   // quote reader retains its own last-good snapshot; use daily closes when already loaded.
-  return () => { stopped = true; offDaily(); offLive(); };
+  return () => { stopped = true; offDaily(); offLive(); offShares(); };
 }

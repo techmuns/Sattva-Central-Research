@@ -1,5 +1,6 @@
 // Local page/iframe scrolling over a long card model; no collectors or production requests.
 import assert from 'node:assert/strict';
+import { useAiAlertsLayout } from './lib/ai-alerts-layout.mjs';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { extname, resolve, sep } from 'node:path';
@@ -24,6 +25,7 @@ const server=createServer((req,res)=>{
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const origin='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH});
+useAiAlertsLayout(browser, 'detailed');
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  page.on('pageerror',error=>errors.push(error.message));

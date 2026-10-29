@@ -28,7 +28,9 @@ export const storyDigest = async value => [...new Uint8Array(await crypto.subtle
 
 /** Only public news/disclosures, with no position sizes, tokens or private source bodies. */
 export function storyRecord(event) {
-  if (!STORY_FEEDS.has(event.feed) || event.private || event.portfolioOnly || event.aiEligible === false && event.attribution?.status !== 'related' ||
+  // An indirect theme copy (theme-exposures.js) is our reading of somebody else's story, never a
+  // company report: it is not grouped, and so never costs a grouping request.
+  if (!STORY_FEEDS.has(event.feed) || event.private || event.portfolioOnly || event.themeExposure || event.aiEligible === false && event.attribution?.status !== 'related' ||
       !validDay(event.day) || !event.headline || !/^https?:\/\//i.test(event.url || '') || !(event.ticker || event.entityId)) return null;
   // Publisher discovery appends our company-matching explanation to detail. It is provenance,
   // not article text: including it made the same report group differently through the pool and

@@ -3,6 +3,7 @@
 // downloaded to get them; a capture that moved sends its feed down the live path; the ranking
 // reads the AI pool. Local captures and local stand-ins only; no production request, no writes.
 import assert from 'node:assert/strict';
+import { useAiAlertsLayout } from './lib/ai-alerts-layout.mjs';
 import { createServer } from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
@@ -61,6 +62,7 @@ const server = createServer((req, res) => {
 await new Promise((done) => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
+useAiAlertsLayout(browser, 'detailed');
 
 // The market-news HEAD is not in this list: the header's notification watcher (js/core/watch.js)
 // polls it from boot on every page, pool or no pool. Its archive months are, because only the

@@ -16,6 +16,7 @@
 // shipped UI; unavailable fonts fall back to the system stack and export checks report SKIP.
 
 import { readFileSync } from 'node:fs';
+import { useAiAlertsLayout } from './lib/ai-alerts-layout.mjs';
 
 const BASE = (process.argv[2] || 'http://localhost:8080').replace(/\/$/, '');
 const PW_ROOT = process.env.PLAYWRIGHT_ROOT || '/opt/node22/lib/node_modules/playwright';
@@ -128,6 +129,7 @@ const downloadOrSkip = async (label, file) => {
 }
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--test-type'] });
+useAiAlertsLayout(browser, 'detailed');
 // This suite stubs APIs with context routes. Playwright cannot intercept network
 // requests initiated inside a service worker, so keep that worker out of this
 // fixture and exercise it separately in verify-dashboard-performance-ui.mjs.

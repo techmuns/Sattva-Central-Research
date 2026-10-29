@@ -5,6 +5,7 @@
 //   PLAYWRIGHT_ROOT=/path/to/node_modules/playwright node scripts/verify-kpi-impact-ui.mjs [screenshot.png]
 
 import assert from 'node:assert/strict';
+import { useAiAlertsLayout } from './lib/ai-alerts-layout.mjs';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
@@ -108,6 +109,7 @@ const server = createServer((req, res) => {
 await new Promise((done) => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH });
+useAiAlertsLayout(browser, 'detailed');
 const errors = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1600 } });

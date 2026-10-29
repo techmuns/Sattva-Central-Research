@@ -75,7 +75,7 @@ export function tokenise(name) {
  * last — the same collision guard resolve-portfolio-companies.mjs uses, and for the same reason:
  * "Allcargo Global" and "Allcargo Logistics" are different companies.
  */
-export function buildIndex({ mc = null, tech = null, book = null } = {}) {
+export function buildIndex({ mc = null, tech = null, book = null, names = null } = {}) {
   const raw = [];
   const seen = new Map(); // squashed name -> ticker | 'AMBIGUOUS'
 
@@ -94,6 +94,9 @@ export function buildIndex({ mc = null, tech = null, book = null } = {}) {
   for (const e of Object.values(mc?.map || {})) add(e?.fullName, e?.ticker, 'moneycontrol');
   for (const c of tech?.companies || []) add(c?.name, c?.ticker, 'technicals');
   for (const h of book?.holdings || []) if (h?.ticker) add(h?.matchedName || h?.name, h.ticker, 'the book');
+  // Optional extra name/ticker pairs (e.g. an exchange directory's legal names for symbols the feeds
+  // above already carry). The same collision guard applies: a name shared by two symbols is poisoned.
+  for (const n of names || []) if (n?.ticker) add(n.name, n.ticker, n.from || 'directory');
 
   const entries = raw.filter((e) => seen.get(e.key) !== 'AMBIGUOUS');
   const byFirst = new Map();

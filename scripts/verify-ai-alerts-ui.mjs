@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Actual AI ranking and tab UI over deterministic local event fixtures. No production reads.
 import assert from 'node:assert/strict';
+import { useAiAlertsLayout } from './lib/ai-alerts-layout.mjs';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
@@ -115,6 +116,7 @@ await new Promise((done) => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const familyOrigin = 'https://sattva-family.pages.dev';
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH });
+useAiAlertsLayout(browser, 'detailed');
 // A browser in California must still roll the Indian market date at 18:30 UTC.
 const page = await browser.newPage({ viewport: { width: 1440, height: 1100 }, timezoneId: 'America/Los_Angeles' });
 const errors = [];
@@ -883,7 +885,8 @@ try {
     tab.render({ root: document.querySelector('#root'), scope: 'universe', params: {}, savedView: { reading: { extras } } });
   }, savedFilters);
   await waitFor(savedReader, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
-  assert.deepEqual(await savedReader.evaluate(async () => (await import('/js/tabs/ai-alerts.js')).getSavedView()), savedFilters);
+  // A saved reading also keeps the reader's own Compact | Detailed layout.
+  assert.deepEqual(await savedReader.evaluate(async () => (await import('/js/tabs/ai-alerts.js')).getSavedView()), { ...savedFilters, aiLayout: 'detailed' });
   assert.equal(await savedReader.locator('[data-ai-search]').inputValue(), 'Zenith');
   assert.equal(await savedReader.locator('[data-ai-type="results"]').isChecked(), true);
   await savedReader.locator('[data-ai-sort]').selectOption('newest');

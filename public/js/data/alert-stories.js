@@ -47,7 +47,9 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
   }
   function status(events) {
     const rows = records(events), reviewed = rows.filter(r => decision(r)).length;
-    const unchecked = events.filter(e => STORY_FEEDS.has(e.feed) && !e.private && !e.portfolioOnly && !storyRecord(e)).length;
+    // An indirect theme copy is a derived reading of a story, never a report to group — counting it
+    // as unchecked would print "Ungrouped" over a card that has nothing waiting to be grouped.
+    const unchecked = events.filter(e => STORY_FEEDS.has(e.feed) && !e.private && !e.portfolioOnly && !e.themeExposure && !storyRecord(e)).length;
     return { total: rows.length + unchecked, reviewed, checking, partial: reviewed < rows.length + unchecked, historyDays: STORY_HISTORY_DAYS };
   }
   async function save() {

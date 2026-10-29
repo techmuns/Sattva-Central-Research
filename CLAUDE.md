@@ -2792,6 +2792,26 @@ contract does not cover: a tab the shell decided not to mount.
 
 ## AI Alerts — the explainable priority layer
 
+**Compact layout, broker reports and indirect theme exposure (ported from Glow, 29 October 2026).**
+Compact is the default; the heading's Compact | Detailed switch is remembered on the device
+(`sattva:ai-alerts:layout:v1`) and Detailed is the existing cards, unchanged. Compact is the Detailed
+cards FILTERED (`js/data/ai-alerts-compact.js`, pure): one row per company — company, CMP, market cap
+(shares × CMP, `js/data/share-market-cap.js`), the lead item in at most 60 words, and the row opens
+its source. It leaves out the `technicals` feed and call/meeting date notices; a company left with
+nothing material appears only in Detailed and is counted in the status pill's title. Every row has
+an always-visible ✕ (the same device archive as Detailed); broker reports open from a Show / Hide
+pill. Browser suites written for the cards opt into Detailed through `scripts/lib/ai-alerts-layout.mjs`;
+`verify-ai-alerts-compact.mjs` and `verify-ai-alerts-compact-ui.mjs` are Compact's tests.
+The `broker-reports` alert source reads `public/data/broker-reports.json`, built on the runner by
+`scripts/build-broker-reports.mjs` from the Telegram channel's artifact (`broker-reports-refresh.yml`,
+after each collection, hourly fallback) — never the 10 MB archive in the browser. A stance exists only
+with a printed rating word; no target is derived from an upside; unresolved names are counted, and a
+group company is never filed under its parent. `js/data/theme-exposures.js` makes a labelled,
+neutral copy of a decisive market-wide story for each company a reviewed, CITED theme map says sells
+into that market (GLP-1 today); the copy never corroborates, sets direction or names a KPI. None of
+the mapped companies is in Sattva's book today, so copies show under Universe and Watchlist until a
+cited exposure for a book company is added. See `docs/THEME-EXPOSURES.md`.
+
 **The list holds still while it updates (29 October 2026; Glow's user: "update silently in the back and
 things stack on top").** The order follows the ranking only until the first completed read (with holding
 sizes) or the reader's first scroll/touch/key/click; then a background update never moves a listed card:

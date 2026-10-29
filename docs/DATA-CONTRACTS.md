@@ -211,6 +211,42 @@ in the retained model, search and export. NSE purposes continue to display exact
 
 ---
 
+## `public/data/broker-reports.json` — DERIVED, broker research from the Telegram channel
+
+Built by `scripts/build-broker-reports.mjs` from the retained Telegram capture (the collector's
+artifact on the runner; the committed `telegram-posts.json` locally) and committed by
+`.github/workflows/broker-reports-refresh.yml` after each Telegram collection, hourly as a fallback.
+It is rewritten when the reports change, and otherwise once its capture check time is an hour old.
+
+| Field | Meaning |
+| --- | --- |
+| `schemaVersion` | `1` |
+| `generatedAt` | when this file was built |
+| `captureCheckedAt` | the Telegram collector's own last check of the channel — the feed's `asOf` |
+| `windowDays`, `from` | reports published on or after `from` (an IST midnight, 30 days) |
+| `counts` | `archivedPosts`, `brokerPosts` (posts that carried a report), `reports`, `resolved`, `unresolved` |
+| `unresolvedNames` | up to 40 names, with counts, that matched no NSE symbol or matched two |
+| `reports[]` | one per broker, company and IST day; duplicates across posts are merged and `urls` lists every post |
+
+Each report: `id`, `broker` (aliases folded — Joindre Capital Services is Joindre Capital), `ticker`
+(null when unresolved), `company`, `named` (the post's own spelling), `kind` (`view` \| `initiation`),
+`upsidePct` (signed; negative is the broker's stated downside), `rating` and `stance` (only where the
+post printed a rating word; BUY/ADD/ACCUMULATE/OUTPERFORM/OVERWEIGHT bullish, HOLD/NEUTRAL neutral,
+REDUCE/SELL/UNDERPERFORM/UNDERWEIGHT bearish), `target` (only where printed — never derived),
+`points` (the post's words after the company, verbatim), `reportTitle` (a digest's header title),
+`targetRevision` / `ratingChangeWords` (the title states one), `publishedAt`, `url`, `urls`, and
+`previous` — the same broker's previous RATED report on the company from the whole archive, which is
+what lets an alert say "HOLD → BUY". The PDF behind a post is not read.
+
+The browser reads it in `public/js/data/broker-reports.js` as the `broker-reports` alert source: one
+event per report, high importance for an initiation, a downside or bearish call, a rating change, a
+stated revision, or two or more brokers on the company inside the 14-day AI window.
+
+Sattva (ported from Glow, 29 October 2026): names also resolve through the exchange directory's
+legal names (`announcement-identities.json`, Active listings whose symbol is already a dashboard
+ticker), so a broker's full-name title such as "Bharat Heavy Electricals" resolves where the feeds
+print only a short form. No new symbol can appear and every collision guard still applies.
+
 ## `public/data/technicals.json` — LIVE
 
 **The dashboard's one genuinely live feed.** Written by `scripts/scrape-technicals.mjs`, refreshed

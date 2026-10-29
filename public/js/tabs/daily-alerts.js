@@ -1,4 +1,5 @@
 import { TAB_META } from './catalog.js';
+import { isThemeExposureContext } from '../data/theme-exposures.js';
 import { reconcileMarkup } from '../ui/reconcile-markup.js';
 import { readableFilingUrl } from '../data/nse-xbrl-shared.js';
 import { storyGrouping } from '../data/alert-stories.js';
@@ -1117,6 +1118,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     get: (e) => `
       <div class="max-w-[560px]">
         ${e.feed === 'news' ? `<div data-news-attribution="${escapeHtml(e.attribution?.status || 'uncertain')}" class="text-xs font-semibold text-slate-600" title="${escapeHtml(e.attribution?.reason || 'Company relationship unverified')}">${escapeHtml(attributionLabel(e))}</div>` : ''}
+        ${isThemeExposureContext(e) ? `<div data-news-attribution="theme" class="text-xs font-semibold text-slate-600" title="${escapeHtml(`${e.themeExposure.readAcross} ${e.attribution.reason}`)}">Indirect · ${escapeHtml(e.themeExposure.short)} exposure</div>` : ''}
         <div data-alert-headline class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${mode===HORIZON.UPCOMING?escapeHtml(e.headline):alertHeadlineHtml(developmentLine(developmentOfRow(e),{fallback:e.headline}))}</div>
         <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
         ${mode === HORIZON.UPCOMING ? '' : `${sourceReportsHtml(e)}${alertReadingHtml(e)}`}

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Real card/ranking/virtualizer over local captured-history fixtures; no production or paid calls.
 import assert from 'node:assert/strict';
+import { useAiAlertsLayout } from './lib/ai-alerts-layout.mjs';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { extname, resolve, sep } from 'node:path';
@@ -55,6 +56,7 @@ const server = createServer((req, res) => {
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const origin=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH});
+useAiAlertsLayout(browser, 'detailed');
 const page=await browser.newPage({viewport:{width:1280,height:1000}}),errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 await page.context().route('**/*',route=>route.request().url()==='https://sattva-family.pages.dev/research-bridge' ? route.fulfill({contentType:'text/html',body:`<script>addEventListener('message',e=>{if(e.data.channel==='sattva-portfolio-v1')setTimeout(()=>parent.postMessage({channel:e.data.channel,id:e.data.id,type:'auth-required'},'*'),100)});</script>`}) : new URL(route.request().url()).origin===origin?route.continue():route.fulfill({status:200,body:'{}'}));

@@ -1,5 +1,6 @@
 // Real AI Alerts, refresh/mute logic and immutable service-worker upgrade; local public fixtures only.
 import assert from 'node:assert/strict';
+import { useAiAlertsLayout } from './lib/ai-alerts-layout.mjs';
 import { createServer } from 'node:http';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
@@ -19,7 +20,7 @@ const oldFiles = new Map([['/js/data/alert-stories.js', `export const storyGroup
 oldFiles.set('/js/data/newsletter-shared.js', 'export const normaliseEmailList = undefined;');
 oldFiles.set('/css/theme.css', readFileSync(resolve(root, 'css/theme.css'), 'utf8') + '\n.ai-alert-tools { width:100%; } .ai-alert-search { flex-basis:100%; width:100%; }');
 oldFiles.set('/js/tabs/ai-alerts.js', readFileSync(resolve(root, 'js/tabs/ai-alerts.js'), 'utf8').replace(
-  /    meta: `<span data-ai-feed-status[^\n]+/,
+  /    meta: `<span[^\n]*data-ai-feed-status[^\n]+/,
   '    meta: `<div><span>Some reports remain ungrouped</span><span>Partial coverage · retained evidence shown</span><span>Universe · companies with recent events</span><span>14-day window</span></div>`,',
 ));
 const fixture = `const listeners=new Set(); export const onChange=fn=>{listeners.add(fn);return()=>listeners.delete(fn);};
@@ -77,6 +78,7 @@ const server = createServer(async (req, res) => {
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
+useAiAlertsLayout(browser, 'detailed');
 try {
   const page=debugPage=await browser.newPage({viewport:{width:1280,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.route('**/*', route => route.request().url() === 'https://sattva-family.pages.dev/research-bridge' ? route.fulfill({ contentType:'text/html', body:`<script>addEventListener('message', e => { if (e.data.channel === 'sattva-portfolio-v1') parent.postMessage({channel:e.data.channel,id:e.data.id,type:'auth-required'}, '*'); });</script>` }) : new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.fulfill({ status:200, body:'' }));
