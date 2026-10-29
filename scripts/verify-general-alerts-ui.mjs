@@ -314,7 +314,7 @@ try {
   await page.locator('[data-feed-toggle="__all"]').press('Escape');
   assert.equal(await picker.getAttribute('open'), null);
   assert(await sourceSummary.evaluate(node => node === document.activeElement), 'Escape returns focus to the source control');
-  assert.equal(await page.locator('[data-feed]').count(), 20, 'Universe includes private price status and hides the portfolio-only calendar');
+  assert.equal(await page.locator('[data-feed]').count(), 21, 'Universe includes private price status and broker reports, and hides the portfolio-only calendar');
   assert.equal(await page.locator('[data-horizon-toggle]').count(), 0, 'All Alerts has no horizon switch');
   assert.equal(await page.locator('[data-alerts-history-summary]').count(), 0, 'the redundant Till Today label is removed');
   assert.equal(await page.locator('[data-alerts-reading-count]').count(), 0, 'the item/source-report summary is removed');
@@ -525,7 +525,7 @@ try {
       signals: document.querySelectorAll('[data-alert-signal]').length,
     };
   });
-  assert.deepEqual(tableContract.headers, ['DATE / TIME', 'COMPANY', 'WHAT HAPPENED', 'FEED', 'LINK']);
+  assert.deepEqual(tableContract.headers, ['DATE / TIME', 'COMPANY', 'WHAT HAPPENED', 'FEED', 'CMP', 'MARKET CAP', 'LINK']);
   assert(!tableContract.headers.includes('DIRECTION') && !tableContract.headers.includes('IMPORTANCE'));
   assert(tableContract.className.includes('table-scroll-surface'));
   assert.equal(tableContract.tabIndex, 0);
@@ -755,7 +755,14 @@ try {
       // Locator hover waits for a stable, hittable target after iframe resize
       // and window replacement; a cached bounding-box point does not.
       await scroller.hover({ position: { x: 4, y: 100 } });
-      await wheelPage.mouse.wheel(0, 180);
+      // The measured list retains a 40-row buffer. Cross roughly two records per
+      // gesture so 24 native gestures reach its replacement edge even with tall rows.
+      const distance = await scroller.evaluate(el => {
+        const boundary = el.getBoundingClientRect().top + el.querySelector('thead').offsetHeight;
+        const row = [...el.querySelectorAll('tr[data-row-key]')].find(node => node.getBoundingClientRect().bottom > boundary);
+        return Math.max(180, Math.ceil((row?.getBoundingClientRect().height || 90) * 2));
+      });
+      await wheelPage.mouse.wheel(0, distance);
       try {
         await wheelFrame.waitForFunction(readingPosition, previous);
       } catch (error) {

@@ -1,6 +1,7 @@
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { readableOwnership } from '../public/js/data/mutual-funds-ownership.js';
-import { coverageState, validIsin, MF_ORIGIN } from './mutual-funds-model.mjs';
+import { coverageState, validIsin, MF_ORIGIN,projectCompany } from './mutual-funds-model.mjs';
+import {ACTIVITY_BASIS} from '../public/js/data/mutual-funds-activity.js';
 import { openForReader, hash,decode64 } from './mutual-funds-seal.mjs';
 import {readBackgroundView} from './github-background-views.mjs';
 
@@ -79,7 +80,8 @@ export async function githubMutualFunds(request,env,{privateRead=false,fetcher=f
   const ids=url.searchParams.has('isins')?url.searchParams.get('isins').split(',').filter(Boolean):null;
   if(ids&&(ids.length>250||ids.some(id=>!validIsin(id))))throw Error('Invalid company scope');
   const index=await mfSnapshotFile(snapshot,privateRead?snapshot.manifest.privateIndex:snapshot.manifest.publicIndex,env,{privateRead,fetcher});
-  const meta={...index.meta,health:coverageState(index.meta),runtime:'github-actions',...(prepared?{delivery:'static-assets'}:{})};
+  const meta={...index.meta,health:coverageState(index.meta),runtime:'github-actions',...(prepared?{delivery:'static-assets'}:{}),
+    ...(!privateRead?{publicSnapshotId:snapshot.manifest.files[snapshot.manifest.publicIndex]}:{})};
   if(company) {
     const isin=url.searchParams.get('isin'),month=url.searchParams.get('month');
     if(!validIsin(isin)||month&&!/^20\d\d-(0[1-9]|1[0-2])$/.test(month))throw Error('Invalid detail scope');
@@ -92,7 +94,7 @@ export async function githubMutualFunds(request,env,{privateRead=false,fetcher=f
     // Inflate only the requested prepared file, never a company's entire
     // retained archive or the complete universe of monthly views.
     const value=selected?await boundedJson(new Response(new Response(decode64(selected.gzip)).body.pipeThrough(new DecompressionStream('gzip'))),5*1024*1024):null;
-    return {meta,company:value?readableOwnership(value):null};
+    return {meta,company:value?readableOwnership(value.activityBasis===ACTIVITY_BASIS?value:{...projectCompany(value,{month:value.month}),months:value.months}):null};
   }
   const cursor=url.searchParams.get('cursor')||'',scope=ids?new Set(ids):null;
   const eligible=index.rows.filter(row=>scope?scope.has(row.isin):row.isin>cursor).sort((a,b)=>a.isin.localeCompare(b.isin));

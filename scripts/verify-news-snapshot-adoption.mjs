@@ -41,4 +41,29 @@ assert.deepEqual(feed.forTicker('TEST'), before, 'failed queued refreshes retain
 assert.equal(feed.meta().newsDelivery.core.pending, false);
 assert.equal(reads, 6);
 feed.dispose();
-console.log('PASS actual news feed: correction, shrinking/empty history, live arrival during preparation, rollback and failed queued refreshes.');
+
+// A TICKER RENAMED UNDER AN UNCHANGED ISIN (HEG -> HEGAM, 28 October 2026). The head keeps the
+// retired key's rows for the rest of its window. Read by that key they kept the old ticker while
+// the retained archive read the same articles under the entity's current identity, so the full
+// history held two rows per article for one company and a period the head covers held one.
+{
+  const isin = 'isin:INE000000099';
+  const identity = { key: 'NEWCO', ticker: 'NEWCO', entityId: isin, name: 'NewCo Advanced Limited',
+    legalName: 'NewCo Advanced Limited', portfolioIsins: ['INE000000099'], queries: ['NewCo Advanced Limited'], portfolio: true };
+  const filed = (id, ticker, company) => article(id, { ticker, company, entityId: isin, query: company });
+  // Only the retired key holds rows, so nothing but the identity revision can say NEWCO moved.
+  const head = { capturedAt: stamp(-60000), entities: [identity], empty: [],
+    byTicker: { OLDCO: [filed('renamed-1', 'OLDCO', 'OldCo Ltd'), filed('renamed-2', 'OLDCO', 'OldCo Ltd')] } };
+  const renamed = createFeed('news', { allowColdStart: false, read: async () => ({ value: head, checkedAt: Date.now() }) });
+  await renamed.load([]);
+  // A live search reading reaches every feed through the shared ledger; only this capture's rows here.
+  const captured = () => renamed.rows().filter(row => row.entityId === isin);
+  assert.deepEqual(captured().map(row => [row.id, row.ticker, row.entityId, row.company]).sort(),
+    [['renamed-1', 'NEWCO', isin, 'NewCo Advanced Limited'], ['renamed-2', 'NEWCO', isin, 'NewCo Advanced Limited']],
+    'rows filed under a retired key are read under their entity\'s current identity, as the archive reads them');
+  renamed.setWanted([{ key: 'NEWCO', ticker: 'NEWCO', name: 'NewCo Renamed Limited' }]);
+  assert(captured().length === 2 && captured().every(row => row.company === 'NewCo Renamed Limited'),
+    'an identity change reaches rows read through another key, not only that key\'s own bucket');
+  renamed.dispose();
+}
+console.log('PASS actual news feed: correction, shrinking/empty history, live arrival during preparation, rollback, failed queued refreshes and renamed tickers.');

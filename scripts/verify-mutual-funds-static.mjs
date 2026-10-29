@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {localMutualFunds} from './lib/mutual-funds-local.mjs';
-import {publishStaticMutualFunds,restoreStaticMutualFunds} from './lib/mutual-funds-static.mjs';
+import {publishStaticMutualFunds,restoreStaticMutualFunds,mutualFundsPublicationEnv} from './lib/mutual-funds-static.mjs';
+import {snapshotTransferFailure} from './mutual-funds-github.mjs';
 import {installPreparedBackground} from './lib/github-background-deployment.mjs';
 import {readerKeys,encode64} from '../worker/mutual-funds-seal.mjs';
 import {handleMutualFunds} from '../worker/mutual-funds.mjs';
@@ -39,7 +40,7 @@ try {
   await installPreparedBackground([first],{env,fetcher,publicRoot:site,scratch:path.join(root,'install')});
   const worker={GH_REPO:repo,GH_DISPATCH_TOKEN:secret,CAPTURE_REGISTRY:{getByName(){throw Error('Prepared readers must never touch Cloudflare SQL');}},ASSETS:{fetch:async request=>{assetReads++;assert.equal(request.headers.get('authorization'),null);const target=path.join(site,new URL(request.url).pathname);return fs.existsSync(target)?new Response(fs.readFileSync(target)):new Response(null,{status:404});}}};
   const read=(suffix,options={})=>handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds'+suffix),worker,{fetcher:async()=>{throw Error('Readers must not use GitHub API or external network');},authorise:async()=>({ok:true}),...options});
-  let response=await read(`?isins=${isin}`),value=await response.json();assert.equal(response.status,200);assert.equal(value.rows[0].totalShares,100);assert.equal(value.meta.delivery,'static-assets');
+  let response=await read(`?isins=${isin}`),value=await response.json();assert.equal(response.status,200);assert.equal(value.rows[0].totalShares,100);assert.equal(value.meta.delivery,'static-assets');assert.match(value.meta.publicSnapshotId,/^[a-f0-9]{64}$/,'The whole prepared public index has an immutable identity');
   response=await read(`/private?isins=${isin}`);assert.match(response.headers.get('cache-control'),/private.*no-store/);assert.equal((await response.json()).rows[0].totalShares,150);
   response=await read(`/private/company?isin=${isin}&month=${prior}`);assert.equal((await response.json()).company.totalShares,100);
   const before=assetReads;response=await read('/private',{authorise:async()=>({ok:false,reason:'no-session'})});assert.equal(response.status,401);assert.equal(assetReads,before,'Authorization precedes even the encrypted head lookup');
@@ -56,5 +57,17 @@ try {
   const rotatedResponse=await handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds/private?isins='+isin),rotatedWorker,{authorise:async()=>({ok:true}),fetcher:async()=>{throw Error('No external reads');}});assert.equal(rotatedResponse.status,200);assert.equal((await rotatedResponse.json()).rows[0].totalShares,150);
   await assert.rejects(restoreStaticMutualFunds({env:{...env,MF_STATE_KEY:'incorrect-archive-secret-key-12345'},fetcher,file:path.join(root,'wrong-key.sqlite'),legacyClient:async()=>{throw Error('No reset permitted');}}));
   const indexFile=path.join(site,'generated-views/mutual-funds',firstIndex),original=fs.readFileSync(indexFile);fs.writeFileSync(indexFile,'invalid prepared file');response=await read(`?isins=${isin}`);assert.equal(response.status,503,'A corrupt prepared file cannot silently choose old SQL or a different dataset');fs.writeFileSync(indexFile,original);
+  const checkout='b'.repeat(40),queued={...env,GITHUB_RUN_ID:'12348',MF_SOURCE_SHA:checkout};
+  assert.equal(mutualFundsPublicationEnv(queued).GITHUB_SHA,checkout);
+  assert.equal(queued.GITHUB_SHA,env.GITHUB_SHA,'The original trigger environment remains unchanged');
+  assert.throws(()=>mutualFundsPublicationEnv({...queued,MF_SOURCE_SHA:'invalid'}),/source commit/);
+  const published=await publishStaticMutualFunds(rotated,{env:queued,fetcher,file,out:path.join(root,'queued-publish'),sleep:async()=>{},head:()=>checkout});
+  assert.equal(published.manifest.sourceSha,checkout,'A delayed run records its actual reviewed checkout in the published bundle');
+  const beforeInvalid=sequence;
+  await assert.rejects(publishStaticMutualFunds(rotated,{env:{...queued,GITHUB_RUN_ID:'12349',MF_SOURCE_SHA:'c'.repeat(40)},fetcher,file,out:path.join(root,'invalid-checkout'),sleep:async()=>{},head:()=>checkout}),/checkout does not match/);
+  assert.equal(sequence,beforeInvalid,'An incorrect claimed checkout still cannot upload a publication');
+  assert.equal(snapshotTransferFailure(Error('Background checkout does not match its source commit')),'source-commit-mismatch');
+  assert.equal(snapshotTransferFailure(Error('GitHub background operation failed (503)')),'github-http-503');
+  assert.equal(snapshotTransferFailure(Error('private-source-facts must not enter logs')),'operation-failed');
   console.log('PASS static MF delivery: exact public/private/current/historical values, authorization before asset reads, no reader GitHub API/network/SQL, encrypted-only static files, complete master restoration and unchanged ciphertext reuse');
 }finally{local?.close();fs.rmSync(root,{recursive:true,force:true});}

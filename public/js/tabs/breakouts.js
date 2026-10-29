@@ -163,6 +163,8 @@ const signalsOf = (s) => s.breakdown.map((b) => ({ label: `${b.label} (${fmtPoin
 
 // scoreTable accessors are shared across all three sub-views.
 const tableBase = (rows, ctx) => ({
+  // This screen already owns the quote lifecycle; adding cap must not re-check prices on repaint.
+  companyMarket: { cmpLabel: 'Price', watchPrices: false },
   rows,
   key: (s) => s.company.ticker,
   name: (s) => s.company.name || s.company.ticker,
@@ -1068,7 +1070,7 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Above 200 DMA', key: 'd200', width: 17, get: (s) => yn(vf(s).above200dma) },
     { header: 'Thresholds', key: 'thr', width: 60, get: () => `RSI D1>${thresholds.rsiD1}, W>${thresholds.rsiW}, M>${thresholds.rsiM}; F2 RSI D>${thresholds.rsiD2}, Vol≥${thresholds.volMult}×; F3 RSI D>${thresholds.rsiD3}, fresh MACD cross + >20 DMA` },
   ];
-  exportRows({ filename, sheetName: 'Momentum Scanner', columns, rows }).then((ok) => {
+  exportRows({ companyMarket: { cmpLabel: 'Price' }, filename, sheetName: 'Momentum Scanner', columns, rows }).then((ok) => {
     if (!ok) console.warn('[breakouts] momentum export did not complete — exceljs unavailable.');
   });
 }
@@ -1117,7 +1119,7 @@ function runExport(visibleRows, filename) {
     { header: 'Above 200 DMA', key: 'dma', width: 15, get: (s) => (s.company.above_200dma == null ? '' : s.company.above_200dma ? 'Yes' : 'No') },
   ];
 
-  exportRows({ filename, sheetName: 'Technicals', columns, rows: scoredRows }).then((ok) => {
+  exportRows({ companyMarket: { cmpLabel: 'Price' }, filename, sheetName: 'Technicals', columns, rows: scoredRows }).then((ok) => {
     if (!ok) console.warn('[breakouts] export did not complete — exceljs unavailable.');
   });
 }

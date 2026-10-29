@@ -1,6 +1,7 @@
 // Real browser persistence and controlled network gates: cached/precomputed
 // summaries must paint before revalidation or private supplementation finishes.
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve,extname,sep} from 'node:path';
 import {comparisonStatus} from '../public/js/data/mutual-funds-status.js';
@@ -8,7 +9,7 @@ const {chromium}=await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
 const origin='https://mf-cache.test',root=resolve('public'),errors=[],requests=[];
 const isin='INE090A01021',other='INE040A01034';
-const row={isin,name:'Cached Company',ticker:'FIXTURE',month:'2026-08',priorMonth:'2026-07',totalShares:120,netChange:20,comparableFunds:1,addedFunds:1,reducedFunds:0,pendingFunds:0,direction:'Added',insight:'Saved comparison',revision:'one'};
+const row={activityBasis:'equity-hybrid-ex-arbitrage-v1',isin,name:'Cached Company',ticker:'FIXTURE',month:'2026-08',priorMonth:'2026-07',totalShares:120,netChange:20,comparableFunds:1,addedFunds:1,reducedFunds:0,pendingFunds:0,direction:'Added',insight:'Saved comparison',revision:'one'};
 const meta={checkedAt:'2026-09-20T00:00:00Z',state:'complete',amcs:[{status:'ok',month:'2026-08'}]};
 let publicValue={rows:[row],meta},privateValue=null,publicGate=null,privateGate=null,failPublic=false;
 const gate=()=>{let release;const promise=new Promise(r=>release=r);return {promise,release};};
@@ -27,12 +28,13 @@ try {
   if(u.pathname==='/js/core/host-context.js')return js(`let token=null;const listeners=[];export const authHeaders=()=>token?{Authorization:'Bearer '+token}:{};export const hostToken=()=>token;export const onHostContext=fn=>listeners.push(fn);window.session=value=>{token=value;for(const fn of listeners)fn({}, {session:true});};`);
   if(u.pathname==='/js/data/coverage.js')return js(`export const holdings=()=>[{isin:'${isin}',name:'Cached Company'}];`);
   if(u.pathname==='/js/core/watchlist.js')return js('export const all=()=>[];');
-  if(u.pathname==='/js/data/scope.js')return js('export const filterByScope=rows=>rows;');
+  // The Holding filter is All in this fixture: its helpers leave the rows untouched.
+  if(u.pathname==='/js/data/scope.js')return js('export const filterByScope=rows=>rows;export const scopeHoldings=rows=>rows;export const holdingMembership=()=>null;');
   if(u.pathname==='/api/mutual-funds') {
    requests.push(u.href);const value=structuredClone(typeof publicValue==='function'?publicValue(u):publicValue),block=publicGate,fail=failPublic;
    if(block)await block.promise;
    if(fail)return route.abort('failed');
-   return route.fulfill({contentType:'application/json',headers:{etag:JSON.stringify(JSON.stringify(value).length+':'+value.rows[0]?.totalShares),'cache-control':'no-cache'},body:JSON.stringify(value)});
+   return route.fulfill({contentType:'application/json',headers:{etag:createHash('sha256').update(JSON.stringify(value)).digest('hex'),'cache-control':'no-cache'},body:JSON.stringify(value)});
   }
   if(u.pathname==='/api/mutual-funds/private') {
    const block=privateGate,value=structuredClone(privateValue);if(block)await block.promise;
@@ -42,8 +44,8 @@ try {
   return route.fulfill({contentType:{'.js':'text/javascript','.json':'application/json'}[extname(file)]||'text/plain',body:readFileSync(file)});
  });
  const open=async()=>{await page.goto(origin);await page.waitForFunction(()=>window.ready);};
- const start=()=>page.evaluate(()=>{window.finished=false;window.work=feed.load().then(()=>window.finished=true);});
- await open();await page.evaluate(()=>feed.load());
+ const start=()=>page.evaluate(()=>{window.finished=false;window.work=feed.load('universe').then(()=>window.finished=true);});
+ await open();await page.evaluate(()=>feed.load('universe'));
  assert.equal(await page.evaluate(()=>feed.all()[0].netChange),20);
  // Reload clears module memory. Withhold the whole network response; IndexedDB
  // alone must produce the original exact rows and source check, with no new stamp.
@@ -53,14 +55,14 @@ try {
  assert.equal(await page.evaluate(()=>feed.meta().checkedAt),meta.checkedAt);
  assert.equal(await page.evaluate(()=>feed.meta().origin),'store');
  assert.equal(await page.evaluate(()=>finished),false);
- const before=requests.length;await page.evaluate(()=>{window.second=feed.load();});
+ const before=requests.length;await page.evaluate(()=>{window.second=feed.load('universe');});
  publicGate.release();publicGate=null;await page.evaluate(()=>Promise.all([work,second]));
  assert.equal(requests.length,before,'concurrent callers share one revalidation');
  assert.equal(await page.evaluate(()=>feed.all().length),2);
  assert.equal(await page.evaluate(()=>feed.all().find(r=>r.isin==='INE090A01021').totalShares),250);
  assert.equal(await page.evaluate(()=>feed.meta().state),'collecting','partial capture remains partial');
  // A failing refresh preserves the complete saved response and marks failure.
- failPublic=true;await page.evaluate(()=>feed.load());failPublic=false;
+ failPublic=true;await page.evaluate(()=>feed.load('universe'));failPublic=false;
  assert.equal(await page.evaluate(()=>feed.all().length),2);
  assert.equal(await page.evaluate(()=>feed.meta().readFailed),true);
  assert.match(await page.evaluate(()=>feed.health()),/Read failed/);
@@ -72,7 +74,7 @@ try {
  assert.equal(await page.evaluate(()=>feed.all().find(r=>r.isin==='INE090A01021').totalShares),250);
  privateGate.release();privateGate=null;await page.evaluate(()=>work);
  assert.equal(await page.evaluate(()=>feed.all().find(r=>r.isin==='INE090A01021').totalShares),275);
- assert.equal(await page.evaluate(async()=> (await store.readEntry('mf-snapshot:INE090A01021')).value.rows[0].totalShares),250,'private rows are never persisted');
+ assert.equal(await page.evaluate(async()=> (await store.readEntry('mf-snapshot:universe')).value.rows[0].totalShares),250,'private rows are never persisted');
  // On a primary correction, invalidate only its obsolete private overlay while
  // waiting for the refreshed supplement; an account change rejects late results.
  publicValue={...publicValue,rows:[{...row,totalShares:300,netChange:200,revision:'three'}]};
@@ -87,6 +89,18 @@ try {
  assert.deepEqual(scoped.rows,many);assert.equal(requests.length-batchStart,2);
  const universe=await page.evaluate(()=>feed.load('universe'));
  assert.deepEqual(universe.rows,many);
+ // The identity covers the whole index: unchanged data needs only one probe,
+ // while a correction beyond page one still fetches and displays its last row.
+ const a='a'.repeat(64),b='b'.repeat(64);let version=a,tail=251;
+ publicValue=u=>{const source=many.map((row,i)=>i===250?{...row,totalShares:tail}:row),ids=u.searchParams.get('isins')?.split(',');return {rows:ids?source.filter(row=>ids.includes(row.isin)):u.searchParams.get('cursor')?source.slice(250):source.slice(0,250),meta:{...meta,publicSnapshotId:version},nextCursor:ids||u.searchParams.get('cursor')?null:many[249].isin};};
+ await page.evaluate(()=>feed.load('universe'));
+ let probeStart=requests.length;await page.evaluate(()=>feed.load('universe'));assert.equal(requests.length-probeStart,1);
+ version=b;tail=999;probeStart=requests.length;await page.evaluate(()=>feed.load('universe'));
+ assert.equal(requests.length-probeStart,2);assert.equal(await page.evaluate(id=>feed.all().find(row=>row.isin===id).totalShares,many.at(-1).isin),999);
+ publicGate=gate();await open();await page.evaluate(holding=>{window.work=feed.load('portfolio',{holdings:[holding]});},many.at(-1));
+ await page.waitForFunction(id=>feed.scopedRows('portfolio',[{isin:id}])[0]?.totalShares===999,many.at(-1).isin);
+ assert.equal(await page.evaluate(()=>feed.meta().publicRevalidating),true,'A saved full Universe paints in a newly selected scope while its response is withheld');
+ publicGate.release();publicGate=null;await page.evaluate(()=>work);
  assert.deepEqual(errors,[]);
  console.log('PASS MF cache-first reload, unchanged source dates, shared requests, new/corrected rows, failure retention, staged private reads, account isolation and full scope/pagination');
 } finally {publicGate?.release();privateGate?.release();await browser.close();}

@@ -11,10 +11,12 @@
 // file knows nothing about technicals or any other tab, so prompts 4–7 can adopt it as-is.
 
 const EXCELJS_CDN = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+import { marketColumns } from './company-market-columns.js';
+import * as marketInputs from '../data/company-market.js';
 
 let loaderPromise = null;
 
-function loadExcelJs() {
+export function loadExcelJs() {
   if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
   if (loaderPromise) return loaderPromise;
   loaderPromise = new Promise((resolve, reject) => {
@@ -36,7 +38,8 @@ function loadExcelJs() {
  * Returns true on success, false if the export could not run (offline, CDN blocked) — the
  * caller decides how loudly to complain. Never throws into a click handler.
  */
-export async function exportRows({ filename = 'export', sheetName = 'Sheet1', columns = [], rows = [], canExport = () => true }) {
+export async function exportRows({ filename = 'export', sheetName = 'Sheet1', columns = [], rows = [], canExport = () => true, companyMarket = null }) {
+  columns = marketColumns(columns, companyMarket, true);
   let ExcelJS;
   try {
     ExcelJS = await loadExcelJs();
@@ -46,6 +49,8 @@ export async function exportRows({ filename = 'export', sheetName = 'Sheet1', co
   }
 
   try {
+    if (!canExport()) return false;
+    if (companyMarket) await marketInputs.load();
     if (!canExport()) return false;
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Sattva Central Research';
@@ -98,7 +103,7 @@ function triggerDownload(blob, filename) {
  *
  *   exportSheets({ filename, banner, sheets: [{ name, columns, rows }] })
  */
-export async function exportSheets({ filename = 'export', banner = '', sheets = [] }) {
+export async function exportSheets({ filename = 'export', banner = '', sheets = [], prepareWorkbook = null }) {
   let ExcelJS;
   try {
     ExcelJS = await loadExcelJs();
@@ -108,13 +113,14 @@ export async function exportSheets({ filename = 'export', banner = '', sheets = 
   }
 
   try {
+    if (sheets.some(sheet => sheet.companyMarket)) await marketInputs.load();
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Sattva Central Research';
     wb.created = new Date();
 
     for (const sheet of sheets) {
       const ws = wb.addWorksheet(sheet.name, { views: [{ state: 'frozen', ySplit: banner ? 2 : 1 }] });
-      const columns = sheet.columns || [];
+      const columns = marketColumns(sheet.columns || [], sheet.companyMarket, true);
 
       if (banner) {
         // Row 1 is the provenance statement, merged across the full width.
@@ -147,6 +153,7 @@ export async function exportSheets({ filename = 'export', banner = '', sheets = 
       }
     }
 
+    prepareWorkbook?.(wb);
     const buffer = await wb.xlsx.writeBuffer();
     triggerDownload(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${filename}.xlsx`);
     return true;

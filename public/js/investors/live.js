@@ -1,3 +1,4 @@
+import { marketHeads, marketCells, wireMarketCells } from '../ui/company-market-columns.js';
 // investors/live.js — Superstar Investors, live off Ticker Finology.
 //
 //   renderLive(ctx, { disposers })   the whole sub-view
@@ -669,6 +670,7 @@ function holdingsTable(ctx, rows, quarters, initialView, { embedded = false, too
   const investorNames = [...new Set(rows.map((r) => r.investor))].sort();
 
   return scoreTable({
+    companyMarket: true,
     rows,
     bookmarkDate: () => quarters[0],
     bookmarkSource: row => row.investor,
@@ -814,19 +816,26 @@ export async function openInvestor(slug) {
   const b = feed.book(slug);
   if (!inv && !b) return;
   open = { slug, inv, b };
+  let stopPanel = null;
+  const releasePanel = () => { stopPanel?.(); stopPanel = null; };
+  const panel = render => () => { releasePanel(); return render(); };
+  const wireMarketPanel = (host, compact) => {
+    const stopMarket = wireMarketCells(host), stopDisclosures = wirePublicDisclosures(host, slug, 'investor', compact);
+    stopPanel = () => { stopDisclosures?.(); stopMarket(); };
+  };
 
   openWorkspace({
     title: b?.name || inv?.name || slug,
     avatarName: b?.name || inv?.name || slug,
     tabs: [
-      { id: 'holdings', label: 'Holdings', badge: b?.holdings?.length ?? undefined, render: holdingsPanel, wire: (host) => wirePublicDisclosures(host, slug, 'investor', true) },
+      { id: 'holdings', label: 'Holdings', badge: b?.holdings?.length ?? undefined, render: panel(holdingsPanel), wire: host => wireMarketPanel(host, true) },
       { id: 'exchange', label: 'Exchange disclosures', badge: publicHoldings.forPerson(slug).length || undefined,
-        render: () => publicDisclosuresHtml(slug), wire: (host) => wirePublicDisclosures(host, slug) },
-      { id: 'moves', label: 'Quarterly comparison', render: movesPanel },
-      { id: 'profile', label: 'Profile', render: profilePanel },
+        render: panel(() => publicDisclosuresHtml(slug)), wire: host => wireMarketPanel(host, false) },
+      { id: 'moves', label: 'Quarterly comparison', render: panel(movesPanel) },
+      { id: 'profile', label: 'Profile', render: panel(profilePanel) },
     ],
     activeTab: 'holdings',
-    onClose: () => (open = null),
+    onClose: () => { releasePanel(); open = null; },
   });
 }
 
@@ -848,7 +857,7 @@ function holdingsPanel() {
         <thead class="bg-slate-50">
           <tr>
             <th scope="col" class="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-slate-600">Company</th>
-            ${b.quarters.map((q) => `<th scope="col" class="whitespace-nowrap px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide text-slate-600">${escapeHtml(q)}</th>`).join('')}
+            ${marketHeads}${b.quarters.map((q) => `<th scope="col" class="whitespace-nowrap px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide text-slate-600">${escapeHtml(q)}</th>`).join('')}
             <th scope="col" title="Ticker Finology's own derivation from the holding percentage and a market cap — a filing never states a rupee amount" class="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide text-slate-600">Value</th>
           </tr>
         </thead>
@@ -859,7 +868,7 @@ function holdingsPanel() {
                 <td class="px-3 py-2 font-semibold text-slate-900">${
                   h.companySlug ? `<a href="${escapeHtml(FINOLOGY_COMPANY(h.companySlug))}" target="_blank" rel="noopener" class="hover:text-indigo-700 hover:underline">${escapeHtml(h.company)}</a>` : escapeHtml(h.company)
                 }</td>
-                ${b.quarters.map((q) => `<td class="px-3 py-2 text-right tabular-nums text-slate-700">${h.quarterlyHoldings[q] != null ? pct(h.quarterlyHoldings[q]) : disclosureStatus(h, q) === 'filing_due' ? 'Filing due' : disclosureStatus(h, q) === 'not_disclosed' ? 'Not disclosed' : 'Unconfirmed'}</td>`).join('')}
+                ${marketCells(h)}${b.quarters.map((q) => `<td class="px-3 py-2 text-right tabular-nums text-slate-700">${h.quarterlyHoldings[q] != null ? pct(h.quarterlyHoldings[q]) : disclosureStatus(h, q) === 'filing_due' ? 'Filing due' : disclosureStatus(h, q) === 'not_disclosed' ? 'Not disclosed' : 'Unconfirmed'}</td>`).join('')}
                 <td class="px-3 py-2 text-right tabular-nums text-slate-700">${cr(h.valueCr)}</td>
               </tr>`
             )
@@ -1036,6 +1045,7 @@ async function runExport() {
     sheets: [
       {
         name: 'Holdings',
+        companyMarket: true,
         columns: [
           { header: 'Investor', width: 26, get: (r) => r.investor },
           { header: 'Finology Id', width: 22, get: (r) => r.slug },
@@ -1063,6 +1073,7 @@ async function runExport() {
       },
       {
         name: 'Quarter comparison (derived)',
+        companyMarket: true,
         columns: [
           { header: 'Investor', width: 26, get: (r) => r.investor },
           { header: 'Company', width: 34, get: (r) => r.company },

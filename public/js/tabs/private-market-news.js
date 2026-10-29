@@ -5,9 +5,67 @@ import { sectionHead, scoreTable, openDrill, openModal } from '../ui/screener.js
 import { escapeHtml as esc } from '../core/dom.js';
 import { exportRows } from '../ui/export.js';
 import * as refreshRegistry from '../core/refresh.js';
+import { revalidatedJson } from '../core/store.js';
+import * as watchlist from '../core/watchlist.js';
+import * as book from '../data/coverage.js';
+import { nameKey, privateCompanyMatcher, privateCompaniesFromBook } from '../data/private-companies.js';
 
 export const meta = TAB_META['private-market-news'];
-let ctxRef = null, table = null, view = null, offTable = null, disposers = [];
+let ctxRef = null, table = null, view = null, offTable = null, disposers = [], viewScope = null;
+// THE SCOPE (ported from Glow). Universe is every funding record Inc42 reported; Portfolio narrows to
+// the family's own private companies (the book's unlisted lines) and Watchlist to watched companies,
+// both by EXACT company name. A record names no ISIN, so a name is the only join, and a near miss is
+// not a match.
+let bookHoldings = null, bookRead = null, bookError = null;
+const PERIOD_DEFAULT = { universe: 'latest', portfolio: 'all', watchlist: 'all' };
+function loadBook() {
+  bookRead ||= revalidatedJson('data/portfolio-companies.json')
+    .then(list => { bookHoldings = Array.isArray(list?.holdings) ? list.holdings : []; bookError = null; })
+    .catch(error => { bookError = error?.message || 'unreadable'; bookRead = null; })
+    .then(() => paint());
+  return bookRead;
+}
+// The reader's live book decides membership: a private line the family no longer holds drops out.
+function privateCompanies() {
+  if (!bookHoldings) return null;
+  const live = new Set((book.isLoaded() ? book.holdings() : []).map(h => h.isin).filter(Boolean));
+  return privateCompaniesFromBook(bookHoldings, live.size ? live : null);
+}
+function scopeRows(rows, scope) {
+  if (scope === 'portfolio') {
+    const companies = privateCompanies();
+    if (!companies) return { rows: [], holdingOf: () => null, matched: 0, companies };
+    const match = privateCompanyMatcher(companies), holdings = new Map();
+    for (const row of rows) { const company = match(row.company); if (company) holdings.set(row.id, company); }
+    return { rows: rows.filter(row => holdings.has(row.id)), holdingOf: row => holdings.get(row.id) || null,
+      matched: new Set([...holdings.values()].map(c => c.id)).size, companies };
+  }
+  if (scope === 'watchlist') {
+    const match = privateCompanyMatcher(watchlist.all().filter(w => w.name).map(w => ({ name: w.name, aliases: [] })));
+    return { rows: rows.filter(row => match(row.company)), holdingOf: () => null, matched: 0, companies: null };
+  }
+  return { rows, holdingOf: () => null, matched: 0, companies: null };
+}
+function scopeText(scope, matched, companies) {
+  if (scope === 'portfolio') {
+    if (bookError) return 'The family’s private-company list could not be read, so no funding is matched to it. Universe still lists every record.';
+    if (!companies) return 'Reading the family’s private companies from the book…';
+    return `Funding reported by Inc42 for the family’s own private companies · ${matched} of ${companies.length} have a captured round · matched by exact company name.`;
+  }
+  if (scope === 'watchlist') return 'Funding reported by Inc42 for your watchlist companies · matched by exact company name.';
+  return 'Weekly Indian startup funding reported by Inc42 · every captured record, across the source universe.';
+}
+function emptyText(scope, all, companies) {
+  if (!all.length) return 'Funding collection has not published readable rows yet. Coverage shows the latest attempt.';
+  if (scope === 'portfolio') {
+    if (bookError) return 'The family’s private-company list could not be read. This is a failed read, not an absence of funding.';
+    if (!companies) return 'Reading the family’s private companies…';
+    if (!companies.length) return 'The family book carries no private companies.';
+    return `No funding for the family’s ${companies.length} private ${companies.length === 1 ? 'company' : 'companies'} matches these filters. Try All captured history.`;
+  }
+  if (scope === 'watchlist') return 'None of your watchlist companies appears in the captured funding records.';
+  return 'No funding deals match these filters.';
+}
 const fields = [['date','Funding date'],['company','Company'],['sector','Sector'],['subsector','Subsector'],['businessModel','Business model'],['amount','Round size'],['round','Round type'],['investors','Investors'],['leadInvestor','Lead investor']];
 const time = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-IN', { timeZone:'Asia/Kolkata', dateStyle:'medium', timeStyle:'short' }) + ' IST' : 'Not yet confirmed';
 const safeUrl = value => { try { const u = new URL(value); return u.origin === 'https://inc42.com' ? u.href : 'https://inc42.com/tag/funding-galore/'; } catch { return 'https://inc42.com/tag/funding-galore/'; } };
@@ -38,12 +96,18 @@ function coverage() {
 }
 function paint() {
   if (!ctxRef) return;
-  const root = ctxRef.root, m = feed.meta(), rows = feed.rows(), h = feed.health();
+  const root = ctxRef.root, m = feed.meta(), all = feed.rows(), h = feed.health();
+  const scope = ['portfolio', 'watchlist'].includes(ctxRef.scope) ? ctxRef.scope : 'universe';
+  const { rows, holdingOf, matched, companies } = scopeRows(all, scope);
   const searchText = root.querySelector('input')?.value;
   const focused = root.contains(document.activeElement) ? document.activeElement : null;
   const input = focused?.matches('input') ? { value:focused.value, start:focused.selectionStart, end:focused.selectionEnd } : null;
   const selected = focused?.matches('select') ? focused.getAttribute('aria-label') : null;
   view = table?.view || view;
+  // Search, sort and the other filters carry across a scope change; the period moves to the new
+  // scope's own default only while it is still the old one's, since a week rarely holds the family's.
+  if (view && viewScope && viewScope !== scope && view.filters?.[0] === PERIOD_DEFAULT[viewScope]) view = { ...view, filters: [PERIOD_DEFAULT[scope], ...view.filters.slice(1)] };
+  viewScope = scope;
   const scroll = root.querySelector('[data-table-scroll]');
   const position = scroll ? { top:scroll.scrollTop, left:scroll.scrollLeft } : null;
   offTable?.(); offTable = null;
@@ -52,20 +116,20 @@ function paint() {
   const options = (key, label) => ({ label, options:[{ value:'all', label:`All ${label.toLowerCase()}` }, ...[...new Set(rows.map(r => r[key]).filter(v => v && !/^[-–—_]$/.test(v)))].sort().map(value => ({ value,label:value }))], match:(r,v) => v === 'all' || !v || r[key] === v });
   table = scoreTable({ rows, key:r => r.id, name:r => r.company, watchKey:() => null, showWatchFilter:false,
     showRank:false, showAvatar:false, nameWrap:true, nameMaxPx:210, dense:true, wrapHeads:true, nameAfter:1,
-    sub:r => r.sourceMissing ? 'Retained · removed from source' : '',
-    searchPlaceholder:'Search company, investor, sector or round...', searchable:r => fields.map(([key]) => r[key]).join(' '),
+    sub:r => [holdingOf(r) ? (nameKey(holdingOf(r).name) === nameKey(r.company) ? 'Family holding' : `Family holding · ${holdingOf(r).name}`) : '', r.sourceMissing ? 'Retained · removed from source' : ''].filter(Boolean).join(' · '),
+    searchPlaceholder:'Search company, investor, sector or round...', searchable:r => [...fields.map(([key]) => r[key]), holdingOf(r)?.name || ''].join(' '),
     columns: fields.filter(([key]) => key !== 'company').map(([key,label]) => ({ label, get:r => cell(r[key]), html:true, sortable:key !== 'amount', sortValue:r => key === 'date' ? r.dateISO || '' : r[key] })),
     initialSort:{ key:'Funding date', dir:'desc' }, initialView:view,
-    filters:[{ label:'Funding period', value:'latest', options:[{ value:'latest',label:'Latest captured week' }, { value:'all',label:'All captured history' }, ...[...new Set(rows.map(publicationYear).filter(Boolean))].sort().reverse().map(value => ({ value,label:`${value} roundups` }))], match:(r,v) => v === 'all' || !v ? true : v === 'latest' ? r.sourceUrl === latest : publicationYear(r) === v }, options('sector','Sectors'), fundingRoundFilter(rows), options('businessModel','Business models')],
+    filters:[{ label:'Funding period', value:PERIOD_DEFAULT[scope], options:[{ value:'latest',label:'Latest captured week' }, { value:'all',label:'All captured history' }, ...[...new Set(rows.map(publicationYear).filter(Boolean))].sort().reverse().map(value => ({ value,label:`${value} roundups` }))], match:(r,v) => v === 'all' || !v ? true : v === 'latest' ? r.sourceUrl === latest : publicationYear(r) === v }, options('sector','Sectors'), fundingRoundFilter(rows), options('businessModel','Business models')],
     loading:!m.generatedAt && !m.readError,
-    emptyMessage:rows.length ? 'No funding deals match these filters.' : 'Funding collection has not published readable rows yet. Coverage shows the latest attempt.',
+    emptyMessage:emptyText(scope, all, companies),
     countNoun:'funding records', fillMode:'windowed', stickyHead:'max(320px, calc(100vh - 340px))', onRowClick:details,
-    bookmarkDate:r => r.dateISO, bookmarkSource:() => 'Inc42 Funding Galore', link:r => safeUrl(r.sourceUrl), exportName:'sattva-private-market-news',
-    onExport:visible => exportRows({ filename:'sattva-private-market-news', sheetName:'Private market funding', rows:visible,
-      columns:[...fields.map(([key,header]) => ({ key,header,get:r => r[key],width:key === 'investors' ? 70 : 24 })), ...['sourceUrl','sourceTitle','publishedAt','firstSeenAt','updatedAt','sourceMissing'].map(key => ({ key,header:key,get:r => String(r[key] ?? '') })),
+    bookmarkDate:r => r.dateISO, bookmarkSource:() => 'Inc42 Funding Galore', link:r => safeUrl(r.sourceUrl), exportName:`sattva-private-market-news-${scope}`,
+    onExport:visible => exportRows({ filename:`sattva-private-market-news-${scope}`, sheetName:'Private market funding', rows:visible,
+      columns:[...(scope === 'portfolio' ? [{ key:'familyHolding', header:'Family holding (matched by exact name)', get:r => holdingOf(r)?.name || '', width:28 }] : []), ...fields.map(([key,header]) => ({ key,header,get:r => r[key],width:key === 'investors' ? 70 : 24 })), ...['sourceUrl','sourceTitle','publishedAt','firstSeenAt','updatedAt','sourceMissing'].map(key => ({ key,header:key,get:r => String(r[key] ?? '') })),
         { key:'notes',header:'Source footnotes',get:r => (m.articles || []).find(a => a.url === r.sourceUrl)?.notes?.join('\n') || '' }, { key:'sourceFields',header:'All original source fields',get:r => JSON.stringify(r.sourceFields) }, { key:'revisions',header:'Prior source versions',get:r => JSON.stringify(r.revisions || []) }] }),
   });
-  root.innerHTML = `${sectionHead({ title:'Private Market', description:'Weekly Indian startup funding reported by Inc42 · Across the source universe, independent of listed-company scopes.', meta:`<span class="text-xs text-slate-500">${esc(h.label)}</span>` })}
+  root.innerHTML = `${sectionHead({ title:'Private Market', description:scopeText(scope, matched, companies), meta:`<span class="text-xs text-slate-500">${esc(h.label)}</span>` })}
     ${table.html}<p class="mt-3 text-xs text-slate-500">Latest roundup published ${esc(time(latestArticle?.publishedAt))} · Source listing checked ${esc(time(m.sourceCheckedAt))} · <button type="button" data-private-market-coverage class="text-brand-600 hover:underline">Coverage & source notes</button></p>`;
   offTable = table.wire(root); root.querySelector('[data-private-market-coverage]').onclick = coverage;
   const next = root.querySelector('[data-table-scroll]'); if (position && next) { next.scrollTop = position.top; next.scrollLeft = position.left; }
@@ -75,7 +139,9 @@ function paint() {
 }
 export function render(ctx) {
   ctxRef = ctx;
-  if (!disposers.length) disposers = [feed.onChange(paint), feed.bindLifecycle(), refreshRegistry.register('private-market-news', { label:'Private Market', refresh:feed.refresh })];
+  if (!disposers.length) disposers = [feed.onChange(paint), feed.bindLifecycle(), refreshRegistry.register('private-market-news', { label:'Private Market', refresh:feed.refresh }),
+    watchlist.onChange(() => { if (ctxRef?.scope === 'watchlist') paint(); }), book.onChange(() => { if (ctxRef?.scope === 'portfolio') paint(); })];
   paint(); void feed.load();
+  if (ctx.scope === 'portfolio' && !bookHoldings) void loadBook();
 }
 export function destroy() { ctxRef = null; view = table?.view || view; offTable?.(); offTable = null; table = null; disposers.forEach(fn => fn()); disposers = []; }

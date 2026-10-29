@@ -142,7 +142,7 @@ const tab = makeFilingsTab({
       ${coverageBlock(meta)}
     </div>
   </div>`,
-  onExport: async (visible, meta) => exportRows({
+  onExport: async (visible, meta) => exportRows({ companyMarket: true,
     filename: 'sattva-corporate-actions', sheetName: 'Corporate Actions',
     columns: [
       { header: 'Ticker', key: 'ticker', width: 14, get: (r) => r.ticker },

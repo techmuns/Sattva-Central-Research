@@ -426,6 +426,30 @@ assertEnding(shortestDigest,dense);
 assert(shortestDigest.length<=3&&shortestDigest.every(m=>m.part.summaryChars===100&&m.bytes<=80000),'The shortest tier stays bounded under additional byte pressure');
 assert.equal(new Set(shortestDigest.flatMap(m=>m.part.eventIds)).size,500);
 assert.deepEqual(shortestDigest.flatMap(m=>m.keys).sort(),briefStoryKeys(dense).sort());
+// Results-day floods: many updates per company, each with another source. Once every card
+// tier fails, the digest keeps one company heading per row and every update and exact link;
+// its last step links each leading source and counts the rest, which the PDF carries.
+const floodPad=n=>String(n).padStart(12,'0');
+const flood=companies=>{const value=structuredClone(dense);value.announcements.groups=Array.from({length:companies},(_,c)=>({ticker:`FLOOD${c}`,company:`Flooded Issuer ${c}`,items:Array.from({length:10},(_,i)=>{const n=c*10+i;return {...structuredClone(official),
+ headline:`Flooded Issuer ${c} reports distinct development ${i}: INR ${n+1} crore order from Customer ${n}, with delivery and payment terms stated in the attached filing for investors to review in full detail.`,
+ keys:[`flood:${n}`],content:{state:'pending'},at:at-n*1000,url:`https://www.bseindia.com/xml-data/corpfiling/AttachLive/00000000-0000-4000-8000-${floodPad(n)}.pdf`,
+ sourceUrls:[`https://www.bseindia.com/xml-data/corpfiling/AttachLive/00000000-0000-4000-8100-${floodPad(n)}.pdf`]};})}));return value;};
+for(const [companies,inlineExtras] of [[44,true],[52,false]]){
+ const source=flood(companies),sourceBefore=JSON.stringify(source),events=editorialEvents(source,briefStats(source).companies).events,parts=renderInvestorEmails(source,options),html=parts.map(m=>m.html).join('');
+ assertEnding(parts,source);
+ assert(parts.length<=3&&parts.every(m=>m.part.digest===true&&m.part.summaryChars===100&&m.bytes<=90000),'A flood beyond every card tier uses the bounded company digest');
+ assert.equal(parts.every(m=>m.part.extraSources===undefined),inlineExtras,'The digest drops inline secondary links only when they cannot fit');
+ assert.deepEqual(parts.flatMap(m=>m.part.eventIds),events.map(e=>e.id),'Every update appears once, in company reading order');
+ assert.deepEqual(parts.flatMap(m=>m.keys).sort(),briefStoryKeys(source).sort());
+ assert(parts.every(m=>m.html.includes(`href="${pdfUrl}"`)),'Every digest part links the complete report');
+ for(const event of events){const [lead,...others]=event.sources;assert.equal(others.length,1);
+  assert(html.includes(`href="${lead}" target=_blank rel=noreferrer class=gvl>Announcement →</a>`),'Every update keeps its exact leading source, opening in a new tab');
+  assert.equal(html.includes(`href="${others[0]}"`),inlineExtras,'Secondary sources stay exact while they fit');}
+ if(!inlineExtras)assert.equal(html.split('· +1 source in PDF').length-1,events.length,'Each counted secondary source is named as in the PDF');
+ for(const message of parts)for(let c=0;c<companies;c++){const headings=message.html.match(new RegExp(`<strong class=gvc>Flooded Issuer ${c}(?: \\(continued\\))?</strong>`,'g'))?.length||0;
+  assert(headings<=1,'A company heading prints once per digest part');assert.equal(headings,message.html.includes(`data-company="FLOOD${c}"`)?1:0);}
+ assert.equal(JSON.stringify(source),sourceBefore,'The digest cannot rewrite the captured record');
+}
 const noticeStats=briefStats(metadataBrief),noticeEvents=editorialEvents(metadataBrief,noticeStats.companies).events;
 const denseNotice=renderBriefHtml(metadataBrief,{...options,stats:noticeStats,part:{investor:true,reportLink:true,eventIds:noticeEvents.map(e=>e.id),compact:true,summaryChars:100,supplements:false,index:1,total:1}});
 assert(denseNotice.includes(notice),'A structured meeting notice retains its later dividend agenda in the shortest mode');

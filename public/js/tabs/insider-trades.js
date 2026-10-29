@@ -319,7 +319,7 @@ const tab = makeFilingsTab({
     </div>`,
   onExport: async (visible, m) => {
     const headers = (m.headers || []).filter((h) => !/^source$/i.test(h) && !looksLikeLink(h));
-    await exportRows({
+    await exportRows({ companyMarket: true,
       filename: 'sattva-bulk-block-deal',
       sheetName: 'Bulk-Block Deal',
       columns: [

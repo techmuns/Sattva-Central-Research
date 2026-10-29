@@ -340,6 +340,7 @@ export function makeFilingsTab(cfg) {
 
     const searchControl = cfg.searchControl?.({ ctx, rows, view });
     const table = scoreTable({
+      companyMarket: !cfg.rowContent,
       rows,
       key: (r) => rowKeys.get(r) || '',
       // THE STAR MARKS THE COMPANY, NOT THE ROW. `key` above identifies the row and is not a

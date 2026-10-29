@@ -66,7 +66,8 @@ export const TAB_META = Object.freeze({
   'private-market-news': {
     id: 'private-market-news', title: 'Private Market', navigationGroup: 'news-section',
     subtitle: 'Indian startup funding from Inc42 Funding Galore.', subviews: [],
-    allowEmptyScope: true, scopeIndependent: true, savedViewAvailable: false,
+    // The scope applies here (ported from Glow): Portfolio is the family's private companies.
+    allowEmptyScope: true, savedViewAvailable: false,
   },
   'public-chatter': {
     id: 'public-chatter',

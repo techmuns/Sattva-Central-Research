@@ -1,14 +1,22 @@
 import assert from 'node:assert/strict';
+import './verify-mutual-funds-directional.mjs';
 import {buildOwnership} from './lib/mutual-funds-build.mjs';
 import {change,mergeCompany,projectCompany,coverageState,companyRevision} from '../worker/mutual-funds-model.mjs';
 import {handleMutualFunds} from '../worker/mutual-funds.mjs';
+import {netVolumeCr,fundHouseLead} from '../public/js/data/mutual-funds-insight.js';
 const now=Date.parse('2026-09-20T00:00:00Z'),isin='INE090A01021',other='INE040A01034';
 const h=(id,quantity,pct=100)=>({isin:id,name:id,quantity,pctToNav:pct,marketValueCr:25});
-const sc=(name,month,rows)=>({schemeName:name,asOf:`${month}-31`,holdings:rows});
+const sc=(name,month,rows)=>({schemeName:name,classification:'Equity',asOf:`${month}-31`,holdings:rows});
 const snapshot={amcSlug:'fixture',amc:'Fixture AMC',asOfMonth:'Aug-26',fetchedAt:'2026-09-19T00:00:00Z',sourceUrl:'https://example.com/aug.xlsx',schemes:[sc('Growth Fund','2026-08',[h(isin,150)]),sc('Exit Fund','2026-08',[h(other,100)]),sc('Missing Quantity','2026-08',[h(isin,null)])],history:[{asOfMonth:'Jul-26',schemes:[sc('Growth Fund','2026-07',[h(isin,100)]),sc('Exit Fund','2026-07',[h(isin,30)]),sc('Unreported Fund','2026-07',[h(isin,70)]),sc('Missing Quantity','2026-07',[h(isin,20)])]}]};
 const built=buildOwnership([snapshot],{now});const company=built.companies.find(c=>c.isin===isin);
 let p=projectCompany({...company,denominator:{shares:1000,checkedAt:'2026-09-19T00:00:00Z',kind:'exchange'}},{now});
 assert.equal(p.totalShares,150);assert.equal(p.netChange,20);assert.equal(p.addedShares,50);assert.equal(p.reducedShares,30);assert.equal(p.pendingFunds,2);assert.equal(p.companyPct,15);assert.equal(p.funds.find(f=>f.name==='Exit Fund').action,'Exited');assert.equal(p.funds.find(f=>f.name==='Unreported Fund').change,null);assert.equal(p.funds.find(f=>f.name==='Missing Quantity').current.shares,null);
+assert.equal(p.topBuyer.amc,'Fixture AMC');assert.equal(p.topSeller.amc,'Fixture AMC');
+assert.equal(netVolumeCr({...p,netChange:250_000},400),10);
+assert.equal(netVolumeCr({...p,netChange:-75_000},800),-6);
+assert.equal(netVolumeCr({...p,netChange:0},400),0);
+for(const cmp of [null,undefined,NaN,Infinity,0,-1])assert.equal(netVolumeCr(p,cmp),null);
+for(const row of [{...p,netChange:null},{...p,comparableFunds:0},{...p,missing:true}])assert.equal(netVolumeCr(row,400),null);
 assert.equal(change(100,0).action,'New');assert.equal(change(100,0).changePct,null);assert.equal(change(0,100).changePct,-100);assert.equal(change(1,1).action,'No material change');
 // Unknown or partial sheets cannot establish a zero. Non-adjacent periods cannot establish MoM.
 const partial=structuredClone(snapshot);partial.schemes[1].holdings[0].pctToNav=40;
@@ -21,7 +29,7 @@ const merged=mergeCompany(company,newer);assert.equal(merged.funds[0].months['20
 const unavailable=structuredClone(newer);unavailable.funds[0].months['2026-08'].shares=null;assert.equal(mergeCompany(merged,unavailable).funds[0].months['2026-08'].shares,175);
 const older=structuredClone(newer);older.funds[0].months['2026-08'].checkedAt='2026-09-01T00:00:00Z';assert.equal(mergeCompany(merged,older).funds[0].months['2026-08'].shares,175);
 const rechecked=structuredClone(company);rechecked.funds[0].months['2026-08'].checkedAt='2026-09-20T00:00:00Z';assert.equal(companyRevision(company),companyRevision(rechecked));
-assert.equal(coverageState({state:'complete',checkedAt:new Date(now).toISOString(),amcs:[{month:'2026-07',status:'ok'}]},now).state,'partial');
+assert.equal(coverageState({state:'complete',checkedAt:new Date(now).toISOString(),amcs:[{month:'2026-07',status:'ok',checkedAt:new Date(now).toISOString()}]},now).state,'partial');
 assert.equal(coverageState({state:'complete',checkedAt:'2026-09-01',amcs:[{month:'2026-08',status:'ok'}]},now).state,'stale');
 assert.equal(coverageState({state:'complete',checkedAt:new Date(now).toISOString(),amcs:[{month:'2026-08',status:'ok'}]},now+12*86400000).state,'stale');
 assert.equal(projectCompany({...company,denominator:{shares:1000,checkedAt:'2026-08-01'}},{now}).companyPct,null);

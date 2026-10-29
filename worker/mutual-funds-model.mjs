@@ -1,4 +1,5 @@
 import { freshShareCount,selectShareCount } from '../public/js/data/mutual-funds-ownership.js';
+import { ACTIVITY_BASIS,schemeActivity } from '../public/js/data/mutual-funds-activity.js';
 import { contentTag } from './http.mjs';
 // All ownership arithmetic runs in the collector / Worker, never in the browser.
 export const MF_OBJECT = 'mutual-funds:v1';
@@ -50,10 +51,11 @@ export function projectCompany(company, { month = null, now = Date.now() } = {})
   const funds = company.funds.map(f => {
     const points = Object.fromEntries(Object.entries(f.months).map(([m,p])=>[m,{...p,...change(p.shares,f.months[previousMonth(m)]?.shares)}]));
     const current = points[latest], older = points[prior];
-    return { ...f, months: points, current: current || null, prior: older || null, ...change(current?.shares, older?.shares) };
+    return { ...f, activity:schemeActivity(f), months: points, current: current || null, prior: older || null, ...change(current?.shares, older?.shares) };
   }).filter(f => f.everHeld || Object.values(f.months).some(p => p.shares > 0));
   const current = funds.filter(f => number(f.current?.shares) !== null);
-  const comparable = funds.filter(f => f.change !== null);
+  const eligible = funds.filter(f=>f.activity.eligible);
+  const comparable = eligible.filter(f => f.change !== null);
   const added = comparable.filter(f => f.change > 0), reduced = comparable.filter(f => f.change < 0);
   const totalShares = current.length ? current.reduce((s,f) => s+f.current.shares,0) : null;
   const netChange = comparable.length ? comparable.reduce((s,f) => s+f.change,0) : null;
@@ -62,31 +64,36 @@ export function projectCompany(company, { month = null, now = Date.now() } = {})
   const companyPct = totalShares !== null && denominatorFresh ? totalShares/denominator.shares*100 : null;
   const topBuyer = added.sort((a,b)=>b.change-a.change)[0], topSeller = reduced.sort((a,b)=>a.change-b.change)[0];
   const fmt = n => Math.abs(n).toLocaleString('en-IN');
-  const insight = netChange === null ? 'Comparable monthly disclosures are not available yet.'
-    : `${added.length} funds added; ${reduced.length} reduced. Net ${netChange < 0 ? '−' : '+'}${fmt(netChange)} shares.${topBuyer ? ` Largest addition: ${topBuyer.name} (+${fmt(topBuyer.change)}).` : ''}${topSeller ? ` Largest reduction: ${topSeller.name} (−${fmt(topSeller.change)}).` : ''}`;
+  const insight = netChange === null ? 'Comparable equity/hybrid disclosures are not available yet.'
+    : `${netChange>0?'Net buying':netChange<0?'Net selling':'No net change'}: ${netChange<0?'−':netChange>0?'+':''}${fmt(netChange)} shares. ${added.length} funds added; ${reduced.length} reduced.`;
+  // Aggregate by the source's AMC identity, so opposite moves in two schemes
+  // of the same house are netted before calling the house a buyer or seller.
+  const houses=new Map();
+  for(const f of comparable){
+    const slug=f.id.startsWith('scanner:')?f.amc:f.id.split(':')[0],key=slug||f.amc||f.id;
+    const house=houses.get(key)||{id:key,name:f.amc||null,schemeName:f.name,change:0};
+    house.change+=f.change;houses.set(key,house);
+  }
+  const fundHouses=[...houses.values()].filter(h=>h.change!==0).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change)||a.id.localeCompare(b.id));
+  const excludedFunds={arbitrage:0,'fixed-income':0,unclassified:0};
+  for(const f of funds)if(!f.activity.eligible)excludedFunds[f.activity.category]++;
   return { ...company, months, month: latest, priorMonth: prior, funds,
     totalShares, netChange, addedShares: comparable.length ? added.reduce((s,f)=>s+f.change,0) : null,
     reducedShares: comparable.length ? -reduced.reduce((s,f)=>s+f.change,0) : null,
     addedFunds: added.length, reducedFunds: reduced.length, holders: current.filter(f=>f.current.shares>0).length,
-    comparableFunds: comparable.length, pendingFunds: funds.length-comparable.length,
+    activityBasis:ACTIVITY_BASIS,activityUnavailable:null,eligibleFunds:eligible.length,excludedFunds,fundHouses,
+    comparableFunds: comparable.length, pendingFunds: eligible.length-comparable.length,
     companyPct: companyPct <= 100 ? companyPct : null, denominatorFresh,
     ownershipUnavailable: totalShares===null?'missing-mf-shares':!denominator?'missing-share-count':!denominatorFresh?'stale-share-count':companyPct>100?'inconsistent-share-count':null,
     direction: netChange === null ? 'Pending' : netChange > 0 ? 'Added' : netChange < 0 ? 'Reduced' : 'No material change',
-    insight, topBuyer: topBuyer ? { name:topBuyer.name,change:topBuyer.change } : null,
-    topSeller: topSeller ? { name:topSeller.name,change:topSeller.change } : null,
+    insight, topBuyer: topBuyer ? { name:topBuyer.name,change:topBuyer.change,amc:topBuyer.amc||null } : null,
+    topSeller: topSeller ? { name:topSeller.name,change:topSeller.change,amc:topSeller.amc||null } : null,
     disclosureCheckedAt: current.map(f=>f.current.checkedAt).filter(Boolean).sort().at(-1) || null };
 }
 export function summaryOf(projected) {
   const { funds, ...summary } = projected;
   return summary;
 }
-export function coverageState(meta, now = Date.now()) {
-  const amcs = meta?.amcs || [], target = targetMonth(now);
-  const current = amcs.filter(a => a.month === target && a.status === 'ok');
-  const age=now-Date.parse(meta?.checkedAt);
-  const stale = !Number.isFinite(age) || age < -60000 || age > 45*60000;
-  return { state: !amcs.length ? 'unavailable' : stale ? 'stale' : current.length !== amcs.length || meta?.state !== 'complete' ? 'partial' : 'current',
-    targetMonth: target, currentAmcs: current.length, totalAmcs: amcs.length, checkedAt: meta?.checkedAt || null };
-}
+export {sourceFreshness as coverageState} from '../public/js/data/mutual-funds-freshness.js';
 
 export const companyRevision = company => contentTag(JSON.stringify({...company,denominatorVerifiedAt:company.denominator?.checkedAt||null},(key,value)=>["checkedAt","fetchedAt","revision"].includes(key)?undefined:value&&typeof value==='object'&&!Array.isArray(value)?Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b))):value));

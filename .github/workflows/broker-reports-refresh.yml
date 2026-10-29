@@ -1,0 +1,78 @@
+name: Broker reports refresh
+
+# The broker reports behind AI Alerts (ported from Glow), read out of the retained Telegram research
+# channel by scripts/build-broker-reports.mjs into public/data/broker-reports.json.
+#
+# The Telegram collection publishes its archive as an Actions artifact and commits nothing, so this
+# job restores that artifact (the same restore the collector uses) and rebuilds the small derived
+# file after every completed collection, with an hourly schedule as the fallback for a missed
+# trigger. It commits only when the reports changed. A capture that cannot be read fails the run
+# and leaves the committed file as it was.
+on:
+  workflow_run:
+    workflows: ['Telegram collection']
+    types: [completed]
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+
+run-name: Broker reports refresh (${{ github.event_name == 'workflow_run' && 'after-telegram' || github.event_name == 'schedule' && 'github-cron' || 'manual' }})
+
+concurrency:
+  group: broker-reports-refresh
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Restore the retained Telegram archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in 1 2 3; do
+            if node scripts/telegram-artifact.mjs restore public/data/telegram-posts.json "$RUNNER_TEMP/telegram-posts.json"; then exit 0; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep 5
+          done
+
+      - name: Build the broker reports
+        run: node scripts/build-broker-reports.mjs "$RUNNER_TEMP/telegram-posts.json"
+
+      - name: Commit the broker reports to main
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/broker-reports.json
+          if git diff --cached --quiet; then
+            echo "No broker report changes to commit."
+            exit 0
+          fi
+          git commit -m "Broker reports refresh ($(date -u +%Y-%m-%d\ %H:%M) UTC)"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — fetching + rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { echo "Rebase failed — aborting."; git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          echo "Push failed after 4 attempts."
+          exit 1

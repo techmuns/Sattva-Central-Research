@@ -53,7 +53,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/technicals.json public/data/price-move-checks.json
+          git add public/data/technicals.json public/data/price-move-checks.json public/data/company-quotes.json
           if git diff --cached --quiet; then
             echo "Nothing newly verified; nothing to commit."
             exit 0

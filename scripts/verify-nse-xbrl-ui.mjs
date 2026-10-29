@@ -221,15 +221,16 @@ await check('a filing link anywhere in the app is read the same way, and a PDF l
   await panel().waitFor({ state: 'detached' });
 
   // A PDF is already readable and must keep its ordinary behaviour: a new tab, not a panel.
-  await page.locator('#loose-pdf').click();
-  await page.waitForTimeout(400);
+  const [pdfPage] = await Promise.all([page.waitForEvent('popup'), page.locator('#loose-pdf').click()]);
   assert.equal(await panel().count(), 0, 'a PDF must not open the XBRL panel');
-  for (const extra of context.pages().slice(1)) await extra.close();
+  await pdfPage.close();
 });
 
 await check('a modified click opens the complete readable page', async () => {
   for (const options of [{ modifiers: ['ControlOrMeta'] }, { button: 'middle' }]) {
+    await page.bringToFront();
     const [opened] = await Promise.all([context.waitForEvent('page'), page.locator('#loose-link').click(options)]);
+    await opened.waitForURL(url => url.pathname === '/filing');
     await opened.waitForLoadState('domcontentloaded');
     assert.equal(new URL(opened.url()).pathname, '/filing');
     assert.equal(new URL(opened.url()).searchParams.get('src'), XBRL_URL);

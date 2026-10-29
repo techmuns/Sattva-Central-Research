@@ -154,10 +154,13 @@ export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_B
       !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(options.pdfUrl.slice((origin+'/api/newsletter/pdf/').length)))) throw Error('Investor delivery requires an immutable edition PDF');
   // Preserve every item and exact URL on dense days. Shorten inbox excerpts
   // before reaching the same hard part limit; the complete report is unchanged.
-  for (const [compact,summaryChars] of [[false,340],[true,220],[true,140],[true,100]]) {
-    const supplements=true;
+  // The digest is reached only after every per-update card tier fails: one row per company
+  // keeps every update, source state and exact link within the same three parts. Its last
+  // step links each update's leading source and counts the others, all retained in the PDF.
+  for (const [compact,summaryChars,digest=false,extraSources=true] of [[false,340],[true,220],[true,140],[true,100],[true,100,true],[true,100,true,false]]) {
+    const supplements=true, layout=digest?{digest,...(extraSources?{}:{extraSources})}:{};
     const pages=[], selected=[];
-    const measure=(ids,closing)=>emailBytes(renderBriefHtml(brief,{...options,stats,reading,part:{investor:true,reportLink:true,eventIds:ids,compact,summaryChars,supplements,index:closing?maxParts:1,total:closing?maxParts:Math.max(2,maxParts),packing:true}}));
+    const measure=(ids,closing)=>emailBytes(renderBriefHtml(brief,{...options,stats,reading,part:{investor:true,reportLink:true,eventIds:ids,compact,summaryChars,supplements,...layout,index:closing?maxParts:1,total:closing?maxParts:Math.max(2,maxParts),packing:true}}));
     const continuationOverhead=measure([],false),closingOverhead=measure([],true);let used=closingOverhead;
     // Card markup is additive. Measure each card once instead of rendering the whole
     // growing edition for every candidate (quadratic date formatting/string allocation).
@@ -166,7 +169,10 @@ export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_B
     const blocks=[];
     for(const event of reading.events){
       if(blocks.at(-1)?.ticker!==event.ticker)blocks.push({ticker:event.ticker,events:[]});
-      blocks.at(-1).events.push({event,cost:measure([event.id],false)-continuationOverhead});
+      // A digest line shares its company's row and heading, so price it after the line
+      // before it. The heading a page-opening line regains is within PACKING_RESERVE.
+      const alone=measure([event.id],false),previous=digest?blocks.at(-1).events.at(-1):null;
+      blocks.at(-1).events.push({event,alone,cost:previous?measure([previous.event.id,event.id],false)-previous.alone:alone-continuationOverhead});
     }
     // Reserve the final tables/footer first, then fill backwards. Reversing each
     // completed page restores the original company/event order without losing rows.
@@ -194,7 +200,7 @@ export function renderInvestorEmails(brief, options = {}, {maxBytes=EMAIL_HTML_B
     const messages=pages.map((eventIds,i)=>{
       const previousTicker=i>0?reading.byId.get(pages[i-1].at(-1))?.ticker:null;
       const continuedCompany=reading.byId.get(eventIds[0])?.ticker===previousTicker?previousTicker:null;
-      const part={investor:true,reportLink:true,eventIds,compact,summaryChars,supplements,index:i+1,total:pages.length,continuedCompany};
+      const part={investor:true,reportLink:true,eventIds,compact,summaryChars,supplements,...layout,index:i+1,total:pages.length,continuedCompany};
       const html=renderBriefHtml(brief,{...options,stats,reading,part});
       return {html,bytes:emailBytes(html),part,subject:investorSubject(brief,options.brand||'Sattva Ventures',stats,reading),
         // The first accepted email delivers the verified full report. Later emails continue

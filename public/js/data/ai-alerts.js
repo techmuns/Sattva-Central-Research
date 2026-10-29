@@ -21,6 +21,8 @@ import { storyGrouping } from './alert-stories.js';
 import { STORY_FEEDS, storyRecord, storyKey, isMaterialStoryUpdate, compareStoryRecency } from './alert-stories-shared.js';
 import * as generalAlerts from './daily-alerts.js';
 import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attribution.js';
+import { isThemeExposureContext, themeSpecificity, themeDevelopmentKey, THEME_EXPOSURE_WEIGHT } from './theme-exposures.js';
+export { isThemeExposureContext } from './theme-exposures.js';
 import * as kpiImpact from './kpi-impact.js';
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
 import * as coverage from './coverage.js';
@@ -59,6 +61,10 @@ const rankingEvidence = new WeakMap();
 const FEED_WEIGHT = {
   'price-levels': 18,
   earnings: 12,
+  // A broker's published view of the company: weighed with the fund books, below a filing. A
+  // material one (an initiation, a downside call, a rating change, two brokers in the window) on a
+  // book company today scores 30 + 8 + 16 + 12 = 66 and surfaces; a lone routine view does not.
+  'broker-reports': 8,
   announcements: 10,
   'nse-filings': 10,
   insider: 9,
@@ -135,11 +141,21 @@ function* dedupeSteps(events) {
   events = storyGrouping.projectSteps ? yield* storyGrouping.projectSteps(events) : storyGrouping.project(events);
   // Prefer the useful copy when one exchange supplied a generic label and the other a full
   // subject. Stable ordering also stops equivalent source arrival order changing read state.
+  // Of several accounts of one indirect development, the one that says most about how it bears
+  // stays (zero for every other event, so their order is unchanged).
   return [...events].sort((a, b) => Number(b.importance === 'high') - Number(a.importance === 'high') ||
+    themeSpecificity(b) - themeSpecificity(a) ||
     String(a.feed).localeCompare(String(b.feed)) || String(a.id).localeCompare(String(b.id))).filter((event) => {
-    if (STORY_FEEDS.has(event.feed)) return true;
+    // Story grouping folds a company's own reports. An indirect copy is never sent for grouping
+    // (storyRecord refuses it), so a syndicated headline would otherwise sit on a card twice.
+    if (STORY_FEEDS.has(event.feed) && !isThemeExposureContext(event)) return true;
     const family = feedFamily(event);
-    const key = `${family}:${event.day}:${normalizedHeadline(event.headline) || event.id}`;
+    // One row per indirect DEVELOPMENT: three publishers' accounts of Dr Reddy's generic launch are
+    // one read-across for this card, while the same actor's trial readout and approval on one day
+    // are two (themeDevelopmentKey).
+    const key = isThemeExposureContext(event)
+      ? themeDevelopmentKey(event)
+      : `${family}:${event.day}:${normalizedHeadline(event.headline) || event.id}`;
     const link = event.url && ['announcements', 'news'].includes(family) ? `${family}:url:${canonicalArticleUrl(event.url)}` : null;
     if (seen.has(key) || (link && seen.has(link))) return false;
     seen.add(key); if (link) seen.add(link);
@@ -165,7 +181,9 @@ function eventScore(event, day, feedState) {
   const age = ageInDays(event.day, day);
   const parts = [
     { label: event.importance === 'high' ? 'High-importance event' : 'Low-importance event', points: event.importance === 'high' ? 30 : 4 },
-    { label: `${event.feedLabel || event.feed} source weight`, points: FEED_WEIGHT[event.feed] || 0 },
+    isThemeExposureContext(event)
+      ? { label: `Indirect exposure (${event.themeExposure.short}) weight`, points: THEME_EXPOSURE_WEIGHT }
+      : { label: `${event.feedLabel || event.feed} source weight`, points: FEED_WEIGHT[event.feed] || 0 },
     { label: age === 0 ? 'Occurred today' : age === 1 ? 'Occurred yesterday' : `Occurred ${age} days ago`, points: recencyPoints(age) },
   ];
   if (event.direction === 'negative') parts.push({ label: 'Negative risk signal', points: 10 });
@@ -449,6 +467,7 @@ export function confluenceOf(events, { feedById = new Map() } = {}) {
  */
 export const FEED_TAG = {
   'price-levels': 'LEVEL',
+  'broker-reports': 'BROKER',
   earnings: 'RESULT',
   concalls: 'CALL',
   'screener-insights': 'INSIGHT',
@@ -553,6 +572,12 @@ function resultFigures(event) {
  * one is a change to what every reader of that feed sees, not to this card.
  */
 export const MAX_PER_SOURCE = 3;
+
+/** The evidence row's source word. An indirect reading is named as one, never as the company's NEWS. */
+export function evidenceTag(event) {
+  if (isThemeExposureContext(event)) return 'INDIRECT';
+  return FEED_TAG[event?.feed] || String(event?.feedLabel || event?.feed || '').toUpperCase();
+}
 
 export function topEvidence(card, limit = 3, { maxPerSource = MAX_PER_SOURCE } = {}) {
   // Grouped by FAMILY, in the order each family's strongest event appears — so the rounds below
@@ -679,7 +704,14 @@ const asSentence = (text) => {
  */
 export function plainInsight(card) {
   if (isRelatedNewsContext(card.topEvent)) return `Related-entity report: ${plainHeadline(card.topEvent)}. ${card.topEvent.attribution.reason}`;
-  const claim = asSentence(plainHeadline(leadEvent(card)));
+  const lead = leadEvent(card);
+  // AN INDIRECT LEAD SAYS SO FIRST, AND THEN HOW IT BEARS. The headline is somebody else's news; on
+  // a card titled with this company it would read as this company's. The read-across is the
+  // reviewed sentence for how the story's segment relates to the company's, never a prediction.
+  if (isThemeExposureContext(lead)) {
+    return `Indirect (${lead.themeExposure.short}): ${asSentence(plainHeadline(lead))} ${lead.themeExposure.readAcross}${card.mixed ? ' Sources disagree — check both directions below.' : ''}`;
+  }
+  const claim = asSentence(plainHeadline(lead));
   const conflict = card.mixed ? ' Sources disagree — check both directions below.' : '';
   // A card with no statable event cannot be summarised, and inventing a summary for one is the
   // one thing that would be worse than saying so. In practice every surfaced card has at least
@@ -698,6 +730,7 @@ export function plainInsight(card) {
  */
 export function cardBadge(card) {
   if (isRelatedNewsContext(card.topEvent)) return { id: 'related', label: 'Review relationship', tone: 'caution' };
+  if (isThemeExposureContext(card.topEvent)) return { id: 'indirect', label: 'Indirect exposure', tone: 'caution' };
   if (card.priority === 'watch') return { id: 'watch', label: 'Company update', tone: 'neutral' };
   if (card.mixed) return { id: 'reconcile', label: 'Reconcile', tone: 'caution' };
   if (card.priority === 'must-see') return { id: 'must-see', label: 'Must see', tone: 'negative' };
@@ -795,6 +828,12 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   // ONE PASS OVER THE REPORT, IN SLICES: the supported pool the context reads, the window
   // evidence, and the companies it groups into — each in the report's own order, exactly as the
   // three filters this replaced built them, but never as one task over a Universe history.
+  // An indirect theme copy joins a card as context, like a reviewed related-entity report: it can
+  // open one (a decisive story, today, on a book company) but never counts as the company's own
+  // evidence below — `directEvents` refuses it, so it cannot corroborate, set a direction, fire a
+  // confluence pattern or keep a card for the review window. Only a DECISIVE copy joins: the
+  // card's timeline shows every record it holds, and theme commentary on it outnumbered the
+  // company's own filings (measured on OneSource's card, 6 rows of 14). All Alerts keeps them all.
   const supportedEvents = [], windowEvidence = [], grouped = new Map();
   const allEvents = report?.events || [];
   for (let i = 0; i < allEvents.length; i++) {
@@ -804,7 +843,8 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
     if (supported) supportedEvents.push(event);
     if (!((event.ticker || event.entityId) && validDay(event.day) && event.day >= firstDay && event.day <= day)) continue;
     windowEvidence.push(event);
-    if (!(supported && event.aiEligible !== false || isRelatedNewsContext(event))) continue;
+    if (!(supported && event.aiEligible !== false || isRelatedNewsContext(event) ||
+      isThemeExposureContext(event) && event.importance === 'high')) continue;
     const ticker = event.ticker ? String(event.ticker).toUpperCase() : event.entityId;
     const list = grouped.get(ticker);
     if (list) list.push(event);

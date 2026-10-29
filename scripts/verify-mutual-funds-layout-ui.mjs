@@ -6,7 +6,7 @@ import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
 const seed = JSON.parse(readFileSync(resolve(root, 'data/mutual-funds/index.json')));
-const template = seed.rows.find(row => row.comparableFunds > 0);
+const template = {...seed.rows.find(row => row.comparableFunds > 0),activityBasis:'equity-hybrid-ex-arbitrage-v1'};
 const rows = Array.from({ length: 1000 }, (_, i) => ({ ...template, isin: `INE${String(i).padStart(9, '0')}`,
   ticker: `TEST${i}`, name: `Fixture Company ${String(i).padStart(4, '0')}` }));
 const capture = { ...seed, rows };

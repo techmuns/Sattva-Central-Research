@@ -1,5 +1,6 @@
 // Display helpers keep calendar ages independent of a cached report's collection date.
 import { isRelatedNewsContext } from '../data/company-news-attribution.js';
+import { isThemeExposureContext } from '../data/theme-exposures.js';
 import { isMaterialStoryUpdate, compareStoryRecency } from '../data/alert-stories-shared.js';
 import { searchScore } from './ai-alert-search.js';
 const DAY_MS = 86_400_000;
@@ -40,7 +41,7 @@ export function latestSignal(events = []) {
  * Routine observations and a refreshed capture timestamp cannot make old news new. */
 function alertSignals(card) {
   const events = card?.events || [];
-  const material = events.filter(event => (event.importance === 'high' || isMaterialStoryUpdate(event)) && (event.aiEligible !== false || isRelatedNewsContext(event)));
+  const material = events.filter(event => (event.importance === 'high' || isMaterialStoryUpdate(event)) && (event.aiEligible !== false || isRelatedNewsContext(event) || isThemeExposureContext(event)));
   return material.length ? material : events;
 }
 

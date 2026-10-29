@@ -79,4 +79,12 @@ async function main() {
     console.log('Retained Mutual Funds state and prepared reader snapshots published on GitHub.');
   } else throw Error('Expected restore or publish');
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(()=>{console.error('GitHub snapshot transfer failed. Previous publication and Cloudflare history are retained.');process.exitCode=1;});
+export function snapshotTransferFailure(error) {
+  const message=String(error?.message||'');
+  if(message==='Background checkout does not match its source commit')return 'source-commit-mismatch';
+  const status=message.match(/^GitHub (?:background|snapshot) operation failed \((\d{3})\)$/)?.[1];
+  if(status)return `github-http-${status}`;
+  if(['AbortError','TimeoutError'].includes(error?.name))return 'transfer-timeout';
+  return 'operation-failed';
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(error=>{console.error(`GitHub snapshot transfer failed (${snapshotTransferFailure(error)}). Previous publication and Cloudflare history are retained.`);process.exitCode=1;});

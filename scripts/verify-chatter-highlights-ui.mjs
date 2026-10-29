@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public'), start = '2026-10-13T12:00:00Z';
-let generation = start, detailFailure = false, pending = 0, peak = 0;
+let generation = start, detailFailure = false, pending = 0, peak = 0, cmp = 100;
 const requests = [];
 const stocks = Array.from({ length: 200 }, (_, i) => ({ ticker: `company-${i}`, name: `Company ${i}`, mentions: 3,
   sentiment: { bullish: 1, bearish: 1, neutral: 1, label: 'bullish' }, sources: { valuepickr: 3 } }));
@@ -40,6 +40,8 @@ const server = createServer((request, response) => {
   }
   if (path === '/data/universe.json') return json(stocks.map((stock, i) => ({ Company: stock.name, 'Screener URL': `https://www.screener.in/company/C${i}/` })));
   if (path === '/data/mc-ticker-map.json') return json({ map: {} });
+  if (path === '/api/technicals/prices') return json({ version: 1, generated_at: '2026-10-21T10:00:00Z',
+    rows: [{ ticker: 'C0', cmp, price_date: '2026-10-21' }] });
   if (path.startsWith('/api/')) return json({});
   try {
     const file = resolve(root, `.${path}`); assert(file.startsWith(root + sep));
@@ -71,6 +73,13 @@ try {
   assert(peak <= 2, 'visible detail prefetch uses at most two shared request slots');
   assert(!requests.includes('company-199'), 'offscreen universe details are not fetched');
   assert(await page.locator('tbody tr[data-row-key]').count() <= 40, 'mounted rows remain bounded');
+  cmp = 110;
+  await page.evaluate(async () => {
+    const now = Date.now(); Date.now = () => now + 61_000;
+    await (await import('/js/data/company-market.js')).load();
+  });
+  await cell.locator('[data-chatter-highlight]').first().waitFor();
+  assert.equal(await cell.locator('[data-chatter-highlight]').first().getAttribute('data-highlight-id'), 'red', 'market-cell replacement retains and rebinds source highlights');
   // Link owns its click; it must not also open the company-wide dialog.
   await cell.locator('a').first().click();
   assert.equal(await page.locator('[data-chatter-mentions-dialog]').count(), 0);

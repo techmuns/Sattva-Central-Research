@@ -360,8 +360,11 @@ Bulk/Block Deal retains the `insider-trades` route and all four disclosure categ
 Earnings contains Results (the existing Earnings Hub reader, selected by default) and Concall,
 in that order. Both keep their existing routes, reader controls and data lifecycles.
 News contains Market News (the existing News reader, selected by default), Private Market News,
-and Public Chatter. Private Market News is explicitly scope-independent: Inc42 reports private
-Indian startup funding, which has no listed-equity portfolio/Watchlist mapping. Its archive loads
+and Public Chatter. Private Market News follows the scope switch (ported from Glow, 29 October
+2026): Universe lists every Inc42 funding record, Portfolio only rounds of the family's private
+companies (the book's unlisted lines, `js/data/private-companies.js`), Watchlist rounds of watched
+companies — exact normalised company names only, never a substring; Portfolio and Watchlist open on
+All captured history. `verify-private-companies.mjs` and the Private Market UI suite check it. Its archive loads
 only when opened and retains all captured public table fields, dates, source links and footnotes.
 Its `news-section` group ID stays distinct from the saved `news` reader route, so selecting
 Market News from Public Chatter changes readers normally. Both retain their existing routes,
@@ -882,6 +885,15 @@ match would quietly fail the day they reword it.
 one factual reading after consolidation, exact original-source links and at most three
 90,000-byte email bodies. Preserve corrections, all source evidence and the Sattva design.
 `docs/NEWSLETTER-PARITY.md` records the shared Glow/Sattva logic and upstream workflow.
+
+**Ported from Glow, 29 October 2026 (shared newsletter lock updated):** a busy edition that no
+card tier fits falls back to a company digest (one row per company, one line per update, every
+leading source exact) instead of failing the preview; text and PDF previews no longer depend on
+inbox planning. The grouping pass partitions each company's filings AND news together, so a
+results filing, its release, presentation and news reports are one update (`unifyEvents`,
+`resultsPeriod`); an unsafe proposed group is split alone. Every tier leads each update in bold
+beside a green/red rule (`updateTone` in `newsletter-company-reading.mjs`); risk items lead at
+equal materiality. See `docs/NEWSLETTER-INVESTOR-BRIEF.md`.
 
 
 **Owner correction, 22 October 2026:** daily emails and test copies must only carry reports
@@ -2189,6 +2201,19 @@ links and controls keep their own interactions. A completed drag must not trigge
 Verify with `verify-column-order-ui.mjs`, `verify-column-order-upgrade-ui.mjs`, and the shared
 workspace UI/runtime suites (two devices, offline retry, reset and returning-cache upgrade).
 
+### CMP and market cap on company tables (ported from Glow, 29 October 2026)
+
+`scoreTable({ companyMarket: true })` and `exportRows({ companyMarket })` add a CMP and a market-cap
+column as a pair (`ui/company-market-columns.js`), keeping a table's own price column where it has one
+(`cmpLabel`, e.g. Earnings and Screens' `Price`). Values come from `data/company-market.js`: the
+minute capture, else `company-quotes.json` (a small projection of the completed-session technicals,
+written by every technicals writer and served at `/api/technicals/prices`), else the public cap
+collector's saved Screener price. ISIN, NSE symbol and BSE code decide the join; contradictory
+identifiers withhold both values, and a missing value is a dash with its reason, never zero. A cap is
+shares × CMP only when the share count was observed in the same IST session; otherwise the captured
+cap is used and labelled. Screens owns its quote poller (`watchPrices: false`). See
+`docs/COMPANY-MARKET-COLUMNS.md`; `verify-company-market.mjs` and `verify-company-market-ui.mjs` are the tests.
+
 ### Performance on large tables
 
 Large scrollable tables now use the measured window in `ui/windowed-list.js` (the legacy
@@ -2782,6 +2807,26 @@ contract does not cover: a tab the shell decided not to mount.
 ---
 
 ## AI Alerts — the explainable priority layer
+
+**Compact layout, broker reports and indirect theme exposure (ported from Glow, 29 October 2026).**
+Compact is the default; the heading's Compact | Detailed switch is remembered on the device
+(`sattva:ai-alerts:layout:v1`) and Detailed is the existing cards, unchanged. Compact is the Detailed
+cards FILTERED (`js/data/ai-alerts-compact.js`, pure): one row per company — company, CMP, market cap
+(shares × CMP, `js/data/share-market-cap.js`), the lead item in at most 60 words, and the row opens
+its source. It leaves out the `technicals` feed and call/meeting date notices; a company left with
+nothing material appears only in Detailed and is counted in the status pill's title. Every row has
+an always-visible ✕ (the same device archive as Detailed); broker reports open from a Show / Hide
+pill. Browser suites written for the cards opt into Detailed through `scripts/lib/ai-alerts-layout.mjs`;
+`verify-ai-alerts-compact.mjs` and `verify-ai-alerts-compact-ui.mjs` are Compact's tests.
+The `broker-reports` alert source reads `public/data/broker-reports.json`, built on the runner by
+`scripts/build-broker-reports.mjs` from the Telegram channel's artifact (`broker-reports-refresh.yml`,
+after each collection, hourly fallback) — never the 10 MB archive in the browser. A stance exists only
+with a printed rating word; no target is derived from an upside; unresolved names are counted, and a
+group company is never filed under its parent. `js/data/theme-exposures.js` makes a labelled,
+neutral copy of a decisive market-wide story for each company a reviewed, CITED theme map says sells
+into that market (GLP-1 today); the copy never corroborates, sets direction or names a KPI. None of
+the mapped companies is in Sattva's book today, so copies show under Universe and Watchlist until a
+cited exposure for a book company is added. See `docs/THEME-EXPOSURES.md`.
 
 **The list holds still while it updates (29 October 2026; Glow's user: "update silently in the back and
 things stack on top").** The order follows the ranking only until the first completed read (with holding
@@ -4704,6 +4749,11 @@ summaries; only the visible card headline can carry its optional factual summary
 AI Alerts is the default first tab; Ask Research keeps its existing route and availability.
 Mutual Funds preserves Company Holdings as its default, with All Schemes and Category Performance
 from the same dated public AmfiBeas snapshot. Portfolio sizes never enter that public cache.
+Company Holdings (ported from Glow, 29 October 2026): activity counts verified equity/hybrid
+schemes only (arbitrage, fixed income and unverified categories are excluded and counted), the
+bold insight line names the largest net buying/selling fund houses, and Net Volume (Crores) values
+the net share change at the displayed CMP as a signed estimate, not executed cash flow. See
+`docs/MUTUAL-FUNDS.md`; `verify-mutual-funds-directional.mjs` and `-reading.mjs` are the tests.
 
 ### Investor relevance across Corporate Announcements, News and All Alerts (October 2026)
 

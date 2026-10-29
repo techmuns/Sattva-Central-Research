@@ -108,7 +108,7 @@ const ai = await import('../public/js/data/ai-alerts.js');
 coverage.prime({ holdings: [{ ticker: 'STLTECH', name: 'Sterlite Technologies' }, { ticker: 'RELIANCE', name: 'Reliance Industries' }] });
 
 const expected = ['technicals', 'earnings', 'concalls', 'chatter', 'investors', 'announcements', 'insider', 'news', 'market-news',
-  'price-levels', 'nse-filings', 'twitter', 'ipos', 'earnings-calendar', 'scheduled-concalls', 'screener-portfolio-upcoming', 'investor-positions', 'institutions', 'chatter-posts', 'company-documents', 'drhp-documents'];
+  'price-levels', 'broker-reports', 'nse-filings', 'twitter', 'ipos', 'earnings-calendar', 'scheduled-concalls', 'screener-portfolio-upcoming', 'investor-positions', 'institutions', 'chatter-posts', 'company-documents', 'drhp-documents'];
 assert.deepEqual(alerts.FEEDS.map((f) => f.id), expected, 'explicit registry parity: adding a tab/source must update the pool contract');
 assert.equal(nseRecords([nseRow])[0].day, '2026-09-04', 'timestamps use IST, not their UTC date prefix');
 assert.equal(nseRecords([undated])[0].day, null, 'no invented date');

@@ -6,7 +6,7 @@ import { exportSheets, todayStamp } from '../ui/export.js';
 const date = (s) => s || 'Not supplied';
 export function directoryTable(rows, view) {
   const options = (key, label) => ({ label, options: [{ value: 'all', label: `All ${label.toLowerCase()}` }, ...[...new Set(rows.map((r) => r[key] || 'Not supplied'))].sort().map((v) => ({ value: v, label: v }))], match: (r, v) => (r[key] || 'Not supplied') === v });
-  return scoreTable({ rows, key: (r) => r.id, watchKey: (r) => r.ticker || null, watchName: (r) => r.company,
+  return scoreTable({ companyMarket: true, rows, key: (r) => r.id, watchKey: (r) => r.ticker || null, watchName: (r) => r.company,
     sharedColumnLayout: 'ipo-directory',
     name: (r) => r.company, sub: (r) => `${r.board} · ${r.retained ? 'Retained; not in latest list' : 'IPOPlatform'}`,
     showRank: false, showWatchFilter: false, dense: true, nameMaxPx: 260, stickyHead: 'max(320px, calc(100vh - 310px))', fillMode: 'auto',
@@ -23,7 +23,7 @@ export function directoryTable(rows, view) {
     initialSort: { key: 'Listing date', dir: 'desc' }, initialView: view, link: (r) => r.url,
     countNoun: 'issuers', exportName: 'sattva-ipo-directory',
     emptyMessage: 'No captured issuers match. The first scheduled collection may not be available yet; check the Data flowing in panel.',
-    onExport: (visible, filename) => exportSheets({ filename: `${filename}-${todayStamp()}`, banner: 'Secondary IPOPlatform catalogue, not an exchange confirmation or complete IPO universe. Status and dates are publisher-reported as of each observation.', sheets: [{ name: 'IPO directory', rows: visible, columns: [
+    onExport: (visible, filename) => exportSheets({ filename: `${filename}-${todayStamp()}`, banner: 'Secondary IPOPlatform catalogue, not an exchange confirmation or complete IPO universe. Status and dates are publisher-reported as of each observation.', sheets: [{ name: 'IPO directory', companyMarket: true, rows: visible, columns: [
       { header: 'Company', key: 'company', get: (r) => r.company, width: 40 },
       ...[['board', 'Board'], ['status', 'Publisher status'], ['drhpStatus', 'Publisher DRHP status'], ['openingDate', 'Opening date'], ['closingDate', 'Closing date'], ['openingWindow', 'Published opening window'], ['listingDate', 'Listing date'], ['draftDate', 'Document DRHP date'], ['refiledDate', 'Publisher refiling date'], ['publisherUpdatedAt', 'Publisher row updated'], ['observedAt', 'Collected at'], ['url', 'Source URL']].map(([key, header]) => ({ key, header, get: (r) => r[key] || 'Not supplied', width: key === 'url' ? 60 : 26 })),
       { key: 'retained', header: 'Retained, not re-confirmed', get: (r) => r.retained ? 'Yes' : 'No' },

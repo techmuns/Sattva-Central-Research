@@ -62,6 +62,7 @@ import { classifyStory } from './news-keywords.js';
 import { announcementSignal } from './filing-signals.js';
 export { announcementSignal, BSE_CRITICAL_IS_MATERIAL } from './filing-signals.js';
 import { scopeMatcher } from './scope.js';
+import { mapThemeExposureEvents, isThemeExposureContext } from './theme-exposures.js';
 import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSourceDependencies } from './alert-sources.js';
 import * as records from './alert-records.js';
@@ -1272,7 +1273,9 @@ function* dedupePublisherAlertFeedsSteps(feeds, { day, entities = [] } = {}) {
       const ticker = String(event.ticker || '').toUpperCase();
       const identity = event.entityId && !event.entityId.startsWith('ticker:') ? event.entityId
         : byTicker.get(ticker) || (ticker ? `ticker:${ticker}` : event.entityId);
-      if (!identity || !event.url) continue;
+      // An indirect copy is a different relationship to the same article, never a duplicate of a
+      // company's own report of it; both stay, each labelled.
+      if (!identity || !event.url || isThemeExposureContext(event)) continue;
       const key = JSON.stringify([identity, eventUrlKey(event)]);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push({ event, feed, feedIndex, rowIndex });
@@ -1357,7 +1360,12 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
       // Recreating unchanged calendar events here would force the whole timeline to sort again.
       feed = readFeed(feedById.get(settled.id), { day, includeHistory, queryWindow });
     }
-    const all = yield* mapPortfolioDiscoveryEventsSteps(feed.id, feed.events, portfolioEntities);
+    const discovered = yield* mapPortfolioDiscoveryEventsSteps(feed.id, feed.events, portfolioEntities);
+    // INDIRECT COPIES, BEFORE SCOPE. A market-wide story that names no holding can still bear on
+    // one through a reviewed theme (theme-exposures.js); its labelled copy carries the exposed
+    // company, so the scope below admits it exactly where that company is in scope. The copies are
+    // derived readings, not source records, so the source count below is taken without them.
+    const all = mapThemeExposureEvents(feed.id, discovered, portfolioEntities);
     // The S Screen calendar is already scoped by the exact synchronized portfolio membership.
     // That fact lets BSE-only holdings survive even when they have no NSE ticker; it must not make
     // the private portfolio schedule leak into Universe or the reader's personal watchlist.
@@ -1383,7 +1391,7 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
     const unscopable = feed.portfolioOnly && scope !== 'portfolio';
     const { preparedProjection: _preparedProjection, ...publicFeed } = feed;
     scopedFeeds.push({ ...publicFeed, events, count: events.length, todayCount,
-      sourceCount: feed.preparedProjection?.sourceCount ?? all.length, unresolvedCount: unresolved, scopable: !unscopable,
+      sourceCount: feed.preparedProjection?.sourceCount ?? discovered.length, unresolvedCount: unresolved, scopable: !unscopable,
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null });
     yield;
   }

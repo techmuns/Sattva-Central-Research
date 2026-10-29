@@ -161,19 +161,26 @@ export async function githubNewsletter({env=process.env,fetcher=fetch,legacyClie
   for(const edition of ['morning','evening']){
    const at=localOptions.now?.()??Date.now();
    local.db.prepare('DELETE FROM newsletter_views WHERE id LIKE ?').run(`preview-${edition}-html-%`);
-   try{
-    const brief=await buildBrief({edition,day:istDay(at),settings:local.store.settings(),env,fetcher:guardedFetch,now:at,to:at,reported:local.store.reportedLookup(),includeAi:false,contentService:local.schedule.content});
-    sourceShortcuts.prepare(brief);const options=local.schedule.renderOptions();
-    const delivery=renderBriefDeliveryEmails(brief,{...options,editorial:true,preview:true});
-    const messages=delivery,base={ok:true,edition,subject:messages[0]?.subject||briefSubject(brief,options),builtAt:new Date(at).toISOString(),summary:briefSummary(brief),deliveryParts:delivery.length,deliveryFormat:'investor-brief'};
-    for(const message of messages){const part=message.part?.index||1;save(`preview-${edition}-html-${part}`,{...base,subject:message.subject,part,parts:messages.length,body:renderBriefHtml(brief,{...options,part:message.part,preview:true})});}
-    save(`preview-${edition}-text-1`,{...base,body:renderBriefText(brief,options)});
-    save(`preview-${edition}-pdf-1`,{...base,body:Buffer.from(renderBriefPdf(brief,options)).toString('base64'),binary:true,filename:pdfFilename(brief)});
-   }catch(error){
+   const failed=(formats,error,stage='')=>{
     const code=/^[a-z][a-z0-9-]{0,64}$/.test(error?.code||'')?error.code:'unavailable';
-    console.warn(`Newsletter ${edition} preview build failed: ${code}`);
-    for(const format of ['html','text','pdf'])save(`preview-${edition}-${format}-1`,{ok:false,reason:'preview-build-failed',builtAt:new Date(at).toISOString()});
-   }
+    console.warn(`Newsletter ${edition}${stage} preview build failed: ${code}`);
+    for(const format of formats)save(`preview-${edition}-${format}-1`,{ok:false,reason:'preview-build-failed',builtAt:new Date(at).toISOString()});
+   };
+   let brief,options;
+   try{
+    brief=await buildBrief({edition,day:istDay(at),settings:local.store.settings(),env,fetcher:guardedFetch,now:at,to:at,reported:local.store.reportedLookup(),includeAi:false,contentService:local.schedule.content});
+    sourceShortcuts.prepare(brief);options=local.schedule.renderOptions();
+   }catch(error){failed(['html','text','pdf'],error);continue;}
+   // The text and PDF previews are the complete edition and never depend on inbox packing:
+   // an email preview that cannot be planned must not take the complete report with it.
+   let base={ok:true,edition,subject:briefSubject(brief,options),builtAt:new Date(at).toISOString(),summary:briefSummary(brief)};
+   try{
+    const messages=renderBriefDeliveryEmails(brief,{...options,editorial:true,preview:true});
+    base={...base,subject:messages[0]?.subject||base.subject,deliveryParts:messages.length,deliveryFormat:'investor-brief'};
+    for(const message of messages){const part=message.part?.index||1;save(`preview-${edition}-html-${part}`,{...base,subject:message.subject,part,parts:messages.length,body:renderBriefHtml(brief,{...options,part:message.part,preview:true})});}
+   }catch(error){failed(['html'],error,' email');}
+   try{save(`preview-${edition}-text-1`,{...base,body:renderBriefText(brief,options)});}catch(error){failed(['text'],error,' text');}
+   try{save(`preview-${edition}-pdf-1`,{...base,body:Buffer.from(renderBriefPdf(brief,options)).toString('base64'),binary:true,filename:pdfFilename(brief)});}catch(error){failed(['pdf'],error,' PDF');}
   }
  }
  return {...local,publish,wake,processRequest,preparePreviews,privateMarketsJob,sourceShortcuts};

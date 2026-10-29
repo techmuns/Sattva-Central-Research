@@ -63,7 +63,7 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       stopManagers?.(); stopManagers = audience === 'my-managers' ? managers.watchFreshness() : null; paint('audience');
     } });
     const openPerson = (r) => mine ? openManager(r.personId, ctx) : openInvestor?.(r.personId);
-    const table = scoreTable({ rows: events, key: (r) => r.id, name: (r) => r.company,
+    const table = scoreTable({ companyMarket: true, rows: events, key: (r) => r.id, name: (r) => r.company,
       sub: (r) => r.reportedName && r.reportedName.toLowerCase() !== r.person.toLowerCase() ? `${r.person} · reported: ${r.reportedName}` : r.person,
       watchKey: (r) => r.ticker || null, watchName: (r) => r.company,
       nameMaxPx: 240, showAvatar: false, dense: true, stickyHead: '400px', fillMode: 'scroll',
@@ -85,7 +85,7 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       ],
     });
     state.activityView = table.view;
-    const holdingTable = scoreTable({ rows: observations, key: (r) => r.id, name: (r) => r.company, sub: (r) => r.person,
+    const holdingTable = scoreTable({ companyMarket: true, rows: observations, key: (r) => r.id, name: (r) => r.company, sub: (r) => r.person,
       watchKey: (r) => r.ticker || null, watchName: (r) => r.company, nameMaxPx: 260,
       dense: true, showAvatar: false, stickyHead: '360px', fillMode: 'scroll', initialView: state.holdingsView,
       searchable: (r) => `${r.company} ${r.person}`, onRowClick: openPerson,
@@ -204,7 +204,7 @@ function exportChanges(rows, state, range, holdings, scope) {
   const keys = holdings ? ['from', 'date', 'period', 'person', 'company', 'action', 'before', 'now', 'deltaPp', 'unit', 'source', 'sourceCheckedAt']
     : ['date', 'dateKind', 'person', 'company', 'ticker', 'action', 'quantity', 'amount', 'value', 'source', 'reportedName', 'attribution', 'relationship', 'relationshipUrl', 'identityCheckedAt'];
   const headers = { from: 'Prior quarter end', date: holdings ? 'Latest quarter end' : privateExport ? 'Ledger / reported trade date' : 'Trade date', deltaPp: 'Change (percentage points)', sourceCheckedAt: 'Source checked', relationshipUrl: 'Identity evidence URL', identityCheckedAt: 'Identity reviewed at' };
-  return exportRows({ filename: `sattva-${state.audience}-${holdings ? 'holdings' : 'activity'}-${state.period}`, sheetName: holdings ? 'Holdings comparisons' : privateExport ? 'Ledger and deals' : 'Trades',
+  return exportRows({ companyMarket: true, filename: `sattva-${state.audience}-${holdings ? 'holdings' : 'activity'}-${state.period}`, sheetName: holdings ? 'Holdings comparisons' : privateExport ? 'Ledger and deals' : 'Trades',
     canExport: () => !privateExport || !!revision && managers.meta()?.sourceRevision === revision,
     columns: [...keys.map((key) => ({ header: headers[key] || key, key, width: 24, get: (r) => r[key] ?? null })),
       { header: 'Carried purchase date', key: 'dateSheet', width: 24, get: r => r.raw?.dateSheet || null },

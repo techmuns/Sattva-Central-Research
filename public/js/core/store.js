@@ -176,7 +176,12 @@ export function isPersistent() {
  * Read one entry. Resolves to `{ tag, savedAt, value }` or null — never rejects, because a store
  * that cannot be read is indistinguishable, to every caller, from a store that is empty.
  */
-export async function readEntry(key) {
+export async function readEntry(key, { waitMs } = {}) {
+  if (Number.isFinite(waitMs) && waitMs >= 0) {
+    let timer;
+    try { return await Promise.race([readEntry(key), new Promise(resolve => { timer = setTimeout(resolve, waitMs, null); })]); }
+    finally { clearTimeout(timer); }
+  }
   const mem = memory.get(key);
   if (mem) return mem;
   const db = await openDb();
@@ -412,7 +417,7 @@ export function conditionalJson(path, options = {}) {
   // cancellation owner of a different live reader. Ordinary public poll,
   // capture, and header reads still share one bounded revalidation.
   if (options.signal || options.validate || authHeaders(path).authorization) return readConditionalJson(path, options);
-  const requestKey = JSON.stringify([path, options.key, !!options.optional, !!options.rawManifest]);
+  const requestKey = JSON.stringify([path, options.key, !!options.optional, !!options.rawManifest, options.cacheWaitMs]);
   let pending = conditionalInFlight.get(requestKey);
   if (!pending) {
     pending = readConditionalJson(path, options).finally(() => conditionalInFlight.delete(requestKey));
@@ -421,12 +426,13 @@ export function conditionalJson(path, options = {}) {
   return pending;
 }
 
-async function readConditionalJson(path, { key, optional = false, signal, validate, rawManifest = false } = {}) {
+async function readConditionalJson(path, { key, optional = false, signal, validate, rawManifest = false, cacheWaitMs } = {}) {
   if (rawManifest && (!key?.startsWith('news-query:manifest:') || !path.startsWith('data/'))) throw Error('Invalid raw manifest reader');
   const callerSignal = signal;
   signal = signal || AbortSignal.timeout(20000);
   signal.throwIfAborted();
-  const stored = key ? await readEntry(key) : null;
+  // Opt-in readers can revalidate while a slow storage thread restores disk data.
+  const stored = key ? await readEntry(key, { waitMs: cacheWaitMs }) : null;
   signal.throwIfAborted();
 
   let res;

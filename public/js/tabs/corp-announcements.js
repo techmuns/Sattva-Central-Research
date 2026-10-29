@@ -575,7 +575,7 @@ const tab = makeFilingsTab({
   onExport: async (_visible, m) => {
     const { rows, total } = await query.all();
     const truncated = total > rows.length;
-    await exportRows({
+    await exportRows({ companyMarket: true,
       filename: 'sattva-corp-announcements',
       sheetName: 'Announcements',
       columns: [

@@ -1,0 +1,52 @@
+{
+  "description": "The 29 October 2026 morning brief, which still printed one company's results several times after the 28 October grouping fix: Capri Global's two reports of its results were split from the results filing because they quote different figures (standalone Rs 353 crore against consolidated PAT Rs 418 crore, and a FY28 growth target), and Sasken's results were filed under five subjects that the grouping pass left apart. Headlines, subjects and times are the captured rows; the press release's read facts are the edition's printed summary; URLs and publishers are fixture placeholders. The controls are constructed to prove what must stay separate. Model replies in offline tests are fixtures, not a live accuracy evaluation.",
+  "capri": {
+    "ticker": "CGCL",
+    "company": "Capri Global Capital Limited",
+    "filings": [
+      { "id": "press-bse", "headline": "Press Release - Unaudited Standalone and Consolidated financial results of the Company for the quarter and half year ended September 30, 2026", "subject": "Press Release / Media Release", "exchanges": ["BSE"], "publishedAt": "2026-10-28T11:47:00.000Z",
+        "facts": [
+          { "field": "event", "value": "Announcement of unaudited standalone and consolidated financial results for Q2 and half year ended September 30, 2026" },
+          { "field": "amount", "value": "Consolidated AUM Rs 43,878 crores, up 62% YoY" },
+          { "field": "amount", "value": "2QFY27 PAT Rs 418 crores, up 77% YoY" }
+        ] },
+      { "id": "press-nse", "headline": "Capri Global Capital Limited has informed the Exchange regarding a press release dated October 28, 2026, titled \"Press Release   Unaudited Standalone and Consolidated financial results of the Company for the quarter and half year ended September 30, 2026\".", "subject": "Press Release", "exchanges": ["NSE"], "publishedAt": "2026-10-28T11:48:12.000Z" },
+      { "id": "presentation-bse", "headline": "Investor Presentation for quarter and half year ended September 30, 2026", "subject": "Investor Presentation", "exchanges": ["BSE"], "publishedAt": "2026-10-28T11:52:00.000Z" },
+      { "id": "presentation-nse", "headline": "Capri Global Capital Limited has informed the Exchange about Investor Presentation", "subject": "Investor Presentation", "exchanges": ["NSE"], "publishedAt": "2026-10-28T11:53:25.000Z" }
+    ],
+    "reports": [
+      { "id": "standalone", "headline": "Capri Global Capital reports 66.50% jump in standalone Q2FY27 net profit at ₹353 crore", "publisher": "Publisher A", "publishedAt": "2026-10-28T15:53:20.000Z" },
+      { "id": "growth", "headline": "CGCL: AUM grew 62% and PAT 77% YoY as FY28 growth plans target ₹650 bn", "publisher": "Publisher B", "publishedAt": "2026-10-28T11:59:44.000Z" }
+    ]
+  },
+  "sasken": {
+    "ticker": "SASKEN",
+    "company": "Sasken Communication Technologies",
+    "results": [
+      { "headline": "Sasken Technologies Limited has informed the Exchange regarding 'We are enclosing herewith Standalone and Consolidated audited financial results of the Company forthe quarter and half year ended September 30, 2026, as taken on record at the Board Meeting held today'.", "subject": "Updates", "exchanges": ["NSE"], "publishedAt": "2026-10-28T15:44:28.000Z" },
+      { "headline": "We are enclosing herewith Standalone and Consolidated audited financial results of the Company for the quarter and half year ended September 30, 2026, as taken on record at the Board Meeting held today.The Board declared an interim dividend of Rs.12 (120%) per", "subject": "Outcome of Board Meeting", "exchanges": ["NSE"], "publishedAt": "2026-10-28T15:37:00.000Z" },
+      { "headline": "We are enclosing herewith Standalone and Consolidated audited financial results of the Company for the quarter and half year ended September 30, 2026, as taken on record at the Board Meeting ....", "subject": "General", "exchanges": ["BSE"], "publishedAt": "2026-10-28T15:56:00.000Z" },
+      { "headline": "We are enclosing herewith Standalone and Consolidated audited financial results of the Company for the quarter and half year ended September 30, 2026, as taken on record at the Board Meeting ....", "subject": "Financial Results", "exchanges": ["BSE"], "publishedAt": "2026-10-28T15:53:00.000Z" },
+      { "headline": "Sasken Technologies Limited has submitted to the Exchange, the financial results for the period ended September 30, 2026.", "subject": "Outcome of Board Meeting", "exchanges": ["NSE"], "publishedAt": "2026-10-28T15:37:00.000Z" }
+    ],
+    "separate": [
+      { "headline": "Sasken Technologies Limited has informed the Exchange that Record date for the purpose of Dividend  is 03-Nov-2026.", "subject": "Record Date", "exchanges": ["NSE"], "publishedAt": "2026-10-28T15:39:50.000Z" },
+      { "headline": "Sasken Technologies Limited has informed the Exchange that Board of Directors at its meeting held on October 28, 2026, declared Interim Dividend of Rs. 12 per equity share.", "subject": "Dividend", "exchanges": ["NSE"], "publishedAt": "2026-10-28T15:37:00.000Z" }
+    ],
+    "controls": [
+      { "control": "notice", "headline": "Board meeting to consider financial results for the quarter ended September 30, 2026", "subject": "Board Meeting", "exchanges": ["BSE"], "publishedAt": "2026-10-28T15:40:00.000Z" },
+      { "control": "resubmitted", "headline": "Resubmission of audited financial results for the quarter and half year ended September 30, 2026", "subject": "Financial Results", "exchanges": ["BSE"], "publishedAt": "2026-10-28T15:58:00.000Z" },
+      { "control": "other-period", "headline": "Standalone and Consolidated audited financial results for the quarter ended June 30, 2026", "subject": "Financial Results", "exchanges": ["BSE"], "publishedAt": "2026-10-28T15:57:00.000Z" },
+      { "control": "call", "headline": "Intimation of earnings call to discuss financial results for the quarter ended September 30, 2026", "subject": "Analyst / Investor Meet", "exchanges": ["BSE"], "publishedAt": "2026-10-28T15:59:00.000Z" }
+    ]
+  },
+  "quotePages": [
+    "Kaveri Seed Company Limited (KSCL) share price — eduinvesting",
+    "ICICI Bank Limited (ICICIBANK.NS) Stock Price, News, Quote & History",
+    "FUSION CX LIMITED Share Price"
+  ],
+  "notQuotePages": [
+    "Kaveri Seed Company Ltd Falls to 52-Week Low of Rs 647.95 as Sell-Off Deepens",
+    "Kaveri Seed share price jumps 8% after Q2 results"
+  ]
+}

@@ -1,3 +1,4 @@
+import { marketHeads, marketCells, wireMarketCells } from '../ui/company-market-columns.js';
 import { escapeHtml } from '../core/dom.js';
 import { openModal, closeModal } from '../ui/screener.js';
 import { onHostContext } from '../core/host-context.js';
@@ -121,10 +122,11 @@ function coverageHtml() {
     ${state?.schedule?.nextCheckAt ? `<p class="text-xs text-slate-500">Next automatic check eligible: ${e(date(state.schedule.nextCheckAt))}. Actual start times can be delayed.</p>` : ''}
     ${state?.sourceIntervalMs ? `<p data-summary-pacing class="text-xs text-slate-500">Source requests are spaced at least ${e(state.sourceIntervalMs / 60000)} minutes apart. ${e(state.automatedRequestsLast24h || 0)} of ${e(state.requestBudget)} reserved attempts used in the rolling 24-hour budget.<br>Next source attempt eligible: ${state.nextSourceAttemptAt ? e(date(state.nextSourceAttemptAt)) : 'No pending source notes.'} A source refusal extends the pause.</p>` : ''}
     <p class="text-xs text-slate-500">New holdings join automatically on the next successful portfolio and catalogue check. Saved notes have no automatic expiry. Source corrections without a new summary ID are not re-fetched automatically.</p>
-    ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table data-column-layout="summary:2" class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th><th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td><td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
+    ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table data-column-layout="summary:2" class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th>${marketHeads}<th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td>${marketCells(holding)}<td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
 }
 export function openSummaryCoverage() {
   const version = modal(coverageHtml());
+  const stopMarket = wireMarketCells(document.getElementById('modal-content'));
   const off = summaries.onChange(() => {
     if (version !== openVersion) return;
     const content = document.getElementById('modal-content'), focused = content.contains(document.activeElement);
@@ -132,7 +134,7 @@ export function openSummaryCoverage() {
     if (focused) content.querySelector('[data-summary-close]')?.focus({ preventScroll: true });
   });
   const release = closeSession;
-  closeSession = () => { off(); release?.(); };
+  closeSession = () => { stopMarket(); off(); release?.(); };
 }
 export function summaryStatusHtml() {
   return `<div data-summary-coverage class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500"><span>${e(summaryStateMessage(summaries.status()))}</span><button type="button" data-summary-coverage-open class="font-semibold text-indigo-600 underline">Summary coverage</button></div>`;

@@ -27,6 +27,8 @@ import { snapshotForRow, SECTION_LABELS } from '../core/bookmark-record.js';
 import { bookmarkButton, wireBookmarks } from './bookmark-button.js';
 import { tabBar } from './components.js';
 import { tableFilterGroup } from './table-filter-group.js';
+import { marketColumns } from './company-market-columns.js';
+import * as companyMarket from '../data/company-market.js';
 
 // ---------------------------------------------------------------------------------------
 // Overlay focus management — shared by the drill, the modal and the workspace.
@@ -400,6 +402,7 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  * re-renders its own tbody without the tab getting involved.
  */
 export function scoreTable(config) {
+  config = { ...config, columns: marketColumns(config.columns || [], config.companyMarket) };
   let {
     rows = [],
     key = (r) => r.ticker,
@@ -670,15 +673,17 @@ export function scoreTable(config) {
 
   function headHtml() {
     if (rowContent) return `<tr><th scope="col">${escapeHtml(nameLabel)}</th></tr>`;
-    const th = (label, sortKey, align = 'left') => {
+    const th = (label, sortKey, align = 'left', column = {}) => {
       const sortable = allowSort && sortKey !== null;
       const active = view.sort && view.sort.key === sortKey;
       // `wrapHeads` lets a long heading stack instead of forcing its column as wide as the label.
       // On a table with a dozen numeric columns the headings, not the figures, are what overflows.
       return `<th scope="col" class="${wrapHeads ? 'align-bottom' : 'whitespace-nowrap'} ${PX} py-3 text-${align} text-xs font-bold uppercase ${TRACK} text-slate-600 ${sortable ? 'cursor-pointer select-none hover:text-indigo-600' : ''}"
+        ${column.columnBefore ? `data-column-before="${escapeHtml(column.columnBefore)}"` : ''}
+        ${column.columnAfter ? `data-column-after="${escapeHtml(column.columnAfter)}"` : ''}
         ${sortable ? `data-sort="${escapeHtml(sortKey)}"` : ''}>${escapeHtml(label)}${active ? (view.sort.dir === 'asc' ? ' ▴' : ' ▾') : ''}</th>`;
     };
-    const dataTh = (c) => th(c.label, c.sortable === false ? null : c.label, c.align === 'right' ? 'right' : 'left');
+    const dataTh = (c) => th(c.label, c.sortable === false ? null : c.label, c.align === 'right' ? 'right' : 'left', c);
     return `
       <tr>
         ${showRank ? `<th scope="col" class="w-12 ${PX} py-3 text-left text-xs font-bold uppercase ${TRACK} text-slate-600">#</th>` : ''}
@@ -1488,9 +1493,23 @@ export function scoreTable(config) {
       }
       repaint(pending ? { resetScroll: true } : options);
     };
+    const marketCompany = typeof config.companyMarket === 'function' ? config.companyMarket : config.companyMarket?.company || (row => typeof row.company === 'object' ? row.company : row);
+    const marketReadings = new Map(config.companyMarket && !rowContent ? rows.map(row => [String(key(row)), JSON.stringify(companyMarket.read(marketCompany(row)))]) : []);
+    const stopMarket = config.companyMarket && !rowContent ? companyMarket.watch(() => {
+      if (isDisposed || !host.isConnected) return;
+      const changed = [];
+      for (const row of rows) {
+        const id = String(key(row)), reading = JSON.stringify(companyMarket.read(marketCompany(row)));
+        if (marketReadings.get(id) !== reading) changed.push(id);
+        marketReadings.set(id, reading);
+      }
+      updateRows(changed);
+      if (changed.length && columns.find(column => column.label === view.sort?.key)?.marketField) activeRepaint?.({ resetScroll: false });
+    }, { watchPrices: config.companyMarket.watchPrices !== false }) : null;
 
     return () => {
       isDisposed = true;
+      stopMarket?.();
       releaseSearch?.();
       releaseToolbar?.();
       activeFilterGroup?.dispose(); activeFilterGroup = null;
@@ -1559,7 +1578,7 @@ export function scoreTable(config) {
     if (typeof options.loading === 'boolean') loading = options.loading;
     activeLoading?.();
   }
-  return { html, wire, view, updateRows: (keys) => updateRows(keys), updateData, updateStatus, refreshPresentation: () => activePresentation?.() };
+  return { html, wire, view, visibleRows, updateRows: (keys) => updateRows(keys), updateData, updateStatus, refreshPresentation: () => activePresentation?.() };
 }
 
 // ---------------------------------------------------------------------------------------

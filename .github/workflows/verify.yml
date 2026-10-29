@@ -46,7 +46,7 @@ jobs:
       - name: Verify investor quarterly evidence and aggregation
         run: node scripts/verify-super-investors.mjs && node scripts/verify-holdings-integrity.mjs && node scripts/verify-investor-changes.mjs && node scripts/verify-managers.mjs && node scripts/verify-manager-reader.mjs && node scripts/verify-public-holdings.mjs && node scripts/verify-investor-publishing.mjs && node scripts/verify-super-investor-capture.mjs
       - name: Verify private funding tables, budgets, history and publication
-        run: node scripts/verify-private-market-news.mjs
+        run: node scripts/verify-private-market-news.mjs && node scripts/verify-private-companies.mjs
       - name: Verify refresh ownership and source targeting
         run: node scripts/verify-refresh.mjs
       - name: Verify evidence-based public chatter summaries
@@ -74,7 +74,7 @@ jobs:
         # 6 GB on 1 October 2026, past Node's default 4 GB heap on the 16 GB runner.
         run: node scripts/verify-json-preparation.mjs && node scripts/verify-alert-pool-projection.mjs && node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node --max-old-space-size=8192 scripts/verify-news-working-set.mjs
       - name: Verify Mutual Fund calculations and resumable capture
-        run: node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-denominators.mjs && node scripts/verify-mutual-funds-sources.mjs && node scripts/verify-mutual-funds-schedule.mjs && node scripts/verify-mutual-funds-scanner.mjs && node scripts/verify-mutual-funds-github.mjs && node scripts/verify-mutual-funds-export.mjs && node scripts/verify-github-deploy-state.mjs && node scripts/verify-mutual-funds-static.mjs && node scripts/verify-github-background-views.mjs && node scripts/verify-github-background-seal.mjs && node scripts/verify-github-background-package.mjs && node scripts/verify-github-background-bundle.mjs && node scripts/verify-github-background-release.mjs
+        run: node scripts/verify-mutual-funds-reading.mjs && node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-directional.mjs && node scripts/verify-mutual-funds-denominators.mjs && node scripts/verify-mutual-funds-sources.mjs && node scripts/verify-mutual-funds-schedule.mjs && node scripts/verify-mutual-funds-scanner.mjs && node scripts/verify-mutual-funds-github.mjs && node scripts/verify-mutual-funds-export.mjs && node scripts/verify-github-deploy-state.mjs && node scripts/verify-mutual-funds-static.mjs && node scripts/verify-github-background-views.mjs && node scripts/verify-github-background-seal.mjs && node scripts/verify-github-background-package.mjs && node scripts/verify-github-background-bundle.mjs && node scripts/verify-github-background-release.mjs
       - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)
         run: node scripts/verify-hot-path-memo.mjs
       - name: Verify lossless news parts and deployable asset sizes
@@ -122,7 +122,7 @@ jobs:
       - name: Verify continuous corporate announcement sources and retention
         run: node scripts/verify-corporate-stream.mjs && node scripts/verify-bse-collection.mjs && node scripts/verify-bse-request-profile.mjs && node scripts/verify-announcement-recovery.mjs
       - name: Verify investor relevance, categories, event stitching, shared feedback, the announcement index and AI Read
-        run: node scripts/verify-market-caps.mjs && node scripts/verify-relevance.mjs && node scripts/verify-announcement-read-stream.mjs && node scripts/verify-announcement-query.mjs
+        run: node scripts/verify-market-caps.mjs && node scripts/verify-company-market.mjs && node scripts/verify-relevance.mjs && node scripts/verify-announcement-read-stream.mjs && node scripts/verify-announcement-query.mjs
       - name: Verify the announcement index, shared feedback and AI Read across real Durable Object RPC in the local Worker runtime
         run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-announcements-runtime.mjs'
       - name: Verify domestic filings and earnings provenance
@@ -181,7 +181,9 @@ jobs:
       - name: Verify the precomputed alert pool is exact and stands aside honestly
         run: node scripts/verify-announcement-delivery.mjs && node scripts/verify-alert-pool-cache.mjs && node scripts/verify-alert-pool-delivery.mjs && node --max-old-space-size=4096 scripts/verify-alert-pool.mjs
       - name: Verify AI alert search, calendar dates and the KPIs in play
-        run: node scripts/verify-ai-alerts.mjs && node scripts/verify-ai-alert-search.mjs && node scripts/verify-ai-alert-types.mjs && node scripts/verify-alert-timeline.mjs && node scripts/verify-alert-capacity.mjs && node scripts/verify-kpi-impact.mjs
+        run: node scripts/verify-ai-alerts.mjs && node scripts/verify-ai-alert-search.mjs && node scripts/verify-ai-alerts-compact.mjs && node scripts/verify-ai-alert-types.mjs && node scripts/verify-alert-timeline.mjs && node scripts/verify-alert-capacity.mjs && node scripts/verify-kpi-impact.mjs
+      - name: Verify indirect theme exposure on AI Alerts
+        run: node scripts/verify-theme-exposures.mjs
       - name: Verify material alert lifecycle and optional social coverage
         run: node scripts/verify-alert-reliability.mjs && python3 scripts/verify-twitter-collection.py
       - name: Syntax-check JavaScript
@@ -267,7 +269,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
+        run: node scripts/verify-reading-anchor-ui.mjs && node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
       - name: Verify private alert access, pagination and public-cache exclusion
         if: ${{ matrix.part == 2 }}
         env:
@@ -367,7 +369,7 @@ jobs:
         if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-alert-card-grid-ui.mjs && node scripts/verify-ai-alerts-ui.mjs && node scripts/verify-ai-alert-types-ui.mjs && node scripts/verify-ai-alert-timeline-ui.mjs && node scripts/verify-alert-capacity-ui.mjs && node scripts/verify-kpi-impact-ui.mjs && node scripts/verify-alert-prices-ui.mjs && node scripts/verify-cmp-opening-ui.mjs
+        run: node scripts/verify-alert-card-grid-ui.mjs && node scripts/verify-ai-alerts-ui.mjs && node scripts/verify-ai-alerts-compact-ui.mjs && node scripts/verify-ai-alert-types-ui.mjs && node scripts/verify-ai-alert-timeline-ui.mjs && node scripts/verify-alert-capacity-ui.mjs && node scripts/verify-kpi-impact-ui.mjs && node scripts/verify-alert-prices-ui.mjs && node scripts/verify-cmp-opening-ui.mjs
       - name: Verify explicit refresh through the service worker
         if: ${{ matrix.part == 1 }}
         env:
@@ -444,6 +446,11 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-corporate-stream-ui.mjs
+      - name: Verify company market columns, saved layouts, dated prices and returning-session upgrades
+        if: ${{ matrix.part == 1 }}
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-company-market-ui.mjs
       - name: Verify ranked announcement pages, categories, market cap, related filings, AI Read and shared feedback
         if: ${{ matrix.part == 2 }}
         env:

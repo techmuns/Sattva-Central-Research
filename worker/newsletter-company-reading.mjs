@@ -54,7 +54,17 @@ function supportingDocument(item) {
   if(sourceDates.some(d=>!d||d!==sourceDates[0]))return null;
   return {type,date:sourceDates[0]||null,periods:financialPeriodsIn(value).map(financialPeriod)};
 }
-const compare=(a,b)=>b.rank-a.rank||Number(b.lead.kind==='filing')-Number(a.lead.kind==='filing')||b.at-a.at||a.id.localeCompare(b.id);
+// Red and green carry one meaning in the brief, as on the dashboard: the direction a stated rule
+// gives a filing, a trade or a move, or a tracked risk topic. A publisher's headline never receives
+// a direction of ours; its risk keyword is what can turn it red, and its TROUBLE tag says why.
+// A notice that a board WILL consider results or a dividend has declared nothing yet, so it
+// carries no direction however its subject reads.
+const NOTICE=/\b(?:to consider|will consider|to be held|proposal to consider)\b|\bintimation of (?:the )?board meeting\b|^board meeting \d/i;
+export const updateDirection=s=>s?.kind==='filing'&&NOTICE.test(s.headline||'')?null:s?.mood?.id==='good'?'good':s?.mood?.id==='watch'?'watch':null;
+export const updateTone=s=>updateDirection(s)||(s?.topic?.id==='trouble'?'watch':null);
+const toneRank=event=>({watch:2,good:1})[updateTone(event.lead)]||0;
+// Materiality first, then what needs attention (risk before positive), then recency.
+const compare=(a,b)=>b.rank-a.rank||toneRank(b)-toneRank(a)||Number(b.lead.kind==='filing')-Number(a.lead.kind==='filing')||b.at-a.at||a.id.localeCompare(b.id);
 const quality=event=>Number(event.lead.content?.state==='ready')*10000+material(event.lead).length*100+Number(event.lead.kind==='filing');
 const signature=f=>`${f.field}:${headlineKey(f.value)}`;
 const description=event=>event.summary||event.sourceSummary||event.description||event.lead.headline;
@@ -101,9 +111,11 @@ export function companyReadings(events,notes={}) {
       return {...lead,...(consolidated?{note:consolidated,summary:consolidated.summary}:{}),id,variants,additionalReadings,separateSummaries,rank:Math.max(...variants.map(v=>v.rank)),at:Math.max(...variants.map(v=>v.at)),
         sources:[...new Set(variants.flatMap(v=>v.sources))],read:variants.reduce((n,v)=>n+v.read,0),total:variants.reduce((n,v)=>n+v.total,0),sourceCount:variants.reduce((n,v)=>n+v.sourceCount,0),relatedSources:variants.filter(v=>v.lead.related).length};
     }).sort(compare);
-    blocks.push({ticker,events:readings,rank:Math.max(...rows.map(r=>r.rank)),at:Math.max(...rows.map(r=>r.at))});
+    // Across companies only risk lifts a block: a positive tone is mostly a routine dividend filing,
+    // which must not outrank another company's results at the same materiality.
+    blocks.push({ticker,events:readings,rank:Math.max(...rows.map(r=>r.rank)),tone:rows.some(r=>updateTone(r.lead)==='watch')?1:0,at:Math.max(...rows.map(r=>r.at))});
   }
-  blocks.sort((a,b)=>b.rank-a.rank||b.at-a.at||a.ticker.localeCompare(b.ticker));
+  blocks.sort((a,b)=>b.rank-a.rank||b.tone-a.tone||b.at-a.at||a.ticker.localeCompare(b.ticker));
   const result=blocks.flatMap(block=>block.events);
   // Fail closed if a future grouping edit loses a source event or an exact URL.
   const ids=result.flatMap(r=>r.variants.map(v=>v.id));

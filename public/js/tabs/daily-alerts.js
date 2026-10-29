@@ -1,4 +1,5 @@
 import { TAB_META } from './catalog.js';
+import { isThemeExposureContext } from '../data/theme-exposures.js';
 import { reconcileMarkup } from '../ui/reconcile-markup.js';
 import { readableFilingUrl } from '../data/nse-xbrl-shared.js';
 import { storyGrouping } from '../data/alert-stories.js';
@@ -645,9 +646,12 @@ function paint(ctx) {
  * same pixel offset would now point at a different event. Keep the first visible row plus its
  * offset beneath the sticky header, and ask scoreTable to include that row in its first slice.
  */
-function captureTablePosition(root) {
+export function captureTablePosition(root) {
   const scroller = root.querySelector('[data-table-scroll]');
   if (!scroller) return null;
+  // Another feed can paint before the previous virtual-row measurement finishes.
+  // Keep that correction's original reading position, not its transient geometry.
+  if (positionHold?.root === root && positionHold.scroller === scroller) return positionHold.position;
   const top = scroller.scrollTop;
   const left = scroller.scrollLeft;
   const rendered = scroller.querySelectorAll('tbody tr[data-row-key]').length;
@@ -688,35 +692,42 @@ function restoreTablePosition(root, position) {
       return;
     }
     const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
-    scroller.scrollTop += anchor.getBoundingClientRect().top - boundary - position.offset;
+    const delta = anchor.getBoundingClientRect().top - boundary - position.offset;
+    if (Math.abs(delta) >= 0.5) scroller.scrollTop += delta;
   } finally {
     scroller.style.scrollBehavior = inlineBehavior;
   }
 }
 
 let positionFrame = 0;
+let positionHold = null;
 let releasePositionInput = null;
 function cancelPositionCorrection() {
   if (positionFrame) cancelAnimationFrame(positionFrame);
   positionFrame = 0;
+  positionHold = null;
   releasePositionInput?.(); releasePositionInput = null;
 }
-function restoreTablePositionAfterPaint(root, position) {
+export function restoreTablePositionAfterPaint(root, position) {
   cancelPositionCorrection();
   restoreTablePosition(root, position);
   if (!position?.key || position.top <= 1) return;
   const scroller = root.querySelector('[data-table-scroll]');
-  // Natural row measurements and receipt badges settle after the synchronous data paint.
-  // Correct once afterwards; new input always wins over this short bookkeeping window.
+  // ResizeObserver, virtual spacers and receipt badges can settle after two frames.
+  // Cover that short cascade without accumulating drift between overlapping paints.
+  // The window is bounded and fresh reader input always cancels it immediately.
   const inputs = ['wheel', 'pointerdown', 'touchstart', 'keydown', 'input', 'click'];
   for (const type of inputs) root.addEventListener(type, cancelPositionCorrection, { capture: true, passive: true });
   releasePositionInput = () => { for (const type of inputs) root.removeEventListener(type, cancelPositionCorrection, true); };
-  positionFrame = requestAnimationFrame(() => {
-    positionFrame = requestAnimationFrame(() => {
-      cancelPositionCorrection();
-      if (scroller?.isConnected && root.querySelector('[data-table-scroll]') === scroller) restoreTablePosition(root, position);
-    });
-  });
+  positionHold = { root, scroller, position };
+  let frames = 0;
+  const correct = () => {
+    if (!scroller?.isConnected || root.querySelector('[data-table-scroll]') !== scroller) { cancelPositionCorrection(); return; }
+    restoreTablePosition(root, position);
+    if (++frames < 8) positionFrame = requestAnimationFrame(correct);
+    else cancelPositionCorrection();
+  };
+  positionFrame = requestAnimationFrame(correct);
 }
 
 /**
@@ -1107,6 +1118,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     get: (e) => `
       <div class="max-w-[560px]">
         ${e.feed === 'news' ? `<div data-news-attribution="${escapeHtml(e.attribution?.status || 'uncertain')}" class="text-xs font-semibold text-slate-600" title="${escapeHtml(e.attribution?.reason || 'Company relationship unverified')}">${escapeHtml(attributionLabel(e))}</div>` : ''}
+        ${isThemeExposureContext(e) ? `<div data-news-attribution="theme" class="text-xs font-semibold text-slate-600" title="${escapeHtml(`${e.themeExposure.readAcross} ${e.attribution.reason}`)}">Indirect · ${escapeHtml(e.themeExposure.short)} exposure</div>` : ''}
         <div data-alert-headline class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${mode===HORIZON.UPCOMING?escapeHtml(e.headline):alertHeadlineHtml(developmentLine(developmentOfRow(e),{fallback:e.headline}))}</div>
         <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
         ${mode === HORIZON.UPCOMING ? '' : `${sourceReportsHtml(e)}${alertReadingHtml(e)}`}
@@ -1132,6 +1144,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
       ];
   const filters = buildTableFilters(events, day, mode, matchesDate);
   return scoreTable({
+    companyMarket: true,
     rows: events,
     loading: !report || report.pending > 0,
     key: (e) => e.id,
@@ -1336,7 +1349,7 @@ async function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
   };
 
   const cell = (get) => (r) => (r.__banner ? '' : get(r));
-  return exportRows({
+  return exportRows({ companyMarket: true,
     filename: `sattva-all-alerts-${mode === HORIZON.UPCOMING ? 'upcoming-from' : 'through'}-${day}`,
     sheetName: 'All Alerts',
     columns: [

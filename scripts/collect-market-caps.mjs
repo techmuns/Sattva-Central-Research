@@ -68,8 +68,12 @@ async function get(url) {
   return Buffer.concat(chunks).toString('utf8');
 }
 function save(company, figure) {
+  const old = entries.get(company.isin);
+  // A missing price on a successful cap read cannot re-date or erase an older price.
+  const quote = figure.cmp > 0 ? { cmp: figure.cmp, cmpCheckedAt: figure.checkedAt, cmpPriceAsOf: figure.priceAsOf || null, cmpPriceDateLabel: figure.priceDateLabel || null }
+    : { cmp: old?.cmp || null, cmpCheckedAt: old?.cmpCheckedAt || null, cmpPriceAsOf: old?.cmpPriceAsOf || null, cmpPriceDateLabel: old?.cmpPriceDateLabel || null };
   entries.set(company.isin, { isin: company.isin, ticker: company.ticker, bseCode: company.bseCode || null,
-    exchanges: company.exchanges, checkState: 'verified', ...figure });
+    exchanges: company.exchanges, checkState: 'verified', ...figure, ...quote });
   seen.add(company.isin);
 }
 let sourceTotal = null, pagesRead = 0, screenComplete = false, directRead = 0, directTotal = null, directFailures = 0, directUnavailable = 0;
@@ -99,7 +103,7 @@ try {
       if (keys.has(row.key)) throw Error('duplicate issuer across screen pages');
       keys.add(row.key);
       const company = bySource.get(row.key);
-      if (company) save(company, { cr: row.cr, checkedAt, priceDateLabel: null, source: 'Screener', sourceUrl: row.sourceUrl });
+      if (company) save(company, { cr: row.cr, cmp: row.cmp, checkedAt, priceDateLabel: null, source: 'Screener', sourceUrl: row.sourceUrl });
     }
     if (page % 25 === 0 || page === pages) { checkpoint(); console.log(`Market cap screen: ${page}/${pages} pages, ${seen.size} exact exchange matches.`); }
   }

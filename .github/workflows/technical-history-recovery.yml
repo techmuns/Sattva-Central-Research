@@ -48,6 +48,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add public/data/technicals.json
+          [ -f public/data/company-quotes.json ] && git add public/data/company-quotes.json || true
           if [ -f public/data/technical-history-recovery.json ]; then
             git add public/data/technical-history-recovery.json
           fi
@@ -73,5 +74,6 @@ jobs:
           name: technical-history-checkpoint
           path: |
             public/data/technicals.json
+            public/data/company-quotes.json
             public/data/technical-history-recovery.json
           if-no-files-found: warn

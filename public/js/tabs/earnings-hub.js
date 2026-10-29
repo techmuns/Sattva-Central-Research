@@ -408,6 +408,7 @@ function renderLatest(ctx) {
   // cell, where they stay searchable and visible without costing two columns of width. The width
   // freed up goes to the reported figures, which is what the growth percentages are derived from.
   const makeTable = () => scoreTable({
+    companyMarket: { cmpLabel: 'Price' },
     rows,
     key: (r) => r.scId,
     // THE STAR MARKS THE COMPANY, NOT THE ROW. `key` above identifies the row and is not a ticker
@@ -753,6 +754,7 @@ function renderCalendar(ctx) {
 
   const makeTable = scoped.length
     ? () => scoreTable({
+        companyMarket: { cmpLabel: 'Price' },
         rows: scoped,
         key: (r) => r.eventId || r.scId,
         watchKey: (r) => r.ticker || null,
@@ -928,7 +930,7 @@ async function exportCalendar(rows, payload, date = '') {
       completeness +
       `Market cap in Rs. crore. Blank cells mean not known, not zero.`,
   };
-  await exportRows({
+  await exportRows({ companyMarket: { cmpLabel: 'Price' },
     filename: 'sattva-earnings-calendar',
     sheetName: 'Results Calendar',
     columns: [
@@ -965,7 +967,7 @@ async function exportResults(rows, m) {
   const cur = reportingPeriodLabel(m?.currentPeriod, 'Current period');
   const pri = reportingPeriodLabel(m?.priorPeriod, 'Comparison period');
   const val = (mm, field) => (mm?.[field] ?? '');
-  await exportRows({
+  await exportRows({ companyMarket: { cmpLabel: 'Price' },
     filename: 'sattva-earnings',
     sheetName: 'Latest Results',
     columns: [
