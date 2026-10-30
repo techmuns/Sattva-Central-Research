@@ -149,7 +149,7 @@ export function filingStatement(row) {
     if (!v || v.length < 8 || isTypeOnly(v) || seen.has(key)) continue;
     seen.add(key);
     const score = Math.min(v.length, 200) + (AMOUNTISH.test(v) ? 90 : /\d/.test(v) ? 15 : 0) - (POINTER.test(v) ? 140 : 0) -
-      (key === label || key.length < 26 ? 110 : 0) - (/^(?:bagging\/receiving of orders\/contracts|credit rating|acquisition|updates?|general updates|press release|investor presentation)$/i.test(v) ? 150 : 0);
+      (key === label || key.length < 26 ? 110 : 0) - (GENERIC_STATEMENT.test(v) || /_/.test(v) || /^(?:credit rating|updates?|general updates|press release|investor presentation)$/i.test(v) ? 150 : 0);
     candidates.push({ v, score });
   }
   candidates.sort((a, b) => b.score - a.score);
@@ -801,7 +801,7 @@ function orderLine(o) {
 }
 
 // An exchange label standing in for a statement: it says what kind of filing this is, not what happened.
-const GENERIC_STATEMENT = /^(?:update[- ]?)?(?:acquisition(?: \(including agreement to acquire\))?|acquisition of 'to be incorporated companies'|bagging\/receiving of orders\/contracts(?:\s*\(sub-para 4-para b\))?|awarding of order\(s\)\/contract\(s\)|receiving of new orders|new orders? received|capacity addition(?:\s*\(sub-para 3-para b\))?|commencement of commercial production\/operations|agreements,contracts,arrangements,mou|actions? (?:initiated|taken)(?:\/taken)? or orders passed(?: \(sub-para 20\))?|pendency of (?:any )?litigation.*|product launch|credit rating(?:- (?:new|revision))?|scheme of arrangement|other restructuring)$/i;
+const GENERIC_STATEMENT = /^(?:update[- ]?)?(?:acquisition(?: \(including agreement to acquire\))?|acquisition of 'to be incorporated companies'|bagging\/receiving of orders\/contracts(?:\s*\(sub-para 4-para b\))?|awarding of order\(s\)\/contract\(s\)(?:\s*-?\s*\(sub-para 4-para b\))?|award[_ ]of[_ ]order[_ /]+receipt[_ ]of[_ ]order|(?:intimation of )?(?:bagging|receipt|receiving)(?:\/receiving)? of (?:new )?orders?(?:\/contracts?)?|receiving of new orders|new orders? received|capacity addition(?:\s*\(sub-para 3-para b\))?|commencement of commercial production\/operations|agreements,contracts,arrangements,mou|actions? (?:initiated|taken)(?:\/taken)? or orders passed(?: \(sub-para 20\))?|pendency of (?:any )?litigation.*|product launch|credit rating(?:- (?:new|revision))?|scheme of arrangement|other restructuring)$/i;
 
 // What leads the sentence: what changes earnings first, who is buying next, the tape last.
 const HEADLINE_RANK = { growth: 0, earnings: 0, smart: 1, technical: 2 };
@@ -821,7 +821,9 @@ function composeThesis({ c, stance, positives, negatives, orderSummary }) {
     if (why.length >= 5) break;
   }
   const risks = [];
-  for (const i of negatives) { push(factLine(i, c), risks); if (risks.length >= 4) break; }
+  // A bare exchange label ("Action(s) taken or orders passed") with little weight is evidence to
+  // open, not a risk to state; it stays in the evidence list.
+  for (const i of negatives) { if (i.generic && i.points < 3) continue; push(factLine(i, c), risks); if (risks.length >= 4) break; }
   const headline = stance === 'risk' ? [...risks.slice(0, 2)].join(' · ') || why[0]
     : stance === 'mixed' ? [why[0], risks[0]].filter(Boolean).join(' · ')
       : why.slice(0, 2).join(' · ') || risks.slice(0, 2).join(' · ');
