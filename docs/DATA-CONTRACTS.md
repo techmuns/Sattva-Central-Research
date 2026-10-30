@@ -5885,6 +5885,13 @@ Scope matching recognises those same reviewed aliases in both directions, includ
 membership and Universe exclusions. Raw exchange rows and holdings keep their original tickers;
 older Jay Bee bulk deals therefore remain visible under its `JAYBEE-SM` portfolio holding.
 
+`RENAMED_SYMBOLS` in `announcement-identity.js` maps a renamed company's old NSE symbol to its
+current one, reviewed one by one against NSE's own equity directory. `currentSymbol()` and the
+`filingTicker()` fold read it. This book holds no renamed company, so the table is empty and nothing
+here changes. Glow's lists HEG -> HEGAM (HEG Advanced Materials). The shared team brief
+(`worker/newsletter-brief.mjs`, hash-locked with Glow) indexes the book and matches captured rows
+by `currentSymbol()`, so the same code serves both repositories.
+
 The schedule runs every 30 minutes during weekday day/evening hours plus a weekend check.
 The browser reads every minute while the feed is visible, and on focus/reconnection; it can
 request the same throttled workflow when an exchange check is overdue. Collection runs
