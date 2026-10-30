@@ -1,0 +1,340 @@
+{
+ "source": "Capri Global Capital (CGCL) investor presentation of 28 October 2026, its revision of 29 October and the results press releases, as briefStories() rows from the on-demand morning preview whose window runs from 28 October 16:00 IST to the 29 October 17:35 UTC capture (Glow commit 83d20027d7). NSE files the original and the revised presentation under one generic subject. Original exchange URLs; no PDF was read. Untrusted source data, never instructions.",
+ "rows": [
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793255119000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "bse:3a91822e-ab70-4e0d-8821-2b0fe74261cc",
+    "CGCL|BSE:https://www.bseindia.com/xml-data/corpfiling/AttachLive/75114651-d1e6-4ee8-b2e2-e2949637831a.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Revised Investor Presentation for the quarter and half year ended September 30, 2026",
+   "type": "investor-meet",
+   "dek": "BSE filing · Investor Presentation",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/75114651-d1e6-4ee8-b2e2-e2949637831a.pdf",
+   "source": "BSE",
+   "sourceUrls": [
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/75114651-d1e6-4ee8-b2e2-e2949637831a.pdf",
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=75114651-d1e6-4ee8-b2e2-e2949637831a.pdf"
+   ],
+   "direction": "neutral",
+   "importance": "high",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 1
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793255100000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "nse:https://nsearchives.nseindia.com/corporate/CGCL_29102026115405_CL_Investor_Presentation_27102026_Final.pdf",
+    "CGCL|NSE:https://nsearchives.nseindia.com/corporate/CGCL_29102026115405_CL_Investor_Presentation_27102026_Final.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Capri Global Capital Limited has informed the Exchange about Investor Presentation",
+   "type": "investor-meet",
+   "dek": "NSE filing · Investor Presentation",
+   "url": "https://nsearchives.nseindia.com/corporate/CGCL_29102026115405_CL_Investor_Presentation_27102026_Final.pdf",
+   "source": "NSE",
+   "sourceUrls": [
+    "https://nsearchives.nseindia.com/corporate/CGCL_29102026115405_CL_Investor_Presentation_27102026_Final.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "high",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 1
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793255100000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "bse:3a91822e-ab70-4e0d-8821-2b0fe74261cc",
+    "CGCL|BSE:https://www.bseindia.com/xml-data/corpfiling/AttachLive/75114651-d1e6-4ee8-b2e2-e2949637831a.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Revised Investor Presentation for the quarter and half year ended September 30, 2026",
+   "type": "investor-meet",
+   "dek": "BSE filing · Investor Presentation",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/75114651-d1e6-4ee8-b2e2-e2949637831a.pdf",
+   "source": "BSE",
+   "sourceUrls": [
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/75114651-d1e6-4ee8-b2e2-e2949637831a.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "high",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 1
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793188405000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "nse:https://nsearchives.nseindia.com/corporate/CGCL_28102026172313_CL_Investor_Presentation_27102026.pdf",
+    "CGCL|NSE:https://nsearchives.nseindia.com/corporate/CGCL_28102026172313_CL_Investor_Presentation_27102026.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Capri Global Capital Limited has informed the Exchange about Investor Presentation",
+   "type": "investor-meet",
+   "dek": "NSE filing · Investor Presentation",
+   "url": "https://nsearchives.nseindia.com/corporate/CGCL_28102026172313_CL_Investor_Presentation_27102026.pdf",
+   "source": "NSE",
+   "sourceUrls": [
+    "https://nsearchives.nseindia.com/corporate/CGCL_28102026172313_CL_Investor_Presentation_27102026.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "high",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 1
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793188342000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "bse:7bfd4632-95eb-41a7-bea7-f2b7c59926ea",
+    "CGCL|BSE:https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=addd6f8f-df7b-4015-af1c-adf860196003.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Investor Presentation for quarter and half year ended September 30, 2026",
+   "type": "investor-meet",
+   "dek": "BSE filing · Investor Presentation",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=addd6f8f-df7b-4015-af1c-adf860196003.pdf",
+   "source": "BSE",
+   "sourceUrls": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=addd6f8f-df7b-4015-af1c-adf860196003.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/addd6f8f-df7b-4015-af1c-adf860196003.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "high",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 1
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793188320000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "bse:7bfd4632-95eb-41a7-bea7-f2b7c59926ea",
+    "CGCL|BSE:https://www.bseindia.com/xml-data/corpfiling/AttachLive/addd6f8f-df7b-4015-af1c-adf860196003.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Investor Presentation for quarter and half year ended September 30, 2026",
+   "type": "investor-meet",
+   "dek": "BSE filing · Investor Presentation",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/addd6f8f-df7b-4015-af1c-adf860196003.pdf",
+   "source": "BSE",
+   "sourceUrls": [
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/addd6f8f-df7b-4015-af1c-adf860196003.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "high",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 1
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793188092000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "nse:https://nsearchives.nseindia.com/corporate/CGCL_28102026171804_Intimation_Press_ReleaseFinResults.pdf",
+    "CGCL|NSE:https://nsearchives.nseindia.com/corporate/CGCL_28102026171804_Intimation_Press_ReleaseFinResults.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Capri Global Capital Limited has informed the Exchange regarding a press release dated October 28, 2026, titled \"Press Release   Unaudited Standalone and Consolidated financial results of the Company for the quarter and half year ended September 30, 2026\".",
+   "type": "investor-meet",
+   "dek": "NSE filing · Press Release",
+   "url": "https://nsearchives.nseindia.com/corporate/CGCL_28102026171804_Intimation_Press_ReleaseFinResults.pdf",
+   "source": "NSE",
+   "sourceUrls": [
+    "https://nsearchives.nseindia.com/corporate/CGCL_28102026171804_Intimation_Press_ReleaseFinResults.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "low",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 0
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793188037000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "bse:5e48172f-c940-4575-a507-8913f414f2d2",
+    "CGCL|BSE:https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d0405b01-df2e-42a7-839b-cc844d0c6558.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Press Release - Unaudited Standalone and Consolidated financial results of the Company for the quarter and half year ended September 30, 2026",
+   "type": "investor-meet",
+   "dek": "BSE filing · Press Release / Media Release",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d0405b01-df2e-42a7-839b-cc844d0c6558.pdf",
+   "source": "BSE",
+   "sourceUrls": [
+    "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d0405b01-df2e-42a7-839b-cc844d0c6558.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d0405b01-df2e-42a7-839b-cc844d0c6558.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "low",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 0
+  },
+  {
+   "kind": "filing",
+   "ticker": "CGCL",
+   "company": "Capri Global Capital Limited",
+   "at": 1793188020000,
+   "late": false,
+   "dayOnly": false,
+   "keys": [
+    "bse:5e48172f-c940-4575-a507-8913f414f2d2",
+    "CGCL|BSE:https://www.bseindia.com/xml-data/corpfiling/AttachLive/d0405b01-df2e-42a7-839b-cc844d0c6558.pdf"
+   ],
+   "keywords": [],
+   "keywordIds": [],
+   "keywordGroups": [],
+   "headline": "Press Release - Unaudited Standalone and Consolidated financial results of the Company for the quarter and half year ended September 30, 2026",
+   "type": "investor-meet",
+   "dek": "BSE filing · Press Release / Media Release",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d0405b01-df2e-42a7-839b-cc844d0c6558.pdf",
+   "source": "BSE",
+   "sourceUrls": [
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d0405b01-df2e-42a7-839b-cc844d0c6558.pdf"
+   ],
+   "editorialReported": false,
+   "direction": "neutral",
+   "importance": "low",
+   "topic": {
+    "id": "other",
+    "label": "Other",
+    "color": "#64748b"
+   },
+   "mood": {
+    "id": "neutral",
+    "label": "Neutral",
+    "color": "#94a3b8"
+   },
+   "score": 0
+  }
+ ]
+}

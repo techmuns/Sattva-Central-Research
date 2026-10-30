@@ -89,6 +89,11 @@ export function companyReadings(events,notes={}) {
         return other&&sameIssuer(v.lead,event.lead)&&other.type===support.type&&Math.abs(v.at-event.at)<=3600000&&
           (!other.date||!support.date||other.date===support.date)&&(!other.periods.length||!support.periods.length||JSON.stringify(other.periods)===JSON.stringify(support.periods));
       }));
+      // A supporting copy can join one group while its own headline already heads another: NSE files
+      // an original and a revised presentation under one generic subject. A headline is printed once,
+      // so the two groups become one; their variants keep separate readings.
+      const titled=group&&title&&!group.variants.some(v=>headlineKey(v.lead.headline)===title)?groups.find(g=>g!==group&&g.variants.some(v=>headlineKey(v.lead.headline)===title)):null;
+      if(titled){group.variants.push(...titled.variants);groups.splice(groups.indexOf(titled),1);}
       if(group)group.variants.push(event);else groups.push({variants:[event]});
     }
     const readings=groups.map(({variants})=>{
