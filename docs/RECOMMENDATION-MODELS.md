@@ -148,8 +148,10 @@ date discovery uses the permanent per-file check inventory, so an outage longer 
 overlap cannot strand unattempted dates behind an already completed backfill cursor. Financial
 history keeps its earlier fixed boundary. BSE-only prices and unsupported sources remain gaps.
 
-AI Recommendations sits between AI Alerts and All Alerts. It has Company, Current market price and
-Catalyst columns. Evidence/outcomes are available on demand. The reader respects Portfolio, Watchlist
+AI Recommendations sits between AI Alerts and All Alerts. Since 30 October 2026 the page reads the
+broader, sector-aware catalyst engine's ideas (`data/ai-catalysts.json`, see
+[CATALYST-ENGINE.md](CATALYST-ENGINE.md)); this foundation publication is read beside it and adds a
+"Verified filing" mark to the ideas it agrees with. Its rules, ledger and outcomes are unchanged. The reader respects Portfolio, Watchlist
 and Universe, checks prepared output on opening/return and every five minutes while visible, preserves
 search/scroll and retains the last valid publication through outages and reloads. Missing, stale,
 partial and verified-empty states differ. The service-worker revision delivers it to returning readers.

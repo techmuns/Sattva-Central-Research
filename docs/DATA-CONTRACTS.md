@@ -1,6 +1,28 @@
 # Data Contracts
 
-## AI Recommendations — prepared public research
+## `public/data/ai-catalysts.json` — DERIVED, the AI Recommendations ideas (30 October 2026)
+
+Built by `scripts/build-catalyst-ideas.mjs` from captures already in `public/data/` (filings, results,
+insider and deal disclosures, investor books, broker calls, con-call highlights, technicals, market
+caps, the sector ontology) and committed by `.github/workflows/catalyst-ideas-refresh.yml`. No network
+read and no model call. The engine and its rules: [CATALYST-ENGINE.md](CATALYST-ENGINE.md).
+
+Envelope: `{version:2,stage:"catalyst-ideas",engine,playbooks,generatedAt,asOfDay,windowDays,contentHash,
+rowCount,counts:{opportunity,mixed,risk,watch,screened,companiesSeen},coverage:{filingsRead,filingsInWindow,
+filingsWithCatalysts,minUniverseMcapCr,resultsQuarter,catalystTypes},inputs:{<file>:{ok,capturedAt,…}},
+vocabulary:{catalysts,themes},method,ideas}`.
+Each idea: `{id,rank,ticker,isin,bseCode,company,inBook,sector,industry,group,groupLabel,sectorInferred,mcapCr,
+capBand,price:{cmp,asOf,changePct,source},stance:"opportunity"|"mixed"|"risk"|"watch",tier,conviction(0–100),
+risk(0–100),net,pillars:{earnings/30,growth/40,smart/20,technical/10},pricedIn,headline,why[],risks[],lens,watch[],
+kpis[],orderSummary,themes[],result,technical,nextResult,latestCatalystAt,evidence[]}`. Evidence items:
+`{type,date,title,source,url,points,kind?,generic?,amountCr?,amountBand?,ratio?,ratioBasis?,valueCr?,who?,upsidePct?,govt?,export?}`.
+`title` is the source's own statement (lead-ins and legal citations removed, never reworded);
+`amountCr` is a figure the filing states (or the lower bound of the company's own size band, with
+`amountBand: true`); `ratio` is derived from two source figures. Scores are evidence points, not
+probabilities or targets. The file is rewritten only when the ideas change or it is six hours old.
+IndexedDB `ai-catalysts:v2` retains the last valid publication through failed reads and reloads.
+
+## AI Recommendations — prepared public research (verified-filing foundation)
 
 `data/ai-recommendations.json` is prepared on GitHub Actions, retained as a hash-named public Release
 asset and installed into static delivery by the existing automatic deployment. There is no browser

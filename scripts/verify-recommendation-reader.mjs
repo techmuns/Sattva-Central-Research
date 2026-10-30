@@ -31,16 +31,24 @@ corrupt=true;await assert.rejects(transport.download(entry),/integrity/);corrupt
 await assert.rejects(transport.download({...entry,repo:'other/Repo'}),/destination/);
 inventoryIncomplete=true;await assert.rejects(transport.latest(),/inventory incomplete/);inventoryIncomplete=false;
 
-let network=value,fail=false,saved=null;
-const feed=createRecommendationFeed({now:()=>Date.parse('2026-10-21T15:00:00Z'),readSaved:async()=>saved,save:async v=>{saved={value:v};},fetcher:async()=>{
+// The reader: prepared catalyst ideas (v2), with the foundation publication above as an optional
+// "verified filing" mark on an idea it agrees with.
+const idea={id:'PRECWIRE:catalyst-engine-1',rank:1,ticker:'PRECWIRE',company:'Fixture only',stance:'opportunity',tier:'Strong',conviction:60,risk:5,net:57,
+  pillars:{earnings:20,growth:30,smart:5,technical:5},headline:'₹1,200 Cr of new orders',evidence:[{type:'order-win',date:'2026-10-19',title:'Fixture order',points:12}],themes:['orders']};
+const ideas={version:2,stage:'catalyst-ideas',engine:'catalyst-engine-1',generatedAt:'2026-10-21T13:00:00Z',ideas:[idea],rowCount:1};
+let network=ideas,fail=false,saved=null,foundation=true;
+const feed=createRecommendationFeed({now:()=>Date.parse('2026-10-21T15:00:00Z'),readSaved:async()=>saved,save:async v=>{saved={value:v};},fetcher:async url=>{
+  if(url.includes('ai-recommendations.json'))return foundation?Response.json(value):new Response('',{status:404});
   if(fail)throw Error('Fixture outage');return Response.json(network,{headers:{etag:'fixture'}});
 }});
 await feed.refresh();assert.equal(feed.rows().length,1);assert.equal(feed.meta().stale,false);
+assert.equal(feed.rows()[0].verified?.catalyst,'Verified fixture catalyst','the foundation publication marks the idea it agrees with');
 fail=true;await feed.refresh();assert.equal(feed.rows().length,1);assert.match(feed.meta().error,/outage/);
 const returning=createRecommendationFeed({readSaved:async()=>saved,save:async()=>{},fetcher:async()=>{throw Error('Offline');}});
-await returning.load();await returning.refresh();assert.equal(returning.rows()[0].id,'one');assert.match(returning.meta().error,/Offline/);
-fail=false;network={...value,generatedAt:'2026-10-20T13:00:00Z',rows:[],rowCount:0};await feed.refresh();assert.equal(feed.rows().length,1);assert.match(feed.meta().error,/Older/);
-network={...value,generatedAt:'2026-10-21T16:00:00Z',rows:[],rowCount:0};await feed.refresh();assert.equal(feed.rows().length,0,'A verified withdrawal is a real empty list');
+await returning.load();await returning.refresh();assert.equal(returning.rows()[0].id,idea.id);assert.match(returning.meta().error,/Offline/);
+fail=false;network={...ideas,generatedAt:'2026-10-20T13:00:00Z',ideas:[],rowCount:0};await feed.refresh();assert.equal(feed.rows().length,1);assert.match(feed.meta().error,/Older/);
+network={...ideas,generatedAt:'2026-10-21T16:00:00Z',ideas:[],rowCount:0};await feed.refresh();assert.equal(feed.rows().length,0,'A verified withdrawal is a real empty list');
+network={...ideas,version:1};await feed.refresh();assert.match(feed.meta().error,/Invalid/,'a v1 file is not read as ideas');
 assert.deepEqual(researchTabs.filter(t=>t.meta.navigationGroup==='alerts').map(t=>t.meta.id),['ai-alerts','ai-recommendations','daily-alerts']);
 assert.equal(TAB_META['ai-recommendations'].title,'AI Recommendations');
-console.log('PASS public recommendation integrity, retained failure/reload data, withdrawals, stale rejection and tab placement');
+console.log('PASS public recommendation integrity, prepared catalyst ideas with verified-filing marks, retained failure/reload data, withdrawals, stale rejection and tab placement');
