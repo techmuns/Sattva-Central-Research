@@ -280,7 +280,7 @@
       "pending": []
     },
     "isin:INE482D01024|CARYSIL": {
-      "lastAttemptAt": "2026-10-24T04:24:52+00:00",
+      "lastAttemptAt": "2026-10-30T08:30:45+00:00",
       "lastResultCount": 39,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-30T00:48:50+00:00",
@@ -2821,6 +2821,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 251,
-    "checkedAt": "2026-10-30T08:05:23.304835+00:00"
+    "checkedAt": "2026-10-30T08:30:45.949856+00:00"
   }
 }
