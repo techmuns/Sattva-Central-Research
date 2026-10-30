@@ -61,6 +61,15 @@ for(const date of ['2026-10-19','2026-10-20'])assert(JSON.stringify([differentCa
 const invalidCall=structuredClone(rows[2]);invalidCall.content.facts.find(f=>f.location.endsWith('/DateOfCallForTranscriptsOfEarningsOrQuarterlyCalls')).value='2026-02-31';
 assert.equal(supportingDocumentSummary(invalidCall),null,'Invalid native call dates cannot become factual prose or identity');
 assert.equal(companyReadings([]).length,0);
+// Real 28–29 October Capri Global filings: NSE files the original presentation and its revision
+// under one generic subject, and the original's NSE copy also belongs with BSE's presentation.
+// That threw "Repeated company headline"; a headline is printed once without splitting the pair.
+const presentation=JSON.parse(readFileSync(new URL('./fixtures/newsletter/investor-presentation-revision-2026-10-29.json',import.meta.url))).rows;
+const presented=editorialEvents({},companies(presentation)).events;
+const headlineOwner=new Map();for(const event of presented)for(const v of event.variants){const key=headlineKey(v.lead.headline);assert(!headlineOwner.has(key)||headlineOwner.get(key)===event.id,'Capri Global: each headline is printed once');headlineOwner.set(key,event.id);}
+const original=presented.find(e=>e.variants.some(v=>/^Investor Presentation for quarter/i.test(v.lead.headline)));
+assert(original.sources.some(url=>url.includes('CGCL_28102026172313')),'The NSE copy of the original presentation stays with its BSE filing');
+const presentedSources=new Set(presented.flatMap(e=>e.sources));assert(presentation.every(r=>presentedSources.has(r.url)),'Every Capri Global source survives');
 const tradeA={...rows[0],kind:'trade',headline:'Insider purchase reported',dek:'Director Alpha bought 10 shares',url:'https://fixture.test/trade-a',content:null};
 const tradeB={...tradeA,dek:'Director Beta bought 20 shares',at:tradeA.at+60000,url:'https://fixture.test/trade-b'};
 const measurements=editorialEvents({},companies([tradeA,tradeB])).events;
