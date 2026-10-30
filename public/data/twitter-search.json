@@ -288,7 +288,7 @@
       "pending": []
     },
     "isin:INE736A01011|Central Depository Services": {
-      "lastAttemptAt": "2026-10-24T05:04:08+00:00",
+      "lastAttemptAt": "2026-10-30T09:15:06+00:00",
       "lastResultCount": 40,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-19T05:32:20+00:00",
@@ -2821,6 +2821,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 251,
-    "checkedAt": "2026-10-30T08:30:45.949856+00:00"
+    "checkedAt": "2026-10-30T09:15:06.562739+00:00"
   }
 }
