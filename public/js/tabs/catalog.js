@@ -21,7 +21,7 @@ export const TAB_META = Object.freeze({
   },
   'ai-recommendations': {
     id: 'ai-recommendations', title: 'AI Recommendations', navigationGroup: 'alerts', layout: 'table',
-    subtitle: 'Prepared research candidates from verified catalyst evidence.', subviews: [], savedViewAvailable: false,
+    subtitle: 'Sector-aware catalyst ideas from filings, results and money flows, every claim linked to its source.', subviews: [], savedViewAvailable: false,
   },
   'ask-research': {
     id: 'ask-research',

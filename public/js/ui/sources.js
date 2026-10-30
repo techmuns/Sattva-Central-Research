@@ -779,14 +779,15 @@ export function sourceGroups() {
   const funding = privateMarketNews.meta(), fundingHealth = privateMarketNews.health();
   const recommendationState = recommendations.meta();
   groups.splice(groups.indexOf(flows), 0, { id:'recommendation-evidence', title:'Recommendation evidence', icon:'🔎', tabs:'Alerts · AI Recommendations', items:[{
-    id:'recommendation-catalysts', name:'Original NSE/BSE catalyst evidence and NSE daily reports', url:'https://www.nseindia.com/all-reports', status:'live',
-    readState:sourceReadState({at:recommendationState.generatedAt,failed:!!recommendationState.error,partial:true,maxAgeMs:8*3600000}),
-    cadence:'GitHub Actions every six hours; browser publication checks every five minutes while visible and on return.',
-    feeds:'Three evidence-based catalyst hypotheses and an immutable forward outcome ledger.',
+    id:'recommendation-catalysts', name:'Catalyst engine — filings, results, disclosures and money flows', url:'https://www.nseindia.com/all-reports', status:'live',
+    readState:sourceReadState({at:recommendationState.generatedAt,failed:!!recommendationState.error,partial:false,maxAgeMs:8*3600000}),
+    cadence:'GitHub Actions after the filing, trade, NSE, data and broker captures, with an hourly fallback; browser checks every five minutes while visible and on return.',
+    feeds:'Sector-aware catalyst ideas: orders sized against revenue, capacity, approvals, deals, promoter and investor buying, legal and governance risk.',
     details:[`Prepared: ${recommendationState.generatedAt || 'not loaded; open AI Recommendations'}. Publication checked: ${recommendationState.browserCheckedAt || 'not checked'}.`,
-      'Financial and historical coverage remains partial. Scores are research rankings; investment performance is not established. Prices retain their actual official close dates.',
-      'No paid providers or model calls. Collection, calculations and retained state stay on GitHub; the website serves prepared public JSON.'],
-    file:'data/ai-recommendations.json · recommendation-foundation.yml' }] });
+      [clause(num(() => recommendationState.counts?.screened), '<n> companies screened'), clause(num(() => recommendationState.coverage?.filingsInWindow), '<n> exchange filings read in the evidence window')].filter(Boolean).join('; ') || 'Coverage counts appear once AI Recommendations has loaded.',
+      'Deterministic evidence points, not probabilities or targets. Ratios are derived from two source figures. No paid providers or model calls; the website serves prepared public JSON.',
+      recommendationState.verifiedCount ? `${recommendationState.verifiedCount} ideas also carry the verified-filing earnings model's mark.` : 'The verified-filing earnings model (recommendation-foundation.yml) adds its mark where its publication is installed.'],
+    file:'data/ai-catalysts.json · catalyst-ideas-refresh.yml · data/ai-recommendations.json (verified-filing marks)' }] });
   groups.splice(groups.indexOf(flows), 0, { id:'private-market-news', title:'Private market funding', icon:'📰', tabs:'News · Private Market', items:[{
     id:'inc42-funding-galore', name:'Inc42 — Funding Galore', url:'https://inc42.com/tag/funding-galore/', status:'live', readState:fundingHealth.readState,
     cadence:'Source checks at least six hours apart; weekly roundups. Browser publication checks every five minutes while visible.',
