@@ -95,6 +95,14 @@ keyboard access and explicit retries. Refreshes preserve the reader's visible me
 
 ## Stack
 
+AI Recommendations catalyst engine (30 October 2026): the page reads `data/ai-catalysts.json`, built by
+`scripts/build-catalyst-ideas.mjs` from this repository's own captures (filings, results, disclosures,
+investor books, broker calls, technicals, sector ontology) and committed by `catalyst-ideas-refresh.yml`.
+Deterministic, sector-aware (`catalyst-playbooks.js`), sized against revenue and market cap, risk scored
+separately; no model call, target or probability. Every new trap gets a case in
+`verify-catalyst-engine.mjs`. Read `docs/CATALYST-ENGINE.md` before changing it. The foundation below
+stays independent and only adds a "Verified filing" mark.
+
 Recommendation evidence foundation (21 October 2026): financial-history capture and event-date
 verification run only in `recommendation-foundation.yml` on standard public GitHub Actions runners.
 The retained public SQLite generations live on GitHub Releases. The three fixed catalyst models and
@@ -4311,6 +4319,8 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change the team brief — what is in it, how it reads, when it sends | `worker/newsletter-brief.mjs` (the scan, the stories, the fold, the strict publication window, the filing particulars and the broadsheet), `worker/newsletter-schedule.mjs` (the alarm and the send), `worker/newsletter-store.mjs` (subscribers, settings, deliveries and the sent-story ledger), `public/js/data/newsletter-shared.js` (editions, windows, addresses — imported by both sides) and `public/js/ui/newsletter.js` (the header control). Read *The team brief* first. `node scripts/verify-newsletter.mjs` and `node scripts/verify-newsletter-ui.mjs` are the tests |
 | Set up the team brief on a deployment | `MUNS_TOKEN` on the Worker sends it; `DASHBOARD_ORIGIN` and `NEWSLETTER_PRODUCT_NAME` are vars in `wrangler.jsonc`; the `NEWSLETTER` binding and `NEWSLETTER_LIMITER` are there too. Subscribe from the header and the alarm arms itself |
 | Change who is asked, or how the contributor dropdown behaves | `js/ui/watchlist-attribution.js` (the prompt) + `js/core/watchlist-people.js` (the roster and this device's own name) — read *An addition carries the name of whoever made it* first. Never preselect a name on a device nobody has identified themselves on |
+| Change what AI Recommendations finds, how a sector is read, or how ideas are scored | `public/js/data/catalyst-engine.js` (vocabulary, classifier, scoring) + `catalyst-playbooks.js` (per-sector weights, lens, watch list) + `scripts/build-catalyst-ideas.mjs` (inputs and identity) — read `docs/CATALYST-ENGINE.md`; `node scripts/verify-catalyst-engine.mjs` is the test |
+| Change the AI Recommendations page | `public/js/tabs/ai-recommendations.js` + the `.rx-*` block in `public/css/theme.css`; `node scripts/verify-recommendations-ui.mjs` |
 | Change AI Alerts ranking or thresholds | `js/data/ai-alerts.js` — keep it deterministic, retain every contribution for verification without rendering the arithmetic, use the real `coverage.js` book, and test `rankReport()` directly |
 | Change what an AI Alerts card SAYS, or how many rows it shows | `plainInsight()` / `leadEvent()` / `plainHeadline()` / `filingClaim()` / `sourceStatement()` / `CLAIM_MAX` / `topEvidence()` / `MAX_PER_SOURCE` in `js/data/ai-alerts.js` (pure and exported) + `EVIDENCE_ROWS` / `byNewestFirst` / `listHeadMarkup` in `js/tabs/ai-alerts.js` — read *Time to insight is the product's only job* first: the sentence is ONE claim, the strongest event's own, so no pattern name, feed tally or filler belongs in it; no new number, and every figure comes from a collector's field; only sentences we wrote may be reworded, and a filing's claim is CHOSEN between its subject, the exchange's description and the exchange's sub-category rather than paraphrased; a clip keeps the untouched wording on the sentence's `title`; a volume reading takes no tone; and the rows are read newest first because the header says so. There is no figure strip and no per-question paragraph: `cardMetrics` is deleted and every figure it held has a place named in that section |
 | Change which investor question a topic bears on, or how a card states it | `js/data/alert-drivers.js` (the one mapping) + `driverReadings()` / `driverChipsMarkup()` in `js/tabs/ai-alerts.js` — read *Earnings assumption, valuation or thesis* first. A reading is a chip on the row whose own record backs it, never a block of its own; it is a TOPIC reading, so the wording stays "could change" and the chip never borrows a direction colour; a second reading on one row prints `+1`; and the layer adds no score |
