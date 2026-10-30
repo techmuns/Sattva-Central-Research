@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-30T00:18:12.668Z",
-  "oldestDataAt": "2026-10-30T00:18:12.668Z",
+  "capturedAt": "2026-10-30T05:48:11.337Z",
+  "oldestDataAt": "2026-10-30T05:48:11.337Z",
   "from": "2025-10-30",
   "to": "2026-10-30",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-30T00:18:12.668Z",
+      "capturedAt": "2026-10-30T05:48:11.337Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-30T00:18:12.668Z",
+      "capturedAt": "2026-10-30T05:48:11.337Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-28",
+      "latestDate": "2026-10-29",
       "oldestDate": "2026-10-15",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-30T00:18:12.668Z",
+      "capturedAt": "2026-10-30T05:48:11.337Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-30T00:18:12.668Z",
+      "capturedAt": "2026-10-30T05:48:11.337Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2061,
   "emptyCount": 0,
-  "rowCount": 22965,
+  "rowCount": 22968,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -270761,6 +270761,21 @@
     "SILGO": [
       {
         "ticker": "SILGO",
+        "date": "2026-10-29",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Silgo Retail",
+          "Insider": "Ms. Dempal Shah",
+          "Transaction": "Acquisition",
+          "Trade Shares": "565175",
+          "Broadcast Date": "2026-10-29",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SILGO",
         "date": "2026-10-12",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -328867,6 +328882,21 @@
       }
     ],
     "VALUE360": [
+      {
+        "ticker": "VALUE360",
+        "date": "2026-10-29",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Value 360 Commu.",
+          "Insider": "Craft Emerging Marketing Fund PCC",
+          "Transaction": "Sell",
+          "Trade Shares": "450000",
+          "Broadcast Date": "2026-10-29",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "VALUE360",
         "date": "2026-10-13",
@@ -432959,6 +432989,21 @@
       }
     ],
     "PURPLEUTED": [
+      {
+        "ticker": "PURPLEUTED",
+        "date": "2026-10-29",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Purple United",
+          "Insider": "Jatiner Dev Seth",
+          "Transaction": "Acquisition",
+          "Trade Shares": "83250",
+          "Broadcast Date": "2026-10-29",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "PURPLEUTED",
         "date": "2026-10-10",
