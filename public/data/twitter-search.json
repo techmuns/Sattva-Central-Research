@@ -419,7 +419,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0N0J01014|Concord Control Systems": {
-      "lastAttemptAt": "2026-10-24T13:24:05+00:00",
+      "lastAttemptAt": "2026-10-30T14:24:45+00:00",
       "error": "search-unavailable"
     },
     "isin:INE532F01054|Edelweiss Financial Services": {
@@ -2819,6 +2819,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 251,
-    "checkedAt": "2026-10-30T14:14:21.498161+00:00"
+    "checkedAt": "2026-10-30T14:24:45.882068+00:00"
   }
 }
