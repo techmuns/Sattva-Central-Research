@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-31T14:46:23.644Z",
-  "oldestDataAt": "2026-10-31T14:46:23.644Z",
-  "from": "2025-10-31",
-  "to": "2026-10-31",
+  "capturedAt": "2026-10-31T18:41:54.356Z",
+  "oldestDataAt": "2026-10-31T18:41:54.356Z",
+  "from": "2025-11-01",
+  "to": "2026-11-01",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-31T14:46:23.644Z",
+      "capturedAt": "2026-10-31T18:41:54.356Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-31T14:46:23.644Z",
+      "capturedAt": "2026-10-31T18:41:54.356Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-31T14:46:23.644Z",
+      "capturedAt": "2026-10-31T18:41:54.356Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-31T14:46:23.644Z",
+      "capturedAt": "2026-10-31T18:41:54.356Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2065,
+  "withRows": 2064,
   "emptyCount": 0,
-  "rowCount": 23121,
+  "rowCount": 23099,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -91342,52 +91342,6 @@
         }
       }
     ],
-    "SHILCTECH": [
-      {
-        "ticker": "SHILCTECH",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "SHILCTECH",
-          "Insider": "Alay Jitendra Shah",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "117000",
-          "Trade %": "1.02",
-          "Trade Value": null,
-          "Post Holding Shares": "2809548",
-          "Post Holding %": "24.55",
-          "Mode": "Market",
-          "From Date": "2025-10-21",
-          "To Date": "2025-10-21",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "SHILCTECH",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "SHILCTECH",
-          "Insider": "Alay Jtendra Shah",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "100000",
-          "Trade %": "0.87",
-          "Trade Value": null,
-          "Post Holding Shares": "2709548",
-          "Post Holding %": "23.68",
-          "Mode": "Market",
-          "From Date": "2025-10-23",
-          "To Date": "2025-10-23",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      }
-    ],
     "ENRIN": [
       {
         "ticker": "ENRIN",
@@ -95657,28 +95611,6 @@
           "From Date": "2026-01-30",
           "To Date": "2026-01-30",
           "Broadcast Date": "2026-02-09",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "VEDL",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "VEDL",
-          "Insider": "Vedanta Holdings Mauritius II Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Others",
-          "Trade Shares": "492820420",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "492820420",
-          "Post Holding %": null,
-          "Mode": "Creation",
-          "From Date": "2025-10-27",
-          "To Date": "2025-10-27",
-          "Broadcast Date": "2025-10-31",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -107283,138 +107215,6 @@
           "From Date": "2025-10-31",
           "To Date": "2025-10-31",
           "Broadcast Date": "2025-11-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWSTEEL",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "JSWSTEEL",
-          "Insider": "JSW Steel Employees Welfare Trust - JSWSL OPJ Samruddhi Plan 2021 A/c",
-          "Category": "Other",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "188",
-          "Trade %": "0",
-          "Trade Value": "228420",
-          "Post Holding Shares": "2858678",
-          "Post Holding %": "0.12",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWSTEEL",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "JSWSTEEL",
-          "Insider": "JSW Steel Employees Welfare Trust - JSWSL OPJ Samruddhi Plan 2021 A/c",
-          "Category": "Other",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "643",
-          "Trade %": "0",
-          "Trade Value": "759398",
-          "Post Holding Shares": "2861373",
-          "Post Holding %": "0.12",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-28",
-          "To Date": "2025-10-28",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWSTEEL",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "JSWSTEEL",
-          "Insider": "JSW Steel Employees Welfare Trust - OPJ ESOP Plan 2021 A/c",
-          "Category": "Other",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "10259",
-          "Trade %": "0",
-          "Trade Value": "10259",
-          "Post Holding Shares": "2848419",
-          "Post Holding %": "0.12",
-          "Mode": "Off Market",
-          "From Date": "2025-10-30",
-          "To Date": "2025-10-30",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWSTEEL",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "JSWSTEEL",
-          "Insider": "JSW Steel Employees Welfare Trust - OPJ ESOP Plan 2021 A/c",
-          "Category": "Other",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "115",
-          "Trade %": "0",
-          "Trade Value": "135815",
-          "Post Holding Shares": "2862016",
-          "Post Holding %": "0.12",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-28",
-          "To Date": "2025-10-28",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWSTEEL",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "JSWSTEEL",
-          "Insider": "JSW Steel Employees Welfare Trust - OPJ ESOP Plan 2021 A/c",
-          "Category": "Other",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1188",
-          "Trade %": "0",
-          "Trade Value": "1188",
-          "Post Holding Shares": "2860185",
-          "Post Holding %": "0.12",
-          "Mode": "Off Market",
-          "From Date": "2025-10-28",
-          "To Date": "2025-10-28",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWSTEEL",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "JSWSTEEL",
-          "Insider": "JSW Steel Employees Welfare Trust - OPJ ESOP Plan 2021 A/c",
-          "Category": "Other",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1319",
-          "Trade %": "0",
-          "Trade Value": "1602585",
-          "Post Holding Shares": "2858866",
-          "Post Holding %": "0.12",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -156900,28 +156700,6 @@
       },
       {
         "ticker": "VGUARD",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "VGUARD",
-          "Insider": "ICICI Prudential Mutual Fund",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "53077",
-          "Trade %": "0.01",
-          "Trade Value": null,
-          "Post Holding Shares": "21843603",
-          "Post Holding %": "5.01",
-          "Mode": "Market",
-          "From Date": "2025-10-20",
-          "To Date": "2025-10-20",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "VGUARD",
         "date": null,
         "cells": {
           "Company": "CHEERAN JOSEPH",
@@ -192570,28 +192348,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "Gold Family Pvt Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Pledge",
-          "Trade Shares": "200000",
-          "Trade %": "0.05",
-          "Trade Value": "225340000",
-          "Post Holding Shares": "500000",
-          "Post Holding %": "0.12",
-          "Mode": "Creation Of Pledge",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "MANIPALHOS": [
@@ -199793,226 +199549,6 @@
           "From Date": "2025-11-03",
           "To Date": "2025-11-03",
           "Broadcast Date": "2025-11-06",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Ajit Bhaskar Kamble",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "218",
-          "Trade %": "0",
-          "Trade Value": "159879",
-          "Post Holding Shares": "8583",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Ajit Bhaskar Kamble",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "307",
-          "Trade %": "0",
-          "Trade Value": "224466",
-          "Post Holding Shares": "8801",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-28",
-          "To Date": "2025-10-28",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Ajit Bhaskar Kamble",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "8452",
-          "Trade %": "0",
-          "Trade Value": "6198612",
-          "Post Holding Shares": "131",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Ajit Bhaskar Kamble",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "893",
-          "Trade %": "0",
-          "Trade Value": "652926",
-          "Post Holding Shares": "9108",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-28",
-          "To Date": "2025-10-28",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Dhinakar Balakrishnan",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1582",
-          "Trade %": "0",
-          "Trade Value": "1161694",
-          "Post Holding Shares": "10000",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Ritesh Sharma",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "11000",
-          "Trade %": "0",
-          "Trade Value": "8104910",
-          "Post Holding Shares": "92991",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Ritesh Sharma",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "21000",
-          "Trade %": "0",
-          "Trade Value": "15679020",
-          "Post Holding Shares": "71991",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-30",
-          "To Date": "2025-10-30",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Samir Jaiswal",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1700",
-          "Trade %": "0",
-          "Trade Value": "1264500",
-          "Post Holding Shares": "27000",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-20",
-          "To Date": "2025-10-30",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Sathya Ramanan",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "12000",
-          "Trade %": "0",
-          "Trade Value": "8834760",
-          "Post Holding Shares": "43021",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HDBFS",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "HDB Financial Services Ltd",
-          "Insider": "Shirley Thomas",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2800",
-          "Trade %": "0",
-          "Trade Value": "2063600",
-          "Post Holding Shares": "2487",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
@@ -213707,28 +213243,6 @@
           "From Date": "2025-11-04",
           "To Date": "2025-11-04",
           "Broadcast Date": "2025-11-04",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAUKRI",
-        "date": "2025-10-31",
-        "cells": {
-          "Company": "NAUKRI",
-          "Insider": "Info Edge Employees Stock Option Plan Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "7769",
-          "Trade %": "0",
-          "Trade Value": "15538",
-          "Post Holding Shares": "963268",
-          "Post Holding %": "0.15",
-          "Mode": "ESOP",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-10-31",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
