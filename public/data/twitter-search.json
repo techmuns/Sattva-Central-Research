@@ -603,7 +603,7 @@
       "pending": []
     },
     "isin:INE291A01017|Garware Hi-Tech Film": {
-      "lastAttemptAt": "2026-10-24T23:31:36+00:00",
+      "lastAttemptAt": "2026-10-31T05:52:01+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -2819,6 +2819,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 251,
-    "checkedAt": "2026-10-31T04:32:25.048114+00:00"
+    "checkedAt": "2026-10-31T05:52:01.514183+00:00"
   }
 }
