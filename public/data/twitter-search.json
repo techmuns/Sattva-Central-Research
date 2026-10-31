@@ -745,7 +745,7 @@
       ]
     },
     "isin:INE530B01024|IIFL": {
-      "lastAttemptAt": "2026-10-25T09:57:57+00:00",
+      "lastAttemptAt": "2026-10-31T18:41:01+00:00",
       "lastResultCount": 68,
       "error": "search-unavailable",
       "targetThrough": "2026-09-07T15:18:18+00:00",
@@ -2819,6 +2819,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 255,
-    "checkedAt": "2026-10-31T17:57:00.441026+00:00"
+    "checkedAt": "2026-10-31T18:41:01.088184+00:00"
   }
 }
