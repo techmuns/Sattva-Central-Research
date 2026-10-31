@@ -808,7 +808,7 @@
       "pending": []
     },
     "isin:INE00M901018|INTERARCH": {
-      "lastAttemptAt": "2026-10-25T14:05:08+00:00",
+      "lastAttemptAt": "2026-10-31T22:38:46+00:00",
       "error": "search-unavailable",
       "lastResultCount": 102,
       "lastSuccessAt": "2026-09-21T14:54:36+00:00",
@@ -2819,6 +2819,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 255,
-    "checkedAt": "2026-10-31T22:12:12.541238+00:00"
+    "checkedAt": "2026-10-31T22:38:46.001767+00:00"
   }
 }
