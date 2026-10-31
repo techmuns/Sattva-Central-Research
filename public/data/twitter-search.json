@@ -825,8 +825,8 @@
       ]
     },
     "isin:INE858B01029|ISGEC Heavy Engineering": {
-      "lastAttemptAt": "2026-10-25T14:44:23+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-31T23:11:51+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 10,
       "lastSuccessAt": "2026-10-25T14:44:23+00:00",
       "targetThrough": null,
@@ -2819,6 +2819,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 255,
-    "checkedAt": "2026-10-31T22:38:46.001767+00:00"
+    "checkedAt": "2026-10-31T23:11:51.837375+00:00"
   }
 }
