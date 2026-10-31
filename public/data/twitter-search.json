@@ -800,7 +800,7 @@
       "lastDiscoveryAt": "2026-10-20T07:46:04+00:00"
     },
     "isin:INE00M901018|Interarch Building Products": {
-      "lastAttemptAt": "2026-10-25T13:58:24+00:00",
+      "lastAttemptAt": "2026-10-31T22:12:12+00:00",
       "error": "search-unavailable",
       "lastResultCount": 8,
       "lastSuccessAt": "2026-10-20T07:46:04+00:00",
@@ -2819,6 +2819,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 255,
-    "checkedAt": "2026-10-31T21:19:14.690320+00:00"
+    "checkedAt": "2026-10-31T22:12:12.541238+00:00"
   }
 }
