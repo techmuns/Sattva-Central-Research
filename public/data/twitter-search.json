@@ -1340,9 +1340,9 @@
       "pending": []
     },
     "isin:INE417T01026|PB Fintech": {
-      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastAttemptAt": "2026-11-01T23:09:51+00:00",
       "lastResultCount": 101,
-      "error": "result-cap-incomplete",
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
       "targetThrough": "2026-10-16T06:34:32+00:00",
       "pending": [
@@ -2826,6 +2826,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-11-01T22:32:33.443257+00:00"
+    "checkedAt": "2026-11-01T23:09:51.152599+00:00"
   }
 }
