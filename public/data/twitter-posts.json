@@ -1,10 +1,558 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-01T01:41:12+00:00",
+  "capturedAt": "2026-11-01T19:50:04+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2116966040790077596",
+      "handle": "SwingAcumen",
+      "display_name": "Market Acumen",
+      "text": "🚨 MAJOR ORDER WINS — NCC, OSWAL PUMPS, AFCONS &amp; L&amp;T https://t.co/FTDHaeVL9s",
+      "created_at": "2026-11-01T18:50:10+00:00",
+      "url": "https://x.com/SwingAcumen/status/2116966040790077596",
+      "image": "https://pbs.twimg.com/media/HWD5ZCfbsAAKPnk.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116947498485112881",
+      "handle": "sandeepk8",
+      "display_name": "Sandeep",
+      "text": "Hey @SonuSood pls meri help karo mere pe 65000 ka loan hai agar main kal subah kissht nahi bhari to wo ghar chala jayega pls kuch paise de do",
+      "created_at": "2026-11-01T17:36:29+00:00",
+      "url": "https://x.com/sandeepk8/status/2116947498485112881",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116908921864556834",
+      "handle": "politondata",
+      "display_name": "Politon Data",
+      "text": "Todo mês, a Politon Data mostra quanto a União pagou a cada Poder no último mês com dados já publicados. Este é setembro de 2026.\n\nPagamentos nos Orçamentos Fiscal e da Seguridade Social (OFSS) da União em setembro/2026: cerca de R$ 526,7 bi (R$ 526.658.813.945,83) · −19,6% vs. agosto (R$ 655,1 bi).\n• Executivo: cerca de R$ 518,7 bi (R$ 518.662.008.451,06) · −19,9% vs. agosto\n• Judiciário: cerca de R$ 5,7 bi (R$ 5.724.874.992,35) · +8,8% vs. agosto\n• Legislativo, incluindo TCU: cerca de R$ 1,4 bi (R$ 1.359.269.667,83) · −1,0% vs. agosto\n• Ministério Público da União e CNMP: cerca de R$ 846,4 mi (R$ 846.359.967,44) · +29,1% vs. agosto\n• Defensoria Pública da União: cerca de R$ 66,3 mi (R$ 66.300.867,15) · +62,3% vs. agosto\n\nAcumulado de janeiro a setembro de 2026 (9 meses publicados): cerca de R$ 4,8 tri (R$ 4.761.964.664.973,09).\n\nPor brasileiro: R$ 2.467,70 em setembro = R$ 526,7 bi ÷ 213.421.037 habitantes, o equivalente a 1,5 salários mínimos de 2026 (R$ 1.621,00). Conta da Politon Data; o total inclui dívida e despesas financeiras.\nPopulação: IBGE, Estimativas da População 2025 (Portaria IBGE nº 1.098/2025, DOU 28/08/2025), ref. 1º/7/2025 — https://t.co/svt5nRWbnL\nSalário mínimo: Decreto nº 12.797/2025 (DOU 24/12/2025) — https://t.co/LjuuCtv20Q\n\nSiglas: OFSS = Orçamentos Fiscal e da Seguridade Social · TCU = Tribunal de Contas da União · MPU = Ministério Público da União · CNMP = Conselho Nacional do Ministério Público · DPU = Defensoria Pública da União · Siafi = Sistema Integrado de Administração Financeira · RREO = Relatório Resumido da Execução Orçamentária.\n\nRessalvas:\nInclui restos a pagar, despesas financeiras e dívida. Exclui Extra-Siafi e o Orçamento de Investimento das estatais.\nDados publicados e revisáveis. Não representam fechamento definitivo nem todo o custeio público.\nA competência de setembro de 2026 está fora do intervalo de controle RREO disponível, de janeiro de 2026 a agosto de 2026.\nFonte: Tesouro Transparente; verificação: 31/10/2026 01:24 UTC.\nVariações e acumulado calculados pela Politon Data com os arquivos mensais do mesmo script oficial (verificações Tesouro: 31/10/2026 01:24 UTC; 31/10/2026 13:15 UTC).\n\nDataset: https://t.co/pPJPMmWSmH\nRecurso: https://t.co/x0Xm2A8j3j\nhttps://t.co/fIhHWfSTBx | Transparência que transforma.\n#PolitonData #GastosPublicos #Orcamento #Transparencia",
+      "created_at": "2026-11-01T15:03:11+00:00",
+      "url": "https://x.com/politondata/status/2116908921864556834",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116894993990459749",
+      "handle": "chartwhisp60202",
+      "display_name": "Chart Whisperer",
+      "text": "BROAD-BASED SELLING: 45 STOCKS DOWN OVER 5%\n\n1. Black Box -9.01%\n2. Ksolves India -11.88%\n3. Quality Power -6.11%\n4. Kanohar Electricals -11.13%\n5. Powerica -6.38%\n6. Gujarat Themis -8.70%\n7. Man Industries -6.06%\n8. Commercial Syn Bags -9.21%\n9. Avalon Tech -6.41%\n10. Omnitech Engineering -7.81%\n11. Datamatics -6.49%\n12. Vikram Thermo -7.77%\n13. Shringar House -6.66%\n14. Timex Group -6.58%\n15. Dynamic Cables -6.51%\n16. Waaree Renewable -5.43%\n17. SKM Egg Products -6.73%\n18. Onemi Tech -6.05%\n19. Himadri -5.42%\n20. Netweb -5.42%\n21. Shanti Gold -5.65%\n22. Vishnu Chemicals -5.65%\n23. Filatex India -5.57%\n24. Accelya -5.52%\n25. Shankesh Jewellers -5.51%\n26. M&B Engineering -5.45%\n27. Oswal Pumps -5.34%\n28. Power Mech -5.26%\n29. AGI Infra -5.24%\n30. Dynacons Sys -5.15%\n31. Latent View -5.13%\n32. KFin Tech -5.08%\n33. Skipper -5.07%\n34. JSW Dulux -5.07%\n35. R R Kabel -5.05%\n36. Marine Electricals -5.04%\n37. Garuda Cons -5.04%\n38. V2 Retail -5.03%\n39. India Nippon Electricals -6.16%\n40. Symphony -5.82%\n41. Sika Interplant -5.80%\n42. Enviro Infra -5.79%\n43. Onward Tech -5.76%\n44. Aeroflex -5.70%\n45. Shringar House -6.66%",
+      "created_at": "2026-11-01T14:07:51+00:00",
+      "url": "https://x.com/chartwhisp60202/status/2116894993990459749",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116888233665839293",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | EPFO rolls out WhatsApp services, automatic settlement of inactive PF accounts up to Rs 1,000\n\nWhat subscribers need to know👇\nhttps://t.co/SOKT88n99u",
+      "created_at": "2026-11-01T13:40:59+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116888233665839293",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116879691923820791",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Watch | Union Railway Minister Ashwini Vaishnaw inspected the manufacturing of India's first indigenously developed high-speed bullet train, B28, at BEML's Aditya manufacturing facility in Bengaluru, Karnataka. The trainsets are being developed for the Mumbai–Ahmedabad High-Speed Rail Corridor, with a design speed of 280 kmph and an operational speed of 249 kmph.\n\nThe project involves the development of two eight-coach trainsets by BEML. The first prototype is expected to be ready in the first quarter of 2027, following which it will undergo extensive testing and trials. The development marks a significant step towards strengthening India's indigenous high-speed rail manufacturing capabilities.",
+      "created_at": "2026-11-01T13:07:02+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116879691923820791",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116877929687003580",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Crude oil prices likely to remain volatile with upward bias amid US-Iran tensions: Analysts\n\n- Crude oil prices expected to remain volatile with upward bias.\n- US-Iran tensions and Strait of Hormuz risks drive oil gains.\n- Brent crude nears USD 118 per barrel amid supply concerns.\n\nRead More:\nhttps://t.co/F4jhILphiS",
+      "created_at": "2026-11-01T13:00:02+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116877929687003580",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116877297190092995",
+      "handle": "biswalsk22",
+      "display_name": "susanta biswal",
+      "text": "listed #TOPMNCs in India\nCapital Goods, Power & Energy Transition:\n• Siemens Energy India Ltd\n• GE Vernova T&D India\n• Siemens Ltd\n• ABB India\n• Honeywell Automation India\n• Schneider Electric Infrastructure\n• Hitachi Energy India\nIndustrial, Auto Components & Bearings:\n• Bosch Ltd\n• Cummins India\n• 3M India\n• SKF India\n• Schaeffler India\n• Timken India\n• Castrol India\n• Kansai Nerolac Paints\nFMCG & Consumer Staples:\n• Hindustan Unilever (HUL)\n• Nestlé India\n• Procter & Gamble Hygiene and Health Care (P&G)\n• Colgate-Palmolive (India)\n• Whirlpool of India\n• Bata India\nPharma, Healthcare & Diagnostics:\n• Abbott India\n• Sanofi India\n• GlaxoSmithKline Pharmaceuticals (GSK)\n• Pfizer India\n• Astrazeneca Pharma India\n• Gland Pharma\nIT, Digital & Financial Services:\n• Oracle Financial Services Software (OFSS)\n• Nippon Life India Asset Management",
+      "created_at": "2026-11-01T12:57:31+00:00",
+      "url": "https://x.com/biswalsk22/status/2116877297190092995",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        },
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116870508591620589",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | “Vanish Kumar ji, when will you vanish?”\n\nUsing a parody of the popular 'Johny Johny Yes Papa' rhyme, Former West Bengal Chief Minister Mamata Banerjee said, “Vanish Vanish, yes papa, Vote chori? Yes Papa.” \n\nAddressing the rally at the Ramlila Maidan, Banerjee asked: 'Vanish Kumar ji, when will you vanish? We are waiting'. Raising doubts over the Special Intensive Revision (SIR) of electoral rolls in West Bengal, she said \"Bengal is a victim of SIR\".\n\n#MamataBanerjee #GyaneshKumar #RamlilaMaida",
+      "created_at": "2026-11-01T12:30:33+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116870508591620589",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116861761957556403",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "IDBI Bank employees call nationwide strike on November 2-3 over proposed sale to Fairfax\n\n- IDBI Bank staff to strike on Nov 2-3 against privatisation.\n- Union demands cancellation of sale to Canada's Fairfax Group.\n- Bank posted strong profits after heavy public investment.\n\nRead More:\nhttps://t.co/9hbGltBJtC",
+      "created_at": "2026-11-01T11:55:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116861761957556403",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116861350760878591",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Jaishankar calls for secure global supply chains, says de-risking key to economic resilience\n\nAddressing the G20 Foreign Ministers’ Meeting in Atlanta, S Jaishankar called for diversified and transparent supply chains, warning that conflicts, pandemics and climate events threaten global economic resilience.\n\nRead More:\nhttps://t.co/awO6v5VT5D",
+      "created_at": "2026-11-01T11:54:10+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116861350760878591",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116860927333257327",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Coal power generation jumps 25.7% in October, fastest in three years, as hydro output slumps\n\nWeak rainfall linked to El Niño cut hydropower by 26%, while strong industrial demand pushed coal’s share of India’s electricity generation to nearly 72%\n\nRead More:\nhttps://t.co/EdvGvY4spP",
+      "created_at": "2026-11-01T11:52:29+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116860927333257327",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116859729825989065",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "DeepSeek drops enhanced coding agent with aim to rival Anthropic\n\nThe new agent aims to “take as little human attention as possible, and give as much value as possible,” DeepSeek said in a user manual on GitHub.\n\nRead More:\nhttps://t.co/ceMPc3fm7y",
+      "created_at": "2026-11-01T11:47:43+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116859729825989065",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116858946929688657",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Indian Bank targets Rs 100 crore lending under EV charging scheme in FY27: MD\n\nThe bank has launched 'IND Green Charge', a financing scheme for public, captive and fleet charging stations under both standalone and franchise models\n\nRead More:\nhttps://t.co/nsXAOpGDTy",
+      "created_at": "2026-11-01T11:44:36+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116858946929688657",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116858569220042826",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "IN PHOTOS | Experimental saffron cultivation on restored degraded land in Leh has recorded its first bloom in just 30 days, against the usual two-month timeline. With nearly 22 grams of saffron harvested in four days, the pilot project highlights Ladakh’s potential for high-altitude farming and future commercial-scale production, opening new opportunities for local entrepreneurship and economic growth.\n\nHere’s a glimpse of saffron cultivation in Jammu and Kashmir and Leh.\n\n#Saffron #JammuKashmir #Leh #Ladakh",
+      "created_at": "2026-11-01T11:43:06+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116858569220042826",
+      "image": "https://pbs.twimg.com/media/HWCXoOobAAIRSzD.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116857592727429148",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | From Carlsberg to Coca-Cola: Global beverage giants gear up for India IPOs\n\n- Carlsberg, Pernod Ricard and Coca-Cola plan Indian IPOs.\n- Carlsberg filed an updated draft prospectus with SEBI.\n- Coca-Cola explores listing its Indian bottling unit.\n\nRead More:\nhttps://t.co/wiVtdCciW7",
+      "created_at": "2026-11-01T11:39:14+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116857592727429148",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116855449760989482",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Yes Bank rejects wilful disobedience charge as AT-1 bond trustee warns contempt action\n\nAxis Trustee Services has warned of contempt proceedings against the bank, its directors and officers for alleged non-compliance with the Supreme Court judgment\n\n@archishmaaa reports: \nhttps://t.co/JPIrzzEdhh",
+      "created_at": "2026-11-01T11:30:43+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116855449760989482",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116855180935549380",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Heidi Klum has returned with yet another outlandish Halloween makeover. This time, she transformed herself into an enormous, blood-covered hand.\n\nKlum made a striking arrival in a truck plastered with red warning signs, joined by individuals in yellow hazmat suits. \n\nHer outfit showcased an oversized hand with lengthy red-painted nails and rings, while her wrist looked as though it had been severed. Her face appeared from the middle of the palm, with just her eyes and mouth showing.\n\n#HeidiKlumHalloween #Halloween2026",
+      "created_at": "2026-11-01T11:29:39+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116855180935549380",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116835570001576028",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCExclusive | 🚨 Binance is publicly committed to backstopping this hacking incident with its own assets: APAC Head SB Seker\n\n-Binance committed to backstop $6.3B hack with own assets.\n-90 percent of stolen assets have been replenished so far.\n-FBI confirms North Korean group TraderTraitor committed theft.\n\n@debanganaghosh4 reports: \nhttps://t.co/s4CjH18ML6",
+      "created_at": "2026-11-01T10:11:43+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116835570001576028",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116833264434634893",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Binance says 90% of stolen crypto assets replenished after $6.3 billion security breach\n\n- Binance sets aside $6.34B to cover $6.3B security breach.\n- Around 90% of stolen token assets are already replenished.\n- Breach linked to North Korean hacking group TraderTraitor.\n\nRead More:\nhttps://t.co/haX6JwnfEb",
+      "created_at": "2026-11-01T10:02:33+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116833264434634893",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116832952659399033",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "@Sharadkum123 Dear Customer, We have shared the necessary information and clarification regarding your concern via private message. We kindly request you to check the same. If you require any further assistance, please feel free to reach out to us via DM. Thank you! https://t.co/ZY1aPkU834",
+      "created_at": "2026-11-01T10:01:19+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2116832952659399033",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116832626304811351",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#EarningsWithMc | Oil PSUs earn Rs 30,106 crore in Q2, nearly 39% of annual profit, despite fuel sale losses\n\nIOC, BPCL and HPCL posted a combined standalone net profit of Rs 30,106 crore in the September quarter, as higher refining margins and inventory gains offset losses on fuel sales and Rs 67,900 crore in accumulated under-recoveries.\n\nRead More:\nhttps://t.co/gQI5ENksU7",
+      "created_at": "2026-11-01T10:00:01+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116832626304811351",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116830127757901899",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "@RajputRavi78194 Dear Customer, We have shared the necessary information and clarification regarding your concern via private message. We kindly request you to check the same. If you require any further assistance, please feel free to reach out to us via DM. Thank you! https://t.co/ZY1aPkU834",
+      "created_at": "2026-11-01T09:50:05+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2116830127757901899",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116827335840125291",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "SEBI working to delist companies with no economic activity to protect investors: Chairman\n\nSEBI chairman Tuhin Kanta Pandey said the regulator is working to delist companies with no economic activity, citing their use in 'pump and dump' operations, while also preparing proposals to ease certain FPI norms.\n\nRead More:\nhttps://t.co/GTzHFLA9sT",
+      "created_at": "2026-11-01T09:39:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116827335840125291",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116826723484672440",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | M&M's October vehicle sales hit record 1.31 lakh units, exports jump 77%\n\nMahindra & Mahindra's total vehicle sales rose 9% year-on-year to a record 1,31,109 units in October, driven by festive demand and strong exports, which surged 77%.\n\nRead More:\nhttps://t.co/I0xtunuHnE",
+      "created_at": "2026-11-01T09:36:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116826723484672440",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116826337717395633",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | FPI outflows hit Rs 2.95 lakh crore in 2026 as foreign investors sell Indian stocks for second month\n\nForeign portfolio investors withdrew Rs 34,843 crore from Indian equities in October for the second straight month, taking 2026 outflows to Rs 2.95 lakh crore, though they infused around Rs 6,300 crore in the final week.\n\nRead More:\nhttps://t.co/CMxOKjUkD9",
+      "created_at": "2026-11-01T09:35:02+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116826337717395633",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116822755140313453",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Vande Bharat Sleeper Express between Bengaluru and Mumbai flagged off\n\n- New Vande Bharat Sleeper to connect Bengaluru and Mumbai.\n- Bengaluru-Pune bullet train corridor announced.\n- Bengaluru-Mangaluru Vande Bharat coming in weeks.\n\nRead More:\nhttps://t.co/xodVLPMHWY",
+      "created_at": "2026-11-01T09:20:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2116822755140313453",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116817148387774734",
+      "handle": "Rational1947",
+      "display_name": "Rational Mind",
+      "text": "is Kissht getting hacked??? @kothariabhishek @latha_venkatesh @imFmoharkan https://t.co/7QOFpq2WDY",
+      "created_at": "2026-11-01T08:58:31+00:00",
+      "url": "https://x.com/Rational1947/status/2116817148387774734",
+      "image": "https://pbs.twimg.com/media/HWBxzlQbQAAyZwq.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116802426309419478",
+      "handle": "CapitalTrends",
+      "display_name": "Capital Trends",
+      "text": "IT sector has been a mixed bag over 5 years!  \n\nTop performers:\n• OFSS +125.9%\n• COFORGE +109.94%\n• PERSISTENT +54.14%\n• HCLTECH +24.86%\n• TECHM +21.18%  \n\nOFSS and COFORGE have clearly led the pack, while large caps like TCS, INFY and WIPRO are still in the red. https://t.co/Lk67idsK50",
+      "created_at": "2026-11-01T08:00:01+00:00",
+      "url": "https://x.com/CapitalTrends/status/2116802426309419478",
+      "image": "https://pbs.twimg.com/media/HWBMAybbEAErYGP.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116798135037309016",
+      "handle": "lokeshmittal_",
+      "display_name": "Lokesh Mittal",
+      "text": "@nakulvibhor Oswal Pumps @ ipo price.",
+      "created_at": "2026-11-01T07:42:58+00:00",
+      "url": "https://x.com/lokeshmittal_/status/2116798135037309016",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116787070379114809",
+      "handle": "BhartiyNiveshak",
+      "display_name": "Upgrade Your Life",
+      "text": "OnEMI (Kissht) – Q2 FY27\n\nRevenue: ₹732 Cr (+45% YoY | +9% QoQ)\nPAT: ₹125 Cr (+100% YoY | +32% QoQ)\nEPS: ₹7.1 (+51% YoY)\n\nAUM: ₹9,317 Cr (+68% YoY | +16% QoQ)\nDisbursements: ₹4,612 Cr (+56% YoY)\n\nPPOP ₹287 Cr (+40% YoY). RoAAUM 5.78% and RoAE 21.65% (annualised). GNPA improved to 2.18% (-75 bps YoY). Net worth ₹2,377 Cr (+103% YoY). Cumulative customers 12.8 Mn (+22% YoY). Raised FY27 AUM growth guidance to 60%+ with focus on asset quality (GNPA target <2.25%).",
+      "created_at": "2026-11-01T06:59:00+00:00",
+      "url": "https://x.com/BhartiyNiveshak/status/2116787070379114809",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116785344536551772",
+      "handle": "Harry1515356",
+      "display_name": "Harry",
+      "text": "@Govind0025 Ofss?",
+      "created_at": "2026-11-01T06:52:08+00:00",
+      "url": "https://x.com/Harry1515356/status/2116785344536551772",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116785018248773923",
+      "handle": "ChikouTrader",
+      "display_name": "Mаղʝմռα𝗍𝗁 Տ",
+      "text": "#KISSHT  : CMP - 304\n\nBearish, should test 225- 240 levels shortly !\n\nSEBI Unregistered. DYOR. Refer to bio for disclaimer.  \n\n#Investing   \n#OnEMITechnology",
+      "created_at": "2026-11-01T06:50:50+00:00",
+      "url": "https://x.com/ChikouTrader/status/2116785018248773923",
+      "image": "https://pbs.twimg.com/media/HWBUofdaAAAFkVj.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116770048614572442",
+      "handle": "DrRomeetSaha",
+      "display_name": "Dr. Romeet Saha",
+      "text": "Q2 FY27: Concalls with Strong Growth Guidance\n\nHFCL\nRevenue growth guidance for FY27 has been raised from 20% to 40%, and now to over 80%. The order book stands at ₹28,900 Cr, and management sees ₹10,000 Cr revenue possibly before FY29.\n\nSterlite Tech\nThe order book has grown from ₹7,700 Cr in April to ₹35,000 Cr. Management has reiterated its target of ₹20,000 Cr revenue by FY29.\n\nNetweb\nRevenue grew 336%, with AI servers up about 10x. The company is aiming for ₹4,000 Cr revenue this year, with an ₹11,000 Cr pipeline.\n\nMTAR\nRevenue tripled this quarter, and full-year growth guidance is 80%. Order wins in H1 were ₹4,100 Cr.\n\nUnimech Aerospace\nRevenue nearly doubled and the order book is up about 8x. Over 340 parts are still in qualification, with a larger ramp-up expected from FY28.\n\nApollo Micro\nGuiding for 35–45% growth. The order book is at a record level and is expected to cross ₹2,000 Cr by March. Planned expansion takes capacity to almost 12x current levels.\n\nSri Lotus\nRevenue and profit growth guided at 55–60% for the year. H1 pre-sales grew 176%.\n\nAarti Pharmalabs\nProfit rose from ₹24 Cr to ₹66 Cr. Growth guidance for this year is 40–50%, with peptides expected to contribute from FY28.\n\nAcutaas\nThe ₹1,000 Cr CDMO revenue target has been reached a year ahead of plan. The next target is ₹2,000 Cr by FY30, with margins near 40%.\n\nSG Mart\nManagement has guided for 50%+ annual earnings growth over the next 3–4 years.\n\nSakar Healthcare\nProfit grew 149%. Oncology revenue is expected at about ₹200 Cr this year and ₹300 Cr next year, becoming roughly half the business.\n\nKissht (Onemi)\nProfit doubled, and loan growth guidance has been raised to over 60%.\n\nOther companies with strong guidance:\nShadowfax: revenue +57%, hyperlocal deliveries +88%\nBluestone: revenue +44%, ₹12,000 Cr ambition by FY30\nDeepa Jewellers: guiding 40–45% annual growth till FY29\nSenores: profit growth guided at 50–60%\nPoonawalla: profit up about 5x\nSG Finserve: profit growth guided at 35–40%\nAeroflex: ₹1,500 Cr revenue target by FY30, led by data centre cooling\nMacpower: growth guidance raised to 35%\nKarnika: H1 revenue +75%\nNeochem: growth guidance above 40%\n\nThese are summaries of what management shared on the calls, not recommendations.",
+      "created_at": "2026-11-01T05:51:21+00:00",
+      "url": "https://x.com/DrRomeetSaha/status/2116770048614572442",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116768180651860370",
+      "handle": "VSR9000",
+      "display_name": "VSR",
+      "text": "#MOBIKWIK #ORIENTTECH #JYOTICNC #JAINREC #JGCHEM #PREMIERENE #EXICOM #PLATIND #BHARTIHEXA #CPPLUS #RUBICON #SAILIFE\n\n67 IPOs. One request to SEBI on behalf of us all. 👆\n\nWAAREEENER, BAJAJHFL, UNIECOM, EPACK, NOVAAGRI, BLSE, RPTECH, VSTL, MUKKA, SRM, JNKINDIA, TBOTEK, AWFIS, IXIGO, DEEDEV, ABDL, EMCURE, INTERARCH, GALAPREC, KRN, DIFFNKG, GARUDA, EIEL, VMM, MAMATA, SENORES, UNIMECH, STALLION, QUADFUTURE, AEQUS, SUDEEPPHRM, VIDYAWIRES, SHANTIGOLD, CORONA, SHRINGARMS, SHREEJISPG, EBGNG, BELRISE, ATLANTAELE, PROSTARM, MEESHO, GROWW, SAMBHV, ESDS, RAMBHAJO, INDOMIM, XTRANET, MILKYMIST, TECHNOCRAF, MVELECTRO, JSIPL, KISSHT, TEMPSENS, SSRETAIL, LALITHAA",
+      "created_at": "2026-11-01T05:43:56+00:00",
+      "url": "https://x.com/VSR9000/status/2116768180651860370",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116747888160305620",
+      "handle": "SmarTradingA",
+      "display_name": "Smart Trading Alerts",
+      "text": "Emkay Global Financial Services, Aarti Pharmalabs, OnEMI Technology Solutions, RR Kabel, Credit Connect Care, Shree Refrigeration, Gokul Agro Resources, Aeroflex Industries, Macfos, Reliance Industries, Foseco Crucibles, Vedanta Aluminium Metals, Gulf Oil Lubricants",
+      "created_at": "2026-11-01T04:23:18+00:00",
+      "url": "https://x.com/SmarTradingA/status/2116747888160305620",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116724457054281948",
+      "handle": "growth_edge_",
+      "display_name": "GrowthEdge",
+      "text": "Not all IPOs deserve to sell on opening.\n\nListing gains tell only half the story.\n\nHere are some FY27 IPOs trading 50%+ above their offer price:🔥\n\n✅️Tonbo Imaging India: 86%\n\n✅️Jindal Supreme: 76%\n\n✅️Steamhouse India: 63%\n\n✅️ESDS Software Solution: 170%\n\n✅️Lalithaa Jewellery Mart: 79%\n\n✅️Milky Mist Dairy Food: 119%\n\n✅️Dhoot Transmission: 77%\n\n✅️Technocraft Ventures: 119%\n\n✅️MV Electro Systems: 71%\n\n✅️Indo MIM: 142%\n\n✅️Xtranet Technologies: 122%\n\n✅️Onemi Technology: 78%",
+      "created_at": "2026-11-01T02:50:12+00:00",
+      "url": "https://x.com/growth_edge_/status/2116724457054281948",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116641582468509904",
+      "handle": "jwadellai",
+      "display_name": "pupupadel",
+      "text": "@daily_hoosier I know our ofss like shit, but how y special teams who big part of natty last year play like shit this year. Mf radicic you are worst Croatia person I've seen who kicking the ball, mf y from Balon D'or winner luka Modric but what is that kick dude",
+      "created_at": "2026-10-31T21:20:53+00:00",
+      "url": "https://x.com/jwadellai/status/2116641582468509904",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
     {
       "tweet_id": "2116637822954139971",
       "handle": "DragaMariba",
@@ -18,6 +566,26 @@
         {
           "entityId": "isin:INE854B01010",
           "query": "\"Datasel\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116634886555713835",
+      "handle": "VSR9000",
+      "display_name": "VSR",
+      "text": "67 IPOs. One request to SEBI on behalf of us all.\n\nA humble request: Please repost this until it becomes a regulatory amendment.\n\nImagine being a 20–30-year-old direct equity investing enthusiast, building a portfolio with the ambition of creating generational wealth over the next few decades...\n\nBetween 2024 and October 2026, we identified 67 mainboard IPOs that were subscribed over 5× and, at some point since listing, traded at least 100% above their IPO issue price.\n\nYes some have corrected significantly since then.\n\nThat's not the point.\n\nThese 67 IPOs could have been opportunities for young investors like me to begin building long-term ownership in selective businesses.\n\nBut overwhelming subscription demand meant many of us couldn't secure allotments.\n\nAnd after listing, valuations, limited monthly cash flows or other circumstances kept us from entering.\n\nAs long-term investors, we think in decades, not quarters.\n\nWe have anchor allocations for institutional investors, including mutual funds.\n\nBut there is no comparable dedicated allocation for individual investors willing to commit their capital for the long term.\n\nWhy can't a small portion of IPO shares be reserved for long-term retail investors who voluntarily commit to a defined lock-in period?\n\nI request SEBI and the concerned regulators to consider such an amendment, with transparent eligibility and appropriate safeguards.\n\n@BeingPractical @lkeshre @Nithin0dha @nikhilkamathcio \n\nYou have made direct equity investing accessible to millions of Indians, Thank you so much,,,\n\nI believe you are better placed to bring this proposal to the regulators and advocate for the next generation of long-term retail investors.\n\nHelp us build ownership, not just access to trading.\n\nThank you in advance.\n\nThese 67 IPOs illustrate the opportunities that many young investors could have participated in.\n\nNot every one will become a long-term wealth creator, but access to early ownership matters.\n\nNSE symbols (2024–2026):\n\nPREMIERENE, WAAREEENER, BAJAJHFL, UNIECOM, MOBIKWIK, JYOTICNC, EPACK, NOVAAGRI, BLSE, RPTECH, VSTL, PLATIND, EXICOM, MUKKA, JGCHEM, SRM, BHARTIHEXA, JNKINDIA, TBOTEK, AWFIS, IXIGO, DEEDEV, ABDL, EMCURE, INTERARCH, ORIENTTECH, GALAPREC, KRN, DIFFNKG, GARUDA, EIEL, VMM, SAILIFE, MAMATA, SENORES, UNIMECH, STALLION, QUADFUTURE, JAINREC, AEQUS, SUDEEPPHRM, VIDYAWIRES, SHANTIGOLD, CORONA, SHRINGARMS, CPPLUS, RUBICON, SHREEJISPG, EBGNG, BELRISE, ATLANTAELE, PROSTARM, MEESHO, GROWW, SAMBHV, ESDS, RAMBHAJO, INDOMIM, XTRANET, MILKYMIST, TECHNOCRAF, MVELECTRO, JSIPL, KISSHT, TEMPSENS, SSRETAIL, LALITHAA",
+      "created_at": "2026-10-31T20:54:16+00:00",
+      "url": "https://x.com/VSR9000/status/2116634886555713835",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -66,6 +634,134 @@
         {
           "entityId": "isin:INE854B01010",
           "query": "\"Datasel\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116608526814449740",
+      "handle": "bafnavaibhav",
+      "display_name": "Vaibhav Bafna",
+      "text": "My proprietary screen just ran on the Nifty 500. Top 3 on my radar:\nGESHIP: Q1 PAT +159%\nCHENNPETRO: Q2 PAT +212%\nOFSS: H1 revenue +38%\nNot a go yet, more screening needed. Same model flagged Sterlite Tech and HFCL early. Want the full list when it opens up?",
+      "created_at": "2026-10-31T19:09:32+00:00",
+      "url": "https://x.com/bafnavaibhav/status/2116608526814449740",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116596398816968942",
+      "handle": "Harry1515356",
+      "display_name": "Harry",
+      "text": "@PspkOG18 @akashpatel1812 Holding ofss?",
+      "created_at": "2026-10-31T18:21:20+00:00",
+      "url": "https://x.com/Harry1515356/status/2116596398816968942",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116574347301134521",
+      "handle": "grok",
+      "display_name": "Grok",
+      "text": "@ChikouTrader From the replies, most requested stocks (appearing multiple times):\n\nOnEMI Technology\nHUDCO\nSuzlon\nHFCL\nNTPC\nKFintech\nPaisalo Digital\n\nMany others mentioned once. Highest volume overall still low given 50+ replies.",
+      "created_at": "2026-10-31T16:53:43+00:00",
+      "url": "https://x.com/grok/status/2116574347301134521",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116569614155157718",
+      "handle": "Santosh83707516",
+      "display_name": "Santosh 🙏🙏🙏",
+      "text": "आदरणीय प्रधानमंत्री श्री @narendramodi जी, माननीय वित्त मंत्री जी एवं @FinMinIndia से विनम्र अनुरोध है। 🙏\n\nदेश के गरीब और आर्थिक रूप से परेशान लोन डिफॉल्टरों की समस्याओं पर भी ध्यान दीजिए।\n\nRing, Kissht और अन्य लोन ऐप्स एवं उनकी फाइनेंस कंपनियों के कारण कई लोग मानसिक और आर्थिक तनाव झेल रहे हैं।\n\nबार-बार अनुरोध और शिकायत करने के बावजूद समाधान नहीं मिल रहा है।\n\nमेरी मांग है कि:\n\n1. RBI सभी संबंधित फाइनेंस कंपनियों की जांच करे।\n2. परेशान कर्जदारों को उचित लोन सेटलमेंट और री-स्ट्रक्चरिंग का विकल्प मिले।\n3. ब्याज और पेनल्टी के नाम पर बढ़ते बोझ की समीक्षा हो।\n4. RBI के नियमों का पालन नहीं करने वाली कंपनियों पर उचित कार्रवाई हो।\n5. गरीब और मजबूर कर्जदारों को सम्मानजनक समाधान मिले।\n\nकृपया हमारी आवाज सुनिए। हमें कर्ज से राहत और सम्मान के साथ जीवन जीने का अवसर दीजिए। 🙏\n\n#LoanAppHarassment #RBI #LoanSettlement #FinMinIndia\n@narendramodi 🙏\n@nsitharamanoffc 🙏\n@FinMinIndia 🙏",
+      "created_at": "2026-10-31T16:34:54+00:00",
+      "url": "https://x.com/Santosh83707516/status/2116569614155157718",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116553288070103385",
+      "handle": "Keerti__Sharma",
+      "display_name": "\"Keerti | Macro & Equity Research\"",
+      "text": "#Kissht runs two businesses.\n\nOne lends its own money, like a small bank. The other is a platform. Kissht finds borrowers for big lenders, collects the EMIs and earns a fee.\n\nThe platform needs little capital, so it can grow fast. That was our bet in the video. About three quarters of the value sits there.\n\nThis quarter the platform grew faster. Partner loans rose 19% in three months, own loans 13%. Profit doubled to ₹125 crore.\n\nKissht covers the first 5% of losses on partner loans. That number is not shared yet.\n\nThe bet is playing out. The platform is now more than half the book, and growing fastest.\n\nhttps://t.co/NUwIx8pLSe",
+      "created_at": "2026-10-31T15:30:02+00:00",
+      "url": "https://x.com/Keerti__Sharma/status/2116553288070103385",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116549173034271167",
+      "handle": "MarketBuilder5",
+      "display_name": "Strategy_Builder",
+      "text": "Acme Solar Holdings\nOnEMI Technology Solutions\nBhageria Industries\nEmkay Global Financial Services\nOm Power Transmission\nAeroflex Industries\nFoseco Crucible (India)\nMacfos\nManaksia Coated Metals\nTVS Holdings\nAdroit Industries\nSudeep Pharma\nTVS Motor\nSudarshan Colorants India",
+      "created_at": "2026-10-31T15:13:41+00:00",
+      "url": "https://x.com/MarketBuilder5/status/2116549173034271167",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116543132871622971",
+      "handle": "Skinvest18",
+      "display_name": "Skinvestment",
+      "text": "Strong weekly close IT STOCK🔥🚨✅\n\nCOFORGE CMP - 2045 \nSWING TARGET - 2400\n\n#Coforge #Niftyit #tcs #persistent #ofss #hcl #infy #nifty #sensex #bullish #novseries #banknifty https://t.co/UIG529k6aM",
+      "created_at": "2026-10-31T14:49:41+00:00",
+      "url": "https://x.com/Skinvest18/status/2116543132871622971",
+      "image": "https://pbs.twimg.com/media/HV94wpxaEAExWKV.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
         }
       ]
     },
@@ -174,6 +870,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2116498553774465256",
+      "handle": "BigInvestorLens",
+      "display_name": "Market Insight with a Big Investor’s Lens",
+      "text": "#OswalPumps | New Order Announcement\n\nOswal Pumps has disclosed an order/contract Rs. 235.92 Crore approx award to the stock exchanges. \n\nDesign, Manufacture, Supply, Transport, Installation,\nTesting and Commissioning of Off-Grid DC Solar\rPhotovoltaic Water Pumping Systems (‘SPWPS’) of \r3HP, 5 HP & 7.5 HP capacity at identified farmer’s site \rin District of Maharashtra, including complete system \rwarranty and its repair and maintenance and Remote \rMonitoring System (‘RMS’) for 5 years under PM \rKusum B Scheme “Magel Tyala Saur Krushi Pump” \nYojana.\n\nFor investors, the important questions are:\n• What is the total order value?\n• Is it a domestic or export order?\n• What is the execution timeline?\n• What are the expected margins?\n• Does it add meaningfully to the existing order book?\n\nOrder wins are useful growth indicators, but order value and profitability determine their actual significance.\n\n #SolarEnergy #OrderBook #IndianStocks",
+      "created_at": "2026-10-31T11:52:32+00:00",
+      "url": "https://x.com/BigInvestorLens/status/2116498553774465256",
+      "image": "https://pbs.twimg.com/media/HV9QNusbUAAWyIH.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116494142603960625",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -212,6 +924,22 @@
       ]
     },
     {
+      "tweet_id": "2116487379750207887",
+      "handle": "1learntheninves",
+      "display_name": "prasad gaurav",
+      "text": "@ChikouTrader Onemi technology",
+      "created_at": "2026-10-31T11:08:08+00:00",
+      "url": "https://x.com/1learntheninves/status/2116487379750207887",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116479398983430526",
       "handle": "PetrNov95968147",
       "display_name": "Petr Novák",
@@ -239,6 +967,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2116471964587991354",
+      "handle": "akashpatel1812",
+      "display_name": "Ak$h P@TEL",
+      "text": "@PspkOG18 #OFSS At the moment i cant update anything confidently....due to uncertain market condition..if i gives positive hope then i might be wrong.\n\nBetter follow sl n hold once..",
+      "created_at": "2026-10-31T10:06:53+00:00",
+      "url": "https://x.com/akashpatel1812/status/2116471964587991354",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116471491453681993",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -248,6 +992,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116468682394358081",
+      "handle": "akashpatel1812",
+      "display_name": "Ak$h P@TEL",
+      "text": "@Rahulkr297 #KISSHT badly crashed due to consistent #Selloff\nWait with sl 270 last level.\n#KALYANJEWELLERS cmp 498 also looks weak ... but for long term strong demand u can hold...festival and wedding season huge demand. Even gold n silver price increase so expected strong sales growth.",
+      "created_at": "2026-10-31T09:53:50+00:00",
+      "url": "https://x.com/akashpatel1812/status/2116468682394358081",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
     },
     {
       "tweet_id": "2116465199469220295",
@@ -270,6 +1034,46 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116455081550000462",
+      "handle": "10PointerEquity",
+      "display_name": "VISHAL GOYAL",
+      "text": "Guidance: FY27 AUM growth 60%+,impairment cost reduction &gt;15%,GNPA &lt;2.25%,RoE &gt;20%\n\n+ve: Growth,asset quality,CoF decline,operating leverage\n\nMonitor: Credit cost,opex,book seasoning,LAP growth\n\n#KISSHT #Q2FY27",
+      "created_at": "2026-10-31T08:59:47+00:00",
+      "url": "https://x.com/10PointerEquity/status/2116455081550000462",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116455078425243669",
+      "handle": "10PointerEquity",
+      "display_name": "VISHAL GOYAL",
+      "text": "ONEMI/KISSHT: Q2FY27: Strong Beat\n\nAUM ₹9,317cr,+68% YoY\nDisbursement ₹4,612cr,+56% YoY\nIncome ₹740cr,+43% YoY\nPPOP ₹287cr,+40% YoY\nPAT ₹125cr,+100% YoY\nRoAAUM/RoE 5.8%/21.7%\nGNPA/NNPA 2.18%/0.34%\nCredit cost 6.2% vs 9.3% YoY\nStage-2 2.37%\nCollection efficiency 97.1%",
+      "created_at": "2026-10-31T08:59:47+00:00",
+      "url": "https://x.com/10PointerEquity/status/2116455078425243669",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
     },
     {
       "tweet_id": "2116453874999460333",
@@ -431,6 +1235,26 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2116418642716103162",
+      "handle": "TheCEO_Magazine",
+      "display_name": "The CEO Magazine India",
+      "text": "@Kissht_EMI  Q2 profit doubles to Rs 125 Cr. Kissht paired 44.7% operating revenue growth with more than doubled quarterly profit, even as total expenses increased 35%. More business coverage: https://t.co/ZL6dn2Ml0Q #TheCEOMagazine https://t.co/n3fEDwwp5Z",
+      "created_at": "2026-10-31T06:35:00+00:00",
+      "url": "https://x.com/TheCEO_Magazine/status/2116418642716103162",
+      "image": "https://pbs.twimg.com/media/HV3sZQeaYAAf_YE.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116416790284955947",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -451,6 +1275,26 @@
       "image": "https://pbs.twimg.com/media/HV8FKQoaUAAKATt.jpg",
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116413262543913352",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "@Sharadkum123 Dear Customer, Your concerns are important to us and we are committed to resolving such matters on priority. Please send us a DM with your registered email address so we can look into this and take the necessary steps. Thank you! https://t.co/ZY1aPkU834",
+      "created_at": "2026-10-31T06:13:37+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2116413262543913352",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
     },
     {
       "tweet_id": "2116404298058002551",
@@ -508,6 +1352,26 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2116383189195509940",
+      "handle": "Santosh83707516",
+      "display_name": "Santosh 🙏🙏🙏",
+      "text": "🙏 माननीय RBI, भारत सरकार एवं संबंधित विभागों से विनम्र अनुरोध है।🙏\n\nRing, Kissht, Si Creva Capital तथा इनके सभी Lending Partners और संबंधित Loan Apps की कार्यप्रणाली, लोन सिस्टम, ब्याज एवं पेनल्टी, रिकवरी प्रक्रिया, ग्राहकों की शिकायतों और RBI के नियमों के पालन की निष्पक्ष जाँच एवं सत्यापन करवाया जाए।\n\nयदि जाँच में किसी भी प्रकार की अनियमितता या नियमों का उल्लंघन पाया जाता है, तो संबंधित कंपनियों और उनके जिम्मेदार अधिकारियों के खिलाफ सख्त कानूनी कार्रवाई की जाए।\n\nआर्थिक परेशानियों से जूझ रहे गरीब और मध्यमवर्गीय कर्जदारों की समस्याओं को भी गंभीरता से सुना जाए। उन्हें उचित समाधान, री-स्ट्रक्चरिंग और सेटलमेंट का विकल्प दिया जाए।\n\nहमारी माँग है कि केवल शिकायतें सुनने के बजाय पूरी व्यवस्था की जाँच हो और दोषियों पर उचित कार्रवाई हो।\n\n🙏 कृपया इस गरीब कर्जदार की आवाज़ को अनदेखा न करें।\n\n#RBI #Ring #Kissht #SiCrevaCapital #LoanApps #LendingPartners #ConsumerRights #FinanceMinistry @PaywithRing @Kissht_EMI @FinMinIndia @RBIsays @RBI @PMOIndia @narendramodi @ajtak_news @ANInews @ABPNews",
+      "created_at": "2026-10-31T04:14:07+00:00",
+      "url": "https://x.com/Santosh83707516/status/2116383189195509940",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116380642673844322",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -519,6 +1383,42 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2116379993458835673",
+      "handle": "CapitalTrends",
+      "display_name": "Capital Trends",
+      "text": "Top performers from top performing sectors:\n\nLAURUSLABS : Pharma\nSAREGAMA : Media\nWELCORP : Metal\nAEGISLOG : Energy\nMAHABANK : PSU Bank\nPHOENIXLTD : Realty\nFEDERALBNK : Bank\nSONACOMS : Auto\nBSE : Financial Services\nOFSS : IT\nRADICO : FMCG\n\nHave you invested in these? NSE performance in YTD (2026) so far. Like and Retweet!",
+      "created_at": "2026-10-31T04:01:25+00:00",
+      "url": "https://x.com/CapitalTrends/status/2116379993458835673",
+      "image": "https://pbs.twimg.com/media/HV7kJYSbYAAf-C2.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116375862232883460",
+      "handle": "Keerti__Sharma",
+      "display_name": "\"Keerti | Macro & Equity Research\"",
+      "text": "#Kissht runs two businesses.\n\nOne lends its own money, like a small bank. The other is a platform. Kissht finds borrowers for big lenders, collects the EMIs and earns a fee.\n\nThe platform needs little capital, so it can grow fast. That was our bet in the video. About three quarters of the value sits there.\n\nThis quarter the platform grew faster. Partner loans rose 19% in three months, own loans 13%. Profit doubled to ₹125 crore.\n\nKissht covers the first 5% of losses on partner loans. That number is not shared yet.\n\nThe bet is playing out. The platform is now more than half the book, and growing fastest.\n\nhttps://t.co/NUwIx8pLSe",
+      "created_at": "2026-10-31T03:45:00+00:00",
+      "url": "https://x.com/Keerti__Sharma/status/2116375862232883460",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116374602826072452",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -528,6 +1428,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2116372067004403947",
+      "handle": "My220594Mohit",
+      "display_name": "MOHIT YADAV",
+      "text": "@grok \nOswal Pumps mein Trade Receivables Net Sales ka 55% ho gaya hai. Kya ye red flag hai?",
+      "created_at": "2026-10-31T03:29:55+00:00",
+      "url": "https://x.com/My220594Mohit/status/2116372067004403947",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
     },
     {
       "tweet_id": "2116367557062184980",
@@ -606,6 +1522,74 @@
         {
           "entityId": "isin:INE854B01010",
           "query": "\"Jayaswal Neco\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116341917625495911",
+      "handle": "finvezto",
+      "display_name": "Anand Ganapathy (SEBI RA)",
+      "text": "Oswal Pumps won a Rs 236cr MSEDCL order for 10,000 off-grid solar water pumps under PM-KUSUM B.\nThe repeat order, including GST, is to be executed within 60 days. #OswalPumps",
+      "created_at": "2026-10-31T01:30:07+00:00",
+      "url": "https://x.com/finvezto/status/2116341917625495911",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116333922397422028",
+      "handle": "MohitKhatriJSM",
+      "display_name": "Mohit Khatri",
+      "text": "Le bhai…\n#OFSS #COFORGE #PERSISTENT #TECHM #HCLTECH so on… https://t.co/0pNaEGFx7a",
+      "created_at": "2026-10-31T00:58:21+00:00",
+      "url": "https://x.com/MohitKhatriJSM/status/2116333922397422028",
+      "image": "https://pbs.twimg.com/media/HV66ey9aIAEXOgh.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116328477188386931",
+      "handle": "Mukeput",
+      "display_name": "शेयर बाजार का कीड़ा",
+      "text": "https://t.co/UuALegWmeG",
+      "created_at": "2026-10-31T00:36:43+00:00",
+      "url": "https://x.com/Mukeput/status/2116328477188386931",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116327724415701126",
+      "handle": "Mukeput",
+      "display_name": "शेयर बाजार का कीड़ा",
+      "text": "Oswal Pumps Ltd – SOLAR PUMP ORDER WIN\n\nCompany receives order from MSEDCL:\n\nOrder for 10,000 Off-Grid Solar Photovoltaic Water Pumping Systems\n\nTotal order value of INR 235.92 Cr \n\n Order under PM-KUSUM B Scheme.",
+      "created_at": "2026-10-31T00:33:43+00:00",
+      "url": "https://x.com/Mukeput/status/2116327724415701126",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
         }
       ]
     },
@@ -674,6 +1658,38 @@
       ]
     },
     {
+      "tweet_id": "2116250037978386887",
+      "handle": "bishalgunners",
+      "display_name": "Bishal",
+      "text": "@MohitKhatriJSM Konsa it stock 40 50 chale hai jara naam batana",
+      "created_at": "2026-10-30T19:25:01+00:00",
+      "url": "https://x.com/bishalgunners/status/2116250037978386887",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116243115107574129",
+      "handle": "Harry1515356",
+      "display_name": "Harry",
+      "text": "@CrazeStockX Ofss",
+      "created_at": "2026-10-30T18:57:31+00:00",
+      "url": "https://x.com/Harry1515356/status/2116243115107574129",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116235453754163411",
       "handle": "y_lord",
       "display_name": "𝕷𝖔𝖗𝖉 𝖄",
@@ -686,6 +1702,22 @@
         {
           "entityId": "isin:INE854B01010",
           "query": "\"Neco Defence Munitions\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116233673246929049",
+      "handle": "id4rplato",
+      "display_name": "Harry",
+      "text": "@Bharrathpatell Ofss",
+      "created_at": "2026-10-30T18:20:00+00:00",
+      "url": "https://x.com/id4rplato/status/2116233673246929049",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
         }
       ]
     },
@@ -978,6 +2010,22 @@
         {
           "entityId": "isin:INE854B01010",
           "query": "\"Datasel\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116163742228783475",
+      "handle": "Harry1515356",
+      "display_name": "Harry",
+      "text": "@akashpatel1812 Ofss",
+      "created_at": "2026-10-30T13:42:07+00:00",
+      "url": "https://x.com/Harry1515356/status/2116163742228783475",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
         }
       ]
     },
@@ -2509,6 +3557,22 @@
       ]
     },
     {
+      "tweet_id": "2116109912963227959",
+      "handle": "createwealth007",
+      "display_name": "Ejaz",
+      "text": "Strong Q2 FY27 · Onemi Technology #Onemi\n\nProfit more than doubled on a smaller sales increase. The strongest of the last three quarters on both lines.\n\nAlso: #SambhvSteel #ParasDefence #MilkyMistDairy\n\n#Earnings #Results https://t.co/cdSf9feHHC",
+      "created_at": "2026-10-30T10:08:13+00:00",
+      "url": "https://x.com/createwealth007/status/2116109912963227959",
+      "image": "https://pbs.twimg.com/media/HV3uvAlagAAitKd.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116109843811717183",
       "handle": "SinghCapitall",
       "display_name": "PunjabVision",
@@ -3012,6 +4076,26 @@
         {
           "entityId": "isin:INE591G01025",
           "query": "\"COFORGE\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116093555332837818",
+      "handle": "Patterns0001",
+      "display_name": "Patterns",
+      "text": "SEBI STUDY SAYS:\n\n15% of Individual investors sell their IPO shares on listing day, while 50% sell within a week https://t.co/h0YCrE966l",
+      "created_at": "2026-10-30T09:03:13+00:00",
+      "url": "https://x.com/Patterns0001/status/2116093555332837818",
+      "image": "https://pbs.twimg.com/media/HV3f3aza4AA3VGt.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -3716,6 +4800,10 @@
         {
           "entityId": "isin:INE591G01025",
           "query": "\"COFORGE\""
+        },
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
         }
       ]
     },
@@ -4704,6 +5792,22 @@
       ]
     },
     {
+      "tweet_id": "2116055248083030150",
+      "handle": "CapitalTrends",
+      "display_name": "Capital Trends",
+      "text": "Nifty MNC YTD Performance!  \nGLAND leads the pack with a strong +78.54%.  \n\nTop performers:\nGLAND: +78.54%\nPOWERINDIA: +53.6%\nBOSCHLTD: +31.98%\nOFSS: +29.3%  \n\nClear standout among Nifty MNC names so far this year. https://t.co/kM0zlfpYKH",
+      "created_at": "2026-10-30T06:31:00+00:00",
+      "url": "https://x.com/CapitalTrends/status/2116055248083030150",
+      "image": "https://pbs.twimg.com/media/HVz4AYWbkAEp8i_.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116055246632055271",
       "handle": "TejaswiPalam",
       "display_name": "Tejaswi | AI Industrial Shift 🇮🇳",
@@ -5187,6 +6291,26 @@
       ]
     },
     {
+      "tweet_id": "2116043799034269781",
+      "handle": "CeoVine",
+      "display_name": "CEO VINE",
+      "text": "OnEMI Technology Solutions, the parent company of digital lending platform @Kissht_EMI, reported a 100.4% year-on-year increase in consolidated net profit to ₹125.1 crore.\n\nRead full news here: https://t.co/hAbvRmaJqc\n\n#Kissht #OnEMI #FinTech #Q2FY27 #ProfitGrowth #CEOVINE https://t.co/QDcNiM12JG",
+      "created_at": "2026-10-30T05:45:30+00:00",
+      "url": "https://x.com/CeoVine/status/2116043799034269781",
+      "image": "https://pbs.twimg.com/media/HV2xjzPaAAA0JOd.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116043699553751421",
       "handle": "praseninld",
       "display_name": "Prasenjeet Dash",
@@ -5535,6 +6659,54 @@
       ]
     },
     {
+      "tweet_id": "2116031768105218453",
+      "handle": "Harry1515356",
+      "display_name": "Harry",
+      "text": "@FIINKNOWLEDGE Down ofss",
+      "created_at": "2026-10-30T04:57:42+00:00",
+      "url": "https://x.com/Harry1515356/status/2116031768105218453",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116030427261805003",
+      "handle": "Equitymaster",
+      "display_name": "Equitymaster",
+      "text": "Comparing the 5 Companies\n\nEach company offers a different way to participate in India's AI opportunity.\n\n- Bosch: AI integration across automotive and industrial technology.\n- Persistent Systems: Enterprise AI and digital engineering.\n- Oracle Financial Services Software: AI applications in banking and financial services.\n- Affle 3i: AI-powered digital advertising.\n- RateGain: AI-driven travel technology and revenue management.\n\nThese businesses have different operating models, growth drivers and risk profiles.",
+      "created_at": "2026-10-30T04:52:22+00:00",
+      "url": "https://x.com/Equitymaster/status/2116030427261805003",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116030413156319343",
+      "handle": "Equitymaster",
+      "display_name": "Equitymaster",
+      "text": "3/ #OracleFinancialServicesSoftware\n\nOracle Financial Services Software is bringing AI into the financial services ecosystem.\n\nIts AI applications include:\n- AI-powered digital banking.\n- Generative and Agentic AI.\n- Customer behaviour analysis.\n- Cash-flow forecasting.\n- Financial crime detection and risk management.\n\nFinancial performance (FY23–FY26):\n- Revenue CAGR: 10.4%\n- Net profit CAGR: 13.5%\n- 3-year average ROE: 30.7%\n- 3-year average ROCE: 42.7%\n- Debt-to-equity: 0\n\nIts strong profitability, high margins and specialised financial technology offerings are key strengths.",
+      "created_at": "2026-10-30T04:52:19+00:00",
+      "url": "https://x.com/Equitymaster/status/2116030413156319343",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116030376112173425",
       "handle": "chartwhisp60202",
       "display_name": "Chart Whisperer",
@@ -5735,6 +6907,22 @@
         {
           "entityId": "isin:INE522F01014",
           "query": "\"COALINDIA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116023340037210422",
+      "handle": "FIINKNOWLEDGE",
+      "display_name": "Inder singgh 🇮🇳",
+      "text": "📈 Nifty IT continues its bullish momentum, rebounding strongly above key support levels! Leading the rally:\n🚀 Coforge: +7.31%\n🚀 Persistent: +4.76%\n🚀 Mphasis: +3.97%\n🚀 OFSS: +2.77%\n🚀 Wipro: +2.52%\nIT stocks showing strong momentum! 📈💻\n#NiftyIT  #Tradingview https://t.co/M8tjTgeXZx",
+      "created_at": "2026-10-30T04:24:12+00:00",
+      "url": "https://x.com/FIINKNOWLEDGE/status/2116023340037210422",
+      "image": "https://pbs.twimg.com/media/HV2gAavaUAAaTrl.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
         }
       ]
     },
@@ -6419,6 +7607,54 @@
       ]
     },
     {
+      "tweet_id": "2116006249728995823",
+      "handle": "FundsIndia",
+      "display_name": "FundsIndia",
+      "text": "STOCK WATCH\n\n📈Bullish: Data Patterns, Karur Vysya Bank, Syrma, CUB, Pidilite Industries, TVS Motors, JSW Energy, APL Apollo, GVT&amp;D, Hindustan Zinc.\n\n📉Bearish: Mankind Pharma, Sagility, OFSS, CG Power, Cummins India, Coromandel, Navin Fluorine, Hero MotoCorp, PNB Housing, Enrin.",
+      "created_at": "2026-10-30T03:16:18+00:00",
+      "url": "https://x.com/FundsIndia/status/2116006249728995823",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116005420716450026",
+      "handle": "ManishJais40",
+      "display_name": "Manish Jaiswal",
+      "text": "OnEMI Technology Increase It’s AuM guidance|| A very unique business || #stockmarket\nhttps://t.co/d2Y2B7STM6",
+      "created_at": "2026-10-30T03:13:00+00:00",
+      "url": "https://x.com/ManishJais40/status/2116005420716450026",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2116005051923841493",
+      "handle": "Investor1498940",
+      "display_name": "Retail Investor",
+      "text": "Stocks quarterly profit growth (YoY):\n🚀 Onemi Technology ⬆️ 100% \n🚀 Poojaa Precision ⬆️ 87%  \n🚀 Bajaj Consumer ⬆️ 65% \n🚀 Shaily Engg ⬆️ 63% \n🚀 Foseco Crucible ⬆️ 61% \n🚀 Emmvee Photo ⬆️ 60% \n🚀 Raghav Pro ⬆️ 56% \n🚀 Alldigi Tech ⬆️ 50%\n\n⚠️Not a buy/sell recom.\n\n#smallcaps",
+      "created_at": "2026-10-30T03:11:32+00:00",
+      "url": "https://x.com/Investor1498940/status/2116005051923841493",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2116004437319995422",
       "handle": "ZeeBusiness",
       "display_name": "Zee Business",
@@ -6723,6 +7959,22 @@
       ]
     },
     {
+      "tweet_id": "2115901983227777343",
+      "handle": "Pet3r_xavio",
+      "display_name": "P E T E R.🦖 #FofanaOUT",
+      "text": "@iamsammyworld @filesofarike Ofss?",
+      "created_at": "2026-10-29T20:21:59+00:00",
+      "url": "https://x.com/Pet3r_xavio/status/2115901983227777343",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2115883533185208414",
       "handle": "chandrakar_c",
       "display_name": "Dev Investor @ Dev chandrakar",
@@ -6739,6 +7991,26 @@
       ]
     },
     {
+      "tweet_id": "2115878793395241069",
+      "handle": "chandrakar_c",
+      "display_name": "Dev Investor @ Dev chandrakar",
+      "text": "Excellent result\nManaksia Coated Metals Industries\nBhageria Industries\nEmkay Global Financial Services\nAarti Pharmalabs\nOnEMI Technology Solutions (Kissht)\nRR Kabel\nCredit Connect\nCare\nShree Refrigeration\nGokul Agro Resources\nAeroflex Industries\nMacfos (ROBU)",
+      "created_at": "2026-10-29T18:49:50+00:00",
+      "url": "https://x.com/chandrakar_c/status/2115878793395241069",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2115875459426853255",
       "handle": "amberkul",
       "display_name": "financeamber",
@@ -6751,6 +8023,26 @@
         {
           "entityId": "isin:INE067A01029",
           "query": "\"CGPOWER\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2115867752389063064",
+      "handle": "AlfafinderIndia",
+      "display_name": "ALFA FINDER",
+      "text": "🎙️ OnEMI Technology Solutions (KISSHT) Q2 FY27 earnings call, decoded ⬇️\n\nOnEMI Technology (Kissht) reported Q2 FY27 profit of ₹125 Cr, roughly doubling from a year earlier, on total income of ₹740 Cr, up 43% YoY. AUM rose 68% to ₹9,317 Cr. Management attributed growth to larger ticket sizes of ₹43,380 and longer tenures of 17.8 months, as well as a deliberate shift toward higher-quality borrowers. Borrowing costs fell to 13.76%, which management said helped pricing and margins. Management now guides FY27 AUM growth of 60%+, up from the 40%+ it guided last quarter, and a 15%+ reduction in credit costs. Last quarter the company missed its GNPA target of below 2.25%, which came in at 2.89%. This quarter GNPA was 2.18%. The call was marked confident, though management acknowledged sector-wide stress.\n\nGrowth triggers\n• FY27 AUM growth of 60%+ guided, raised from 40%+ (Q2 FY27 call, 29 Oct 2026)\n• Complete ₹624.15 Cr investment in Si Creva Capital Services by end-December 2026\n• RoAE of 20%+ guided for FY27\n\nBlockers\n• Missed Q1 FY27 GNPA target of below 2.25%, which came in at 2.89%\n• Management flagged rising systemic indebtedness, rising repo rates and gold loan contagion risk\n\n#KISSHT #EarningsCall #Q2FY27 #GuidanceRaised",
+      "created_at": "2026-10-29T18:05:57+00:00",
+      "url": "https://x.com/AlfafinderIndia/status/2115867752389063064",
+      "image": "https://pbs.twimg.com/media/HV0SfPAacAAXrGU.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
         }
       ]
     },
@@ -7308,6 +8600,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2115820959013929471",
+      "handle": "SouvikG1982",
+      "display_name": "Souvik Ghosh",
+      "text": "6/8 📲 OnEMI Technology Solutions (Kissht) — Digital Lending Alpha\n\n• Revenue: ₹732 Cr (+44.6% YoY top-line surge)\n\n• Operating Profit: ₹223 Cr (+50.6% YoY expansion)\n\n• Net Profit (PAT): ₹125.12 Cr (+100% YoY profit double)\n\n• Margins: Maintained tight operating discipline with OPM holding steady at 30%.\n\n• Key Highlights: The mass-market retail and consumption credit segment witnessed explosive app-based ticket volumes across their core Kissht and PaywithRING digital platforms.\n\n• Commentary/Guidance: Massive structural trajectory validated post recent listing, keeping a spectacular 5-year profit growth CAGR of 46.8% active. Balance sheet risk metrics remain robust as debtor days improved to 17.2 days.\n\n#Onemi",
+      "created_at": "2026-10-29T15:00:01+00:00",
+      "url": "https://x.com/SouvikG1982/status/2115820959013929471",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
     },
     {
       "tweet_id": "2115820766776414313",
@@ -8350,1294 +9662,22 @@
       "matchedQueries": []
     },
     {
-      "tweet_id": "2115764339466801251",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Retail trade leads services growth at 19.9% in August, air transport contracts 9.6%: MoSPI\n\nSeventeen of the 19 services sub-sectors recorded year-on-year growth in August, with retail trade, repair services and real estate leading the expansion. Air transport and entertainment services were the only sectors to contract\n\n@IshaanGera with more details\nhttps://t.co/hzZJDHyeQf",
-      "created_at": "2026-10-29T11:15:02+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2115764339466801251",
+      "tweet_id": "2115764927222997064",
+      "handle": "Bytes_Equity",
+      "display_name": "Equity_Bytes",
+      "text": "OnEMI Technology Solutions: Q2 FY27 Results and Key Takeaways from the Concall\n\nOnEMI runs Kissht, a digital lending app that gives small personal loans within minutes. Its loan book grew 68%, profit doubled and asset quality improved at the same time.\n\nQ2 FY27\nAUM (Assets Under Management, the total loan book): ₹9,317 Cr (+68% YoY, +16% QoQ)\nDisbursements: ₹4,612 Cr (+56% YoY)\nTotal income: ₹740 Cr (+43% YoY)\nPAT: ₹125 Cr (2x YoY, +32% QoQ)\nReturn on assets: 5.78%, ROE: 21.65%\nGross NPA: 2.18%, Net NPA: 0.34%\nCredit cost: 6.2% of loan book (vs 9.3% a year ago)\n\n1.  Shifting to safer borrowers-\nLoans to customers with credit scores above 760 rose to 24.8% from 20.8%, and only about 4% go to customers below 700. New loans to people already holding 3 or more loans fell over 35% in a year. These better borrowers take bigger loans for longer, so the loan book is growing faster than the customer count.\n\n2.  Asset quality improving-\nCredit cost fell to 6.2% from 9.3% a year ago. Loans showing early stress (Stage 2) dropped back to 2.37% from 3.15% in Q1, and collection efficiency was 97.12%. Exposure to drought-hit areas is under 6%, and to borrowers with gold loans under 8%.\n\n3.  Borrowing costs falling-\nCost of borrowing fell to 13.76% from 14.45% in Q1, and new money in Q2 was raised at about 12.1%. As older, costlier loans are repaid, management expects at least a 1.5 percentage point fall over 3-4 quarters. A rating upgrade and an ₹832 Cr preferential share issue should help further.\n\n4.  AI used across the lending process-\nThe credit scoring model is now in its 42nd version and predicts defaults much better than in 2023. AI voice agents now recover early overdue loans at 86% of the rate of human callers. Real-time monitoring led to 7 policy changes in the quarter to cut risk early.\n\n5.  Property loans turned profitable-\nLAP (Loan Against Property) loans reached ₹737 Cr, about 8% of the book, across 107 branches. More than 40% of these borrowers are existing Kissht customers. The business turned profitable a quarter earlier than guided.\n\n6.  Points to keep in mind-\nTotal income is about 34% of the loan book, showing these are high-interest unsecured loans. About 55% of loans sit on partner lenders' books under co-lending. The tax rate fell to 19% due to ESOP-linked benefits, which will fade over the next few quarters.\n\nKey Guidance\nFY27 loan book growth raised to 60%+ (from 40%+)\nCredit cost to fall more than 15% YoY\nROE above 20% and Gross NPA below 2.25%\n\n#OnEMI #Q2FY27",
+      "created_at": "2026-10-29T11:17:22+00:00",
+      "url": "https://x.com/Bytes_Equity/status/2115764927222997064",
       "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2115763366321078447",
-      "handle": "Emperorfadeni",
-      "display_name": "WOCKHARDT†",
-      "text": "@JackInacker The only  Percocet (perky set )i f**k with is breast 🔥🔥🔥🔥",
-      "created_at": "2026-10-29T11:11:10+00:00",
-      "url": "https://x.com/Emperorfadeni/status/2115763366321078447",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115760540190683618",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Rupee rises 3 paise to close at 95.25 against US dollar\n\nThe rupee consolidated in a narrow range and rose 3 paise to close at 95.25 (provisional) against the US dollar on Thursday, supported by positive domestic markets and softening crude oil prices.\n\nRead More:\nhttps://t.co/g9MOX3Zv42",
-      "created_at": "2026-10-29T10:59:56+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2115760540190683618",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2115760404320473452",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@ToxicMate_ Hi Arjun, we're glad to know that you've received your refund. Thank you for your patience and understanding throughout the process. ~ Sid",
-      "created_at": "2026-10-29T10:59:23+00:00",
-      "url": "https://x.com/abcapital/status/2115760404320473452",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115758810099044464",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Partnered | Desert dinners, distinctive stays and time together: discover ideas for a romantic escape in Qatar \n\nhttps://t.co/URqmDRRzqe\n\n#HoneymoonInspiration #VisitQatar #Travel @qatartourism https://t.co/BwV3OYEhhL",
-      "created_at": "2026-10-29T10:53:03+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2115758810099044464",
-      "image": "https://pbs.twimg.com/media/HVyvGLoaYAAzkCs.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2115758259986727043",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#EarningsWithMC | Trent Q2 results: Net profit rises 9% to Rs 490 crore, beats estimate\n\nTrent Ltd, the parent of Westside and Zudio, on October 29 reported 9% increase in net profit at Rs 490 crore for the quarter ended September 30, 2026. \n\nRead More:\nhttps://t.co/R9VYLzhKfm",
-      "created_at": "2026-10-29T10:50:52+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2115758259986727043",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2115756399225639348",
-      "handle": "imAdvaitK",
-      "display_name": "Advait Kulkarni",
-      "text": "@OversLife Darren Gough",
-      "created_at": "2026-10-29T10:43:29+00:00",
-      "url": "https://x.com/imAdvaitK/status/2115756399225639348",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115756350789881964",
-      "handle": "nihalah50754091",
-      "display_name": "nihal ahmed",
-      "text": "$JAYNECOIND Iron &amp; steel sector company with excellent fundamentals reducing debts every quarter. Technically also super strong with all DMAs in tight wedge. Any volume surge should signal buy. https://t.co/tOIa3WR6Sk",
-      "created_at": "2026-10-29T10:43:17+00:00",
-      "url": "https://x.com/nihalah50754091/status/2115756350789881964",
-      "image": "https://pbs.twimg.com/media/HVytL08b0AAmokQ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE854B01010",
-          "query": "\"JAYNECOIND\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115753547996483708",
-      "handle": "Wockcrafter",
-      "display_name": "Gilderoy Wockhardt",
-      "text": "@MaxAnderson This stopped me from buying any google 2 years ago and the stock did somersaults afterwards. Be amused if this ends up coming true",
-      "created_at": "2026-10-29T10:32:09+00:00",
-      "url": "https://x.com/Wockcrafter/status/2115753547996483708",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115752899334811826",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "Hi Nirmal, we apologize for the inconvenience caused. We have escalated your concern regarding policy cancellation and refund to the concerned team. Our Sales Team will connect with you to clarify the matter. We have also shared your feedback regarding the advisor's service with the team for review. ~ Sid",
-      "created_at": "2026-10-29T10:29:34+00:00",
-      "url": "https://x.com/abcapital/status/2115752899334811826",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115752511772799445",
-      "handle": "Nirmalrajput9",
-      "display_name": "Er Nirmal rajput",
-      "text": "@abcapital Hii team, still issue not resolved how many take time",
-      "created_at": "2026-10-29T10:28:02+00:00",
-      "url": "https://x.com/Nirmalrajput9/status/2115752511772799445",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115752234441129985",
-      "handle": "Wockcrafter",
-      "display_name": "Gilderoy Wockhardt",
-      "text": "@DeepDishEnjoyer @MindBags I see, and raise you to this: https://t.co/Y6mIroubd8",
-      "created_at": "2026-10-29T10:26:56+00:00",
-      "url": "https://x.com/Wockcrafter/status/2115752234441129985",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115749302559731846",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@rjayara Hi Ravinder, we understand how distressing this could be for you. Thank you for providing the necessary details. We are actively reviewing your case and will work on a resolution. We will promptly reach out to assist you further. ~ Sid",
-      "created_at": "2026-10-29T10:15:17+00:00",
-      "url": "https://x.com/abcapital/status/2115749302559731846",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115748915333288085",
-      "handle": "advait_akash",
-      "display_name": "STat. Advait Akash Shah",
-      "text": "https://t.co/3Ueq3XNxzk",
-      "created_at": "2026-10-29T10:13:44+00:00",
-      "url": "https://x.com/advait_akash/status/2115748915333288085",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115748320144478419",
-      "handle": "AnonScan",
-      "display_name": "Anonymous Scandinavia🌐 Assange⏳ #NoExtradition",
-      "text": "The Danish government pledged hundreds of millions of kroner to an Estonian artillery fund meant to buy shells for Ukraine.\n\nHowever...Estonia used 71 million kroner of the Danish money as an advance payment to an Italian company called #Datasel, owned by the Indian firm #NecoDefence.\n\nDatasel had never produced ammunition. It was registered as a software company, shared an address with an Audi dealership in La Spezia, and used screenshots from computer games plus #AI-generated images on its website to look like a real arms supplier.\n\nNo grenades were ever delivered. Estonia has sued the company, and the Estonian defence minister lost his job over the affair.\nDanish authorities have so far largely referred the matter to #Estonia\n\n#IncompetenceRules\n#dkpol \n#dkmedier \nhttps://t.co/ATg4ZKgMwF",
-      "created_at": "2026-10-29T10:11:22+00:00",
-      "url": "https://x.com/AnonScan/status/2115748320144478419",
-      "image": "https://pbs.twimg.com/media/HVyl4eoWkAAtU6G.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE854B01010",
-          "query": "\"Datasel\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115747650557354109",
-      "handle": "FleetwoodRap",
-      "display_name": "Wockhardt Flockhardt Flame",
-      "text": "Thats my goat!!",
-      "created_at": "2026-10-29T10:08:43+00:00",
-      "url": "https://x.com/FleetwoodRap/status/2115747650557354109",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115747288626934218",
-      "handle": "Chart_Wallah108",
-      "display_name": "Chart Wallah",
-      "text": "@AshinKall You did a nice analysis 👍@ashinKall \n\nWockhardt Pharma currently consolidating near major support area (In monthly time frame this support area is a make or break level) \nIt may reverse from their support area when consolidation is over. 📈 https://t.co/PJgUpufin3",
-      "created_at": "2026-10-29T10:07:16+00:00",
-      "url": "https://x.com/Chart_Wallah108/status/2115747288626934218",
-      "image": "https://pbs.twimg.com/media/HVykQ1ZbwAAEI0H.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115746952558031214",
-      "handle": "FleetwoodRap",
-      "display_name": "Wockhardt Flockhardt Flame",
-      "text": "@Hattietheresa41 #kaicenatsaveus",
-      "created_at": "2026-10-29T10:05:56+00:00",
-      "url": "https://x.com/FleetwoodRap/status/2115746952558031214",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115746857486008581",
-      "handle": "BPS1802",
-      "display_name": "BHANU PRATAP SINGH",
-      "text": "@abcapital Let’s see, I will update here once I receive the refund amount.",
-      "created_at": "2026-10-29T10:05:34+00:00",
-      "url": "https://x.com/BPS1802/status/2115746857486008581",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115745853055123901",
-      "handle": "rjayara",
-      "display_name": "ravi Singh",
-      "text": "@abcapital\nमेरे बेटे का गंभीर एक्सीडेंट हुआ है। उसके इलाज और सर्जरी में  सारी जमा पूँजी खर्च हो चुकी है। मैं कर्ज के बोझ तले दबा हूँ और आर्थिक संकट से गुजर रहा हूँ। मेरी आपसे विनती है कि मुझे 10 महीने की मोहलत दी जाए, इस दौरान EMI की वसूली रोकी जाए और ब्याज व पेनल्टी में राहत https://t.co/wRMuDBYoGy",
-      "created_at": "2026-10-29T10:01:34+00:00",
-      "url": "https://x.com/rjayara/status/2115745853055123901",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115745625526722577",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "Hi there, we apologize for the experience. We have shared your concern with our team, and you will receive an update shortly. To ensure your privacy, we recommend removing your post containing personal information and sharing the details with us via DM, so we can assist you securely. ~ Raavi",
-      "created_at": "2026-10-29T10:00:40+00:00",
-      "url": "https://x.com/abcapital/status/2115745625526722577",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115745400804065560",
-      "handle": "FleetwoodRap",
-      "display_name": "Wockhardt Flockhardt Flame",
-      "text": "@soonrightaway Two things can be true",
-      "created_at": "2026-10-29T09:59:46+00:00",
-      "url": "https://x.com/FleetwoodRap/status/2115745400804065560",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115744481412812904",
-      "handle": "akshat_sarawgi",
-      "display_name": "Akshat Sarawgi | Indian Small-cap & SME Investor",
-      "text": "3️⃣ 🏗️ Capex and expansion execution\n\n🏭 Gangad campus: A complex exceeding four lakh sq ft is planned for specialised conductors, restoration systems, tools, batteries, electrolysers and fuel cells.\n\n🎯 Timing: Phase one remains targeted for Q4 FY27; the annual report places full commercialisation in calendar 2028.\n\n🔋 Battery assembly: Planned annual capacity is 2.5 GWh, covering modules, packs and container integration. Machinery installation was scheduled for Q3 FY27. This is storage-system assembly capacity rather than cell manufacturing.\n\n✅ Input visibility: The Hithium agreement supports purchases of up to 1 GWh of lithium-iron-phosphate cells over a year. It is a purchase framework, separate from customer orders.\n\n⚙️ Other capacity: Plans include 12,000 km annual specialised-conductor capacity and a phased 300 MW electrolyser footprint. The initial electrolyser expansion target is 100 MW.\n\n💰 Investment: The results call discussed approximately ₹300–350 cr FY27 capex, including asset-related investment. A reconciled project-wise spending and committed-funding schedule was not disclosed; management expects debt and equity funding.\n\n4️⃣ 📦 Orders and demand visibility\n\n⚠️ Headline needs qualification: Q1’s ₹1,330 cr reported order position, up 97% YoY, includes L1—lowest-bidder—positions. A firm-only outstanding total was not separately disclosed.\n\n📦 Mix: Transmission contributed 71% of that position and new energy 29%.\n\n✅ Awarded work: Subsequent contracts include ₹116 cr excluding tax for a 200 MW KPI Green solar project over 12 months; ₹24.88 cr including tax for GETCO restoration equipment over eight months; and ₹134.62 cr including tax for MPPTCL over 18 months.\n\n⚠️ Avoid double counting: Some utility awards convert previously reported L1 positions. Adding every announcement to the headline total would overstate incremental work.\n\n🔋 Owned storage: The 150 MW/300 MWh Bhesan agreement has a 12-year term, with commercial operation targeted in FY28. Equipment sales, construction and later availability income have different economics.\n\n⚠️ Distribution opportunity: A consortium containing Advait received a licence covering Gurugram and Nuh. Advait’s investment commitment and attributable earnings were not quantified.",
-      "created_at": "2026-10-29T09:56:07+00:00",
-      "url": "https://x.com/akshat_sarawgi/status/2115744481412812904",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115744286050492908",
-      "handle": "akshat_sarawgi",
-      "display_name": "Akshat Sarawgi | Indian Small-cap & SME Investor",
-      "text": "⚡ A transmission line can carry internet traffic too: Advait supplies optical ground wire combining lightning protection with fibre communication. Its next chapter adds battery storage and hydrogen equipment.\n\n🎯 Management’s earlier FY27 expectation was 40%+ revenue growth, with commissioning and funding critical to delivery.\n\n👇 Find out more below.\n\nDisclaimer: Business research only; not a recommendation to buy or sell. DYOR.\n\n#AdvaitEnergyTransitions #PowerTransmission #EnergyStorage #GreenHydrogen #Electrolysers",
-      "created_at": "2026-10-29T09:55:21+00:00",
-      "url": "https://x.com/akshat_sarawgi/status/2115744286050492908",
-      "image": "https://pbs.twimg.com/media/HVyf9g8bAAAHWUw.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115744256027435146",
-      "handle": "FleetwoodRap",
-      "display_name": "Wockhardt Flockhardt Flame",
-      "text": "@femboigarfield Idk about bad as hell but I’d definitely cheat on my terrorist wife with her",
-      "created_at": "2026-10-29T09:55:13+00:00",
-      "url": "https://x.com/FleetwoodRap/status/2115744256027435146",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115743929123635211",
-      "handle": "advait_akash",
-      "display_name": "STat. Advait Akash Shah",
-      "text": "https://t.co/5fOQ5OMNNG",
-      "created_at": "2026-10-29T09:53:55+00:00",
-      "url": "https://x.com/advait_akash/status/2115743929123635211",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115743929043997082",
-      "handle": "Wockcrafter",
-      "display_name": "Gilderoy Wockhardt",
-      "text": "@xie_uh @bubbleboi I think this is bearish for Intel, guys...",
-      "created_at": "2026-10-29T09:53:55+00:00",
-      "url": "https://x.com/Wockcrafter/status/2115743929043997082",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115743902187897174",
-      "handle": "akshat_sarawgi",
-      "display_name": "Akshat Sarawgi | Indian Small-cap & SME Investor",
-      "text": "📺 A new air conditioner needs a trusted showroom as much as a hot summer. Aditya Vision brings appliances, electronics and after-sales support to India’s Hindi heartland.\n\n🎯 Management’s long-term revenue growth aspiration is 20–25% annually, supported by store expansion and improving productivity. This is not a fresh FY27 earnings forecast.\n\n👇 Find out more below.\n\nDisclaimer: Business research only; not a recommendation to buy or sell. DYOR.\n\n#AdityaVision #ConsumerElectronics #Retail #HomeAppliances #BusinessResearch",
-      "created_at": "2026-10-29T09:53:49+00:00",
-      "url": "https://x.com/akshat_sarawgi/status/2115743902187897174",
-      "image": "https://pbs.twimg.com/media/HVyf0VAacAASjIJ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE679V01027",
-          "query": "\"Aditya Vision\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115743259498828112",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@BPS1802 Hi Bhanu, we are pleased to inform you that your refund has been initiated and will be credited to your account within 5 working days. Thank you for your patience and understanding. ~ Sam",
-      "created_at": "2026-10-29T09:51:16+00:00",
-      "url": "https://x.com/abcapital/status/2115743259498828112",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115742422487683202",
-      "handle": "PTI_News",
-      "display_name": "Press Trust of India",
-      "text": "News Alert! Illegal madrassas will not be allowed in border areas to curb anti-national activities: Bengal CM.",
-      "created_at": "2026-10-29T09:47:56+00:00",
-      "url": "https://x.com/PTI_News/status/2115742422487683202",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115740436371583151",
-      "handle": "akumarjain",
-      "display_name": "Azey",
-      "text": "@abcapital Sam, do you have an ETA for the resolution?",
-      "created_at": "2026-10-29T09:40:03+00:00",
-      "url": "https://x.com/akumarjain/status/2115740436371583151",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115739222682615817",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@shitukuhad012 Hi Shitu, we’re sorry for the experience you’ve had and want to resolve this at the earliest. Please share your registered contact details and the issue via DM, so we can forward it to the relevant team. ~ Sid https://t.co/CwoaiHo6lr",
-      "created_at": "2026-10-29T09:35:13+00:00",
-      "url": "https://x.com/abcapital/status/2115739222682615817",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115737985543188549",
-      "handle": "Wockcrafter",
-      "display_name": "Gilderoy Wockhardt",
-      "text": "@FixingGoodMafia @Biggieblackdark @bubbleboi @parmita Three hots and a cot!",
-      "created_at": "2026-10-29T09:30:18+00:00",
-      "url": "https://x.com/Wockcrafter/status/2115737985543188549",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115737290198937688",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@akumarjain Hi there, we understand you've been following up and we're sorry it's taking time. Our teams are aligned, and we're working to move this forward at the earliest. ~ Sam",
-      "created_at": "2026-10-29T09:27:33+00:00",
-      "url": "https://x.com/abcapital/status/2115737290198937688",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115734383957082236",
-      "handle": "CapitalTrends",
-      "display_name": "Capital Trends",
-      "text": "Nifty Pharma 3-Year Performance!\n\nWOCKPHARMA +755.53%\nLAURUSLABS +511.52%\nGLENMARK +209.49%  \n\nPharma delivered strong returns over the last 3 years, driven by massive outliers in Wockhardt and Laurus Labs, with solid gains across the sector. https://t.co/HTHe8Vg8cs",
-      "created_at": "2026-10-29T09:16:00+00:00",
-      "url": "https://x.com/CapitalTrends/status/2115734383957082236",
-      "image": "https://pbs.twimg.com/media/HVuTB_4a8AATj2O.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115733878170353914",
-      "handle": "ThatNumerouno",
-      "display_name": "Advait 🇦🇷",
-      "text": "@red_to_arsenal 😭😭😭",
-      "created_at": "2026-10-29T09:13:59+00:00",
-      "url": "https://x.com/ThatNumerouno/status/2115733878170353914",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115733761661046916",
-      "handle": "jsk_lnp",
-      "display_name": "LNPatel",
-      "text": "ABCapital  result tomorrow,  333 can be the good support, weekly close below 347 is not good,\n#ABCapital",
-      "created_at": "2026-10-29T09:13:31+00:00",
-      "url": "https://x.com/jsk_lnp/status/2115733761661046916",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115733674906059132",
-      "handle": "ThatNumerouno",
-      "display_name": "Advait 🇦🇷",
-      "text": "@SALMANIAC_SUMER @anirudhofficial 😭😭😭😭",
-      "created_at": "2026-10-29T09:13:11+00:00",
-      "url": "https://x.com/ThatNumerouno/status/2115733674906059132",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115733601354654141",
-      "handle": "ThatNumerouno",
-      "display_name": "Advait 🇦🇷",
-      "text": "Source: Ramananda Sagar's Ramayan",
-      "created_at": "2026-10-29T09:12:53+00:00",
-      "url": "https://x.com/ThatNumerouno/status/2115733601354654141",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115733247640694833",
-      "handle": "akumarjain",
-      "display_name": "Azey",
-      "text": "@abcapital Hey @abcapital, your spam messages are still coming through on my @WhatsApp. I haven't applied for or taken any loans from your company. Why are you sending me these messages? Please look into this as a priority. #harassment @SEBI_Awareness @RBI @MoneylifeIndia https://t.co/zmwyhmxULr",
-      "created_at": "2026-10-29T09:11:29+00:00",
-      "url": "https://x.com/akumarjain/status/2115733247640694833",
-      "image": "https://pbs.twimg.com/media/HVyXNzwbYAASCw0.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115732862775542179",
-      "handle": "1blurbing",
-      "display_name": "blurbing",
-      "text": "This post beautifully explains the non dualistic thought behind our worship rituals. 🙏 Grateful to come across this post as am trying to understand Advait.",
-      "created_at": "2026-10-29T09:09:57+00:00",
-      "url": "https://x.com/1blurbing/status/2115732862775542179",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115730121902657683",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@NoOneKnowshp Hi there, we’re sorry to hear about your experience. We take this matter seriously. Please share your registered mobile number, loan account number, and the date and time of the incident via DM, so we can look into it and assist you further. ~ Sid https://t.co/CwoaiHo6lr",
-      "created_at": "2026-10-29T08:59:04+00:00",
-      "url": "https://x.com/abcapital/status/2115730121902657683",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115728894439407694",
-      "handle": "ThatNumerouno",
-      "display_name": "Advait 🇦🇷",
-      "text": "Insaan ne bhagwan ki cheezo ko apne hisaab se modify kar liya hai. Agar koi cheez karni hi hai, or usme koi obstacles aa rahe hai to they'll say ki maybe god is testing them. Or agar koi cheez nahi hi karni or obstacles aa jaaye to bolenge kya pata na karne me hi bhalai hai.",
-      "created_at": "2026-10-29T08:54:11+00:00",
-      "url": "https://x.com/ThatNumerouno/status/2115728894439407694",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115727722773430371",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@jagadeeshbr95 Hi Jagadeesh, sorry for the inconvenience. Please DM us your registered contact number and loan account number, so we can help you with your loan closure request. Thank you. ~ Sid https://t.co/CwoaiHo6lr",
-      "created_at": "2026-10-29T08:49:32+00:00",
-      "url": "https://x.com/abcapital/status/2115727722773430371",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115725666372989114",
-      "handle": "Advait_im",
-      "display_name": "Advait Mehta",
-      "text": "@samirande_ 🥸 https://t.co/0z7zoOZRUj",
-      "created_at": "2026-10-29T08:41:21+00:00",
-      "url": "https://x.com/Advait_im/status/2115725666372989114",
-      "image": "https://pbs.twimg.com/media/HVyRRhybUAAhtSx.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115724640182206697",
-      "handle": "janusmyth",
-      "display_name": "Kallol Bhattacherjee",
-      "text": "No journalists visiting, no high commissioner being posted. India will have a full generation that will grow without any human contact with Pakistan that's shaped by hostilities,WhatsApp propaganda and godi media fake fights. I call this Pakistan blindness. Self defeating tbh.",
-      "created_at": "2026-10-29T08:37:17+00:00",
-      "url": "https://x.com/janusmyth/status/2115724640182206697",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115722857300860991",
-      "handle": "dharma_mumukshu",
-      "display_name": "Advait ✨",
-      "text": "@WaqarHasan1231 But still even after all this Ms shit on Israel , this just proves Ms are most ungrateful namak haram community.",
-      "created_at": "2026-10-29T08:30:12+00:00",
-      "url": "https://x.com/dharma_mumukshu/status/2115722857300860991",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115720625645895756",
-      "handle": "cuhngbn311909",
-      "display_name": "崔红宾",
-      "text": "@WeTheIndianss @AMG138168 @grok 付款： 爱沙尼亚分批支付了约7000万欧元预付款。\n交付： 炮弹交付严重延误。爱沙尼亚方面称，收到的货物存在数量不完整、质量不达标等问题。\n合同处理： 爱沙尼亚方面于2025年取消合同，并采取法律行动追讨相关款项。\n企业反驳： Datasel 否认违约，声称自己已经交付了价值约5800万欧元的货物，",
-      "created_at": "2026-10-29T08:21:19+00:00",
-      "url": "https://x.com/cuhngbn311909/status/2115720625645895756",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE854B01010",
-          "query": "\"Datasel\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115720103404962185",
-      "handle": "TheCommuneMag",
-      "display_name": "The Commune",
-      "text": "US Citizen Diljit Dosanjh Reportedly Used Old Aadhaar To Pay ₹50 Instead Of ₹1,100 During Taj Mahal Visit\n https://t.co/9vCeU2h7Eb",
-      "created_at": "2026-10-29T08:19:15+00:00",
-      "url": "https://x.com/TheCommuneMag/status/2115720103404962185",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115718945382772887",
-      "handle": "WealthEnrich",
-      "display_name": "Advait Arora",
-      "text": "Solid operational show by MAS Financials, yet the stock is down ~3.6%! 📉\n📊 Q2 FY27 Highlights:\n• Revenue: Up +22.7% YoY\n• Net Profit: Up +25.4% YoY)\nConsolidated AUM crossed ₹17,000 Cr \n📈 5Year Growth:\n• Sales CAGR: 26%\n• Profit CAGR: 21%\nConsistent long-term compounding, but short-term market sentiment remains lukewarm.\n#StockMarket #Investing #MASFIN",
-      "created_at": "2026-10-29T08:14:39+00:00",
-      "url": "https://x.com/WealthEnrich/status/2115718945382772887",
-      "image": "https://pbs.twimg.com/media/HVyJvnGaMAAiSdX.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115718842689482765",
-      "handle": "advaitrao_",
-      "display_name": "advait",
-      "text": "@FarzaTV can it teach me how to use logic pro?",
-      "created_at": "2026-10-29T08:14:14+00:00",
-      "url": "https://x.com/advaitrao_/status/2115718842689482765",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115718352115265819",
-      "handle": "WizardsUnknown",
-      "display_name": "Unknown Market Wizards",
-      "text": "Been lazy on the posting front but keeping track of the results. Q2 FY27 has been pretty strong, hardly any disappointments so far. \n\nSome of the results/calls/business trajectories I liked:\n\nOrient Electric\nSterlite Tech\nGarware Hi Tech\nCoforge\nSG Finserve\nTips Music\nThe Indian Hotels Company\nInternational Gemological Institute\nSteel Strips Wheels\nJayaswal Neco",
-      "created_at": "2026-10-29T08:12:17+00:00",
-      "url": "https://x.com/WizardsUnknown/status/2115718352115265819",
-      "image": "https://pbs.twimg.com/media/HVyJ27UbEAAwQLI.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE854B01010",
-          "query": "\"Jayaswal Neco\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115716284570567043",
-      "handle": "KhardtW44217",
-      "display_name": "ᵂᴼᶜᴷᴴᴬᴿᴰᵀ🪐🫨",
-      "text": "@thicklilmilf Bring it here bae🫦",
-      "created_at": "2026-10-29T08:04:05+00:00",
-      "url": "https://x.com/KhardtW44217/status/2115716284570567043",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115715327879532853",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@pandya_dhruv_ Hi Dhruv, we're coordinating with the concerned team to get more clarity. We understand the wait has been long, and we’ll connect back with an update soon. ~ Sid",
-      "created_at": "2026-10-29T08:00:16+00:00",
-      "url": "https://x.com/abcapital/status/2115715327879532853",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115714659978543589",
-      "handle": "voltricsX",
-      "display_name": "VoltricsX",
-      "text": "Aditya Vision \n\nCMP- 567\nSL - 540\nTarget - 600, 620+\n\nTime - 15 days \n\n🚫 NOT RECOMMENDED BUY OR SELL \n\n#NIFTY #Stocks #BANKNIFTY #StockMarketIndia #OptionsTrading\n#StocksToWatch  #StockslnFocus #sensex #optionbuying #optiontrading #giftynifty https://t.co/dBk1Rjo6Fi",
-      "created_at": "2026-10-29T07:57:37+00:00",
-      "url": "https://x.com/voltricsX/status/2115714659978543589",
-      "image": "https://pbs.twimg.com/media/HVyHRKhbUAAsj_B.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE679V01027",
-          "query": "\"Aditya Vision\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115713391956513001",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@NausheenAf09 Hi Nausheen, we know this isn’t ideal, and we’re sorry for the delay. We're still actively working on it and will share an update as soon as we can. ~ Sid",
-      "created_at": "2026-10-29T07:52:35+00:00",
-      "url": "https://x.com/abcapital/status/2115713391956513001",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115713380782928170",
-      "handle": "DCipherMarkets",
-      "display_name": "DCipher Markets",
-      "text": "🤝 STRATEGIC DEAL / M&A | #CGPOWER 🤝 #Thinsic\n\nAxiro Semiconductor, a subsidiary of CG Power, has made a strategic investment in Thinsic to enhance its capabilities in silicon carbide power semiconductor technology. This move is part of CG Power's broader strategy to scale up in advanced chip design and power electronics.\n\n• Investment Value: ₹XX Cr (exact investment amount not disclosed)\n• Strategic focus on next-generation silicon carbide technology for electric vehicles and high-voltage applications, bolstering operational synergies between Axiro and Thinsic.\n\n#CGPOWER #Thinsic #Semiconductors #Nifty #StockMarketIndia #StocksToWatch #StocksInFocus #MarketUpdate",
-      "created_at": "2026-10-29T07:52:32+00:00",
-      "url": "https://x.com/DCipherMarkets/status/2115713380782928170",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115711910587031806",
-      "handle": "pandya_dhruv_",
-      "display_name": "Dhruv Pandya",
-      "text": "Hello @abcapital \n\nIts been a week. can you guys let me know what is done to resolve this issue, please?",
-      "created_at": "2026-10-29T07:46:42+00:00",
-      "url": "https://x.com/pandya_dhruv_/status/2115711910587031806",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115711822896726414",
-      "handle": "pandya_dhruv_",
-      "display_name": "Dhruv Pandya",
-      "text": "@abcapital Its been a week. can you guys let me know what is done to resolve this issue, please?",
-      "created_at": "2026-10-29T07:46:21+00:00",
-      "url": "https://x.com/pandya_dhruv_/status/2115711822896726414",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115711453806367183",
-      "handle": "Advaitsuri",
-      "display_name": "Advait Suri",
-      "text": "@AbhishBanerj Kahun kuda banayenge kahun kuch was best 🤣🤣",
-      "created_at": "2026-10-29T07:44:53+00:00",
-      "url": "https://x.com/Advaitsuri/status/2115711453806367183",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115710389971497427",
-      "handle": "Wockcrafter",
-      "display_name": "Gilderoy Wockhardt",
-      "text": "@DueDoctor Hahahaha",
-      "created_at": "2026-10-29T07:40:39+00:00",
-      "url": "https://x.com/Wockcrafter/status/2115710389971497427",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115708435652362547",
-      "handle": "dharma_mumukshu",
-      "display_name": "Advait ✨",
-      "text": "@GauravGupta1110 Bolsonaro is Rahul Gandhi of Brazil, rich nepo baby",
-      "created_at": "2026-10-29T07:32:53+00:00",
-      "url": "https://x.com/dharma_mumukshu/status/2115708435652362547",
-      "image": null,
       "source_url": "https://x.com/unknown",
       "matchedQueries": [
         {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115706320762585356",
-      "handle": "yogeshmemane",
-      "display_name": "yogeshmemane",
-      "text": "@MomentumTraderz Bodal Chemicals, Kiri Industries, Bhageria Industries, Shree Pushkar Chemicals and AksharChem.",
-      "created_at": "2026-10-29T07:24:29+00:00",
-      "url": "https://x.com/yogeshmemane/status/2115706320762585356",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE415I01015",
-          "query": "\"Kiri Industries\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115705188124389513",
-      "handle": "Er_Vpin",
-      "display_name": "Er. Vipin | Multibagger Bloodhound",
-      "text": "🚀 STOCKS BLASTING TODAY! 🔥\n      \n      STOCKS ON THE RADAR 📊\n\n🔥 BIG COMPANIES & MOMENTUM\n\n🔥 Adani Ports\n🔥 JSW Energy\n🔥 Poonawalla Fincorp\n🔥 Acutaas Chemicals\n🔥 Syrma SGS Technology\n🔥 Manappuram Finance\n🔥 Zensar Technologies\n🔥 SG Mart\n🔥 Birlasoft\n🔥 Reliance Power\n\n⚡ PHARMA & EMERGING BUSINESSES\n\n⚡ Aeroflex Industries\n⚡ Sanofi India\n⚡ Bliss GVS Pharma\n⚡ Optiemus Infracom\n⚡ West Coast Paper\n⚡ Mrugesh Trading\n⚡ RPG Life Sciences\n⚡ Northern Arc Capital\n⚡ TCPL Packaging\n⚡ Shukra Pharmaceuticals\n\n📈 INDUSTRIALS & TECHNOLOGY\n\n📈 Kiri Industries\n📈 Aurionpro Solutions\n📈 AGI Infra\n📈 Sasken Technologies\n📈 Hubtown\n📈 CIAN Agro Industries\n📈 Asian Energy Services\n📈 OBSC Perfection\n📈 Pashupati Cotspin\n📈 GRM Overseas\n\n🚀 SPECIAL SITUATIONS & GROWTH\n\n🚀 Shree Pushkar Chemicals\n🚀 Creative Newtech\n🚀 Bhageria Industries\n🚀 Xtranet Technologies\n🚀 Manaksia Coated Metals\n🚀 Gujarat Natural Resources\n🚀 Keltec Energies\n🚀 Onix Solar Energy\n🚀 Asian Star Company\n🚀 India Pesticides & Industrial Products\n\n💥 ADDITIONAL STOCKS TO TRACK\n\n💥 Unitech\n💥 Pranav Constructions\n💥 GRP\n💥 Sathlokhar Synergys\n💥 Tankup Engineering\n💥 Sacheerome\n💥 Onward Technologies\n💥 Cosmic CRF\n💥 Welspun Investments\n💥 Adroit Industries",
-      "created_at": "2026-10-29T07:19:59+00:00",
-      "url": "https://x.com/Er_Vpin/status/2115705188124389513",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE415I01015",
-          "query": "\"Kiri Industries\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115704721210331323",
-      "handle": "PinkunSatapathy",
-      "display_name": "Pinkun",
-      "text": "@abdua08 Acutaas bhi dikhalo \nHolding :\nAvalon\nAeroflex \nAcutaas\nAdvait \n@abdua08 VOEPL kab bhagega?",
-      "created_at": "2026-10-29T07:18:08+00:00",
-      "url": "https://x.com/PinkunSatapathy/status/2115704721210331323",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115704141389627881",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@sadananda1992 Hi Sadananda, we regret your experience and take your concern seriously. Please DM us your registered contact number, email ID and loan account number, so we can look into this. ~ Kabir https://t.co/CwoaiHo6lr",
-      "created_at": "2026-10-29T07:15:49+00:00",
-      "url": "https://x.com/abcapital/status/2115704141389627881",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115703688002207879",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@lawyerpanel002 Hi Abhimanyu, we understand you've been following up and we're sorry it's taking time. Our teams are aligned, and we're working to move this forward at the earliest. ~ Kabir",
-      "created_at": "2026-10-29T07:14:01+00:00",
-      "url": "https://x.com/abcapital/status/2115703688002207879",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115700735325417814",
-      "handle": "iambhupendra25",
-      "display_name": "Bhupendra Verma",
-      "text": "@abcapital From last 3 days what kind of cordination ka happening I didn't get resolution instead of I am getting threatened with the official people. No registration or rules are applied to the responsibil person.",
-      "created_at": "2026-10-29T07:02:17+00:00",
-      "url": "https://x.com/iambhupendra25/status/2115700735325417814",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115700691914178872",
-      "handle": "DanWatchDK",
-      "display_name": "Danwatch",
-      "text": "I 2025 lovede daværende forsvarsminister Troels Lund Poulsen (V) 317 millioner kroner til Ukraines svindende ammunitionslagre. 71 millioner af dem gik til det italienske firma Datasel, der skulle producere artilleriammunition. Men firmaet er falsk og granaterne nåede aldrig frem. Læs hele afsløringen her: https://t.co/Nwe5Lvgse0",
-      "created_at": "2026-10-29T07:02:07+00:00",
-      "url": "https://x.com/DanWatchDK/status/2115700691914178872",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE854B01010",
-          "query": "\"Datasel\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115700581029531652",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@rajaneesan Hi Rajaneesan, we would like to inform you that we have shared your concern with our team. Rest assured, you will receive an update shortly. Thank you for your patience. ~ Sid",
-      "created_at": "2026-10-29T07:01:40+00:00",
-      "url": "https://x.com/abcapital/status/2115700581029531652",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115699788213797013",
-      "handle": "AlfafinderIndia",
-      "display_name": "ALFA FINDER",
-      "text": "CG Power's Axiro becomes lead investor in ThinSiC silicon carbide firm 🤝\n\n#CGPOWER #Partnership https://t.co/9yNXQm7dEv",
-      "created_at": "2026-10-29T06:58:31+00:00",
-      "url": "https://x.com/AlfafinderIndia/status/2115699788213797013",
-      "image": "https://pbs.twimg.com/media/HVx5uR5bYAAeWB9.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115699078109753848",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@iambhupendra25 Hi Bhupendra, we're coordinating with the concerned team to get more clarity. We understand the wait has been long, and we’ll connect back with an update soon. ~ Sid",
-      "created_at": "2026-10-29T06:55:42+00:00",
-      "url": "https://x.com/abcapital/status/2115699078109753848",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115698881191362627",
-      "handle": "REDBOXINDIA",
-      "display_name": "RedboxGlobal India",
-      "text": "CG POWER: AXIRO SEMICONDUCTOR INVESTS IN THINSIC TO STRENGTHEN POSITION IN NEXTGENERATION SILICON CARBIDE POWER SEMICONDUCTORS",
-      "created_at": "2026-10-29T06:54:55+00:00",
-      "url": "https://x.com/REDBOXINDIA/status/2115698881191362627",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115697858200691072",
-      "handle": "CNBCTV18Live",
-      "display_name": "CNBC-TV18",
-      "text": "#JustIn | #CGPower Arm #Axiro #Semiconductor Invests In ThinSiC A #Silicon Valley-based Semiconductor Co https://t.co/eA55ApBE3U",
-      "created_at": "2026-10-29T06:50:51+00:00",
-      "url": "https://x.com/CNBCTV18Live/status/2115697858200691072",
-      "image": "https://pbs.twimg.com/media/HVx3_HrbIAAaCdX.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115697699370754361",
-      "handle": "ETNOWlive",
-      "display_name": "ET NOW",
-      "text": "#StockInNews | CG Power’s arm Axiro Semiconductor invests in Silicon Valley-based ThinSiC Inc, which develops next-generation, low-cost silicon carbide power devices\n\n#CGPower #Semiconductors #SiliconCarbide https://t.co/QlvP5L7uC7",
-      "created_at": "2026-10-29T06:50:13+00:00",
-      "url": "https://x.com/ETNOWlive/status/2115697699370754361",
-      "image": "https://pbs.twimg.com/media/HVx315tb0AA95aN.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115697440624185664",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@RiyaSin41657863 @RBI Hello, we’re still awaiting the requested details to assist you further. Kindly share the required information at your convenience, and we’ll be happy to look into this and provide the necessary assistance. - Mohit",
-      "created_at": "2026-10-29T06:49:12+00:00",
-      "url": "https://x.com/abcapital/status/2115697440624185664",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115697379475333496",
-      "handle": "WealthEnrich",
-      "display_name": "Advait Arora",
-      "text": "This Re-Rating is not stop 📈\nNow nearing Rs. 4000 mark ✔️ https://t.co/RCWZVREojD",
-      "created_at": "2026-10-29T06:48:57+00:00",
-      "url": "https://x.com/WealthEnrich/status/2115697379475333496",
-      "image": "https://pbs.twimg.com/media/HVx3jN3aAAAbXOX.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115696913639162358",
-      "handle": "FWUpdates_",
-      "display_name": "Front Wave Updates",
-      "text": "#CGPOWER: ARM AXIRO SEMICONDUCTOR LEADS FINANCING ROUND IN SILICON VALLEY-BASED THINSIC INC; AMOUNT NOT DISCLOSED\n\nENTERS LONG-TERM PARTNERSHIP TO COMMERCIALISE THINSIC'S SILICON CARBIDE POWER DEVICES\n\nSource: Company Filings",
-      "created_at": "2026-10-29T06:47:06+00:00",
-      "url": "https://x.com/FWUpdates_/status/2115696913639162358",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115695728924430473",
-      "handle": "rajaneesan",
-      "display_name": "Rajaneesan",
-      "text": "@abcapital First you address how to deactivate UPI lite in your app. Else dedicate a team to take the request and deactivate at your end and confirm. I want to deregister.",
-      "created_at": "2026-10-29T06:42:24+00:00",
-      "url": "https://x.com/rajaneesan/status/2115695728924430473",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115695548091297940",
-      "handle": "stockwatch_live",
-      "display_name": "Stockwatch.live",
-      "text": "$CGPOWER Axiro Semiconductor Invests in ThinSiC Inc.\n\n• Axiro Semiconductor invests in ThinSiC Inc., a SiC power device developer.\n• Forms a strategic commercial partnership to boost SiC technology adoption.\n\nhttps://t.co/jmogDh85zs",
-      "created_at": "2026-10-29T06:41:41+00:00",
-      "url": "https://x.com/stockwatch_live/status/2115695548091297940",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115695528168325511",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@AjeetKumar75382 Hi Ajeet, we would like to inform you that we have shared the concern with our team. Rest assured, the account holder will receive an update shortly. Thank you. ~ Kabir",
-      "created_at": "2026-10-29T06:41:36+00:00",
-      "url": "https://x.com/abcapital/status/2115695528168325511",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2115695386795119090",
-      "handle": "iambhupendra25",
-      "display_name": "Bhupendra Verma",
-      "text": "Still there is no resolution inspite of multiple follow ups instead of help @abcapital people are threatening me to pay heavy charges . @AdityaBirlaGrp @KumarMBirla @RBI @jagograhakjago https://t.co/HnMQzEXgfn",
-      "created_at": "2026-10-29T06:41:02+00:00",
-      "url": "https://x.com/iambhupendra25/status/2115695386795119090",
-      "image": "https://pbs.twimg.com/media/HVx1tyuaIAEasb6.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
         {
-          "entityId": "isin:INE674K01013",
-          "query": "\"ABCAPITAL\""
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
         }
       ]
     }
@@ -9645,11 +9685,15 @@
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 12,
-    "incomplete": 245,
-    "checkedAt": "2026-11-01T01:40:44.657051+00:00"
+    "attempted": 7,
+    "incomplete": 243,
+    "checkedAt": "2026-11-01T19:49:32.237850+00:00"
   },
   "archive": [
+    {
+      "file": "twitter-archive/2026-11.json",
+      "month": "2026-11"
+    },
     {
       "file": "twitter-archive/2026-10.json",
       "month": "2026-10"
@@ -9770,9 +9814,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-01T19:27:14.850Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-01T19:50:04.258Z",
     "lastSuccessAt": null
   }
 }
