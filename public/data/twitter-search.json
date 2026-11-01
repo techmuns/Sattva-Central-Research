@@ -1104,8 +1104,8 @@
       "pending": []
     },
     "isin:INE993A01026|Man Industries (India)": {
-      "lastAttemptAt": "2026-10-25T22:41:56+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-01T13:34:38+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-25T22:41:56+00:00",
       "targetThrough": null,
@@ -2814,6 +2814,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-11-01T10:03:40.876798+00:00"
+    "checkedAt": "2026-11-01T13:34:38.539345+00:00"
   }
 }
