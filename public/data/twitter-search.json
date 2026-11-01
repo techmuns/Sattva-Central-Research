@@ -1316,9 +1316,9 @@
       "lastDiscoveryAt": "2026-11-01T19:49:32+00:00"
     },
     "isin:INE0BYP01024|OSWALPUMPS": {
-      "lastAttemptAt": "2026-10-26T02:16:06+00:00",
+      "lastAttemptAt": "2026-11-01T20:47:19+00:00",
       "lastResultCount": 37,
-      "error": null,
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-10-26T02:16:06+00:00",
       "targetThrough": null,
       "pending": []
@@ -2824,8 +2824,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 7,
+    "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-11-01T19:49:32.237850+00:00"
+    "checkedAt": "2026-11-01T20:47:19.588207+00:00"
   }
 }
