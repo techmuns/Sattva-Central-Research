@@ -1036,7 +1036,7 @@
       ]
     },
     "isin:INE0O6601022|Kross": {
-      "lastAttemptAt": "2026-10-25T19:47:54+00:00",
+      "lastAttemptAt": "2026-11-01T06:54:10+00:00",
       "error": "search-unavailable",
       "lastResultCount": 121,
       "targetThrough": "2026-10-20T15:29:19+00:00",
@@ -2814,6 +2814,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-11-01T06:14:21.227845+00:00"
+    "checkedAt": "2026-11-01T06:54:10.914339+00:00"
   }
 }
