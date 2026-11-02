@@ -1448,44 +1448,15 @@
       "pending": []
     },
     "isin:INE546Y01022|Praxis Home Retails": {
-      "lastAttemptAt": "2026-10-26T05:37:34+00:00",
+      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
       "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-26T05:37:34+00:00",
+      "lastSuccessAt": "2026-11-02T06:57:57+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE546Y01022|PRAXIS": {
-      "lastAttemptAt": "2026-10-26T05:37:34+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 115,
-      "targetThrough": "2026-09-18T06:26:21+00:00",
-      "pending": [
-        {
-          "from": "2026-09-13T18:26:21.303571+00:00",
-          "to": "2026-09-18T06:26:21+00:00"
-        },
-        {
-          "from": "2026-09-09T06:26:21.607142+00:00",
-          "to": "2026-09-11T12:26:21.455356+00:00"
-        },
-        {
-          "from": "2026-09-11T12:26:21.455356+00:00",
-          "to": "2026-09-13T18:26:21.303571+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-26T05:37:34+00:00"
-    },
-    "isin:INE811K01011|Prestige Estate Projects": {
-      "lastAttemptAt": "2026-10-26T05:37:34+00:00",
-      "error": null,
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-26T05:37:34+00:00",
-      "targetThrough": null,
-      "pending": []
-    },
-    "isin:INE811K01011|PRESTIGE": {
-      "lastAttemptAt": "2026-10-26T05:37:34+00:00",
+      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
       "error": "result-cap-incomplete",
       "lastResultCount": 123,
       "targetThrough": "2026-09-18T06:26:21+00:00",
@@ -1507,26 +1478,72 @@
           "to": "2026-09-18T06:26:21+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-26T05:37:34+00:00"
+      "lastDiscoveryAt": "2026-11-02T06:57:57+00:00"
     },
-    "isin:INE0V9N01017|Prizor Viztech": {
-      "lastAttemptAt": "2026-10-26T05:37:34+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 88,
-      "lastSuccessAt": "2026-10-16T07:16:43+00:00",
+    "isin:INE811K01011|Prestige Estate Projects": {
+      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-11-02T06:57:57+00:00",
       "targetThrough": null,
       "pending": []
     },
-    "isin:INE004A01022|Protean eGov Technologies": {
-      "lastAttemptAt": "2026-10-26T06:15:06+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 33,
+    "isin:INE811K01011|PRESTIGE": {
+      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 116,
+      "targetThrough": "2026-09-18T06:26:21+00:00",
+      "pending": [
+        {
+          "from": "2026-09-11T12:26:21.455356+00:00",
+          "to": "2026-09-13T18:26:21.303571+00:00"
+        },
+        {
+          "from": "2026-09-13T18:26:21.303571+00:00",
+          "to": "2026-09-16T00:26:21.151785+00:00"
+        },
+        {
+          "from": "2026-09-16T00:26:21.151785+00:00",
+          "to": "2026-09-18T06:26:21+00:00"
+        },
+        {
+          "from": "2026-09-09T06:26:21.607142+00:00",
+          "to": "2026-09-10T09:26:21.531249+00:00"
+        },
+        {
+          "from": "2026-09-10T09:26:21.531249+00:00",
+          "to": "2026-09-11T12:26:21.455356+00:00"
+        }
+      ],
+      "lastDiscoveryAt": "2026-11-02T06:57:57+00:00"
+    },
+    "isin:INE0V9N01017|Prizor Viztech": {
+      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
       "lastSuccessAt": "2026-10-16T07:16:43+00:00",
+      "targetThrough": "2026-11-02T06:57:57+00:00",
+      "pending": [
+        {
+          "from": "2026-10-14T07:16:43+00:00",
+          "to": "2026-10-23T19:07:20+00:00"
+        },
+        {
+          "from": "2026-10-23T19:07:20+00:00",
+          "to": "2026-11-02T06:57:57+00:00"
+        }
+      ]
+    },
+    "isin:INE004A01022|Protean eGov Technologies": {
+      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
+      "error": null,
+      "lastResultCount": 3,
+      "lastSuccessAt": "2026-11-02T06:57:57+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE004A01022|PROTEAN": {
-      "lastAttemptAt": "2026-10-26T06:49:47+00:00",
+      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
       "error": "search-unavailable",
       "lastResultCount": 103,
       "targetThrough": "2026-10-21T09:58:18+00:00",
@@ -1540,7 +1557,7 @@
           "to": "2026-10-21T09:58:18+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-16T07:16:43+00:00",
+      "lastDiscoveryAt": "2026-11-02T06:57:57+00:00",
       "lastSuccessAt": "2026-10-02T05:50:51+00:00"
     },
     "isin:INE0SII01026|Quality Power Electrical Equipments": {
@@ -2824,8 +2841,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 243,
-    "checkedAt": "2026-11-02T05:54:15.229112+00:00"
+    "attempted": 7,
+    "incomplete": 240,
+    "checkedAt": "2026-11-02T06:57:57.240614+00:00"
   }
 }
