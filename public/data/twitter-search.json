@@ -1697,7 +1697,7 @@
       "pending": []
     },
     "isin:INE08U801020|SAMHI": {
-      "lastAttemptAt": "2026-10-26T12:38:30+00:00",
+      "lastAttemptAt": "2026-11-02T20:18:25+00:00",
       "error": "search-unavailable",
       "lastResultCount": 23,
       "lastSuccessAt": "2026-10-02T06:48:54+00:00",
@@ -2843,6 +2843,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-11-02T19:24:10.976915+00:00"
+    "checkedAt": "2026-11-02T20:18:25.365480+00:00"
   }
 }
