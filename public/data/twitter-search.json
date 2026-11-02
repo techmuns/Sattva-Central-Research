@@ -1418,8 +1418,8 @@
       "pending": []
     },
     "isin:INE572E01012|PNBHOUSING": {
-      "lastAttemptAt": "2026-10-26T05:37:34+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-02T02:38:47+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 38,
       "lastSuccessAt": "2026-09-18T06:26:21+00:00",
       "targetThrough": "2026-10-16T06:34:32+00:00",
@@ -2826,6 +2826,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 243,
-    "checkedAt": "2026-11-02T02:32:49.887303+00:00"
+    "checkedAt": "2026-11-02T02:38:47.080979+00:00"
   }
 }
