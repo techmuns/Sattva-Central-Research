@@ -1729,7 +1729,7 @@
       "pending": []
     },
     "isin:INE953O01021|Sansera Engineering": {
-      "lastAttemptAt": "2026-10-26T15:17:21+00:00",
+      "lastAttemptAt": "2026-11-02T23:37:44+00:00",
       "error": "search-unavailable",
       "lastResultCount": 19,
       "targetThrough": null,
@@ -2843,6 +2843,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-11-02T23:03:41.115884+00:00"
+    "checkedAt": "2026-11-02T23:37:44.568928+00:00"
   }
 }
