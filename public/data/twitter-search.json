@@ -1738,7 +1738,7 @@
       "lastSuccessAt": "2026-09-28T06:40:42+00:00"
     },
     "isin:INE953O01021|SANSERA": {
-      "lastAttemptAt": "2026-10-26T16:15:13+00:00",
+      "lastAttemptAt": "2026-11-03T01:42:38+00:00",
       "error": "search-unavailable",
       "lastResultCount": 58,
       "targetThrough": "2026-09-28T06:40:42+00:00",
@@ -2842,7 +2842,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 240,
-    "checkedAt": "2026-11-02T23:37:44.568928+00:00"
+    "incomplete": 250,
+    "checkedAt": "2026-11-03T01:42:38.256874+00:00"
   }
 }
