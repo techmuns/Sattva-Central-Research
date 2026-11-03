@@ -1771,7 +1771,7 @@
       "pending": []
     },
     "isin:INE955I01044|Sejal Glass": {
-      "lastAttemptAt": "2026-10-26T17:55:59+00:00",
+      "lastAttemptAt": "2026-11-03T03:55:42+00:00",
       "error": "search-unavailable",
       "lastResultCount": 110,
       "lastSuccessAt": "2026-10-02T08:02:07+00:00",
@@ -2843,6 +2843,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-03T02:30:49.905132+00:00"
+    "checkedAt": "2026-11-03T03:55:42.941004+00:00"
   }
 }
