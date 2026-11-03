@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-03T02:58:19.661Z",
-  "oldestDataAt": "2026-11-03T02:58:19.661Z",
+  "capturedAt": "2026-11-03T10:14:24.506Z",
+  "oldestDataAt": "2026-11-03T10:14:24.506Z",
   "from": "2025-11-03",
   "to": "2026-11-03",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-03T02:58:19.661Z",
+      "capturedAt": "2026-11-03T10:14:24.506Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-03T02:58:19.661Z",
+      "capturedAt": "2026-11-03T10:14:24.506Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-29",
-      "oldestDate": "2026-10-19",
+      "latestDate": "2026-11-02",
+      "oldestDate": "2026-10-21",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-03T02:58:19.661Z",
+      "capturedAt": "2026-11-03T10:14:24.506Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-03T02:58:19.661Z",
+      "capturedAt": "2026-11-03T10:14:24.506Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2076,
+  "withRows": 2077,
   "emptyCount": 0,
-  "rowCount": 23259,
+  "rowCount": 23262,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -272918,6 +272918,21 @@
     "SILGO": [
       {
         "ticker": "SILGO",
+        "date": "2026-11-02",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Silgo Retail",
+          "Insider": "Ms. Dempal Shah",
+          "Transaction": "Acquisition",
+          "Trade Shares": "565175",
+          "Broadcast Date": "2026-11-02",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SILGO",
         "date": "2026-10-29",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -438618,6 +438633,21 @@
     "UNIHEALTH": [
       {
         "ticker": "UNIHEALTH",
+        "date": "2026-11-02",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Unihealth Hosp",
+          "Insider": "Dr. Akshay M. Parmar",
+          "Transaction": "Acquisition",
+          "Trade Shares": "100000",
+          "Broadcast Date": "2026-11-02",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "UNIHEALTH",
         "date": "2026-10-15",
         "url": "https://www.screener.in/trades/insiders/?o=-2",
         "sourceId": "insiders",
@@ -443121,6 +443151,23 @@
           "Trade Shares": "229188",
           "Trade Value": "42.97 lacs",
           "Price": "18.8",
+          "Broadcast Date": "2026-11-02",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "PSFL": [
+      {
+        "ticker": "PSFL",
+        "date": "2026-11-02",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Paramount Specia",
+          "Insider": "India Equity Fund1",
+          "Transaction": "Sell",
+          "Trade Shares": "10000",
           "Broadcast Date": "2026-11-02",
           "Source": "Screener.in"
         }
