@@ -1853,7 +1853,7 @@
       "pending": []
     },
     "isin:INE526E01018|Shriram Pistons & Rings": {
-      "lastAttemptAt": "2026-10-27T00:06:51+00:00",
+      "lastAttemptAt": "2026-11-03T12:37:23+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -2843,6 +2843,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-03T11:43:52.459787+00:00"
+    "checkedAt": "2026-11-03T12:37:23.260598+00:00"
   }
 }
