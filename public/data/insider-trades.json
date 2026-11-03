@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-03T17:50:53.487Z",
-  "oldestDataAt": "2026-11-03T17:50:53.487Z",
-  "from": "2025-11-03",
-  "to": "2026-11-03",
+  "capturedAt": "2026-11-03T19:44:15.548Z",
+  "oldestDataAt": "2026-11-03T19:44:15.548Z",
+  "from": "2025-11-04",
+  "to": "2026-11-04",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 9,
+      "pagesRead": 2,
       "latestDate": "2026-11-03",
-      "oldestDate": "2026-11-02",
+      "oldestDate": "2026-11-03",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 225,
-      "capturedAt": "2026-11-03T17:50:53.487Z",
+      "rowCount": 50,
+      "capturedAt": "2026-11-03T19:44:15.548Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-03T17:50:53.487Z",
+      "capturedAt": "2026-11-03T19:44:15.548Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-03T17:50:53.487Z",
+      "capturedAt": "2026-11-03T19:44:15.548Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-03T17:50:53.487Z",
+      "capturedAt": "2026-11-03T19:44:15.548Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2089,
+  "withRows": 2087,
   "emptyCount": 0,
-  "rowCount": 23505,
+  "rowCount": 23494,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -131260,50 +131260,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4968",
-          "Trade %": "0.01",
-          "Trade Value": "23597815",
-          "Post Holding Shares": "721553",
-          "Post Holding %": "1.51",
-          "Mode": "Market Purchase",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-11-03",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "5148",
-          "Trade %": "0.01",
-          "Trade Value": "23594214",
-          "Post Holding Shares": "726701",
-          "Post Holding %": "1.52",
-          "Mode": "Market Purchase",
-          "From Date": "2025-10-30",
-          "To Date": "2025-10-30",
-          "Broadcast Date": "2025-11-03",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "AJANTPHARM": [
@@ -137570,28 +137526,6 @@
           "From Date": "2025-11-01",
           "To Date": "2025-11-01",
           "Broadcast Date": "2025-11-06",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "Pawan Kumar Danwar",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1000",
-          "Trade %": "0",
-          "Trade Value": "1550000",
-          "Post Holding Shares": "2000",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-11-03",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -154590,28 +154524,6 @@
           "From Date": "2025-11-10",
           "To Date": "2025-11-11",
           "Broadcast Date": "2025-11-13",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "KEI",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "KEI Industries Ltd",
-          "Insider": "Lalit Sharma",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "5000",
-          "Trade %": "0.01",
-          "Trade Value": "20233289",
-          "Post Holding Shares": "87252",
-          "Post Holding %": "0.09",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-30",
-          "To Date": "2025-10-30",
-          "Broadcast Date": "2025-11-03",
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
@@ -186733,30 +186645,6 @@
         }
       }
     ],
-    "SRF": [
-      {
-        "ticker": "SRF",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "SRF",
-          "Insider": "Kotak Mahindra Mutual Fund",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "39331",
-          "Trade %": "0.01",
-          "Trade Value": null,
-          "Post Holding Shares": "14853579",
-          "Post Holding %": "5.01",
-          "Mode": "Market",
-          "From Date": "2025-10-30",
-          "To Date": "2025-10-30",
-          "Broadcast Date": "2025-11-03",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      }
-    ],
     "KIRLOSENG": [
       {
         "ticker": "KIRLOSENG",
@@ -194564,94 +194452,6 @@
           "From Date": "2025-11-07",
           "To Date": "2025-11-07",
           "Broadcast Date": "2025-11-12",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "Kiaan Shah & PACs",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "13070",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "13070",
-          "Post Holding %": null,
-          "Mode": "Off Market / Inter se transfer",
-          "From Date": "2025-10-27",
-          "To Date": "2025-10-27",
-          "Broadcast Date": "2025-11-03",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "Naysa Shah & PACs",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "13070",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "13070",
-          "Post Holding %": null,
-          "Mode": "Off Market / Inter se transfer",
-          "From Date": "2025-10-27",
-          "To Date": "2025-10-27",
-          "Broadcast Date": "2025-11-03",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "Prakash Chunilal Shah & PACs",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "16144",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "100000",
-          "Post Holding %": "0.02",
-          "Mode": "Off Market / Inter se transfer",
-          "From Date": "2025-10-27",
-          "To Date": "2025-10-27",
-          "Broadcast Date": "2025-11-03",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "360ONE",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "360ONE",
-          "Insider": "Yatin Shah & PACs",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "42284",
-          "Trade %": "0.01",
-          "Trade Value": null,
-          "Post Holding Shares": "10699820",
-          "Post Holding %": "2.64",
-          "Mode": "Off Market / Inter se transfer",
-          "From Date": "2025-10-27",
-          "To Date": "2025-10-27",
-          "Broadcast Date": "2025-11-03",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -209036,28 +208836,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "IDFCFIRSTB",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "IDFC First Bank Ltd",
-          "Insider": "Rukmani Welfre Trust",
-          "Category": "Connected Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "636000",
-          "Trade %": "0.01",
-          "Trade Value": "50055162",
-          "Post Holding Shares": "4457860",
-          "Post Holding %": "0.05",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-30",
-          "To Date": "2025-10-30",
-          "Broadcast Date": "2025-11-03",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "NHPC": [
@@ -211055,30 +210833,6 @@
           "From Date": "2025-11-17",
           "To Date": "2026-06-11",
           "Broadcast Date": "2026-06-25",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      }
-    ],
-    "TATACHEM": [
-      {
-        "ticker": "TATACHEM",
-        "date": "2025-11-03",
-        "cells": {
-          "Company": "TATACHEM",
-          "Insider": "ICICI Prudential Mutual Fund",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "146782",
-          "Trade %": "0.06",
-          "Trade Value": null,
-          "Post Holding Shares": "12753028",
-          "Post Holding %": "5.01",
-          "Mode": "Market",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-11-03",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
