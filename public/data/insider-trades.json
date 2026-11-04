@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-04T18:12:26.957Z",
-  "oldestDataAt": "2026-11-04T18:12:26.957Z",
-  "from": "2025-11-04",
-  "to": "2026-11-04",
+  "capturedAt": "2026-11-04T18:52:51.881Z",
+  "oldestDataAt": "2026-11-04T18:52:51.881Z",
+  "from": "2025-11-05",
+  "to": "2026-11-05",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 8,
+      "pagesRead": 2,
       "latestDate": "2026-11-04",
-      "oldestDate": "2026-11-03",
+      "oldestDate": "2026-11-04",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 200,
-      "capturedAt": "2026-11-04T18:12:26.957Z",
+      "rowCount": 50,
+      "capturedAt": "2026-11-04T18:52:51.881Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-04T18:12:26.957Z",
+      "capturedAt": "2026-11-04T18:52:51.881Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-04T18:12:26.957Z",
+      "capturedAt": "2026-11-04T18:52:51.881Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-04T18:12:26.957Z",
+      "capturedAt": "2026-11-04T18:52:51.881Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2099,
   "emptyCount": 0,
-  "rowCount": 23707,
+  "rowCount": 23702,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -93408,28 +93408,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "SAMMAANCAP",
-        "date": "2025-11-04",
-        "cells": {
-          "Company": "SAMMAANCAP",
-          "Insider": "BlackRock, Inc.",
-          "Category": "None",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "3875983",
-          "Trade %": "0.47",
-          "Trade Value": null,
-          "Post Holding Shares": "44291365",
-          "Post Holding %": "5.33",
-          "Mode": "Market",
-          "From Date": "2025-10-31",
-          "To Date": "2025-10-31",
-          "Broadcast Date": "2025-11-04",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "SANSTAR": [
@@ -102305,50 +102283,6 @@
           "From Date": "2025-11-06",
           "To Date": "2025-11-06",
           "Broadcast Date": "2025-11-07",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-11-04",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1064",
-          "Trade %": "0",
-          "Trade Value": "567443",
-          "Post Holding Shares": "1175750",
-          "Post Holding %": "0.07",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-03",
-          "To Date": "2025-11-03",
-          "Broadcast Date": "2025-11-04",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-11-04",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2687",
-          "Trade %": "0",
-          "Trade Value": "1453469",
-          "Post Holding Shares": "1176814",
-          "Post Holding %": "0.07",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-29",
-          "To Date": "2025-10-29",
-          "Broadcast Date": "2025-11-04",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -182264,28 +182198,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "AFFLE",
-        "date": "2025-11-04",
-        "cells": {
-          "Company": "AFFLE",
-          "Insider": "Kapil Mohan Bhutani",
-          "Category": "KMP",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4500",
-          "Trade %": "0",
-          "Trade Value": "4725000",
-          "Post Holding Shares": "39315",
-          "Post Holding %": "0.02",
-          "Mode": "ESOP",
-          "From Date": "2025-11-04",
-          "To Date": "2025-11-04",
-          "Broadcast Date": "2025-11-04",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "FSL": [
@@ -216173,28 +216085,6 @@
           "From Date": "2025-11-06",
           "To Date": "2025-11-06",
           "Broadcast Date": "2025-11-07",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAUKRI",
-        "date": "2025-11-04",
-        "cells": {
-          "Company": "NAUKRI",
-          "Insider": "Info Edge Employees Stock Option Plan Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "14463",
-          "Trade %": "0",
-          "Trade Value": "28926",
-          "Post Holding Shares": "948805",
-          "Post Holding %": "0.15",
-          "Mode": "ESOP",
-          "From Date": "2025-11-04",
-          "To Date": "2025-11-04",
-          "Broadcast Date": "2025-11-04",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
