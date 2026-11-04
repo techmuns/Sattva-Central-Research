@@ -2327,8 +2327,8 @@
       "pending": []
     },
     "isin:INE1CDF01017|VAML": {
-      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-04T16:23:37+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 87,
       "lastSuccessAt": "2026-10-28T03:19:34+00:00",
       "targetThrough": null,
@@ -2884,8 +2884,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 10,
+    "attempted": 1,
     "incomplete": 247,
-    "checkedAt": "2026-11-04T15:29:18.368349+00:00"
+    "checkedAt": "2026-11-04T16:23:37.238857+00:00"
   }
 }
