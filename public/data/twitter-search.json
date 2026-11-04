@@ -2215,93 +2215,112 @@
       "pending": []
     },
     "isin:INE615H01020|TITAGARH": {
-      "lastAttemptAt": "2026-10-27T23:53:39+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 111,
       "targetThrough": "2026-10-22T10:22:06+00:00",
       "pending": [
         {
-          "from": "2026-09-22T08:08:20+00:00",
-          "to": "2026-10-07T09:15:13+00:00"
-        },
-        {
           "from": "2026-10-07T09:15:13+00:00",
           "to": "2026-10-22T10:22:06+00:00"
+        },
+        {
+          "from": "2026-09-22T08:08:20+00:00",
+          "to": "2026-09-29T20:41:46.500000+00:00"
+        },
+        {
+          "from": "2026-09-29T20:41:46.500000+00:00",
+          "to": "2026-10-07T09:15:13+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-17T04:45:35+00:00",
+      "lastDiscoveryAt": "2026-11-04T15:29:18+00:00",
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0OC301013|Turtlemint Fintech Solutions": {
-      "lastAttemptAt": "2026-10-28T00:49:50+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-22T10:22:06+00:00",
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "error": null,
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0OC301013|TURTLEMINT": {
-      "lastAttemptAt": "2026-10-28T01:28:03+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 35,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 101,
+      "targetThrough": "2026-11-04T15:29:18+00:00",
+      "pending": [
+        {
+          "from": "2026-09-22T08:08:20+00:00",
+          "to": "2026-10-13T23:48:49+00:00"
+        },
+        {
+          "from": "2026-10-13T23:48:49+00:00",
+          "to": "2026-11-04T15:29:18+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-22T10:22:06+00:00",
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|Urban Company": {
-      "lastAttemptAt": "2026-10-28T01:56:11+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 38,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 108,
+      "targetThrough": "2026-11-04T15:29:18+00:00",
+      "pending": [
+        {
+          "from": "2026-09-22T08:08:20+00:00",
+          "to": "2026-10-13T23:48:49+00:00"
+        },
+        {
+          "from": "2026-10-13T23:48:49+00:00",
+          "to": "2026-11-04T15:29:18+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-22T10:22:06+00:00",
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|URBANCO": {
-      "lastAttemptAt": "2026-10-28T02:34:40+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 104,
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "error": null,
+      "lastResultCount": 17,
       "lastSuccessAt": "2026-10-17T05:23:01+00:00",
       "targetThrough": "2026-10-22T10:22:06+00:00",
       "pending": [
         {
-          "from": "2026-10-15T05:23:01+00:00",
-          "to": "2026-10-18T19:52:33.500000+00:00"
-        },
-        {
           "from": "2026-10-18T19:52:33.500000+00:00",
           "to": "2026-10-22T10:22:06+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-04T15:29:18+00:00"
     },
     "isin:INE879I01012|Valor Estate": {
-      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
       "error": null,
-      "lastResultCount": 4,
-      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
+      "lastResultCount": 3,
+      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
       "error": null,
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
       "error": null,
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
-      "lastAttemptAt": "2026-10-28T03:19:34+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 40,
       "lastSuccessAt": "2026-10-28T03:19:34+00:00",
       "targetThrough": null,
@@ -2495,10 +2514,10 @@
       "pending": []
     },
     "isin:INE685T01010|HORIZONIND": {
-      "lastAttemptAt": "2026-10-27T23:19:34+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 4,
-      "lastSuccessAt": "2026-10-22T10:22:06+00:00",
+      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "error": null,
+      "lastResultCount": 40,
+      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2865,8 +2884,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 252,
-    "checkedAt": "2026-11-04T14:34:19.405380+00:00"
+    "attempted": 10,
+    "incomplete": 247,
+    "checkedAt": "2026-11-04T15:29:18.368349+00:00"
   }
 }
