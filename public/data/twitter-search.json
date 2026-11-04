@@ -2149,7 +2149,7 @@
       ]
     },
     "isin:INE976I01016|TATACAP": {
-      "lastAttemptAt": "2026-10-27T18:49:02+00:00",
+      "lastAttemptAt": "2026-11-04T08:46:09+00:00",
       "error": "search-unavailable",
       "lastResultCount": 4,
       "lastSuccessAt": "2026-10-17T04:45:35+00:00",
@@ -2867,6 +2867,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 252,
-    "checkedAt": "2026-11-04T08:06:42.469243+00:00"
+    "checkedAt": "2026-11-04T08:46:09.302652+00:00"
   }
 }
