@@ -9351,7 +9351,7 @@
     "optional": true,
     "status": "unavailable",
     "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-04T08:46:24.944Z",
+    "lastAttemptAt": "2026-11-04T09:42:49.996Z",
     "lastSuccessAt": null
   }
 }

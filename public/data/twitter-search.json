@@ -2157,7 +2157,7 @@
       "pending": []
     },
     "isin:INE142M01025|Tata Technologies": {
-      "lastAttemptAt": "2026-10-27T19:32:29+00:00",
+      "lastAttemptAt": "2026-11-04T09:42:34+00:00",
       "error": "search-unavailable",
       "lastResultCount": 102,
       "lastSuccessAt": "2026-09-24T08:08:20+00:00",
@@ -2867,6 +2867,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 252,
-    "checkedAt": "2026-11-04T08:46:09.302652+00:00"
+    "checkedAt": "2026-11-04T09:42:34.416509+00:00"
   }
 }
