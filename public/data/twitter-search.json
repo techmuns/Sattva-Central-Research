@@ -2542,8 +2542,8 @@
       "pending": []
     },
     "isin:INE852O01025|APTUS": {
-      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-04T23:31:02+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 105,
       "targetThrough": "2026-10-28T07:31:11+00:00",
       "pending": [
@@ -2886,6 +2886,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 247,
-    "checkedAt": "2026-11-04T23:00:21.795234+00:00"
+    "checkedAt": "2026-11-04T23:31:02.007098+00:00"
   }
 }
