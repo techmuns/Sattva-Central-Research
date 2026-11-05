@@ -2620,7 +2620,7 @@
       "pending": []
     },
     "isin:INE007A01025|Crisil": {
-      "lastAttemptAt": "2026-10-28T11:27:10+00:00",
+      "lastAttemptAt": "2026-11-05T08:52:25+00:00",
       "lastResultCount": 60,
       "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
@@ -2886,6 +2886,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 247,
-    "checkedAt": "2026-11-05T08:11:03.490018+00:00"
+    "checkedAt": "2026-11-05T08:52:25.099566+00:00"
   }
 }
