@@ -2802,7 +2802,7 @@
       "pending": []
     },
     "isin:INE185Q01025|Lumino Industries": {
-      "lastAttemptAt": "2026-10-29T02:37:45+00:00",
+      "lastAttemptAt": "2026-11-05T22:53:58+00:00",
       "error": "search-unavailable"
     },
     "isin:INE185Q01025|LUMINO": {
@@ -2886,6 +2886,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-05T22:21:38.723027+00:00"
+    "checkedAt": "2026-11-05T22:53:58.136841+00:00"
   }
 }
