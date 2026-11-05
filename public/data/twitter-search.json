@@ -2459,8 +2459,8 @@
       "lastDiscoveryAt": "2026-10-22T10:22:06+00:00"
     },
     "isin:INE540H01012|Voltamp Transformers": {
-      "lastAttemptAt": "2026-10-28T07:31:11+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-05T02:34:30+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 24,
       "lastSuccessAt": "2026-10-28T07:31:11+00:00",
       "targetThrough": null,
@@ -2886,6 +2886,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 247,
-    "checkedAt": "2026-11-05T02:03:30.101238+00:00"
+    "checkedAt": "2026-11-05T02:34:30.239183+00:00"
   }
 }
