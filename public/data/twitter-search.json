@@ -2806,7 +2806,7 @@
       "error": "search-unavailable"
     },
     "isin:INE185Q01025|LUMINO": {
-      "lastAttemptAt": "2026-10-29T03:10:09+00:00",
+      "lastAttemptAt": "2026-11-05T23:42:15+00:00",
       "error": "search-unavailable"
     },
     "isin:INE721I01024|National Stock Exchange of India": {
@@ -2886,6 +2886,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-05T22:53:58.136841+00:00"
+    "checkedAt": "2026-11-05T23:42:15.012983+00:00"
   }
 }
