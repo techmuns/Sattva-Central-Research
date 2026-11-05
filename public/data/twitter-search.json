@@ -2633,7 +2633,7 @@
       "lastDiscoveryAt": "2026-10-22T20:54:29+00:00"
     },
     "isin:INE007A01025|CRISIL": {
-      "lastAttemptAt": "2026-10-28T13:29:52+00:00",
+      "lastAttemptAt": "2026-11-05T10:17:22+00:00",
       "lastResultCount": 101,
       "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
@@ -2886,6 +2886,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 247,
-    "checkedAt": "2026-11-05T08:52:25.099566+00:00"
+    "checkedAt": "2026-11-05T10:17:22.417529+00:00"
   }
 }
