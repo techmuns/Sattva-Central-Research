@@ -259,7 +259,7 @@
       ]
     },
     "isin:INE376G01013|Biocon": {
-      "lastAttemptAt": "2026-10-30T05:50:07+00:00",
+      "lastAttemptAt": "2026-11-06T18:33:17+00:00",
       "error": "search-unavailable",
       "lastResultCount": 103,
       "targetThrough": "2026-10-14T05:17:36+00:00",
@@ -2938,6 +2938,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-06T17:31:47.405661+00:00"
+    "checkedAt": "2026-11-06T18:33:17.148886+00:00"
   }
 }
