@@ -146,7 +146,7 @@
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Global Securities": {
-      "lastAttemptAt": "2026-10-29T20:08:57+00:00",
+      "lastAttemptAt": "2026-11-06T15:59:57+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Credit Capital": {
@@ -2908,7 +2908,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 246,
-    "checkedAt": "2026-11-06T14:57:48.836917+00:00"
+    "incomplete": 251,
+    "checkedAt": "2026-11-06T15:59:57.819784+00:00"
   }
 }
