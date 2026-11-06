@@ -150,63 +150,92 @@
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Credit Capital": {
-      "lastAttemptAt": "2026-10-29T20:42:36+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": null,
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE094B01013|ASHIKA": {
-      "lastAttemptAt": "2026-10-29T21:31:43+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 114,
+      "targetThrough": "2026-11-06T16:33:07+00:00",
+      "pending": [
+        {
+          "from": "2026-10-28T16:33:07.304301+00:00",
+          "to": "2026-11-02T04:33:07.152151+00:00"
+        },
+        {
+          "from": "2026-11-02T04:33:07.152151+00:00",
+          "to": "2026-11-06T16:33:07+00:00"
+        }
+      ]
     },
     "isin:INE0Z4F01028|Atlanta Electricals": {
-      "lastAttemptAt": "2026-10-29T21:54:31+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 108,
+      "targetThrough": "2026-11-06T16:33:07+00:00",
+      "pending": [
+        {
+          "from": "2026-10-28T16:33:07.304301+00:00",
+          "to": "2026-11-02T04:33:07.152151+00:00"
+        },
+        {
+          "from": "2026-11-02T04:33:07.152151+00:00",
+          "to": "2026-11-06T16:33:07+00:00"
+        }
+      ]
     },
     "isin:INE0Z4F01028|ATLANTAELE": {
-      "lastAttemptAt": "2026-10-29T23:15:15+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": null,
+      "lastResultCount": 86,
+      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE555B01013|Axiscades Technologies": {
-      "lastAttemptAt": "2026-10-30T00:01:52+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 21,
-      "lastSuccessAt": "2026-10-14T05:17:36+00:00",
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": null,
+      "lastResultCount": 49,
+      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE555B01013|AXISCADES": {
-      "lastAttemptAt": "2026-10-30T00:42:15+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 105,
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": null,
+      "lastResultCount": 48,
       "targetThrough": "2026-10-14T05:17:36+00:00",
       "pending": [
-        {
-          "from": "2026-10-05T05:17:36.606600+00:00",
-          "to": "2026-10-09T17:17:36.303300+00:00"
-        },
         {
           "from": "2026-10-09T17:17:36.303300+00:00",
           "to": "2026-10-14T05:17:36+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-06T16:33:07+00:00"
     },
     "isin:INE083K01017|Bengal and Assam Company": {
-      "lastAttemptAt": "2026-10-30T01:26:49+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-14T05:17:36+00:00",
+      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE083K01017|BENGALASM": {
-      "lastAttemptAt": "2026-10-30T02:00:10+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 5,
-      "lastSuccessAt": "2026-10-14T05:17:36+00:00",
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "error": null,
+      "lastResultCount": 3,
+      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0HOQ01053|Billionbrains Garage Ventures": {
-      "lastAttemptAt": "2026-10-30T02:53:16+00:00",
+      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
       "error": "search-unavailable",
       "lastResultCount": 39,
       "lastSuccessAt": "2026-10-14T05:17:36+00:00",
@@ -2907,8 +2936,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 251,
-    "checkedAt": "2026-11-06T15:59:57.819784+00:00"
+    "attempted": 9,
+    "incomplete": 246,
+    "checkedAt": "2026-11-06T16:33:07.304301+00:00"
   }
 }
