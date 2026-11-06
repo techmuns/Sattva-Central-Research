@@ -2826,7 +2826,7 @@
       "error": "search-unavailable"
     },
     "isin:INE092A01019|Tata Chemicals": {
-      "lastAttemptAt": "2026-10-29T07:37:44+00:00",
+      "lastAttemptAt": "2026-11-06T03:35:29+00:00",
       "error": "search-unavailable"
     },
     "isin:INE092A01019|TATACHEM": {
@@ -2886,6 +2886,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-06T02:48:01.355610+00:00"
+    "checkedAt": "2026-11-06T03:35:29.973915+00:00"
   }
 }
