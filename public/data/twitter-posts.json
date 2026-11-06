@@ -9283,7 +9283,7 @@
     "optional": true,
     "status": "unavailable",
     "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-06T19:36:47.452Z",
+    "lastAttemptAt": "2026-11-06T20:47:00.911Z",
     "lastSuccessAt": null
   }
 }
