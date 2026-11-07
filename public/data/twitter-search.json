@@ -368,76 +368,60 @@
       "pending": []
     },
     "isin:INE067A01029|CGPOWER": {
-      "lastAttemptAt": "2026-10-30T13:06:34+00:00",
-      "lastResultCount": 105,
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
+      "lastResultCount": 94,
+      "error": null,
       "lastSuccessAt": "2026-09-20T20:53:41+00:00",
       "targetThrough": "2026-10-30T13:06:34+00:00",
       "pending": [
-        {
-          "from": "2026-09-18T20:53:41+00:00",
-          "to": "2026-10-09T17:00:07.500000+00:00"
-        },
         {
           "from": "2026-10-09T17:00:07.500000+00:00",
           "to": "2026-10-30T13:06:34+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-19T05:32:20+00:00"
+      "lastDiscoveryAt": "2026-11-07T03:16:27+00:00"
     },
     "isin:INE522F01014|Coal India": {
-      "lastAttemptAt": "2026-10-30T13:06:34+00:00",
-      "lastResultCount": 71,
+      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
+      "lastResultCount": 77,
       "error": null,
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
-        {
-          "from": "2026-09-02T10:10:33.233647+00:00",
-          "to": "2026-09-04T16:10:33.116823+00:00"
-        },
         {
           "from": "2026-09-04T16:10:33.116823+00:00",
           "to": "2026-09-06T22:10:33+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-30T13:06:34+00:00"
+      "lastDiscoveryAt": "2026-11-07T03:16:27+00:00"
     },
     "isin:INE522F01014|COALINDIA": {
-      "lastAttemptAt": "2026-10-30T13:06:34+00:00",
-      "lastResultCount": 62,
+      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
+      "lastResultCount": 15,
       "error": null,
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
-        {
-          "from": "2026-08-28T22:10:33.467294+00:00",
-          "to": "2026-08-31T04:10:33.350470+00:00"
-        },
         {
           "from": "2026-08-31T04:10:33.350470+00:00",
           "to": "2026-09-02T10:10:33.233647+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-30T13:06:34+00:00"
+      "lastDiscoveryAt": "2026-11-07T03:16:27+00:00"
     },
     "isin:INE591G01025|Coforge": {
-      "lastAttemptAt": "2026-10-30T13:06:34+00:00",
-      "lastResultCount": 36,
+      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
+      "lastResultCount": 68,
       "error": null,
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
-        {
-          "from": "2026-08-28T22:10:33.467294+00:00",
-          "to": "2026-08-31T04:10:33.350470+00:00"
-        },
         {
           "from": "2026-08-31T04:10:33.350470+00:00",
           "to": "2026-09-02T10:10:33.233647+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-30T13:06:34+00:00"
+      "lastDiscoveryAt": "2026-11-07T03:16:27+00:00"
     },
     "isin:INE591G01025|COFORGE": {
-      "lastAttemptAt": "2026-10-30T13:06:34+00:00",
+      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
       "lastResultCount": 106,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -2936,8 +2920,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
+    "attempted": 5,
     "incomplete": 246,
-    "checkedAt": "2026-11-07T02:39:31.675618+00:00"
+    "checkedAt": "2026-11-07T03:16:27.406381+00:00"
   }
 }
