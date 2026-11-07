@@ -7,7 +7,17 @@ const SME = { 'ALPEXSOLAR-SM': 'ALPEXSOLAR', 'JAYBEE-SM': 'JAYBEE', 'SAHANA-SM':
 const ISSUER_EQUITY = { INE564S13022: 'INE564S01019', INE0R4713012: 'INE0R4701017', INE666D13019: 'INE666D01022' };
 export const announcementIssuerIsin = value => ISSUER_EQUITY[upper(value)] || upper(value);
 const upper = value => String(value || '').trim().toUpperCase();
-export const filingTicker = value => SME[upper(value)] || upper(value);
+// RENAMED SYMBOLS, REVIEWED ONE BY ONE: old NSE symbol -> the symbol NSE lists the same ISIN under
+// today. Each entry must agree with NSE's own equity directory, which lists the old symbol among the
+// ISIN's aliases; Glow's scripts/verify-renamed-symbols.mjs is the check to bring with the first one.
+// This book holds no renamed company, so the table is empty (Glow's lists HEG -> HEGAM). The shared
+// team brief (worker/newsletter-brief.mjs) reads `currentSymbol()` in both repositories.
+export const RENAMED_SYMBOLS = Object.freeze({});
+/** The current symbol when `value` is a reviewed old symbol, else null. */
+export const renamedTo = value => RENAMED_SYMBOLS[upper(value)] || null;
+/** The symbol a company trades under today: a reviewed old symbol becomes its current one. */
+export const currentSymbol = value => renamedTo(value) || upper(value);
+export const filingTicker = value => SME[upper(value)] || renamedTo(value) || upper(value);
 // Exchange ISINs join the directories. Keep old exchange/provider symbols as exact aliases.
 export function mergeExchangeIdentities(...lists) {
   return runSteps(mergeExchangeIdentitySteps(...lists));
