@@ -650,20 +650,36 @@
       "error": "search-unavailable"
     },
     "isin:INE077F01035|GOCL Corporation": {
-      "lastAttemptAt": "2026-10-31T08:48:00+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "error": null,
+      "lastResultCount": 3,
+      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE077F01035|GOCLCORP": {
-      "lastAttemptAt": "2026-10-31T09:05:38+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "error": null,
+      "lastResultCount": 3,
+      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE850D01014|Godrej Agrovet": {
-      "lastAttemptAt": "2026-10-31T12:42:03+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "error": null,
+      "lastResultCount": 63,
+      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE850D01014|GODREJAGRO": {
-      "lastAttemptAt": "2026-10-31T13:21:25+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "error": null,
+      "lastResultCount": 35,
+      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE036B01030|Gujarat Ambuja Exports": {
       "lastAttemptAt": "2026-10-04T08:31:06+00:00",
@@ -686,36 +702,50 @@
       ]
     },
     "isin:INE330T01021|Happy Forgings": {
-      "lastAttemptAt": "2026-10-31T14:48:24+00:00",
-      "lastResultCount": 41,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "lastResultCount": 107,
+      "error": "result-cap-incomplete",
       "lastSuccessAt": "2026-09-07T15:18:18+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-11-07T23:32:09+00:00",
+      "pending": [
+        {
+          "from": "2026-09-05T15:18:18+00:00",
+          "to": "2026-10-07T07:25:13.500000+00:00"
+        },
+        {
+          "from": "2026-10-07T07:25:13.500000+00:00",
+          "to": "2026-11-07T23:32:09+00:00"
+        }
+      ]
     },
     "isin:INE330T01021|HAPPYFORGE": {
-      "lastAttemptAt": "2026-10-31T15:23:23+00:00",
-      "lastResultCount": 16,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-09-07T15:18:18+00:00",
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "lastResultCount": 69,
+      "error": null,
+      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE548A01028|HFCL": {
-      "lastAttemptAt": "2026-10-31T15:26:09+00:00",
-      "lastResultCount": 108,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "lastResultCount": 114,
+      "error": "result-cap-incomplete",
       "targetThrough": "2026-09-07T15:18:18+00:00",
       "pending": [
         {
-          "from": "2026-08-29T15:18:18.076878+00:00",
-          "to": "2026-09-03T03:18:18.038439+00:00"
-        },
-        {
           "from": "2026-09-03T03:18:18.038439+00:00",
           "to": "2026-09-07T15:18:18+00:00"
+        },
+        {
+          "from": "2026-08-29T15:18:18.076878+00:00",
+          "to": "2026-08-31T21:18:18.057658+00:00"
+        },
+        {
+          "from": "2026-08-31T21:18:18.057658+00:00",
+          "to": "2026-09-03T03:18:18.038439+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-07T23:32:09+00:00"
     },
     "isin:INE267A01025|Hindustan Zinc": {
       "lastAttemptAt": "2026-10-04T11:17:10+00:00",
@@ -747,7 +777,7 @@
       "lastDiscoveryAt": "2026-09-12T14:15:30+00:00"
     },
     "isin:INE685T01010|Horizon Industrial Parks": {
-      "lastAttemptAt": "2026-10-31T16:03:06+00:00",
+      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
       "lastResultCount": 45,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-12T14:15:30+00:00",
@@ -2920,8 +2950,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 246,
-    "checkedAt": "2026-11-07T22:37:53.353531+00:00"
+    "attempted": 8,
+    "incomplete": 241,
+    "checkedAt": "2026-11-07T23:32:09.708877+00:00"
   }
 }
