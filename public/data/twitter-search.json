@@ -339,7 +339,7 @@
       "pending": []
     },
     "isin:INE736A01011|CDSL": {
-      "lastAttemptAt": "2026-10-30T09:51:38+00:00",
+      "lastAttemptAt": "2026-11-07T00:37:13+00:00",
       "lastResultCount": 51,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -2938,6 +2938,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-06T23:53:14.726027+00:00"
+    "checkedAt": "2026-11-07T00:37:13.491002+00:00"
   }
 }
