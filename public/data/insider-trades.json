@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-07T16:35:59.484Z",
-  "oldestDataAt": "2026-11-07T16:35:59.484Z",
-  "from": "2025-11-07",
-  "to": "2026-11-07",
+  "capturedAt": "2026-11-07T19:38:13.915Z",
+  "oldestDataAt": "2026-11-07T19:38:13.915Z",
+  "from": "2025-11-08",
+  "to": "2026-11-08",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-07T16:35:59.484Z",
+      "capturedAt": "2026-11-07T19:38:13.915Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-07T16:35:59.484Z",
+      "capturedAt": "2026-11-07T19:38:13.915Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-07T16:35:59.484Z",
+      "capturedAt": "2026-11-07T19:38:13.915Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-07T16:35:59.484Z",
+      "capturedAt": "2026-11-07T19:38:13.915Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2129,
   "emptyCount": 0,
-  "rowCount": 24084,
+  "rowCount": 24078,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -104256,72 +104256,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-11-07",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "22870",
-          "Trade %": "0",
-          "Trade Value": "228700",
-          "Post Holding Shares": "1151601",
-          "Post Holding %": "0.07",
-          "Mode": "ESOP",
-          "From Date": "2025-11-06",
-          "To Date": "2025-11-06",
-          "Broadcast Date": "2025-11-07",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-11-07",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "501",
-          "Trade %": "0",
-          "Trade Value": "265379",
-          "Post Holding Shares": "1175249",
-          "Post Holding %": "0.07",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-04",
-          "To Date": "2025-11-04",
-          "Broadcast Date": "2025-11-07",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-11-07",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "778",
-          "Trade %": "0",
-          "Trade Value": "401972",
-          "Post Holding Shares": "1174471",
-          "Post Holding %": "0.07",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-06",
-          "To Date": "2025-11-06",
-          "Broadcast Date": "2025-11-07",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "JSWSTEEL": [
@@ -133782,28 +133716,6 @@
           "From Date": "2025-11-06",
           "To Date": "2025-11-06",
           "Broadcast Date": "2025-11-11",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-07",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "6650",
-          "Trade %": "0.01",
-          "Trade Value": "31598781",
-          "Post Holding Shares": "743364",
-          "Post Holding %": "1.56",
-          "Mode": "Market Purchase",
-          "From Date": "2025-11-04",
-          "To Date": "2025-11-04",
-          "Broadcast Date": "2025-11-07",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -172874,28 +172786,6 @@
           "From Date": "2025-11-17",
           "To Date": "2025-11-17",
           "Broadcast Date": "2025-11-18",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "WIPRO",
-        "date": "2025-11-07",
-        "cells": {
-          "Company": "WIPRO",
-          "Insider": "Sarat Chand",
-          "Category": "Designated Person",
-          "Security Type": "Any other instrument",
-          "Transaction": "Acquisition",
-          "Trade Shares": "90990",
-          "Trade %": "0",
-          "Trade Value": "21041074",
-          "Post Holding Shares": "140820",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-06",
-          "To Date": "2025-11-06",
-          "Broadcast Date": "2025-11-07",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -218538,28 +218428,6 @@
           "From Date": "2025-11-11",
           "To Date": "2025-11-11",
           "Broadcast Date": "2025-11-12",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAUKRI",
-        "date": "2025-11-07",
-        "cells": {
-          "Company": "NAUKRI",
-          "Insider": "Info Edge Employees Stock Option Plan Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "8768",
-          "Trade %": "0",
-          "Trade Value": "17536",
-          "Post Holding Shares": "940037",
-          "Post Holding %": "0.14",
-          "Mode": "ESOP",
-          "From Date": "2025-11-06",
-          "To Date": "2025-11-06",
-          "Broadcast Date": "2025-11-07",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
