@@ -815,7 +815,7 @@
       "lastDiscoveryAt": "2026-09-12T14:15:30+00:00"
     },
     "isin:INE622H01018|Indo Farm Equipment": {
-      "lastAttemptAt": "2026-10-31T19:11:22+00:00",
+      "lastAttemptAt": "2026-11-08T02:00:14+00:00",
       "error": "search-unavailable",
       "lastResultCount": 5,
       "lastSuccessAt": "2026-09-12T14:15:30+00:00",
@@ -2952,6 +2952,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 241,
-    "checkedAt": "2026-11-08T01:29:06.820226+00:00"
+    "checkedAt": "2026-11-08T02:00:14.589665+00:00"
   }
 }
