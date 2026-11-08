@@ -9422,9 +9422,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-07T23:32:44.170Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-08T00:05:30.558Z",
     "lastSuccessAt": null
   }
 }
