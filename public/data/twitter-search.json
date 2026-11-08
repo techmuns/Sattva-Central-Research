@@ -970,8 +970,8 @@
       "pending": []
     },
     "isin:INE854B01010|JAYNECOIND": {
-      "lastAttemptAt": "2026-11-01T01:40:44+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-08T18:35:40+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 6,
       "lastSuccessAt": "2026-11-01T01:40:44+00:00",
       "targetThrough": null,
@@ -2952,6 +2952,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-08T18:33:18.339450+00:00"
+    "checkedAt": "2026-11-08T18:35:40.769317+00:00"
   }
 }
