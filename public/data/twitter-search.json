@@ -930,8 +930,8 @@
       "pending": []
     },
     "isin:INE854B01010|Jayaswal Neco Industries": {
-      "lastAttemptAt": "2026-11-01T01:40:44+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-08T13:42:47+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 5,
       "lastSuccessAt": "2026-11-01T01:40:44+00:00",
       "targetThrough": null,
@@ -2952,6 +2952,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-11-08T13:30:24.914610+00:00"
+    "checkedAt": "2026-11-08T13:42:47.470967+00:00"
   }
 }
