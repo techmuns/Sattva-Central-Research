@@ -922,8 +922,8 @@
       "pending": []
     },
     "isin:INE0SMY01017|JAYBEE-SM": {
-      "lastAttemptAt": "2026-11-01T01:40:44+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-08T13:30:24+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-11-01T01:40:44+00:00",
       "targetThrough": null,
@@ -2951,7 +2951,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 241,
-    "checkedAt": "2026-11-08T09:44:59.768320+00:00"
+    "incomplete": 245,
+    "checkedAt": "2026-11-08T13:30:24.914610+00:00"
   }
 }
