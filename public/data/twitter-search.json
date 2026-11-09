@@ -1250,7 +1250,7 @@
       "pending": []
     },
     "isin:INE310A01015|Nilkamal": {
-      "lastAttemptAt": "2026-11-01T18:51:45+00:00",
+      "lastAttemptAt": "2026-11-09T20:29:50+00:00",
       "error": "search-unavailable",
       "lastResultCount": 104,
       "targetThrough": "2026-10-25T22:41:56+00:00",
@@ -2952,6 +2952,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-09T17:15:09.192751+00:00"
+    "checkedAt": "2026-11-09T20:29:50.120132+00:00"
   }
 }
