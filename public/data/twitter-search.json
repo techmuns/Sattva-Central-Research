@@ -1186,7 +1186,7 @@
       "pending": []
     },
     "isin:INE103A01014|MRPL": {
-      "lastAttemptAt": "2026-11-01T15:22:02+00:00",
+      "lastAttemptAt": "2026-11-09T11:52:47+00:00",
       "error": "search-unavailable",
       "lastResultCount": 107,
       "lastSuccessAt": "2026-09-27T08:32:05+00:00",
@@ -2952,6 +2952,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-09T11:23:44.259302+00:00"
+    "checkedAt": "2026-11-09T11:52:47.118610+00:00"
   }
 }
