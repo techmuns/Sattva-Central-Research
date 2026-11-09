@@ -1242,7 +1242,7 @@
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE338I01027|MOTILALOFS": {
-      "lastAttemptAt": "2026-11-01T17:04:43+00:00",
+      "lastAttemptAt": "2026-11-09T17:15:09+00:00",
       "error": "search-unavailable",
       "lastResultCount": 19,
       "lastSuccessAt": "2026-10-25T22:41:56+00:00",
@@ -2952,6 +2952,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-09T12:38:54.014394+00:00"
+    "checkedAt": "2026-11-09T17:15:09.192751+00:00"
   }
 }
