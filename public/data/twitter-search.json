@@ -1268,82 +1268,66 @@
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE310A01015|NILKAMAL": {
-      "lastAttemptAt": "2026-11-01T19:26:59+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 14,
-      "targetThrough": "2026-09-13T11:04:59+00:00",
-      "pending": [
-        {
-          "from": "2026-09-08T23:04:59.022531+00:00",
-          "to": "2026-09-13T11:04:59+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-05T06:14:50+00:00"
+      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
+      "error": null,
+      "lastResultCount": 12,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-09T21:01:42+00:00",
+      "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE12F801023|OnEMI Technology Solutions": {
-      "lastAttemptAt": "2026-11-01T19:49:32+00:00",
+      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
       "error": null,
-      "lastResultCount": 63,
-      "lastSuccessAt": "2026-11-01T19:49:32+00:00",
+      "lastResultCount": 17,
+      "lastSuccessAt": "2026-11-09T21:01:42+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE12F801023|Kissht": {
-      "lastAttemptAt": "2026-11-01T19:49:32+00:00",
+      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
       "error": null,
-      "lastResultCount": 84,
-      "lastSuccessAt": "2026-09-13T11:04:59+00:00",
-      "targetThrough": "2026-10-05T06:14:50+00:00",
-      "pending": [
-        {
-          "from": "2026-09-23T08:39:54.500000+00:00",
-          "to": "2026-10-05T06:14:50+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-01T19:49:32+00:00"
+      "lastResultCount": 76,
+      "lastSuccessAt": "2026-10-05T06:14:50+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-09T21:01:42+00:00"
     },
     "isin:INE12F801023|OnEMI Technology": {
-      "lastAttemptAt": "2026-11-01T19:49:32+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 105,
+      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
+      "error": null,
+      "lastResultCount": 67,
       "lastSuccessAt": "2026-09-13T11:04:59+00:00",
       "targetThrough": "2026-11-01T19:49:32+00:00",
       "pending": [
         {
-          "from": "2026-09-11T11:04:59+00:00",
-          "to": "2026-10-07T03:27:15.500000+00:00"
-        },
-        {
           "from": "2026-10-07T03:27:15.500000+00:00",
           "to": "2026-11-01T19:49:32+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-09T21:01:42+00:00"
     },
     "isin:INE12F801023|KISSHT": {
-      "lastAttemptAt": "2026-11-01T19:49:32+00:00",
+      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
       "error": null,
-      "lastResultCount": 22,
-      "targetThrough": "2026-09-27T12:23:53+00:00",
-      "pending": [
-        {
-          "from": "2026-09-23T00:23:53.029928+00:00",
-          "to": "2026-09-27T12:23:53+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-01T19:49:32+00:00"
+      "lastResultCount": 10,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-09T21:01:42+00:00",
+      "lastSuccessAt": "2026-09-27T12:23:53+00:00"
     },
     "isin:INE881D01027|Oracle Financial Services Software": {
-      "lastAttemptAt": "2026-11-01T19:49:32+00:00",
-      "lastResultCount": 51,
+      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
+      "lastResultCount": 10,
       "error": null,
-      "lastSuccessAt": "2026-11-01T19:49:32+00:00",
+      "lastSuccessAt": "2026-11-09T21:01:42+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE881D01027|OFSS": {
-      "lastAttemptAt": "2026-11-01T19:49:32+00:00",
+      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
       "lastResultCount": 102,
-      "error": "result-cap-incomplete",
+      "error": "search-unavailable",
       "targetThrough": "2026-11-01T19:49:32+00:00",
       "pending": [
         {
@@ -2950,8 +2934,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 250,
-    "checkedAt": "2026-11-09T20:29:50.120132+00:00"
+    "attempted": 7,
+    "incomplete": 248,
+    "checkedAt": "2026-11-09T21:01:42.829468+00:00"
   }
 }

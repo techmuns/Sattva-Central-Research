@@ -1,10 +1,1025 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-07T23:32:44+00:00",
+  "capturedAt": "2026-11-09T21:02:18+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2119868064917512530",
+      "handle": "dcumoviepage",
+      "display_name": "DCUMoviePage #RestoreTheSnyderverse",
+      "text": "You know that Crime Saga spin-ofss what gone nowhere? You gonna see them come back FAST from next eyar foward. #TheBatman",
+      "created_at": "2026-11-09T19:01:46+00:00",
+      "url": "https://x.com/dcumoviepage/status/2119868064917512530",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119864674535792799",
+      "handle": "NarainTak",
+      "display_name": "Karthikeyan",
+      "text": "#KISSHT went upwards after this 📈",
+      "created_at": "2026-11-09T18:48:18+00:00",
+      "url": "https://x.com/NarainTak/status/2119864674535792799",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119839515582062863",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Technology | ‘No ordinary CEO’: Why the AI race cannot do without Nvidia’s Jensen Huang\n\n- Nvidia CEO Jensen Huang drives the global AI industry.\n- His central role leaves Nvidia without a clear successor.\n- Analysts warn his unique stewardship poses industry risks.\n\nRead more:\nhttps://t.co/8xX5bWQYwJ",
+      "created_at": "2026-11-09T17:08:19+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119839515582062863",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119819122615702010",
+      "handle": "fenomenodelcolo",
+      "display_name": "FenomenoDelColo 35⭐️🏁",
+      "text": "@pipelchileno Para duelos tipo play ofss ida y vuelta esta la Copa de la Liga y Copa Chile, el torneo debe durar todo el año para que los equipos tengan regularidad. Los play offs son entretenidos pero no aportan mucho a los equipos",
+      "created_at": "2026-11-09T15:47:17+00:00",
+      "url": "https://x.com/fenomenodelcolo/status/2119819122615702010",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119817164953997384",
+      "handle": "mahidhar99",
+      "display_name": "Mahidhar Buddha",
+      "text": "RS Acceleration (9 Nov 2026) 👇\nTrack Relative Strength daily: https://t.co/1rujED3nhJ\n\nEntero Healthcare Solutions\nOnemi Technology\nParag Milk Foods\nChemplast Sanmar\nSTL Networks\nKalyan Jewellers India\nNeogen Chemicals\nAlembic Pharmaceuticals\nLodha Developers\nSaregama India\nZee Entertainment Enterprises\nMM Forgings\nLe Travenues Technology (ixigo)\nTTK Prestige\nGroww\nSai Life Sciences\nAngel One\nTARC\nProtean eGov Technologies\nMuthoot Finance\n\nMomentum is strengthening across pharmaceuticals, chemicals, financial services, jewellery, real estate and media, with Entero Healthcare Solutions leading today's 10-session RS acceleration.\n#ENTERO #KISSHT #PARAGMILK #CHEMPLASTS #STLNETWORK #KALYANKJIL #NEOGEN #APLLTD #LODHA #SAREGAMA #ZEEL #MMFL #IXIGO #TTKPRESTIG #GROWW #SAILIFE #ANGELONE #TARC #PROTEAN #MUTHOOTFIN\nNot a recommendation. RSRank is a data analytics tool.",
+      "created_at": "2026-11-09T15:39:31+00:00",
+      "url": "https://x.com/mahidhar99/status/2119817164953997384",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119814302714794399",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | HUL increases prices of popular detergent brands Surf Excel, Rin and Wheel\n\n- HUL raises MRPs of home care products by up to 11%.\n- Surf Excel, Rin, and Wheel prices increased by Rs 1 to Rs 10.\n- Price hikes offset costs and protect margins.\n\nRead More:\nhttps://t.co/F7VZetJlAR",
+      "created_at": "2026-11-09T15:28:08+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119814302714794399",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119807908607398224",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Nvidia shares slide amid probe into Jensen Huang's alleged links to Chinese businesswoman\n\n- Nvidia shares fell 6% amid a probe into CEO Jensen Huang.\n- The board investigates Huang's links to a Chinese spy suspect.\n- Huang admitted to an affair and pledged to fully cooperate.\n\nRead More:\nhttps://t.co/sUWeQeEjWI",
+      "created_at": "2026-11-09T15:02:44+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119807908607398224",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119802522940710917",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | LIC MD & CEO R Doraiswamy says the insurer is disappointed with its stock's performance since listing and expects a better valuation ahead. \n\nIn a conversation with Malvika and Hamsini, he discusses LIC's stock valuation, market volatility and investment opportunities.\n\n#LIC #LICSharePrice #StockMarket #InsuranceSector #MarketValuation | @malvisundaresan @humsitweets",
+      "created_at": "2026-11-09T14:41:20+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119802522940710917",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119800678298132679",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#World | Oil slides as Trump signals restraint on Iran despite fresh shipping attacks\n\n- Oil prices fell sharply after Trump downplayed US strikes.\n- Brent crude slid 3.6% while WTI dropped 2.9% on Monday.\n- JPMorgan expects global oil supply to exceed consumption.\n\nRead More:\nhttps://t.co/QuUEUHj8QK",
+      "created_at": "2026-11-09T14:34:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119800678298132679",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119799419516375325",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#CurrencyCheck | Rupee breaks six-day winning streak on state banks' dollar bids\n\n-Indian rupee snaps six-session winning streak on Monday.\n- State-run bank dollar bids outweighed positive momentum.\n- RBI expected to rebuild forex buffers instead of appreciation.\n\nRead More:\nhttps://t.co/rYSPxLRQPz",
+      "created_at": "2026-11-09T14:29:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119799419516375325",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119798123425869957",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | LIC remains open to acquisitions in the health insurance space but is cautious amid rising medical inflation. \n\nIn a conversation with Malvika and Hamsini, LIC MD & CEO R Doraiswamy outlines the insurer's health insurance plans and explains its approach to potential acquisitions.\n\n#LIC #HealthInsurance #MedicalInflation #InsuranceSector | @humsitweets @malvisundaresan",
+      "created_at": "2026-11-09T14:23:51+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119798123425869957",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119797046865723449",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | LIC backs the single-insurer model for individual agents and opposes open architecture. \n\nIn a conversation with Malvika and Hamsini, LIC MD & CEO R Doraiswamy explains why agents should represent only one insurer and how the model impacts customer trust and distribution.\n\n#LIC #InsuranceSector #InsuranceAgents #OpenArchitecture | @malvisundaresan | @humsitweets",
+      "created_at": "2026-11-09T14:19:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119797046865723449",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119795702759141859",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | LIC's MD & CEO says forced bundling must be addressed to protect customer choice, stressing the need for greater awareness and trust to make insurance a 'pull product'. \n\nIn a conversation with Malvika and Hamsini, he discusses the need to put customers at the centre of India's insurance growth story.\n\n#LIC #InsuranceSector #IRDAI #CustomerChoice #InsuranceAwareness | @malvisundaresan | @humsitweets",
+      "created_at": "2026-11-09T14:14:14+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119795702759141859",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119793240241316030",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#India | PM Modi speaks to Volodymyr Zelenskyy, reaffirms India's readiness to resolve Russia-Ukraine conflict\n\nThe two leaders also discussed measures to further strengthen India-Ukraine bilateral cooperation in various sectors for the mutual benefit of the two peoples, further added the official missive.\n\nRead More:\nhttps://t.co/6DDB5ynXdJ",
+      "created_at": "2026-11-09T14:04:26+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119793240241316030",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119787222740373708",
+      "handle": "tushar_pwnz",
+      "display_name": "Tushar Sharma",
+      "text": "12/ Bottom line: slow growth, superb economics, paid to wait. The price already respects the quality, and Oracle headlines can move it overnight.\n\nTushar Sharma · Not SEBI-registered · I hold OFSS. Not a recommendation; do your own research.\n\nFound this useful? Repost 1/ 🙏",
+      "created_at": "2026-11-09T13:40:32+00:00",
+      "url": "https://x.com/tushar_pwnz/status/2119787222740373708",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119787214158930183",
+      "handle": "tushar_pwnz",
+      "display_name": "Tushar Sharma",
+      "text": "9/ The catch: the parent.\n\n• Jul: report said Oracle was sounding out buyers for part of its stake; OFSS said it wasn't aware\n• Sep: worries over Oracle's AI data-centre debt knocked OFSS 6.5%+ in a day\n\nThe business didn't change. The stock still trades on Oracle headlines.",
+      "created_at": "2026-11-09T13:40:30+00:00",
+      "url": "https://x.com/tushar_pwnz/status/2119787214158930183",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119787194835775834",
+      "handle": "tushar_pwnz",
+      "display_name": "Tushar Sharma",
+      "text": "2/ What does it actually do?\n\nWhen a bank opens your account, approves a loan, moves money or screens for money laundering, software runs it.\n\nOFSS sells that software: FLEXCUBE core banking, payments, lending, risk &amp; compliance.\n\nOnce it's in, banks rarely rip it out.",
+      "created_at": "2026-11-09T13:40:25+00:00",
+      "url": "https://x.com/tushar_pwnz/status/2119787194835775834",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119787191618662416",
+      "handle": "tushar_pwnz",
+      "display_name": "Tushar Sharma",
+      "text": "1/ Banks in 150+ countries use software made by an Indian-listed company most retail investors skip.\n\nOracle Financial Services (OFSS):\n• Zero debt, ₹5,600+ cr cash\n• 44–48% operating margins\n• ₹400/share dividend for FY26\n\nThe bull case, the catch &amp; what I'm watching 🧵 https://t.co/gX6owHgUVx",
+      "created_at": "2026-11-09T13:40:24+00:00",
+      "url": "https://x.com/tushar_pwnz/status/2119787191618662416",
+      "image": "https://pbs.twimg.com/media/HWr5xSHbwAA_wzs.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119781960046538798",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Gland Pharma shares rally 8% to hit 4-year-high post strong Q2; what brokerages say, check target prices\n\n- Gland Pharma shares hit a four-year high on strong Q2 earnings.\n- Consolidated net profit surged nearly 58 percent year-on-year.\n- Brokerages hold divergent views with Buy and Sell ratings.\n\n@sarmeelimallick writes:\nhttps://t.co/WvrLclXU0d",
+      "created_at": "2026-11-09T13:19:37+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119781960046538798",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119779268968563015",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#ArtificialIntelligence | Nvidia's shares slide 5% as chip giant probes CEO Huang over spy claims\n\n- Nvidia shares fell after a probe into CEO Jensen Huang.\n- Investigation follows report of Huang's ties to a Chinese spy.\n- Nvidia's board expressed confidence in CEO Jensen Huang.\n\nRead more: \nhttps://t.co/yFhzTLfGFY",
+      "created_at": "2026-11-09T13:08:55+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119779268968563015",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119761306282840228",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Technical View: Nifty 50 must cross 25,200 to resume uptrend, until then range-bound trading may continue; Bank Nifty faces crucial resistance at 60,400\n\n- Nifty needs to surpass 25,150–25,200 resistance to extend uptrend towards 25,500\n- 24,800 remains an immediate and crucial support level\n- Break below 24,800 could trigger a deeper correction towards 24,600–24,500\n\nRead more:\nhttps://t.co/RxCcsOX6BO",
+      "created_at": "2026-11-09T11:57:33+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119761306282840228",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119760874919624901",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCProOpinion | Is China’s AI boom built on a bubble? Beijing is deploying state-directed capital to secure global tech supremacy, while America’s AI buildout is increasingly financed by private capital. The contrasting bets carry very different risks\n\n@ssmumbai writes:\nhttps://t.co/cPGd475CvU",
+      "created_at": "2026-11-09T11:55:50+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119760874919624901",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119760552788635782",
+      "handle": "NeverBeforeDeal",
+      "display_name": "Never Before Deals",
+      "text": "🔥🔥🔥Grab it: https://t.co/HjJT6ndqro\n\nNilkamal STL31 Strong and Durable Plastic Seating Stool for Home",
+      "created_at": "2026-11-09T11:54:33+00:00",
+      "url": "https://x.com/NeverBeforeDeal/status/2119760552788635782",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119759235500372054",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | SAT upholds SEBI fraud findings against former Ricoh India CEO Takano, cuts penalty to Rs 10 lakh\n\n- SAT upholds SEBI fraud findings against ex-Ricoh MD Takano.\n- Takano's monetary penalty is reduced from Rs 50 lakh to 10 lakh.\n- Ex-CMO AT Rajan's appeal is dismissed, upholding his penalty.\n\n@BrajeshKMJi writes:\nhttps://t.co/ks1xCSIEkE",
+      "created_at": "2026-11-09T11:49:19+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119759235500372054",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119758247104217498",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | LIC backs IRDAI's commission reforms but calls for a calibrated approach to managing distribution costs. \n\nIn a conversation with Malvika and Hamsini, LIC's MD & CEO discusses the insurer's feedback on the proposed commission norms and their potential impact on agents and the distribution network.\n\n#LIC #IRDAI #InsuranceSector #InsuranceReforms @malvisundaresan | @humsitweets",
+      "created_at": "2026-11-09T11:45:23+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119758247104217498",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119757383190953987",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Which mutual funds should investors consider in Samvat 2083? \n\nIn a conversation with Surabhi Upadhyay, Feroze Azeez, Joint CEO of Anand Rathi Wealth, shares his mutual fund picks and portfolio strategy for the new Samvat. \n\nHe also discusses how investors can build a portfolio aligned with their financial goals for the year ahead.\n\n#Samvat2083 #MutualFunds #FerozeAzeez #AnandRathiWealth | @SurabhiUpadhyay",
+      "created_at": "2026-11-09T11:41:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119757383190953987",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119753280574120126",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | LIC may gradually pare its stake in IDBI Bank to zero, depending on the bank's growth prospects. \n\nIn a conversation with Malvika and Hamsini, LIC's MD & CEO explains the insurer's stake-sale plans and says the proceeds will be redeployed.\n\n#LIC #IDBIBank #BankingSector #Disinvestment @malvisundaresan | @humsitweets",
+      "created_at": "2026-11-09T11:25:39+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119753280574120126",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119752781913559299",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Stock market holiday tomorrow: BSE, NSE shut on November 10 for Diwali Balipratipada after Sunday Muhurat, Monday trade\n\nThe Monday session followed a volatile Muhurat Trading session on Sunday, when Sensex and Nifty erased their early gains to close in the red\n\nRead more:\nhttps://t.co/pelLGq4HmA",
+      "created_at": "2026-11-09T11:23:40+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119752781913559299",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119749760735445290",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | LIC is looking to retain its market leadership as it approaches its centenary, with a sharper focus on protection products, digitalisation and AI. \n\nIn a conversation with Malvika and Hamsini, LIC's MD & CEO outlines the insurer's five-year growth strategy and key priorities for the years ahead.\n\n@malvisundaresan | @humsitweets | #LIC #InsuranceSector #Digitalisation #ArtificialIntelligence",
+      "created_at": "2026-11-09T11:11:40+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119749760735445290",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119740803190792392",
+      "handle": "WealthGenius_",
+      "display_name": "Wealth Genius News and Updates",
+      "text": "💰 DIVIDEND WATCHLIST | 7 COMPANIES WITH 1.5%+ DIVIDEND YIELD\n\nLooking for companies with a dividend-focused track record? Here are 7 names to add to your research list.\n\n📊 STOCKS TO STUDY\n\n1️⃣ Abbott India\n2️⃣ Firstsource Solutions\n3️⃣ GlaxoSmithKline Pharmaceuticals\n4️⃣ IRCTC\n5️⃣ National Aluminium Company (NALCO)\n6️⃣ Oracle Financial Services Software\n7️⃣ Fiem Industries\n\n📌 What to analyse before studying dividend stocks:\n\n• Dividend yield and payout history\n• Consistency of dividend payments\n• Cash flow and profitability\n• Payout ratio and future growth prospects\n• Current valuation\n\n🔖 Save this list for further research.\n\n📲 More detailed research is available through the Telegram link in bio.\n\n⚠️ Dividend yields change with market prices and declared payouts. This is a study list, not a buy/sell recommendation. DYOR.\n\n#DividendStocks #DividendYield #IndianStockMarket\n\nJoin our Telegram-  https://t.co/zh4G7QdCHY",
+      "created_at": "2026-11-09T10:36:05+00:00",
+      "url": "https://x.com/WealthGenius_/status/2119740803190792392",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119733716394418613",
+      "handle": "trader_amay",
+      "display_name": "Amay Jha ( SWING TRADER📊 )",
+      "text": "OnEMI Technology Solutions (KISSHT) | A Digital Lending Company I’m Quite Bullish On\n\nA company that was managing ₹4,000 Cr worth of loans in March 2025 has now crossed ₹10,000 Cr!\n\nAnd its quarterly profit has doubled in just one year🔥🔥🔥\n\nI’ve been going through Kissht’s latest results and management concall. I think this is becoming a very interesting fintech growth story.\n\nWhat exactly does Kissht do?\n\nYou might know Kissht as an instant personal loan app.\n\nBut the actual business is much bigger.\n\nThrough its NBFC subsidiary and lending partners, Kissht provides personal loans and loans against property.\n\nWhat impressed me is its technology.\n\nThe company uses an AI-based underwriting system analysing more than 7,200 variables to assess borrowers.\n\nIt has already served over 1.28 crore customers and works with 45+ lending partners.\n\nAnd here’s the interesting part.\n\nAround 55% of its loan portfolio was managed through lending partners rather than sitting directly on its own balance sheet in September.\n\nThis partnership-led model allows Kissht to expand its lending business without funding every rupee of loans itself.\n\nNow look at the financial numbers.\n\nFY26:\n\nRevenue: ₹2,179 Cr\n\nPAT: ₹281 Cr (+75% YoY)\n\nQ2FY27:\n\nTotal Income: ₹740 Cr (+43% YoY)\n\nPAT: ₹125 Cr (+100% YoY)\n\nAUM: ₹9,317 Cr (+68% YoY)\n\nQuarterly Disbursements: ₹4,612 Cr (+56% YoY)\n\nAnd on 4 November, the company announced that its AUM had already crossed ₹10,000 Cr.\n\nBut what caught my attention wasn’t just the growth.\n\nCredit quality is actually improving alongside it.\n\nGross NPA has reduced to 2.18%.\n\nNet NPA stands at just 0.34%.\n\nCredit cost has declined from 9.3% to 6.2% of average AUM over the past year.\n\nFor a digital lending company growing this quickly, these numbers are worth paying attention to.\n\nManagement’s Future Outlook\n\nThis is where I became more interested.\n\nManagement has increased its FY27 AUM growth guidance from 40%+ to 60%+.\n\nIt is also targeting:\n\n• More than 15% YoY reduction in credit cost\n\n• Return on Equity above 20%\n\n• Gross NPA below 2.25%\n\n• Further reduction in borrowing costs\n\nThe company recently raised another ₹832 Cr through a preferential issue, strengthening its capital base for expansion.\n\nManagement believes it can scale substantially further without another equity fundraise.\n\nMy Future View\n\nI’m bullish on Kissht’s business growth over the next 2–3 years.\n\nThe combination of digital customer acquisition, AI-based underwriting, improving credit costs and lower borrowing expenses could create meaningful earnings growth.\n\nMy aggressive FY28 scenario is a loan portfolio of ₹18,000–20,000 Cr with PAT potentially reaching ₹650 Cr.\n\nThese are my estimates, not management guidance.\n\nAt around ₹354, Kissht commands a market cap of roughly ₹7,200 Cr.\n\nBased on approximately ₹379 Cr trailing annual profit, that works out to around 19× earnings.\n\nFor a lender growing this quickly while delivering over 20% ROE, I find that valuation interesting.\n\nThe biggest risk is that more than 90% of its loan portfolio is still unsecured. A deterioration in borrower repayments could change the earnings picture quickly.\n\nBut my view remains positive.\n\nI believe Kissht has the potential to become a much larger, highly profitable digital lending business if it maintains its underwriting discipline.\n\nThe most interesting part isn’t how quickly Kissht can give someone a loan. It’s how quickly it can scale that business without letting bad loans catch up.\n\nThat’s the story I’ll be tracking closely.\n\n#KISSHT #IndianStockMarket\n\nIndependent research. FY28 projections are personal estimates. Not SEBI registered. Educational purposes only.",
+      "created_at": "2026-11-09T10:07:55+00:00",
+      "url": "https://x.com/trader_amay/status/2119733716394418613",
+      "image": "https://pbs.twimg.com/media/HWrOk2yaoAAq4nK.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119733121189097754",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC |Stock Market Live: Sensex ends 107 pts higher, Nifty above 25,000; PSU banks surge 3.7%, IT slides 1.2% | Closing Bell \n\nhttps://t.co/RxGZCUW7ca https://t.co/5dRGLsmVrC",
+      "created_at": "2026-11-09T10:05:33+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2119733121189097754",
+      "image": "https://pbs.twimg.com/media/HWrOBeLaAAA1jmX.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2119732649527029884",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "@AnuragO91481278 Dear Customer, Your concerns are important to us and we are committed to resolving such matters on priority. Please send us a DM with your registered email address so we can look into this and take the necessary steps. Thank you! https://t.co/ZY1aPkU834",
+      "created_at": "2026-11-09T10:03:41+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2119732649527029884",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119716466866131323",
+      "handle": "AnkitFinAlpha",
+      "display_name": "Ankit | FinAlpha",
+      "text": "Abakkus Flexicap Portfolio Update (October 2026) 📊\n\nAbakkus Felxicap is out with its latest portfolio. Just top-ups and trims to existing names. @vaibhavchugh \n\n🟢 0 Fresh Buys\n(No fresh buys this month)\n\n🔴 0 Full Exits 📉\n(No exits this month)\n\n📈 33 Increase in Holdings\n(Accumulating: Zydus Lifesciences Limited, Billionbrains Garage Ventures Ltd, Dixon Technologies (India) Limited, PB Fintech Limited, ICICI Bank Ltd, etc.)\n\n📉 1 Decrease in Holdings\n(Includes trimming in: Divi's Laboratories Limited)\n\n⏸️ 12 Companies - No Change\n(Held steady on core positions: Lupin Limited, Mahindra & Mahindra Limited, Oracle Financial Services Software Limited, Arvind Fashions Limited, Urban Company Ltd, etc.)",
+      "created_at": "2026-11-09T08:59:22+00:00",
+      "url": "https://x.com/AnkitFinAlpha/status/2119716466866131323",
+      "image": "https://pbs.twimg.com/media/HWq-liFaEAADL3K.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119671270858273133",
+      "handle": "NewsCapitalMKT",
+      "display_name": "NewsCapital Market",
+      "text": "VARUN PATEL RECOMMENDS INVESTING IN NILKAMAL IN DIWALI SPECIAL!\n\nદિવાળી સ્પેશિયલમાં વરુણ પટેલે NILKAMAL પર રોકાણની આપી સલાહ \n\n#varunpatel #nilkamal #diwalispecial #stockrecommendation #stockmarket #stockmarketindia #sharemarket #stockanalysis #investmentideas #nseindia @japfinserve @yomik_prajapati",
+      "created_at": "2026-11-09T05:59:47+00:00",
+      "url": "https://x.com/NewsCapitalMKT/status/2119671270858273133",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119670229056033149",
+      "handle": "aiueoarhr",
+      "display_name": "Haru",
+      "text": "@gaze_observer Digi Lenders clocking up to 50% revenue growth with names like Kissht, Moneyview, and Paytm leading the charge shows massive credit demand, though the rising indebtedness definitely warrants some caution. You and @GauravTejwani13 rare the two accounts I most enjoy following.",
+      "created_at": "2026-11-09T05:55:38+00:00",
+      "url": "https://x.com/aiueoarhr/status/2119670229056033149",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119670127864226225",
+      "handle": "gaze_observer",
+      "display_name": "The Cloaked Gaze 👀",
+      "text": "Digi Lenders Clock 50% Revenue Growth as Credit Demand Surges: Kissht, Moneyview, MobiKwik and Paytm Report 41-49% Revenue Growth in September Quarter; Retail NBFC Lending Up 21.9% as Rising Indebtedness Sparks Caution\n\nCore Theme \nDigital lenders are growing 41-49% as banks’ slower pace in unsecured credit leaves younger and self-employed borrowers to fintechs, with disbursements surging across Kissht, Moneyview and MobiKwik, though the faster rise in retail borrowing across the system is prompting caution about rising indebtedness.\n\nThe Growth: Fintech Scorecard\nListed new-age fintech companies reported 40-50% growth in lending and financial services revenue in the September quarter, driven by strong loan disbursements and rising demand for unsecured credit from younger borrowers\n\nKissht: revenue from operations rose 44.7% YoY to ₹732 crore; Q2 disbursals ₹4,612 crore; AUM ₹9,317 crore\n\nMoneyview: revenue grew 41% to ₹1,120 crore; Q2 disbursals ₹7,701 crore; AUM ₹23,892 crore\n\nMobiKwik: financial services revenue increased 41.8% to ₹87 crore; Q2 disbursals ₹1,083 crore\n\nPaytm: financial services distribution revenue grew 49.3% to ₹912 crore (includes broking and wealth products; revenue metrics not directly comparable across companies)\n\nLoan Disbursements: The Pace\nMoneyview facilitated loans worth ₹7,701 crore in the quarter, up 41.3% YoY\n\nKissht’s disbursements rose 56% to ₹4,612 crore\n\nMobiKwik reported a 34% increase to ₹1,083 crore\n\nThe figures include loans originated through lending partners as well as their own NBFC subsidiaries\n\nMoneyview, which primarily serves consumers outside India’s largest cities, said about 75% of its lending capital comes from partner institutions, allowing it to expand without proportionally increasing its own balance sheet\n\nBroader Credit Backdrop\nThe growth reflects a broader expansion in household and small-business credit, a key indicator of domestic consumption and economic activity\n\nAccording to the RBI, retail lending by non-banking financial companies (NBFCs) grew 21.9% YoY in September, compared with 16.8% a year earlier\n\nBanks’ personal loan portfolios expanded 17.3% during the same period, against 11.5% last year\n\nLarger Lenders Also Benefiting\nBajaj Finance reported a 26% increase in AUM to ₹5.85 lakh crore, booking 13.45 million new loans, up 11%; quarterly disbursements jumped 47% to ₹35,872 crore\n\nCholamandalam Investment and Finance Company’s AUM grew 25% to ₹2.68 lakh crore\n\nWhy Fintechs Are Winning\nJinay Gala, director at India Ratings & Research: the relatively smaller base of digital lenders and their ability to reach borrowers underserved by traditional financial institutions were driving faster growth\n\n“Banks have been slow on personal loans and unsecured lending, allowing fintechs to serve more self-employed and Gen Z borrowers,” he said\n\nET Insight: by capturing the Gen Z wallet, digital platforms have positioned themselves as the primary gatekeepers of future retail consumption",
+      "created_at": "2026-11-09T05:55:14+00:00",
+      "url": "https://x.com/gaze_observer/status/2119670127864226225",
+      "image": "https://pbs.twimg.com/media/HWqUgVBacAA2-3L.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119660648946897118",
+      "handle": "paraskap1",
+      "display_name": "Paras Kapoor",
+      "text": "@CapitalTrends COFORGE leads Nifty IT with a solid +16.67% return over the last 3 months, followed by TECHM at +11.92% and Persistent at +9.99%, while OFSS lags at -14.13%. You and @gogadigital3 are the two accounts I most enjoy following.",
+      "created_at": "2026-11-09T05:17:34+00:00",
+      "url": "https://x.com/paraskap1/status/2119660648946897118",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119660338702622939",
+      "handle": "CapitalTrends",
+      "display_name": "Capital Trends",
+      "text": "COFORGE leads Nifty IT with a solid +16.67% over the last 3 months!  \n\nTECHM (+11.92%) and Persistent (+9.99%) follow, while OFSS lags badly at -14.13%.  \n\nStrong divergence within the IT pack. https://t.co/zI3MjP3csY",
+      "created_at": "2026-11-09T05:16:20+00:00",
+      "url": "https://x.com/CapitalTrends/status/2119660338702622939",
+      "image": "https://pbs.twimg.com/media/HWqL1wNa4AA-qs8.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119643456725492103",
+      "handle": "NilxPatel",
+      "display_name": "Nilkamal Patel",
+      "text": "@ajitanjum Chup ho ja Ab Jo Hoga Dekha Jayega Jisko Problems Jaha Achha Vaha Chale jao",
+      "created_at": "2026-11-09T04:09:15+00:00",
+      "url": "https://x.com/NilxPatel/status/2119643456725492103",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119640059599376487",
+      "handle": "Santosh83707516",
+      "display_name": "Santosh 🙏🙏🙏",
+      "text": "@Rbi @RBIsays @PMOIndia @narendramodi @FinMinIndia @nsitharamanoffc @jagograhakjago @ANI @ajtak_news @PaywithRing @Kissht_EMI \n 🙏माननीय RBI, प्रधानमंत्री जी, वित्त मंत्री जी एवं संबंधित अधिकारियों से विनम्र अनुरोध है कि Ring और Kissht फाइनेंस कंपनियों के खिलाफ सख्त जाँच कर तत्काल कार्रवाई की जाए।\n\nइन कंपनियों की लोन वसूलीमुझे डिफॉल्टर हुए 21 महीने हो चुके हैं, लेकिन आज तक Ring और Kissht की तरफ से मुझे कोई भी सेटलमेंट ऑफर नहीं दिया गया है। बार-बार अनुरोध और शिकायत करने के बावजूद मेरी समस्या का समाधान नहीं हो रहा है।\n\nमैं RBI और संबंधित अधिकारियों से विनम्र अनुरोध करता हूँ कि इस मामले की जाँच करें और ऐसी वित्तीय कंपनियों को निर्देश दें कि आर्थिक परेशानी से जूझ रहे ग्राहकों को उचित सेटलमेंट या री-स्ट्रक्चरिंग का विकल्प दिया जाए।\n\nआखिर एक कर्जदार को राहत पाने के लिए और कितने समय तक इंतजार करना पड़ेगा? कृपया मेरी समस्या पर ध्यान दें और उचित कार्रवाई करें। प्रक्रिया, ग्राहकों पर दबाव, शिकायतों की अनदेखी और सेटलमेंट एवं री-स्ट्रक्चरिंग की सुविधा न देने जैसे मामलों की निष्पक्ष जाँच होनी चाहिए।\n\nकृपया सुनिश्चित करें कि ये कंपनियाँ RBI के सभी नियमों का सख्ती से पालन करें। आम जनता और आर्थिक परेशानी से जूझ रहे कर्जदारों को न्याय एवं राहत प्रदान करें।\n\nअब केवल नियम बनाना नहीं, बल्कि उनका सख्ती से पालन करवाना भी जरूरी है।\n\nहमारी मांग है – Ring और Kissht के खिलाफ सख्त कार्रवाई की जाए।\n🙏🙏🙏🙏🙏🙏🙏",
+      "created_at": "2026-11-09T03:55:45+00:00",
+      "url": "https://x.com/Santosh83707516/status/2119640059599376487",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119636093381292413",
+      "handle": "JARESEARCH_",
+      "display_name": "JA RESEARCH",
+      "text": "#NILKAMAL CMP 2070\nCup/multi-top pattern\n~ Resistance 2370-2760-3000\n~ Support 1600\n\n#MAHLOG CMP 437\nCup/multi-top pattern breakout\n~ Resistance 500-650-750\n~ Support 365\n\n#DVL CMP 299\nCup/multi-top pattern + High volume\n~ Resistance 365-445-535\n~ Support 250 https://t.co/DHSSzEQaGi",
+      "created_at": "2026-11-09T03:40:00+00:00",
+      "url": "https://x.com/JARESEARCH_/status/2119636093381292413",
+      "image": "https://pbs.twimg.com/media/HWnfZ1ZboAAQxpD.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119628936070177143",
+      "handle": "SWINGSTOCKSWALA",
+      "display_name": "swingstockswala",
+      "text": "DIVIDEND DAMAKA || 1.5 PERCENT PLUS YIELD || CASH KING || STUDY LIST\n\nDividend yield 1.5%+, ye 7 companies\n\n1️⃣ Abbott India\n2️⃣ Firstsource Solutions\n3️⃣ GlaxoSmithKline Pharmaceuticals\n4️⃣ IRCTC\n5️⃣ National Aluminium\n6️⃣ Oracle Financial Services Software\n7️⃣ Fiem Industries\n\nJoin telegram link in bio for full list & info 📲\n🔖 Bookmark to study later.\n⚠️ Not a buy/sell recommendation. Do your own research.",
+      "created_at": "2026-11-09T03:11:33+00:00",
+      "url": "https://x.com/SWINGSTOCKSWALA/status/2119628936070177143",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119626971869282498",
+      "handle": "eduinvestingin",
+      "display_name": "Eduinvesting.in",
+      "text": "Kissht Q2 FY27: Profit Doubles, the Loan Book Grows 68%, and the Robots Now Collect at 85% of a Human's Rate https://t.co/uAmcTgcQHd",
+      "created_at": "2026-11-09T03:03:45+00:00",
+      "url": "https://x.com/eduinvestingin/status/2119626971869282498",
+      "image": "https://pbs.twimg.com/media/HWptfiwaMAAgKeN.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119626251627602169",
+      "handle": "KMalhotrs",
+      "display_name": "Kapil Malhotra",
+      "text": "AstraZeneca Pharma: Set to launch Datverzo in India this month following DCGI approval.• Lock-in Openings Today: Watch out for volume action in counters with releasing lock-ins, including OnEmi Technology Solutions and Ardee Industries.",
+      "created_at": "2026-11-09T03:00:53+00:00",
+      "url": "https://x.com/KMalhotrs/status/2119626251627602169",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119620270646550691",
+      "handle": "cmani",
+      "display_name": "Mani 🇮🇳",
+      "text": "Listed new-age fintech firms recorded 40% to 50% revenue growth in lending and financial services during the September quarter, propelled by rising demand for unsecured credit among younger demographics.\n\nFinancial performance highlights:\n- Kissht: Revenue rose 44.7% YoY to ₹732 crore; disbursements increased 56% to ₹4,612 crore.\n- Moneyview: Revenue increased 41% to ₹1,120 crore; loan originations rose 41.3% to ₹7,701 crore.\n- MobiKwik: Financial services revenue grew 41.8% to ₹87 crore; disbursements rose 34% to ₹1,083 crore.\n- Paytm: Financial services distribution revenue expanded 49.3% to ₹912 crore.\n\nPer RBI data, retail lending by NBFCs grew 21.9% YoY in September (vs. 16.8% prior year), while banks' personal loan portfolios rose 17.3% (vs. 11.5% prior year). Analysts attribute fintech outperformance to cautious bank underwriting on unsecured personal loans, enabling digital lenders to address self-employed and Gen Z segments.\n\nSource: The Economic Times\n\n#Fintech #Banking #CreditMarkets #Economy",
+      "created_at": "2026-11-09T02:37:07+00:00",
+      "url": "https://x.com/cmani/status/2119620270646550691",
+      "image": "https://pbs.twimg.com/media/HWpnZ10bIAAvrya.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119619886116921447",
+      "handle": "Sharad9Dubey",
+      "display_name": "Sharad Dubey",
+      "text": "Action For The Day\n\nQ2 Earnings-Whirlpool, Olectra Greentech\n\nLockin Expiry-Ardee Industries, OnEMI Technology Solution\n\nUS Wholesale Inventories, China PPI, CPI",
+      "created_at": "2026-11-09T02:35:36+00:00",
+      "url": "https://x.com/Sharad9Dubey/status/2119619886116921447",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119519914809864577",
+      "handle": "capjeonsinc1894",
+      "display_name": "moonflame.🪻🪻 is seeing BTS in India in 2027",
+      "text": "Real ones are those who have \"nilkamal\" furniture in their house https://t.co/RHaKQAXqI6",
+      "created_at": "2026-11-08T19:58:21+00:00",
+      "url": "https://x.com/capjeonsinc1894/status/2119519914809864577",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119474493060153600",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@ravish_journo यह रविश भड़वा अपने नाजायज बाप के साथ मिलकर फेक न्यूज़ फैला रहा है!",
+      "created_at": "2026-11-08T16:57:51+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2119474493060153600",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119452188820885506",
+      "handle": "lautydealtos",
+      "display_name": "Laucha 🃏",
+      "text": "Con carpa a instituto salir primero no le sirvió de nada en vez de hacer play ofss y esa boludes de seca nuca anual , tendrían que jugar el primero de cada zona una final y a otra cosa mariposa",
+      "created_at": "2026-11-08T15:29:13+00:00",
+      "url": "https://x.com/lautydealtos/status/2119452188820885506",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119443065631109427",
+      "handle": "SlushydotTrade",
+      "display_name": "Slushy.Trade",
+      "text": "@daga_nitin Rolex Rings at 212 and Nilkamal at 2072, sold on Muhurat day. A margin of safety bio and a clean exit. Paper mode is a safe place to make mistakes before real money, if you ever try a new idea.",
+      "created_at": "2026-11-08T14:52:58+00:00",
+      "url": "https://x.com/SlushydotTrade/status/2119443065631109427",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119424564065456418",
+      "handle": "sunilgurjar01",
+      "display_name": "Sunil Gurjar, CFTe",
+      "text": "4- KISSHT\n- FII Increase: 2.89%\n- DII Increase: 6.45% https://t.co/MIIQgkJHWy",
+      "created_at": "2026-11-08T13:39:27+00:00",
+      "url": "https://x.com/sunilgurjar01/status/2119424564065456418",
+      "image": "https://pbs.twimg.com/media/HWm1J0NacAAExne.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119404568593264944",
+      "handle": "dealsified",
+      "display_name": "Dealsified",
+      "text": "Nilkamal Baron Engineered Wood Center Table\n\nMRP: Rs 4,237.38\n\nGreat Indian Festival Sale Price: Rs 3,499\n\n(Paid Link): https://t.co/5sDg9AJlPw",
+      "created_at": "2026-11-08T12:20:00+00:00",
+      "url": "https://x.com/dealsified/status/2119404568593264944",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119386951531032631",
+      "handle": "discountsdeck",
+      "display_name": "Discounts Deck",
+      "text": "Avail 17% Off On Nilkamal Baron Engineered Wood Center Table\n\nMRP: Rs 4,237.38\n\nGreat Indian Festival Sale Price: Rs 3,499\n\n(Paid Link): https://t.co/pAVS7ukp47",
+      "created_at": "2026-11-08T11:10:00+00:00",
+      "url": "https://x.com/discountsdeck/status/2119386951531032631",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119385714815344848",
+      "handle": "daga_nitin",
+      "display_name": "NITIN DAGA",
+      "text": "Sold some rolex rings 212 nilkamal 2072... Happy Diwali Muhurat Trading",
+      "created_at": "2026-11-08T11:05:05+00:00",
+      "url": "https://x.com/daga_nitin/status/2119385714815344848",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119365859617681772",
+      "handle": "RajMShaikh",
+      "display_name": "Raj - The Alpha Trader",
+      "text": "#Kissht cmp 355 at days high, i am still holding for 400+ soon 😊😊",
+      "created_at": "2026-11-08T09:46:11+00:00",
+      "url": "https://x.com/RajMShaikh/status/2119365859617681772",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119362468233515069",
+      "handle": "Amit00253158",
+      "display_name": "Amit Khandelwal",
+      "text": "Technical Observation\nKISSHT (OnEMI Technology Solutions Ltd.)\nKey Trigger / Resistance Zone: Above 354.65\nInvalidation / Reference Level: Closing below 330.00\nMonitoring price structure and volume action around these threshold levels.\nDisclaimer: For educational purposes only. Not financial advice or a recommendation.",
+      "created_at": "2026-11-08T09:32:42+00:00",
+      "url": "https://x.com/Amit00253158/status/2119362468233515069",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119356786126008782",
+      "handle": "Santosh83707516",
+      "display_name": "Santosh 🙏🙏🙏",
+      "text": "🙏आदरणीय @RBI @FinMinIndia @PMOIndia @nsitharaman @jagograhakjago🙏 (Consumer Affairs) से देश के सभी पीड़ित कर्जदारों की ओर से विनम्र अनुरोध है कि Ring App , Kissht App , SiCreva Capital और उनके सभी Lending Partners की कार्यप्रणाली की निष्पक्ष जाँच कराई जाए।\n\nयदि ये कंपनियाँ RBI के नियमों का पालन नहीं कर रही हैं और ग्राहकों की समस्याओं का समाधान, उचित Settlement या Restructuring का विकल्प नहीं दे रही हैं, तो इनके खिलाफ सख्त कार्रवाई करते हुए इनके संचालन पर प्रतिबंध लगाने पर विचार किया जाए।\n\nहमारी माँग है कि आम जनता को अनावश्यक आर्थिक और मानसिक दबाव से बचाया जाए तथा सभी वित्तीय कंपनियों के लिए RBI के नियमों का सख्ती से पालन सुनिश्चित किया जाए।\n\nहमें न्याय चाहिए, प्रताड़ना नहीं! हमारी आवाज़ सुनी जाए।\n\n#BanRing #BanKissht #RBI #ConsumerRights #LoanAppHarassment #JusticeForBorrowers",
+      "created_at": "2026-11-08T09:10:08+00:00",
+      "url": "https://x.com/Santosh83707516/status/2119356786126008782",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119354052119077297",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "आप सभी मित्रों और देशवासियों को दीवाली के शुभ अवसर पर हार्दिक शुभकामनायें।\n#HappyDiwali2026",
+      "created_at": "2026-11-08T08:59:16+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2119354052119077297",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119333847196479989",
+      "handle": "mehraks9",
+      "display_name": "EquiSwingIN",
+      "text": "#kissht\nHow you rate this price pattern? https://t.co/ywgqnk1GQl",
+      "created_at": "2026-11-08T07:38:59+00:00",
+      "url": "https://x.com/mehraks9/status/2119333847196479989",
+      "image": "https://pbs.twimg.com/media/HWli0_dbMAAwOP4.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119328872806461477",
+      "handle": "TalksWave",
+      "display_name": "Abhishek H. Singh 🇮🇳",
+      "text": "@BVutla OFSS is part of the Poll",
+      "created_at": "2026-11-08T07:19:13+00:00",
+      "url": "https://x.com/TalksWave/status/2119328872806461477",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119327951091294365",
+      "handle": "BVutla",
+      "display_name": "DreamMintNFT.",
+      "text": "@TalksWave Ofss",
+      "created_at": "2026-11-08T07:15:33+00:00",
+      "url": "https://x.com/BVutla/status/2119327951091294365",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119319993221603724",
+      "handle": "MohitttPanwar",
+      "display_name": "Mohit Panwar",
+      "text": "The stocks listed below are outperforming their respective sector peers. This list is based on the Q1 results. I will update it after the Q2 results in the first week of December.\n\n360ONE\nAARTIIND\nACMESOLAR\nACUTAAS\nAEGISLOG\nAEGISVOPAK\nAEQUS\nAETHER\nAJMERA\nALPEXSOLAR\nAMAGI\nAPOLLO\nASHIANA\nASKAUTOLTD\nASTRAZEN\nATHERENERG\nATLANTAELE\nAVALON\nAVL\nAZAD\nBCG\nBHEL\nBLACKBUCK\nBLS\nBLUESTONE\nBORORENEW\nBSE\nCARRARO\nCCAVENUE\nCCL\nCEINSYS\nCGCL\nCHENNPETRO\nCHOICEIN\nCLEANMAX\nCOFORGE\nCOSMOFIRST\nCPPLUS\nCUPID\nDATAPATTNS\nDEEPINDS\nDPABHUSHAN\nE2E\nEBGNG\nEFCIL\nEICHERMOT\nEMMVEE\nEMUDHRA\nENDURANCE\nENTERO\nESDS\nETERNAL\nETHOSLTD\nFACT\nFINCABLES\nGAEL\nGALAXYSURF\nGENUSPOWER\nGLENMARK\nGOLDIAM\nGPPL\nGROWW\nGSFC\nGVT&D\nHEROMOTOCO\nHFCL\nHINDCOPPER\nHUBTOWN\nHUDCO\nICRA\nINA\nINDGN\nINDIASHLTR\nINDIQUBE\nINDOMIM\nINNOVACAP\nINTERARCH\nJAINREC\nJIOFIN\nJNPR\nJSLL\nKALYANKJIL\nKAYNES\nKDDL\nKENNAMET\nKIMS\nKIRIINDUS\nKPIGREEN\nKPL\nKRISHANA\nKRN\nLENSKART\nLODHA\nLOTUSDEV\nLTFOODS\nLUMAXIND\nLUMAXTECH\nLUPIN\nM&M\nMAHLIFE\nMANIPALHOS\nMANORAMA\nMARICO\nMARUTI\nMBAPL\nMCX\nMEDIASSIST\nMEESHO\nMILKYMIST\nMINDACORP\nMSUMI\nMTARTECH\nNETWEB\nNEULANDLAB\nNIVABUPA\nNTPCGREEN\nNYKAA\nOBEROIRLTY\nOFSS\nOSWALPUMPS\nPARADEEP\nPARAS\nPCJEWELLER\nPERSISTENT\nPFOCUS\nPICCADIL\nPNGJL\nPOLICYBZR\nPOLYCAB\nPOONAWALLA\nPOWERINDIA\nPREMIERENE\nPRESTIGE\nPTCIL\nPURVA\nPWL\nQPOWER\nRAYMONDREL\nRPTECH\nRRKABEL\nRUBICON\nRUSTOMJEE\nSAATVIKGL\nSAGILITY\nSAMBHV\nSANDHAR\nSANGHVIMOV\nSANOFICONR\nSBFC\nSENCO\nSENORES\nSGFIN\nSHADOWFAX\nSHANTIGOLD\nSHARDAMOTR\nSHILPAMED\nSIGMAADV\nSJS\nSKYGOLD\nSMARTWORKS\nSOBHA\nSOLARINDS\nSONACOMS\nSOTL\nSTLTECH\nSUNTECK\nSUPRIYA\nSWIGGY\nSYRMA\nTARC\nTDPOWERSYS\nTECHNOE\nTITAN\nTORNTPHARM\nTVSMOTOR\nUNIHEALTH\nUNIPARTS\nUNIVCABLES\nURBANCO\nUTLSOLAR\nV2RETAIL\nVADILALIND\nVIKRAMSOLR\nVMARCIND\nWAAREEENER\nWEWORK\nYATHARTH\nZAGGLE",
+      "created_at": "2026-11-08T06:43:56+00:00",
+      "url": "https://x.com/MohitttPanwar/status/2119319993221603724",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119287436614537613",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@vsreddys2 Hey there! This shouldn’t have happened. Please DM your order ID and contact number with us so we can help you out quickly.\n https://t.co/vabVK1k5nA",
+      "created_at": "2026-11-08T04:34:34+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2119287436614537613",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119248548076163395",
+      "handle": "NilkamalMHD",
+      "display_name": "Nilkamal Material Handling",
+      "text": "Wishing you a Diwali filled with new opportunities, stronger partnerships and continued growth.\n\nHappy Diwali from Nilkamal Material Handling! 🪔\n\n#HappyDiwali #NilkamalMaterialHandling #DiwaliWishes https://t.co/Zp9a06pEma",
+      "created_at": "2026-11-08T02:00:02+00:00",
+      "url": "https://x.com/NilkamalMHD/status/2119248548076163395",
+      "image": "https://pbs.twimg.com/media/HWiL-NGbQAA97rI.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
     {
       "tweet_id": "2119188694699823584",
       "handle": "vluxeinvests",
@@ -22,6 +1037,22 @@
         {
           "entityId": "isin:INE330T01021",
           "query": "\"HAPPYFORGE\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2119155589062287808",
+      "handle": "intvdoc",
+      "display_name": "Michael",
+      "text": "The way I view $QNT is that it's like another financial layer which has zero competition.  So where I view its valuation in the next 5-7 years is where swift messaging network, VisaNet,  Amazon pay etc are. A quick AI estimate is as follows.\n\nInfrastructure layer  estimates:\nSWIFT messaging network $15B -$30b\nVisaNet payment network $400B- $600B\nMastercard payment network $250B -$400B\nAmazon Pay $1B-$5B\nOracle financial-services software/integration $10B-$25B",
+      "created_at": "2026-11-07T19:50:39+00:00",
+      "url": "https://x.com/intvdoc/status/2119155589062287808",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
         }
       ]
     },
@@ -5561,6 +6592,22 @@
       ]
     },
     {
+      "tweet_id": "2118649847448264842",
+      "handle": "WealthGenius_",
+      "display_name": "Wealth Genius News and Updates",
+      "text": "🇮🇳 Favourite MNC Companies Listed in India\n\nA sector-wise list of established multinational businesses operating in the Indian market.\n\n⚡ Capital Goods, Power & Energy Transition\n• Siemens Energy India\n• GE Vernova T&D India\n• Siemens\n• ABB India\n• Honeywell Automation India\n• Schneider Electric Infrastructure\n• Hitachi Energy India\n\n🏭 Industrial, Auto Components & Bearings\n• Bosch\n• Cummins India\n• 3M India\n• SKF India\n• Schaeffler India\n• Timken India\n• Castrol India\n• Kansai Nerolac Paints\n\n🛒 FMCG & Consumer Staples\n• Hindustan Unilever (HUL)\n• Nestlé India\n• P&G Hygiene and Health Care\n• Colgate-Palmolive India\n• Whirlpool of India\n• Bata India\n\n💊 Pharma, Healthcare & Diagnostics\n• Abbott India\n• Sanofi India\n• GSK Pharmaceuticals\n• Pfizer India\n• AstraZeneca Pharma India\n• Gland Pharma\n\n💻 IT, Digital & Financial Services\n• Oracle Financial Services Software (OFSS)\n• Nippon Life India Asset Management\n\n📌 A useful starting point for researching MNC businesses across different sectors.\n\nCompare valuations, earnings growth, margins and long-term business prospects before making investment decisions.\n\nDisclaimer: Educational purposes only. No buy/sell recommendation. DYOR.\n\n#MNCStocks #QualityStocks #IndianStockMarket #Investing\n\nJoin our Telegram-  https://t.co/zh4G7QdCHY",
+      "created_at": "2026-11-06T10:21:00+00:00",
+      "url": "https://x.com/WealthGenius_/status/2118649847448264842",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2118649731496964580",
       "handle": "ashika_sp3",
       "display_name": "あしか/Ashika",
@@ -5573,6 +6620,22 @@
         {
           "entityId": "isin:INE094B01013",
           "query": "\"ASHIKA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2118649627230761378",
+      "handle": "WealthGenius_",
+      "display_name": "Wealth Genius News and Updates",
+      "text": "🇮🇳 All-Time Favourite MNC Stocks in India\n\nA diversified watchlist of multinational companies operating across key sectors of the Indian economy.\n\n⚡ Capital Goods, Power & Energy Transition\n• Siemens Energy India\n• GE Vernova T&D India\n• Siemens\n• ABB India\n• Honeywell Automation India\n• Schneider Electric Infrastructure\n• Hitachi Energy India\n\n🏭 Industrial, Auto Components & Bearings\n• Bosch\n• Cummins India\n• 3M India\n• SKF India\n• Schaeffler India\n• Timken India\n• Castrol India\n• Kansai Nerolac Paints\n\n🛒 FMCG & Consumer Staples\n• Hindustan Unilever (HUL)\n• Nestlé India\n• P&G Hygiene and Health Care\n• Colgate-Palmolive India\n• Whirlpool of India\n• Bata India\n\n💊 Pharma, Healthcare & Diagnostics\n• Abbott India\n• Sanofi India\n• GSK Pharmaceuticals\n• Pfizer India\n• AstraZeneca Pharma India\n• Gland Pharma\n\n💻 IT, Digital & Financial Services\n• Oracle Financial Services Software (OFSS)\n• Nippon Life India Asset Management\n\n📌 A broad MNC watchlist covering established businesses, global brands and multiple industry segments.\n\nStudy valuations, earnings growth, business outlook and corporate governance before evaluating any stock.\n\nDisclaimer: Educational purposes only. No buy/sell recommendation. DYOR.\n\n#MNCStocks #IndianStockMarket #QualityStocks #StockMarket\n\nJoin our Telegram-  https://t.co/zh4G7Qeaxw",
+      "created_at": "2026-11-06T10:20:08+00:00",
+      "url": "https://x.com/WealthGenius_/status/2118649627230761378",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
         }
       ]
     },
@@ -5915,6 +6978,26 @@
         {
           "entityId": "isin:INE679V01027",
           "query": "\"Aditya Vision\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2118640812066316641",
+      "handle": "RajMShaikh",
+      "display_name": "Raj - The Alpha Trader",
+      "text": "BTST - #KISSHT cmp 345 💪💪",
+      "created_at": "2026-11-06T09:45:06+00:00",
+      "url": "https://x.com/RajMShaikh/status/2118640812066316641",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -8140,1158 +9223,14 @@
           "query": "\"GODREJAGRO\""
         }
       ]
-    },
-    {
-      "tweet_id": "2118599118771851650",
-      "handle": "WorldOfRamayana",
-      "display_name": "The World Of Ramayana",
-      "text": "Yeh Ram ke Yug ka Aarambh hai! 🏹\nThank you for making Ramayana a historic celebration and an epic for the ages. Keep the love coming! 🕉\n\nBook your tickets now!\nRamayana, now playing in cinemas worldwide, across all premium formats. https://t.co/B3ntOqeF0d",
-      "created_at": "2026-11-06T06:59:26+00:00",
-      "url": "https://x.com/WorldOfRamayana/status/2118599118771851650",
-      "image": "https://pbs.twimg.com/media/HWbGqujaIAAdnnF.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118598517732294713",
-      "handle": "jschanan",
-      "display_name": "JS Chanan",
-      "text": "Intraday Large Deals \n\n#Block #blockdeal #intraday #bigblock #LargeDeal\n\n#SiemensEnergy #YesBank #CGPower #ICICIBank #SanseraEng #Grasim #CGPower #CleanMaxEnvir #HDFCBank #UnisonMetals #SaiLifeSci #CGConsumer #CGConsumer #HDFCBank #BhartiAirtel #HDFCBank #BhartiAirtel #Larsen",
-      "created_at": "2026-11-06T06:57:02+00:00",
-      "url": "https://x.com/jschanan/status/2118598517732294713",
-      "image": "https://pbs.twimg.com/media/HWbGG-hbMAA7-bG.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118598317261398217",
-      "handle": "1stName1234",
-      "display_name": "Wockhardt Bush",
-      "text": "@Cr00k3dJoe @briana__gomez No one normal believes that, cry all you want… the people spoke up about actual facts that matter to them. Russian and Israel puppet trump got crushed. MAGA is dead. Kys https://t.co/DiCkhDGsPV",
-      "created_at": "2026-11-06T06:56:15+00:00",
-      "url": "https://x.com/1stName1234/status/2118598317261398217",
-      "image": "https://pbs.twimg.com/media/HWbF8P4bMAAyQtr.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118598087807811795",
-      "handle": "SanatanEdge",
-      "display_name": "Vestige¹⁸",
-      "text": "The biggest opening of the year is DHURANDHAR THE REVENGE. https://t.co/eU7p6kuD2c",
-      "created_at": "2026-11-06T06:55:20+00:00",
-      "url": "https://x.com/SanatanEdge/status/2118598087807811795",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118597974142111997",
-      "handle": "1stName1234",
-      "display_name": "Wockhardt Bush",
-      "text": "@JMUSPatriot @briana__gomez @grok Using ai because you couldn’t find one on google? You pussy snowflakes are scared of scenarios you made up yourselves. It’s why normal people got sick of it and turned out in droves to rebuke your fake narratives and bullshit in a hithero to unprecedented voting landslide.",
-      "created_at": "2026-11-06T06:54:53+00:00",
-      "url": "https://x.com/1stName1234/status/2118597974142111997",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118596533562290613",
-      "handle": "WokePandemic",
-      "display_name": "Woke Eminent",
-      "text": "All those who took money to promote #Ramayana movie\nTheir wives will run away with someone else \n\nYeh Woke Pandemic ka Shrap hai .....",
-      "created_at": "2026-11-06T06:49:09+00:00",
-      "url": "https://x.com/WokePandemic/status/2118596533562290613",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118596412648886297",
-      "handle": "AlfafinderIndia",
-      "display_name": "ALFA FINDER",
-      "text": "🎙️ Happy Forgings (HAPPYFORGE) call just ended. Here is the decode ⬇️\n\nHappy Forgings reported Q2 FY27 revenue of ₹501 Cr, up 32.7% YoY, and net profit of ₹98 Cr, up 32.8%. Growth was volume-led: volume rose 24.8% and realisation 6.3%, with Q2 EBITDA of ₹153 Cr and a 30.6% margin. Industrial segment sales grew over 50% and farm over 20%; H1 revenue reached ₹950 Cr, up 29.9%. For FY27, management guided margins roughly at FY26 levels, without a number. Against earlier promises, the volume and margin claims held. The self-funding claim did not: ~₹300 Cr of new bank debt is planned, H1 operating cash flow was ₹124 Cr against PAT of ₹189 Cr, and H1 capex of ₹378 Cr is above the ₹350–400 Cr annual guide. Exports are about half the order book.\n\nGrowth triggers\n• ~₹500 Cr orders targeted by FY27-end\n• ₹500 Cr capex phased across FY28–FY29\n• Heavy facility operational in Q4 FY28\n\nBlockers\n• H1 operating cash flow of ₹124 Cr against H1 PAT of ₹189 Cr; the cash-flow guidance was missed\n• ~₹300 Cr of new bank debt despite earlier guidance of self-funding with a bridge loan\n\n#HAPPYFORGE #EarningsCall #Q2FY27",
-      "created_at": "2026-11-06T06:48:41+00:00",
-      "url": "https://x.com/AlfafinderIndia/status/2118596412648886297",
-      "image": "https://pbs.twimg.com/media/HWbEMJwaUAATrNB.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        },
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"HAPPYFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118596210273730759",
-      "handle": "Shiv29_Vish",
-      "display_name": "ShivAm ममगाईं",
-      "text": "Billionbrains Garage Ventures Ltd -\n\nYesterday's closing was good, but it seems some profit booking came in today.\n\nHowever, the stock has now found support at the lower levels.\n\nSupport zone: 204-208\nSL: Closing below 198\n\nProbable target: 260\n\nDYOR!!! https://t.co/EUvPrqEOMS",
-      "created_at": "2026-11-06T06:47:52+00:00",
-      "url": "https://x.com/Shiv29_Vish/status/2118596210273730759",
-      "image": "https://pbs.twimg.com/media/HWbD2YwbAAAhMe6.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"Billionbrains Garage Ventures\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118596075187810501",
-      "handle": "easterncoal",
-      "display_name": "Eastern Coalfields Limited",
-      "text": "A sector's strength lies in the trust it earns.\n\nThe Mines and Minerals (Development and Regulation) Amendment Act, 2026 builds on the spirit of cooperative federalism, shaping a stronger mineral future for India.\n\n#MMDR2026 #ECL #TeamECL #CoalIndia https://t.co/tHMKKVgH2t",
-      "created_at": "2026-11-06T06:47:20+00:00",
-      "url": "https://x.com/easterncoal/status/2118596075187810501",
-      "image": "https://pbs.twimg.com/media/HWbDPplbkAAQOBi.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118595972012097719",
-      "handle": "SumitResearch",
-      "display_name": "Sumit Mehrotra",
-      "text": "AI related stocks under Selling \n\nTD power -16%\nCG power -8%\nBlack box -6%\nAnant Raj -5% \nApar Ind -10%\nNetweb -7% \nE2E -5% \nParacable -7% \nPrecision wire -5%\nESDS -5%\nSTERLITE lower Circuit\nHFCL lower Circuit\nMTAR lower Circuit",
-      "created_at": "2026-11-06T06:46:55+00:00",
-      "url": "https://x.com/SumitResearch/status/2118595972012097719",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118595944350642496",
-      "handle": "1stName1234",
-      "display_name": "Wockhardt Bush",
-      "text": "@samsaraas @RevRuffpdx @TedhiLakeer Read a book for once you might learn something actually.",
-      "created_at": "2026-11-06T06:46:49+00:00",
-      "url": "https://x.com/1stName1234/status/2118595944350642496",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118595847915209191",
-      "handle": "1stName1234",
-      "display_name": "Wockhardt Bush",
-      "text": "@samsaraas @RevRuffpdx @TedhiLakeer Hitler lost that war and was never winnable. He over extended w/o having infrastructure to support his blitzkreig tacs. they ran out fuel way to fast. + his disastrous decision to attack Soviet Union. I’m US through and through but I’m honest unlike you. They did the heavy liftin",
-      "created_at": "2026-11-06T06:46:26+00:00",
-      "url": "https://x.com/1stName1234/status/2118595847915209191",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118595279670960230",
-      "handle": "addmore_Advait",
-      "display_name": "अद्वैत/Advait",
-      "text": "Jahangir chya Sangopana var laksha dya.\nAamchya Sanaa madhe dhawla dhawal karu naka.",
-      "created_at": "2026-11-06T06:44:10+00:00",
-      "url": "https://x.com/addmore_Advait/status/2118595279670960230",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118595277557035465",
-      "handle": "mudraa",
-      "display_name": "Mudraa",
-      "text": "Godrej Agrovet Ltd (GODREJAGRO): Q2 FY27 results (Jul–Sep 2026)\n\nResults announced today, 6 Nov\n\nConsolidated figures\n\nRevenue ₹2,994.98 cr, +17% YoY\n\nEBITDA margin 7.4% (8.6% a year ago)\n\nPAT ₹102.75 cr, +22% YoY; \nEPS ₹5.99\n\nSegment revenue (year-ago in brackets) and segment result:\n\nAnimal nutrition ₹1,386.83 cr (₹1,217.06 cr); result ₹92.79 cr (₹70.29 cr)\n\nVegetable oil ₹809.32 cr (₹640.34 cr); result ₹143.56 cr (₹138.45 cr)\n\nCrop care ₹272.11 cr (₹212.77 cr); result loss ₹5.55 cr (profit ₹16.33 cr)\n\nDairy ₹415.38 cr (₹393.19 cr); result loss ₹3.87 cr (profit ₹9.08 cr)\n\nPoultry & processed food ₹197.72 cr (₹182.59 cr); result ₹1.15 cr (₹2.33 cr)\n\nOthers ₹26.34 cr (₹30.13 cr); result loss ₹2.51 cr (loss ₹3.55 cr)\n\nSource: Godrej Agrovet results filing on NSE/BSE\n\nMembers are discussing it on Mudraa: https://t.co/dFVm7inoyw\n\n#GodrejAgrovet #Q2FY27 #Results",
-      "created_at": "2026-11-06T06:44:10+00:00",
-      "url": "https://x.com/mudraa/status/2118595277557035465",
-      "image": "https://pbs.twimg.com/media/HWbDF2Pa0AATl5z.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        },
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118595148640927860",
-      "handle": "1stName1234",
-      "display_name": "Wockhardt Bush",
-      "text": "@samsaraas @RevRuffpdx @TedhiLakeer Oh man you don’t know history. Trying to claim ww1 as an US victory? We sat out, let Europe do the heavy lifting then joined in when the winning sides were clear. \n\nWW2 we influenced a lot, but claiming victory cause of us is just ignorant. But glad you displayed it loudly!!",
-      "created_at": "2026-11-06T06:43:39+00:00",
-      "url": "https://x.com/1stName1234/status/2118595148640927860",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118595113861664907",
-      "handle": "amitshriv2805",
-      "display_name": "🇮🇳 अमित श्रीवास्तव 🇮🇳",
-      "text": "**GODREJAGRO: Q2 CONS NET PROFIT 1.15B RUPEES VS 925.9M (YOY)\n\n**GODREJAGRO: Q2 EBITDA 2.24B RUPEES VS 2.31B (YOY); Q2 EBITDA MARGIN 7.49% VS 8.99% (YOY)\n\n**GODREJAGRO: Q2 REVENUE 29.95B RUPEES VS 25.67B (YOY)",
-      "created_at": "2026-11-06T06:43:31+00:00",
-      "url": "https://x.com/amitshriv2805/status/2118595113861664907",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118594819715190947",
-      "handle": "jschanan",
-      "display_name": "JS Chanan",
-      "text": "GODREJAGRO: Q2 EBITDA 2.24B RUPEES VS 2.31B (YOY); Q2 EBITDA MARGIN 7.49% VS 8.99% (YOY)",
-      "created_at": "2026-11-06T06:42:21+00:00",
-      "url": "https://x.com/jschanan/status/2118594819715190947",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118594780464820411",
-      "handle": "jschanan",
-      "display_name": "JS Chanan",
-      "text": "Godrej Agrovet Ltd: Q2 CONS NET PROFIT 1.15B RUPEES VS 925.9M (YOY)\n\nGODREJAGRO: Q2 REVENUE 29.95B RUPEES VS 25.67B (YOY) https://t.co/sxCeHgUpF3",
-      "created_at": "2026-11-06T06:42:11+00:00",
-      "url": "https://x.com/jschanan/status/2118594780464820411",
-      "image": "https://pbs.twimg.com/media/HWbCt8Ba4AAqzfO.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        },
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118594343833424115",
-      "handle": "equities_samjho",
-      "display_name": "Tushar Pandey",
-      "text": "Just finished Happy Forgings earnings call. They’ve done capex for data centre projects. Stock is down 10% today. They already have orders in hand and dismissed the fears of Data Centre crack down. Confident of adding another 500 cr orders by fiscal end. Just saying amid this AI fear.",
-      "created_at": "2026-11-06T06:40:27+00:00",
-      "url": "https://x.com/equities_samjho/status/2118594343833424115",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118594161960206338",
-      "handle": "1stName1234",
-      "display_name": "Wockhardt Bush",
-      "text": "@RiggMortis @shannonplante @essenviews Define communism for me, then name a single thing he said in this video that was communistic.",
-      "created_at": "2026-11-06T06:39:44+00:00",
-      "url": "https://x.com/1stName1234/status/2118594161960206338",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118594060055445516",
-      "handle": "BharatKabra7",
-      "display_name": "Bharat Kabra",
-      "text": "@SumitResearch Monday se Cgpower n tube investment",
-      "created_at": "2026-11-06T06:39:20+00:00",
-      "url": "https://x.com/BharatKabra7/status/2118594060055445516",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118593918736744851",
-      "handle": "ai_EquiSense",
-      "display_name": "EquiSense_ai",
-      "text": "🎙️ Happy Forgings (HAPPYFORGE) call was streaming live on EquiSense, it just ended. Here is the decode ⬇️\n\n#HAPPYFORGE #EarningsCall https://t.co/S6epmhoWjj",
-      "created_at": "2026-11-06T06:38:46+00:00",
-      "url": "https://x.com/ai_EquiSense/status/2118593918736744851",
-      "image": "https://pbs.twimg.com/media/HWbB8Pka0AAac6D.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        },
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"HAPPYFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118593705972240607",
-      "handle": "myAlerts_in",
-      "display_name": "myAlerts.in",
-      "text": "#HAPPYFORGE\nHappy Forgings Ltd | Q2FY27 Earnings Concall Takeaways | Full Call Intelligence on Stocksigma Concall Monitor https://t.co/sxG9A8KThm",
-      "created_at": "2026-11-06T06:37:55+00:00",
-      "url": "https://x.com/myAlerts_in/status/2118593705972240607",
-      "image": "https://pbs.twimg.com/media/HWbBv24a8AAGPGZ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        },
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"HAPPYFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118592681786081775",
-      "handle": "gaze_observer",
-      "display_name": "The Cloaked Gaze 👀",
-      "text": "CIL’s Listing-Bound Subsidiaries Log Fall in E-Auction Premiums: MCL’s Average Premium Drops Nearly 66% to ₹274 Per Tonne in FY26 From ₹802 in FY24; Incremental Revenue Falls 60% to ₹728 Crore\n\nCore Theme \nMCL and SECL are heading toward listing with sharply lower e-auction premiums, as MCL’s much larger offering of coal in auctions found far fewer takers, cutting premiums by about two-thirds and incremental revenue by 60%, a trend that weakens a key source of higher realisation ahead of their stock market debut.\n\nThe Core Finding: Premiums Collapse\nThe average e-auction premium realised by Coal India’s two major subsidiaries, Mahanadi Coalfields (MCL) and South Eastern Coalfields (SECL), proposed for stock market listing, has declined by as much as two-thirds over the past two financial years\n\nMCL and SECL are the largest and second-largest subsidiaries of Coal India in terms of coal production\n\nAccording to MCL’s draft red herring prospectus (DRHP), its average premium over the notified price fell to ₹274 per tonne in FY26 from ₹802 per tonne in FY24, a decline of nearly 66%\n\nIncremental revenue generated through premiums over notified prices also fell 60% to ₹728 crore in FY26 from ₹1,833 crore in FY24\n\nHow Coal Is Sold: FSAs vs E-Auctions\nMCL and SECL sell coal mainly through two routes: Fuel supply agreements (FSAs) signed with consumers and competitive e-auction windows\n\nUnder FSAs, prices are set by Coal India and provide a stable revenue stream to the company\n\nIn e-auctions, prices are determined by demand-supply dynamics, and consumers pay premiums over and above notified prices or the benchmark prices at which bidding starts\n\nCompanies selling coal through e-auctions earn incremental revenue or “higher realisation” in the form of premiums paid by buyers\n\nMCL: Offered vs Booked Volumes\nThe decline in premiums came despite a substantial increase in the quantity of coal offered through e-auctions\n\nMCL offered 72.26 million tonnes (mt) in FY26, compared with 28.65 mt in FY24\n\nThe quantity booked rose only to 26.49 mt from 22.86 mt over the same period\n\nConsequently, the proportion of coal offered that was booked declined from nearly 80% in FY24 to around 37% in FY26",
-      "created_at": "2026-11-06T06:33:51+00:00",
-      "url": "https://x.com/gaze_observer/status/2118592681786081775",
-      "image": "https://pbs.twimg.com/media/HWa_xvha4AA2LDB.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118591629754057009",
-      "handle": "ShirazKI",
-      "display_name": "Shiraz Khurram",
-      "text": "I purchased ac day before yesterday and received call for installation after that no person came for installation what service you are providing to customer means commitment is not good\nKindly solve the problem \nAt City Gaya from Aditya vision",
-      "created_at": "2026-11-06T06:29:40+00:00",
-      "url": "https://x.com/ShirazKI/status/2118591629754057009",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE679V01027",
-          "query": "\"Aditya Vision\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118591450720154057",
-      "handle": "BharatKabra7",
-      "display_name": "Bharat Kabra",
-      "text": "@StockX_India Tube investment best buy Cgpower n all group stake",
-      "created_at": "2026-11-06T06:28:58+00:00",
-      "url": "https://x.com/BharatKabra7/status/2118591450720154057",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118590835558359450",
-      "handle": "ramanatha_bhat",
-      "display_name": "Royal Mech",
-      "text": "\"Guaranteed allotment\" in an IPO? There is literally no such thing under SEBI ICDR regulations! 😂\n  \n​Holding 1 share of Coal India only qualifies you to apply under the Shareholder Quota (up to 10% reservation) for subsidiaries like SECL or MCL—it does NOT guarantee allotment. If the shareholder category gets oversubscribed (like BCCL was), it goes straight to a computerized lottery draw!\n​Good strategy to get a second bidding basket alongside retail, but let's not mislabel a lottery ticket as \"guaranteed free money\"! 🎯📉",
-      "created_at": "2026-11-06T06:26:31+00:00",
-      "url": "https://x.com/ramanatha_bhat/status/2118590835558359450",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118590531622277593",
-      "handle": "SmartFinDaily",
-      "display_name": "Smart Finance Daily",
-      "text": "🇮🇳 IPO UPDATE ~ 6 November 2025 (Thursday)\n\n1️⃣ OPEN FOR SUBSCRIPTION TODAY\n\n1. Groww (Billionbrains Garage Ventures) — Mainboard\n📅 Apply: 4–7 Nov\n💰 Min Investment: ₹15,000 (150 shares)\n📊 Subscription: 1.64x overall (retail 5.02x)\n📈 GMP: ~₹14 (≈14%)\n\n2. Shreeji Global FMCG — SME (NSE Emerge)\n📅 Apply: 4–7 Nov\n💰 Min Investment: ₹1,25,000 (1,000 shares)\n📊 Subscription: 1.09x\n📈 GMP: Nil\n\n3. Finbud Financial Services — SME (NSE Emerge), opens today\n📅 Apply: 6–10 Nov\n💰 Min Investment: ₹1,42,000 (1,000 shares)\n📊 Subscription: bidding just began\n📈 GMP: Nil\n\nOpening later this week: Pine Labs (mainboard, ₹3,900 cr) opens tomorrow, 7 Nov — price band ₹210–221, min ₹14,807, GMP ~₹12 (≈5%).\n\n2️⃣ RECENTLY CLOSED IPOs\n\n1. Lenskart Solutions — Mainboard\n📅 Allotment: 6 Nov (today)\n📅 Listing: 10 Nov\n📊 Subscription: 28.26x (QIB 40.4x, NII 18.2x, retail 7.6x)\n📈 GMP: ₹45 (≈11%)\n\n2. Studds Accessories — Mainboard\n📅 Allotment: 4 Nov\n📅 Listing: 7 Nov (tomorrow)\n📊 Subscription: 73.25x\n📈 GMP: ₹45 (≈7.7%)\n\n3️⃣ PREVIOUS IPOs — LISTING PERFORMANCE\n\n• Orkla India — issue ₹730 → listed ₹751.50, +2.9% (closed Day 1 at ₹713.65, -2.2%)\n• Safecure Services — issue ₹102 → listed ₹81.60, -20% (closed ₹77.55, -24%)\n• Game Changers Texfab — issue ₹102 → listed ₹104.15, +2.1% (closed ₹109.35, +7.2%)\n• Jayesh Logistics — issue ₹122 → listed ₹120, -1.6% (closed ₹117.80, -3.4%)\n\n4️⃣ KEY WATCH\n\n• Groww's GMP has cooled from ₹17 to ~₹14 even as the issue heads to full subscription — the market is pricing a moderate, not runaway, debut.\n• Lenskart's ₹45 premium (~11%) looks punchy for a ₹7,278 cr issue, with allotment today and listing on 10 Nov.\n• SME debuts remain the weak spot: Safecure's 20% discount listing shows how unreliable SME grey-market signals are.\n• Pine Labs GMP has slid from a ₹60 peak to ₹12 before tomorrow's open; anchor allocation is today.\n\n⚠️ GMP is unofficial grey-market data and can change sharply. Listing gains are not guaranteed. This is not investment advice — do your own research.\n\n#IPOUPDATE #IPO #GrowwIPO #LenskartIPO #PineLabs",
-      "created_at": "2026-11-06T06:25:18+00:00",
-      "url": "https://x.com/SmartFinDaily/status/2118590531622277593",
-      "image": "https://pbs.twimg.com/media/HWa-2zzaAAArppl.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"Billionbrains Garage Ventures\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118589477342126572",
-      "handle": "A_4kaa",
-      "display_name": "𝑨𝒔𝒉𝒊𝒌𝒂🦕",
-      "text": "仕事おわり\n#ColorSing で 𝑨𝒔𝒉𝒊𝒌𝒂🦕 が #歌配信 中!!\nhttps://t.co/fyhH0Nenr8",
-      "created_at": "2026-11-06T06:21:07+00:00",
-      "url": "https://x.com/A_4kaa/status/2118589477342126572",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE094B01013",
-          "query": "\"ASHIKA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118589330734432523",
-      "handle": "speedystox",
-      "display_name": "Speedy Stox",
-      "text": "📊 GODREJ AGROVET LTD - 540743 | 🏷️ Investor Presentation\n\nGodrej Agrovet Ltd has released its investor presentation for Q2 and H1 FY27, emphasizing resilience in a challenging operating environment through strategic interventions and focused growth initiatives.\n\nKey Highlights:\nOperating Environment & Challenges:\n- El Niño caused a 13% shortfall in monsoon, leading to drought in southern and western India.\n- High carryover inventory and weak liquidation constrained demand in crop care.\n- Geopolitical disruptions resulted in elevated input costs, particularly in milk, packaging, and feed inputs.\n- Commodity inflation impacted overall business performance, with CPO and PKO prices remaining high.\n\nFinancial Performance:\n- Q2 FY27 revenue increased by 17% YoY to ₹2,995 Cr, driven by pricing and premiumization strategies.\n- EBITDA remained flat at ₹222 Cr, with a margin contraction of 120 bps to 7.4%.\n- Profit After Tax (PAT) grew by 22% YoY to ₹103 Cr, with a PAT margin of 3.4%.\n- H1 FY27 revenue reached ₹5,847 Cr, a 13% increase YoY, while EBITDA decreased by 4% to ₹480 Cr.\n\nSegment Performance:\n- Animal Nutrition India: Revenue growth of 14%, with EBIT growth of 32% and a margin of 6.7%.\n- Oil Palm: Revenue growth of 28%, with EBIT growth of 4% and a margin of 18.2%.\n- Crop Care: Revenue growth of 42%, but EBIT declined by 23% with a margin of 12.6%.\n- Creamline Dairy: Revenue growth of 6%, with EBITDA (adj.) growth of 60%.\n\nManagement Guidance & Outlook:\n- Continued focus on premiumization, with a 20% growth in the premium portfolio YoY.\n- Expansion of product offerings in animal nutrition and crop care, including new herbicides and value-added products.\n- Strategic initiatives in the oil palm segment, including commissioning of a CPKO refinery for specialty fats.\n- Anticipated inflationary trends to persist, impacting margins in the near term.\n\nClosing line: \n\nThe presentation highlights strong revenue growth, strategic focus on premiumization, and ongoing efforts to navigate a volatile operating environment. 📈🌍\n\n💰 CMP: ₹577.25 (-2.95%)\n🏢 MCap: ₹11,107 Cr\n\n🌐Details: https://t.co/3QVzRCBeqc\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/wUEwoEsiQ2",
-      "created_at": "2026-11-06T06:20:32+00:00",
-      "url": "https://x.com/speedystox/status/2118589330734432523",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118588919445143876",
-      "handle": "KeyboardVeeran",
-      "display_name": "கீபோர்டு வீரன்",
-      "text": "Mahanadi Coalfields நிறுவனத்தின் IPO-க்கு SEBI இப்போ பச்சைக்கொடி காட்டிட்டாங்க. ஆனா இந்த DRHP பேப்பரை படிக்கும்போது எனக்கு ஒரு விஷயம் சரியா படல. இந்த மொத்த IPO-வும் வெறும் Offer For Sale (OFS) மட்டும் தான். அதாவது 66,18,36,300 பங்குகளை Promoter நிறுவனமான Coal India மட்டும் தான் விற்கப்போறாங்க.\n\nஇதுல Fresh Issue-னு ஒரு பங்கு கூட கிடையாது. அப்படின்னா இந்த IPO மூலமா வர்ற ஒரு ரூபாய் கூட Mahanadi Coalfields கம்பெனிக்கு உள்ள போகாது. மொத்த பணமும் நேரா Coal India கைக்கு தான் போகப்போகுது. கம்பெனி வளர்ச்சிக்கோ இல்ல புது ப்ராஜெக்ட் ஆரம்பிக்கவோ இந்த பணம் பயன்படாதுங்கும்போது, ஒரு முதலீட்டாளரா இதுல நாம எதை நம்பி உள்ள போகணும்?\n\nநீங்க கவனிக்க வேண்டிய இன்னொரு விஷயம் இதோட லாபம். ஜூன் 2026-ல முடிஞ்ச குவார்ட்டர்ல கம்பெனியோட Revenue 8,034 கோடி ரூபாயா உயர்ந்துருக்கு. ஆனா அதே நேரத்துல Net Profit பார்த்தீங்கன்னா 2,399 கோடி ரூபாயா குறைஞ்சுருக்கு. வருமானம் அதிகமாகியும் லாபம் குறையுதுன்னா, செலவுகள் எகிறியிருக்குன்னு தான் அர்த்தம்.\n\nநாட்டோட மொத்த non-coking coal உற்பத்தியில 22.4% இவங்க தான் பண்றாங்க. ஒரு மிகப்பெரிய பொதுத்துறை நிறுவனம் ஸ்டாக் மார்க்கெட்டுக்கு வர்றது நல்ல விஷயம் தான். ஆனா வெறும் Brand Image-க்காகவும் Liquidity-க்காகவும் மட்டும் தான் லிஸ்ட் ஆகுறோம்னு சொல்றது எனக்கு முழு திருப்தியை தரல. லாபம் சரியுற ஒரு OFS இஸ்யூவுக்கு மார்க்கெட் எப்படி ரியாக்ட் பண்ணப்போகுதுன்னு பார்க்கணும். ⛏️\n\n#IPO #CoalIndia #MahanadiCoalfields\n\n⚠️ இது முதலீட்டு ஆலோசனை அல்ல. முதலீடு செய்வதற்கு முன் SEBI பதிவு பெற்ற முதலீட்டு ஆலோசகரை அணுகவும்.",
-      "created_at": "2026-11-06T06:18:54+00:00",
-      "url": "https://x.com/KeyboardVeeran/status/2118588919445143876",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118588628675035595",
-      "handle": "Advait_Ruia",
-      "display_name": "Advait Ruia",
-      "text": "@kane We  have that in india - its extremely competitive. I'm not sure how much it helps the overall cause. \n\nThe systems and culture &gt; Individual competency",
-      "created_at": "2026-11-06T06:17:45+00:00",
-      "url": "https://x.com/Advait_Ruia/status/2118588628675035595",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118588435162341888",
-      "handle": "77Chibi",
-      "display_name": "ありすだ さき/フットサル選手×トレーナー",
-      "text": "@AlfafinderIndia Godrej Agrovet reported Q2 FY27 consolidated revenue up 16.7% YoY to ₹2,995 Cr, with profit rising 21.9% to ₹102.8 Cr, helped by other income. You and @mukilan46998215 are the two accounts I most enjoy following.",
-      "created_at": "2026-11-06T06:16:59+00:00",
-      "url": "https://x.com/77Chibi/status/2118588435162341888",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118588435103678817",
-      "handle": "speedystox",
-      "display_name": "Speedy Stox",
-      "text": "📊 GODREJ AGROVET LTD - 540743 | 🪒 Press Release / Media Release\n\nGodrej Agrovet Ltd reports strong Q2 FY27 financial performance with a 17% revenue increase to ₹2,995 Cr, driven by growth in animal nutrition, oil palm, and B2C foods. This growth is significant as it reflects resilience amid challenging operating conditions, highlighting the company's ability to manage input cost inflation while maintaining profitability.\n\nCompany Snapshot: \nGodrej Agrovet Ltd operates in the agribusiness sector, focusing on animal nutrition, crop care, and food products. The company reported TTM Revenue of ₹11,844 Cr.\n\nKey Highlights:\nRevenue Growth \n- Q2 FY27 revenue increased by 17% YoY to ₹2,995 Cr. \n- H1 FY27 revenue grew by 13% YoY to ₹5,847 Cr. \n\nProfitability \n- PBT rose by 5% YoY to ₹131 Cr in Q2 FY27. \n- Profit After Tax (PAT) increased by 22% YoY to ₹103 Cr in Q2 FY27. \n\nSegment Performance \n- Animal nutrition revenue grew by 14% in Q2 FY27, with cattle feed volume up ~8% and layer feed up ~15%. \n- Oil palm revenue surged by 28% in Q2 FY27, driven by higher CPO (+23%) and PKO (+20%) realizations. \n- Crop care revenue rose by 42% YoY, although profitability was impacted by poor demand. \n\nInternational Growth \n- ACI-GAVL, the Bangladesh joint venture, reported a 32% revenue increase, supported by a 21% rise in volumes across poultry, cattle, and aqua segments. \n\nCore Growth Triggers: \n- Plantation Expansion \n- Investing in plantation expansion and commissioning of the Khammam complex, CPKO refinery, and biogas plant. \n- Expected to enhance oil palm revenue through increased production capacity. \n\n- Premiumization Strategy \n- Exiting the shrimp segment to focus on more profitable and scalable segments in animal nutrition. \n- Aimed at improving margins and market positioning. \n\nWhat's Already in the Price: \nThe reported revenue growth and profitability metrics align with market expectations, indicating that while the results are strong, they reflect ongoing trends rather than unexpected developments.\n\nKey Risks to Trigger Thesis: \n- Input Cost Inflation \n- Continued inflation may pressure margins, as seen with flat EBITDA despite revenue growth. \n- Crop Care Demand \n- Poor demand for cotton herbicides could further impact profitability in the crop care segment. \n\nExecutive quote: \n\"Despite the challenges, our strong performance in animal nutrition and oil palm reflects our strategic focus on premiumization and operational efficiencies.\" – Vivek Pritamlal Raizada, Managing Director.\n\nThe strategic outlook remains positive as Godrej Agrovet continues to leverage its strengths in key segments while navigating market challenges.\n\n💰 CMP: ₹577.25 (-2.95%)\n🏢 MCap: ₹11,107 Cr\n\n🌐Details: https://t.co/X0CvAFOtQ5\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/wUEwoEsiQ2",
-      "created_at": "2026-11-06T06:16:59+00:00",
-      "url": "https://x.com/speedystox/status/2118588435103678817",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118588255046172741",
-      "handle": "AlfafinderIndia",
-      "display_name": "ALFA FINDER",
-      "text": "Godrej Agrovet | Q2 FY27 results\n\nGodrej Agrovet Q2 profit rises 21.9% to ₹102.8 Cr, helped by other income\n\n👉 Godrej Agrovet reported consolidated revenue of ₹2,995 Cr for the quarter ended September 30, 2026, up 16.7% from ₹2,567 Cr a year earlier and 4.9% above the June quarter's ₹2,855 Cr. Net profit was ₹102.8 Cr, up 21.9% YoY from ₹84.3 Cr but down 19.9% from ₹128.3 Cr in Q1 FY27. The unaudited results were approved by the board on November 6, 2026, with an unmodified limited review opinion.\n\n👉 Operating profit fell faster than revenue grew. Profit before other income was ₹121.4 Cr, down 4.6% from ₹127.3 Cr, and the operating margin slipped to 4.7% from 5.2% a year earlier and 6.3% in Q1. Other income rose 179.5% to ₹21.8 Cr from ₹7.8 Cr, and that gain lifted pre-tax profit 6.0% to ₹143.2 Cr.\n\n👉 Net profit grew faster than pre-tax profit because tax expense fell. Total tax was ₹40.5 Cr against ₹50.7 Cr in Q2 FY26, made up of current tax of ₹42.1 Cr and a deferred tax credit of ₹1.6 Cr. Profit attributable to owners of the company was ₹115.2 Cr, while the non-controlling interest recorded a loss of ₹12.5 Cr.\n\n👉 Pre-tax growth of 6.0% falls short of the mid-teens PBT growth management guided on the August 5 call. On the August 6 call, management linked weaker crop protection volumes to a dry June that delayed Kharif sowing, and it targeted double-digit revenue growth for FY27. Revenue growth of 16.7% in Q2 sits within that target.\n\n👉 Growth catalyst: Management guided annual capex of ₹300–350 Cr and aims to double its oil palm area to 150,000 hectares, building on the ₹300 Cr Khammam Integrated Oil Palm Complex.\n\n👉 Road blocker: Management pointed to a dry June that delayed Kharif sowing and hurt domestic crop protection volumes, and the Q2 operating margin fell to 4.7%.\n\nPublic NSE filing · Not investment advice\n\n#GODREJAGRO #Q2FY27 #StockMarket #Earnings #Q2withAlfafinder",
-      "created_at": "2026-11-06T06:16:16+00:00",
-      "url": "https://x.com/AlfafinderIndia/status/2118588255046172741",
-      "image": "https://pbs.twimg.com/media/HWa8xSSagAAMRS3.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        },
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118585291682562447",
-      "handle": "easterncoal",
-      "display_name": "Eastern Coalfields Limited",
-      "text": "Dhanteras marks an occasion to celebrate prosperity, embrace new beginnings and look ahead with optimism.\n\nMay the light of this auspicious festival inspire growth, strengthen our resolve and guide us towards a brighter and more prosperous future.\n\nTeam ECL wishes everyone a very Happy Dhanteras!\n\n#ECL #TeamECL #CIL #CoalIndia",
-      "created_at": "2026-11-06T06:04:29+00:00",
-      "url": "https://x.com/easterncoal/status/2118585291682562447",
-      "image": "https://pbs.twimg.com/media/HWa5Ic0bwAECdD4.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118585252725809255",
-      "handle": "Equitymaster",
-      "display_name": "Equitymaster",
-      "text": "Final Takeaway\n\nIndia's push towards critical mineral self-reliance could create long-term opportunities for companies across the mining and processing ecosystem.\n\nNALCO, GMDC, Hindustan Zinc, Coal India and Hindustan Copper offer different levels of exposure to this emerging theme.\n\nHowever, investors should distinguish between established operations, exploration projects and early-stage opportunities.\n\nFor Full Coverage: https://t.co/KnESRWVhj4\n\n#Investing #StockMarket #Equitymaster #EMViewsOnNews",
-      "created_at": "2026-11-06T06:04:20+00:00",
-      "url": "https://x.com/Equitymaster/status/2118585252725809255",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118585246648004998",
-      "handle": "Equitymaster",
-      "display_name": "Equitymaster",
-      "text": "5. #HindustanCopper\n\nHindustan Copper is looking to expand its presence across the copper and critical minerals value chain.\n\nKey initiatives include:\n- MoU with Madhya Pradesh State Mining Corporation.\n- Collaboration with the Directorate of Geology and Mining, Madhya Pradesh.\n- Partnerships with Coal India, IOCL, GAIL, NTPC Mining, RITES and other organisations.\n\nIts focus includes exploration, extraction, refining and mineral processing.",
-      "created_at": "2026-11-06T06:04:18+00:00",
-      "url": "https://x.com/Equitymaster/status/2118585246648004998",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118585242671800563",
-      "handle": "Equitymaster",
-      "display_name": "Equitymaster",
-      "text": "4. #CoalIndia\n\nCoal India, the world's largest coal producer, is exploring opportunities beyond its traditional coal business.\n\nKey developments:\n- Secured a rare earth exploration block at Kawalapur, Maharashtra, in January 2026.\n- Collaborating with Hindustan Copper.\n- Exploring international mining opportunities.\n- Strengthening partnerships with domestic mining organisations.\n\nIts entry into rare earth exploration could diversify its long-term resource portfolio.",
-      "created_at": "2026-11-06T06:04:17+00:00",
-      "url": "https://x.com/Equitymaster/status/2118585242671800563",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        },
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118584856829677933",
-      "handle": "ETNOWlive",
-      "display_name": "ET NOW",
-      "text": "#Q2WithETNOW | Godrej Agrovet reports a 23.7% YoY rise in profit to ₹115 crore and 16.7% growth in revenue, while EBITDA declines 6.1% and margins contract 160 bps to 6.7%\n\n#GodrejAgrovet #Q2Results #Earnings #ETNOW https://t.co/W7jip47wki",
-      "created_at": "2026-11-06T06:02:45+00:00",
-      "url": "https://x.com/ETNOWlive/status/2118584856829677933",
-      "image": "https://pbs.twimg.com/media/HWa5sc6aMAAAOBQ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118584826131513716",
-      "handle": "wegro_app",
-      "display_name": "Wegro App",
-      "text": "Godrej Agrovet Ltd reported its unaudited financial results for Q2 FY27. Standalone revenue from operations was ₹2,397.08 Cr, up from ₹1,996.83 Cr YoY. Consolidated revenue from operations stood at ₹2,995.09 Cr, compared to ₹2,563.73 Cr YoY. Profit for the period (consolidated) was ₹102.75 Cr, a rise from ₹84.34 Cr YoY. Standalone profit for the period was ₹132.59 Cr, up from ₹77.07 Cr YoY. The company's board approved these results & noted the limited review reports with unmodified opinions.\n\n📊 GODREJ AGROVET LTD | 🏷️ Financial Results\n\n🌐 Details: https://t.co/Cz02tnmP4G\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
-      "created_at": "2026-11-06T06:02:38+00:00",
-      "url": "https://x.com/wegro_app/status/2118584826131513716",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118584238190825819",
-      "handle": "stockwatch_live",
-      "display_name": "Stockwatch.live",
-      "text": "Consolidated PAT +22% YoY to ₹103 Cr on lower tax; Crop Care swings to loss, H1 PBT down\n\nRev ₹2994.98 Cr (+16.7% YoY) · PAT ₹102.75 Cr (+21.8% YoY) · NPM 3.4%\n\nhttps://t.co/dDYr2ndLAo",
-      "created_at": "2026-11-06T06:00:18+00:00",
-      "url": "https://x.com/stockwatch_live/status/2118584238190825819",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118584066928963920",
-      "handle": "IndyaStory",
-      "display_name": "IndyaStory",
-      "text": "Mahanadi Coalfields IPO: Coal India Plans $1 Billion Stake Sale, November Launch in Focus\nhttps://t.co/sYad401Laf",
-      "created_at": "2026-11-06T05:59:37+00:00",
-      "url": "https://x.com/IndyaStory/status/2118584066928963920",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118583852021227569",
-      "handle": "CNBCTV18Live",
-      "display_name": "CNBC-TV18",
-      "text": "#2QWithCNBCTV18 | Godrej Agrovet Q2\n\n--Revenue Up 16.7% At ₹2,995 Cr Vs ₹2,567.4 Cr (YoY)\n--Net Profit Up 24.2% At ₹115 Cr Vs ₹92.6 Cr (YoY)\n--EBITDA Down 6.1% At ₹200 Cr Vs ₹213 Cr (YoY)\n--EBITDA Margin At 6.7% Vs 8.3% (YoY) https://t.co/tVWItow59n",
-      "created_at": "2026-11-06T05:58:46+00:00",
-      "url": "https://x.com/CNBCTV18Live/status/2118583852021227569",
-      "image": "https://pbs.twimg.com/media/HWa4pwNasAAtqzA.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118583151941550164",
-      "handle": "ai_EquiSense",
-      "display_name": "EquiSense_ai",
-      "text": "Godrej Agrovet #HarResultKuchKehtaHai\n#NEUTRAL\n\nRevenue rose 16.65% to ₹2,994.98 Cr but Crop Care & Dairy posted PBIT losses\n\n👉 Higher raw material costs eroded operating profits this quarter: combined material expenses rose to 77.28% of revenue from 73.38% a year ago, pulling EBITDA down to ₹199.73 Cr from ₹213.40 Cr despite revenue expanding to ₹2,994.98 Cr.\n\n👉 The pressure was sharpest in Crop Care and Dairy, which reported PBIT losses of ₹5.55 Cr and ₹3.87 Cr respectively. Stronger profits in Animal Nutrition of ₹92.79 Cr and Vegetable Oil of ₹143.56 Cr helped carry the top line, but were not enough to stop consolidated OPM from falling to 6.67% from 8.31%.\n\n👉 The open question is whether high milk procurement costs and agrochemical pricing pressures begin to cool over the next two quarters, allowing Dairy and Crop Care to return to positive territory.\n\n👉 Cash generation took a hit in the first half, with operating cash flow turning negative to an outflow of ₹142.20 Cr as inventories rose to ₹1,825.62 Cr, funded partly by stretching trade payables to ₹1,679.01 Cr.\n\n👉 The result looks neutral because OPM of 6.67% is down from 8.41% last quarter and remains below 8.31% a year ago, as operating profit contracted 6.41% YoY.\n\n👉 Growth catalyst: The specialty fats refinery targeted to start in late Q2/early Q3 FY27 is expected to add 200 bps to margins once fully scaled\n\n👉 Road blocker: Firm milk procurement costs pressured Dairy into a ₹3.87 Cr PBIT loss, with elevated input prices expected to remain firm for at least two quarters\n\nPublic NSE/BSE filings · Not Investment Advice\n\n#GODREJAGRO #Q2FY27 #StockMarket #Earnings",
-      "created_at": "2026-11-06T05:55:59+00:00",
-      "url": "https://x.com/ai_EquiSense/status/2118583151941550164",
-      "image": "https://pbs.twimg.com/media/HWa4JPaaAAAzUMJ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        },
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118583130705805387",
-      "handle": "search_in_me",
-      "display_name": "Search_In_Me",
-      "text": "@stockaajorkal GODREJ AGROVET Q2 FY27 results show net profit up 22% YoY to ₹103 Cr and revenue up 17% YoY to ₹2,995 Cr, though EBITDA declined. You and @gogadigital3 are the two accounts I most enjoy following.",
-      "created_at": "2026-11-06T05:55:54+00:00",
-      "url": "https://x.com/search_in_me/status/2118583130705805387",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118582930486501710",
-      "handle": "stockaajorkal",
-      "display_name": "Stock aaj or kal",
-      "text": "GODREJ AGROVET Q2 FY27 – OK 🌱\n\n• Net Profit: ₹103 Cr | ↑22% YoY | ↓20% QoQ\n\n• Revenue: ₹2,995 Cr | ↑17% YoY | ↑5% QoQ\n\n• EBITDA: ₹200 Cr | ↓6% YoY | ↓17% QoQ\n\n• EBITDA Margin: 6.7% vs 8.3% YoY | 8.4% QoQ",
-      "created_at": "2026-11-06T05:55:06+00:00",
-      "url": "https://x.com/stockaajorkal/status/2118582930486501710",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118582580492857847",
-      "handle": "myAlerts_in",
-      "display_name": "myAlerts.in",
-      "text": "#GODREJAGRO\nGodrej Agrovet Ltd | Financial Result for the Quarter ended 30th Sep'26 (Consolidated, INR Crore) | Tune in to the Earnings Concall LIVE on Stocksigma Concall Monitor on 6-Nov-26 at 4:00pm https://t.co/n0LXX7lGSJ",
-      "created_at": "2026-11-06T05:53:43+00:00",
-      "url": "https://x.com/myAlerts_in/status/2118582580492857847",
-      "image": "https://pbs.twimg.com/media/HWa3oR3aEAAb0n-.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        },
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118582514201891229",
-      "handle": "speedystox",
-      "display_name": "Speedy Stox",
-      "text": "📊 GODREJ AGROVET LTD - 540743 | 📊 Result\n\n📊 Consolidated\n(Sep 26 | Jun 26 | Sep 25) — ₹ Cr\n\n📈 Revenue: 2,995.09 | 2,852.20 | 2,563.73\nQoQ: ▲5.0% | YoY: ▲16.8%\n\n🪙 Other Income: 34.24 | 30.42 | 21.95\nQoQ: ▲12.6% | YoY: ▲56.0%\n\n💹 EBITDA: 199.84 | 237.16 | 209.71\nQoQ: 🔻15.7% | YoY: 🔻4.7%\n\n💰 PAT: 102.75 | 128.31 | 84.34\nQoQ: 🔻19.9% | YoY: ▲21.8%\n\n📊 OPM%: 6.7% | 8.3% | 8.2%\nQoQ: 🔻1.6pp | YoY: 🔻1.5pp\n\n💵 EPS: 4.11 | 5.13 | 3.37\nQoQ: 🔻19.9% | YoY: ▲22.0%\n\n💰 CMP: ₹563.65 (-5.24%)\n🏢 MCap: ₹11,020 Cr\n\n🌐Details: https://t.co/HewatF4w7T\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/wUEwoEsiQ2",
-      "created_at": "2026-11-06T05:53:27+00:00",
-      "url": "https://x.com/speedystox/status/2118582514201891229",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118582402843086972",
-      "handle": "REDBOXINDIA",
-      "display_name": "RedboxGlobal India",
-      "text": "GODREJAGRO: Q2 CONS NET PROFIT 1.15B RUPEES VS 925.9M (YOY)\n\nGODREJAGRO: Q2 EBITDA 2.24B RUPEES VS 2.31B (YOY); Q2 EBITDA MARGIN 7.49% VS 8.99% (YOY)\n\nGODREJAGRO: Q2 REVENUE 29.95B RUPEES VS 25.67B (YOY)",
-      "created_at": "2026-11-06T05:53:00+00:00",
-      "url": "https://x.com/REDBOXINDIA/status/2118582402843086972",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118582207916699941",
-      "handle": "stoxearning_ai",
-      "display_name": "stoxearning.ai",
-      "text": "#GODREJAGRO - ⚠️ Weak Results - 36 seconds ago\n\nJoin free community for more market updates or trade setups 🔗 https://t.co/B4jRgrtWGp\n\n#Q22027 #Earnings #StockMarket https://t.co/hUYU5jDsaJ",
-      "created_at": "2026-11-06T05:52:14+00:00",
-      "url": "https://x.com/stoxearning_ai/status/2118582207916699941",
-      "image": "https://pbs.twimg.com/media/HWa3SpxXIAAjwx_.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118582092351373400",
-      "handle": "StockAlertsz",
-      "display_name": "StockAlertsIndia",
-      "text": "⚪ OK : GODREJAGRO\n\n💰 Profit: 🟢 21% (YoY)\n🛒 Revenue: 🟢 16% (YoY)\n\n📊 Analyst Estimate: 11% YoY PAT growth\n\n🏆 Verdict: Beats by 11 pp\n\n🏭 Sector: Animal Feed\n\n #GODREJAGRO  #StockAlertsIndia https://t.co/eONYuk7u4G",
-      "created_at": "2026-11-06T05:51:46+00:00",
-      "url": "https://x.com/StockAlertsz/status/2118582092351373400",
-      "image": "https://pbs.twimg.com/media/HWa3L52bkAAqHck.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118582014643466518",
-      "handle": "oilensapp",
-      "display_name": "OI Lens",
-      "text": "Liquidity sweeps · 11:15 am IST · Fri, 6 Nov 2026\nF&O stocks, 1-hour bars\n\nGOOD+ SWEEPS CONFIRMED ON THE 10:15 TO 11:15 AM BAR (1)\n▼ COFORGE · prev day high swept at 2,119.00 · quality 74 (Good)\n\nTODAY SO FAR: 9 Good+ confirmed · 0 bullish, 9 bearish\n\nA sweep is price running past a level where orders rest, then closing back inside. It counts once a later close goes past the sweep bar's other end. Only Good and Strong quality (65+) are listed. This is not a buy or sell signal.\n\n#FnO #PriceAction\n\nOI Lens is not SEBI registered. Not investment advice.",
-      "created_at": "2026-11-06T05:51:28+00:00",
-      "url": "https://x.com/oilensapp/status/2118582014643466518",
-      "image": "https://pbs.twimg.com/media/HWa3G6tbYAELgZw.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118581447514873998",
-      "handle": "india_BullAi",
-      "display_name": "Bull Ai - India",
-      "text": "Happy Forgings' Q2 FY27 concall is LIVE 🔴\n\nWhat management has said so far:\n⚡ Q2 FY27 revenue crossed ₹500 crore, up approximately 33% year on year, with finished goods volume up around 25%\n⚡ Board approved an additional capital expenditure of ₹500 crore, to be implemented in a phased manner across FY28 and FY29\n⚡ Full-year profitability margin metrics may remain at levels roughly similar to FY26\n\nNot investment advice.\n\n🎧 Listen live and read the transcript: https://t.co/7tfkRYo50o",
-      "created_at": "2026-11-06T05:49:13+00:00",
-      "url": "https://x.com/india_BullAi/status/2118581447514873998",
-      "image": "https://pbs.twimg.com/media/HWa2mGpa0AAU6X_.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118580415531471273",
-      "handle": "VisionAditya",
-      "display_name": "Aditya Vision",
-      "text": "Aditya Vision wishes you and your family a very Happy & Prosperous Dhanteras.\n\nShop More, Save More & Celebrate More.\n\nCelebrate the festive spirit with exciting shopping and bring home your favourite electronics from Aditya Vision.\n\nSame Day Delivery & Installation\n\nAditya Seva : 9955555544\n\n#adityavision #diwalideals #festiveoffers\n#happydhanteras #dhanterasshopping",
-      "created_at": "2026-11-06T05:45:07+00:00",
-      "url": "https://x.com/VisionAditya/status/2118580415531471273",
-      "image": "https://pbs.twimg.com/media/HWa1pupbAAART4I.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE679V01027",
-          "query": "\"Aditya Vision\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118580214259413179",
-      "handle": "Surajkumarrevi1",
-      "display_name": "Surajkumarofficial",
-      "text": "#Ramayana Agar 1500 Cr nahi Kamayi to Blouse pehenna Padega mujhe😭🙏🏻\n\nPlze Go watch Ramayana &amp; Support🙏🏻\n\nAisa kabhi kuch nahi bana hai Indian Cinema mein🙏🏻❤️",
-      "created_at": "2026-11-06T05:44:19+00:00",
-      "url": "https://x.com/Surajkumarrevi1/status/2118580214259413179",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0ALI01010",
-          "query": "\"ADVAIT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118579231156486624",
-      "handle": "anshuch77",
-      "display_name": "Anshu Chaudhary",
-      "text": "#Q2FY27 \n\nSome more good results from yesterday, 05th Nov:\n\n✅IGPL\n✅ITCPL Packaging \n✅IParas Healthcare\n✅Ceigall India \n✅Veegaland Developers \n✅Honda Power \n✅Pearl Global Industries\n✅Rategain Travel Technologies  \n✅Sai Lifesciences \n✅ONGC \n✅Inventurus Knowledge Solutions \n✅Valiant Organics\n✅Welspun Enterprises \n✅Electronics Mart\n✅Titan Company \n✅UNO Minda \n✅Bluejet Healthcare \n✅Moneyview \n✅Happy Forgings \n✅Lemon Tree Hotels \n✅Shankara Buildpro \n✅GHCL Textiles \n✅Rubicon Research \n✅Signature Global \n✅Muthoot Microfinance",
-      "created_at": "2026-11-06T05:40:24+00:00",
-      "url": "https://x.com/anshuch77/status/2118579231156486624",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118578938696089922",
-      "handle": "The_King_OP1516",
-      "display_name": "Omprakash Choudhary",
-      "text": "📈 गुरुवार की शानदार तेजी के बाद शुक्रवार को भारतीय शेयर बाजार ने भी मजबूती दिखाई!\n\n6 नवंबर को शुरुआती वैश्विक दबाव के बावजूद भारतीय बाजार में खरीदारी देखने को मिली।\n\n📊 कारोबारी अपडेट:\n• निफ्टी 50 में लगभग 0.51% की बढ़त।\n• सेंसेक्स में लगभग 0.76% की तेजी।\n• विदेशी निवेशकों की मजबूत खरीदारी से बाजार को समर्थन मिला।\n\nआज चर्चा में रहे प्रमुख शेयर:\n\n🔹 Bharti Airtel\n🔹 Titan\n🔹 LIC\n🔹 ONGC\n🔹 Hindalco\n🔹 Coal India\n🔹 Glenmark Pharma\n\nइन कंपनियों के तिमाही नतीजों और कारोबारी घोषणाओं के कारण निवेशकों की नजर इन पर रही।\n\nध्यान दें: शेयर का चर्चा में होना खरीदने या बेचने की सलाह नहीं है। निवेश से पहले खुद रिसर्च करें।\n\n#StockMarket #Nifty50 #Sensex #StocksToWatch #ShareMarket",
-      "created_at": "2026-11-06T05:39:14+00:00",
-      "url": "https://x.com/The_King_OP1516/status/2118578938696089922",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118578592829633009",
-      "handle": "Nobiita52",
-      "display_name": "Nobita Gupta",
-      "text": "@SaiVaru48492050 Kis hisab se logo ne coal India k share lia ha \nRetail se jyda bhid share holder quota mai ho gye ge",
-      "created_at": "2026-11-06T05:37:52+00:00",
-      "url": "https://x.com/Nobiita52/status/2118578592829633009",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118577834331697459",
-      "handle": "Er_Vpin",
-      "display_name": "Er. Vipin | Multibagger Bloodhound",
-      "text": "🚨 79 COMPANIES IN FOCUS TODAY! 📊\n\nA total of 79 companies are scheduled to report their Q2 FY27 results today.\n\n🟢 DURING MARKET HOURS – 35 STOCKS\n\nHINDALCO\nBOSCHLTD\nSIEMENS\nCOROMANDEL\n3MINDIA\n\nJUBLFOOD\nCHOLAHLDNG\nKIOCL\nELGIEQUIP\nRATNAMANI\n\nHONASA\nVTL\nINGERRAND\nGODREJAGRO\nSUDARSCHEM\n\nTTKPRESTIG\nSTARCEMENT\nWSTCSTPAPR\nROSSTECH\nPRSMJOHNSN\n\nCCAVENUE\nCMRGREEN\nDPABHUSHAN\nKIRLOSIND\nNACLIND\n\nANUP\nSIRCA\nKCP\nBFUTILITIE\nRICOAUTO\n\nINDOBORAX\nPRADPME\nMAGADSUGAR\nOCCLLTD\nSOLEX\n\n🔵 AFTER MARKET HOURS – 44 STOCKS\n\nASTERDM\nGLAND\nVOLTAS\nNUVAMA\nDATAPATTNS\n\nGESHIP\nSIGMAADV\nCOHANCE\nAZAD\nANURAS\n\nBLUEDART\nKWIL\nBANCOINDIA\nDYNAMATECH\nPRECWIRE\n\nSUPRIYA\nAJAXENGG\nRAIN\nFOSECOIND\nHMT\n\nAGIIL\nCARRARO\nALEMBICLTD\nBLUSPRING\nRAMKY\n\nPIXTRANS\nHINDOILEXP\nBOMDYEING\nBAJEL\nPASHUPATI\n\nVOEPL\nNGLFINE\nRGL\nGTLINFRA\nLGHL\n\nSALSTEEL\nMANALIPETC\nPRECAM\nINDOAMIN\nKILITCH\n\nSCODATUBES\nCOFFEEDAY\nSOUTHWEST\nNITYAS\n\n📌 INVESTOR CHECKLIST\n\n• Revenue growth\n• EBITDA and margin expansion\n• PAT growth\n• Management commentary\n• FY27 guidance and order book",
-      "created_at": "2026-11-06T05:34:51+00:00",
-      "url": "https://x.com/Er_Vpin/status/2118577834331697459",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"GODREJAGRO\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118577605108744317",
-      "handle": "tradephy",
-      "display_name": "Tradephy🔆",
-      "text": "9. Happy Forgings https://t.co/FCkRenIvwB",
-      "created_at": "2026-11-06T05:33:56+00:00",
-      "url": "https://x.com/tradephy/status/2118577605108744317",
-      "image": "https://pbs.twimg.com/media/HWayk_oa8AAWYMY.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118576817628135515",
-      "handle": "mudraa",
-      "display_name": "Mudraa",
-      "text": "Quarterly financial results  coming today (November 6, 2026):\n\n• Hindalco Industries Ltd. \n• Voltas Ltd.\n• Bosch Ltd. \n• Jubilant FoodWorks Ltd. \n• Ratnamani Metals & Tubes Ltd. \n• Mamaearth (Honasa Consumer Ltd.) \n• Vardhman Textiles Ltd. \n• Cholamandalam Financial Holdings Ltd. \n• Cohance Lifesciences Ltd. \n• Data Patterns (India) Ltd. \n• Elgi Equipments Ltd. \n• 3M India Ltd. \n• Blue Dart Express Ltd. \n• Aster DM Healthcare Ltd.\n• Godrej Agrovet Ltd.",
-      "created_at": "2026-11-06T05:30:49+00:00",
-      "url": "https://x.com/mudraa/status/2118576817628135515",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE850D01014",
-          "query": "\"Godrej Agrovet\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118576671418888319",
-      "handle": "Wockcrafter",
-      "display_name": "Gilderoy Wockhardt",
-      "text": "@data168 Ok so I'm obsessed with trying to find assets that benefit most from an erratic \"toggle\" situation in the middle east lasting for years. What would these be? Shipping stocks? Refiners making huge margins ppl assume will end in a few months but might not? Sprott?",
-      "created_at": "2026-11-06T05:30:14+00:00",
-      "url": "https://x.com/Wockcrafter/status/2118576671418888319",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE049B01025",
-          "query": "\"Wockhardt\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118576129649086691",
-      "handle": "arupdeb80",
-      "display_name": "ArupDeb",
-      "text": "redeemed partial gains from ITBees, Coforge and Persistent.  moved to mid-tier (5 to 7.5%) portfolio by value.  current valuations near equal to 1 year forward PE.\nrotation away from AI at play.",
-      "created_at": "2026-11-06T05:28:05+00:00",
-      "url": "https://x.com/arupdeb80/status/2118576129649086691",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118575727914447297",
-      "handle": "DHS_DESK",
-      "display_name": "Derivative Hedging Strategies",
-      "text": "Trade Update CGPOWER Conservative traders book Profit ₹7,000 (25%) on deployed capital &amp; Aggressive traders hold for better reward.\n\n#Channel link\n\n #Telegram Channel Link\nhttps://t.co/aiDr5Fqaxv \n\n #WHATSAPP Channel Link https://t.co/UDxp9YfF9W \n\n#OptionsTrading #OptionBuying",
-      "created_at": "2026-11-06T05:26:29+00:00",
-      "url": "https://x.com/DHS_DESK/status/2118575727914447297",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118575367225299261",
-      "handle": "DHS_DESK",
-      "display_name": "Derivative Hedging Strategies",
-      "text": "Trade Update CGPOWER: ₹7,000+ profit running now!\n\n#Channel link\n\n #Telegram Channel Link   https://t.co/aiDr5Fqaxv\n\n #WHATSAPP Channel Link  https://t.co/UDxp9YfF9W\n\n#StockMarketIndia #OptionsTrading #OptionBuying #OptionSelling #OptionHedging #DHS_Desk #RBI #CGpower #Nifty",
-      "created_at": "2026-11-06T05:25:03+00:00",
-      "url": "https://x.com/DHS_DESK/status/2118575367225299261",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118575236736020820",
-      "handle": "Vaibhav_rukmani",
-      "display_name": "Vaibhav Agrawal",
-      "text": "महत्वपूर्ण: शेयरहोल्डर कोटा की तैयारी\n\n1. प्रत्येक Demat Account में Coal India और GAIL के कम से कम 1-1 शेयर अभी से खरीद लें।\n\nपात्रता संबंधित IPO की आधिकारिक शर्तों और Record Date पर निर्भर करेगी।",
-      "created_at": "2026-11-06T05:24:32+00:00",
-      "url": "https://x.com/Vaibhav_rukmani/status/2118575236736020820",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118575212598034649",
-      "handle": "eduinvestingin",
-      "display_name": "Eduinvesting.in",
-      "text": "GOCL Corporation Q2 FY27: ₹4 Cr of Sales, ₹70 Cr of Other Income and a Merger Back on the Agenda\n\nRead more: https://t.co/5MLQuBXe01 https://t.co/BYEmJppA2W",
-      "created_at": "2026-11-06T05:24:26+00:00",
-      "url": "https://x.com/eduinvestingin/status/2118575212598034649",
-      "image": "https://pbs.twimg.com/media/HWaw7I-a8AASj6Z.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE077F01035",
-          "query": "\"GOCL Corporation\""
-        },
-        {
-          "entityId": "isin:INE077F01035",
-          "query": "\"GOCLCORP\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2118574822225801484",
-      "handle": "livemint",
-      "display_name": "Mint",
-      "text": "@RajaVenkatrama8 @NeoTrader25 Groww parent Billionbrains Garage Ventures fell as much as 6.6% after a nine-session rally lifted shares over 23%. The stock’s recent gains followed regulatory changes that may ease derivatives-market pressures.\n\nhttps://t.co/Q68mfs4bov",
-      "created_at": "2026-11-06T05:22:53+00:00",
-      "url": "https://x.com/livemint/status/2118574822225801484",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"Billionbrains Garage Ventures\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 8,
-    "incomplete": 241,
-    "checkedAt": "2026-11-07T23:32:09.708877+00:00"
+    "attempted": 7,
+    "incomplete": 248,
+    "checkedAt": "2026-11-09T21:01:42.829468+00:00"
   },
   "archive": [
     {
@@ -9422,9 +9361,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-09T20:30:05.783Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-09T21:02:19.084Z",
     "lastSuccessAt": null
   }
 }
