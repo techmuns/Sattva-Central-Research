@@ -1224,7 +1224,7 @@
       "pending": []
     },
     "isin:INE338I01027|Motilal Oswal Financial Services": {
-      "lastAttemptAt": "2026-11-01T16:28:23+00:00",
+      "lastAttemptAt": "2026-11-09T12:38:54+00:00",
       "error": "search-unavailable",
       "lastResultCount": 101,
       "targetThrough": "2026-10-25T22:41:56+00:00",
@@ -2952,6 +2952,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-09T11:52:47.118610+00:00"
+    "checkedAt": "2026-11-09T12:38:54.014394+00:00"
   }
 }
