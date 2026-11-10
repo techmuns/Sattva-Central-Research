@@ -1522,8 +1522,8 @@
       "lastDiscoveryAt": "2026-11-02T06:57:57+00:00"
     },
     "isin:INE811K01011|Prestige Estate Projects": {
-      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-10T12:18:20+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 2,
       "lastSuccessAt": "2026-11-02T06:57:57+00:00",
       "targetThrough": null,
@@ -2936,6 +2936,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 253,
-    "checkedAt": "2026-11-10T11:40:27.989029+00:00"
+    "checkedAt": "2026-11-10T12:18:20.888933+00:00"
   }
 }

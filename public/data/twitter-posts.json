@@ -9363,7 +9363,7 @@
     "optional": true,
     "status": "unavailable",
     "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-10T11:40:43.430Z",
+    "lastAttemptAt": "2026-11-10T12:18:36.321Z",
     "lastSuccessAt": null
   }
 }
