@@ -1559,8 +1559,8 @@
       "lastDiscoveryAt": "2026-11-02T06:57:57+00:00"
     },
     "isin:INE0V9N01017|Prizor Viztech": {
-      "lastAttemptAt": "2026-11-02T06:57:57+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-10T13:39:04+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 107,
       "lastSuccessAt": "2026-10-16T07:16:43+00:00",
       "targetThrough": "2026-11-02T06:57:57+00:00",
@@ -2936,6 +2936,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 253,
-    "checkedAt": "2026-11-10T13:08:14.342381+00:00"
+    "checkedAt": "2026-11-10T13:39:04.604818+00:00"
   }
 }
