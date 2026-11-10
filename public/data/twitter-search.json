@@ -1664,7 +1664,7 @@
       "pending": []
     },
     "isin:INE399G01023|RKFORGE": {
-      "lastAttemptAt": "2026-11-02T10:49:56+00:00",
+      "lastAttemptAt": "2026-11-10T20:54:38+00:00",
       "error": "search-unavailable",
       "lastResultCount": 14,
       "lastSuccessAt": "2026-10-21T09:58:18+00:00",
@@ -2936,6 +2936,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 253,
-    "checkedAt": "2026-11-10T20:05:29.649904+00:00"
+    "checkedAt": "2026-11-10T20:54:38.807819+00:00"
   }
 }
