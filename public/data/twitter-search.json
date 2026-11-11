@@ -2039,8 +2039,8 @@
       "lastDiscoveryAt": "2026-11-03T19:48:53+00:00"
     },
     "isin:INE12Z301012|Sotefin Bharat": {
-      "lastAttemptAt": "2026-11-03T19:48:53+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-11T18:49:27+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 2,
       "lastSuccessAt": "2026-11-03T19:48:53+00:00",
       "targetThrough": null,
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-11-11T17:50:48.933390+00:00"
+    "checkedAt": "2026-11-11T18:49:27.953126+00:00"
   }
 }
