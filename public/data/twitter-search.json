@@ -1951,7 +1951,7 @@
       "lastSuccessAt": "2026-10-02T10:43:50+00:00"
     },
     "isin:INE01IU01018|Sky Gold": {
-      "lastAttemptAt": "2026-11-03T17:28:10+00:00",
+      "lastAttemptAt": "2026-11-11T14:01:35+00:00",
       "error": "search-unavailable",
       "lastResultCount": 104,
       "targetThrough": "2026-10-02T10:43:50+00:00",
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-11-11T13:18:32.126784+00:00"
+    "checkedAt": "2026-11-11T14:01:35.633141+00:00"
   }
 }
