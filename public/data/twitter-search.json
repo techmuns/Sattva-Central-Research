@@ -1877,7 +1877,7 @@
       ]
     },
     "isin:INE024F01011|Shilchar Technologies": {
-      "lastAttemptAt": "2026-11-03T09:19:41+00:00",
+      "lastAttemptAt": "2026-11-11T07:47:18+00:00",
       "error": "search-unavailable",
       "lastResultCount": 40,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-11-11T07:14:47.667956+00:00"
+    "checkedAt": "2026-11-11T07:47:18.132676+00:00"
   }
 }
