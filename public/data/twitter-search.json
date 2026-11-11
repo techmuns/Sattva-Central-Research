@@ -2943,7 +2943,7 @@
       "pending": []
     },
     "isin:INE758T01015|Zomato": {
-      "lastAttemptAt": "2026-11-03T16:23:33+00:00",
+      "lastAttemptAt": "2026-11-11T12:47:38+00:00",
       "error": "search-unavailable"
     }
   },
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-11-11T12:16:57.321392+00:00"
+    "checkedAt": "2026-11-11T12:47:38.183782+00:00"
   }
 }
