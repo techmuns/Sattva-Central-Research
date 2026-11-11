@@ -1885,7 +1885,7 @@
       "pending": []
     },
     "isin:INE024F01011|SHILCTECH": {
-      "lastAttemptAt": "2026-11-03T09:55:35+00:00",
+      "lastAttemptAt": "2026-11-11T08:59:09+00:00",
       "error": "search-unavailable",
       "lastResultCount": 5,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-11-11T07:47:18.132676+00:00"
+    "checkedAt": "2026-11-11T08:59:09.965259+00:00"
   }
 }
