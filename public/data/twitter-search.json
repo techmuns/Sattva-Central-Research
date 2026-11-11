@@ -1925,7 +1925,7 @@
       "pending": []
     },
     "isin:INE1NPP01017|Siemens Energy India": {
-      "lastAttemptAt": "2026-11-03T14:57:56+00:00",
+      "lastAttemptAt": "2026-11-11T12:16:57+00:00",
       "error": "search-unavailable",
       "lastResultCount": 16,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-11-11T11:35:26.033822+00:00"
+    "checkedAt": "2026-11-11T12:16:57.321392+00:00"
   }
 }
