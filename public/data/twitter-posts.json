@@ -9573,9 +9573,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-11T03:10:49.857Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-11T03:48:29.776Z",
     "lastSuccessAt": null
   }
 }

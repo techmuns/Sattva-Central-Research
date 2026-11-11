@@ -1844,7 +1844,7 @@
       "lastDiscoveryAt": "2026-11-11T03:09:51+00:00"
     },
     "isin:INE955I01044|SEJALLTD": {
-      "lastAttemptAt": "2026-11-03T06:53:47+00:00",
+      "lastAttemptAt": "2026-11-11T03:48:14+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-02T08:02:07+00:00",
@@ -2949,8 +2949,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 9,
+    "attempted": 1,
     "incomplete": 248,
-    "checkedAt": "2026-11-11T03:09:51.944579+00:00"
+    "checkedAt": "2026-11-11T03:48:14.341984+00:00"
   }
 }
