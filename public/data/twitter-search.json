@@ -1722,7 +1722,7 @@
       "pending": []
     },
     "isin:INE500L01026|S H Kelkar & Company": {
-      "lastAttemptAt": "2026-11-02T18:34:38+00:00",
+      "lastAttemptAt": "2026-11-11T01:20:46+00:00",
       "error": "search-unavailable",
       "lastResultCount": 2,
       "lastSuccessAt": "2026-10-21T09:58:18+00:00",
@@ -2936,6 +2936,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 253,
-    "checkedAt": "2026-11-11T00:34:44.872738+00:00"
+    "checkedAt": "2026-11-11T01:20:46.663598+00:00"
   }
 }
