@@ -2327,8 +2327,8 @@
       "pending": []
     },
     "isin:INE0OC301013|TURTLEMINT": {
-      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-12T17:01:46+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 101,
       "targetThrough": "2026-11-04T15:29:18+00:00",
       "pending": [
@@ -2977,6 +2977,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-12T14:37:20.450936+00:00"
+    "checkedAt": "2026-11-12T17:01:46.800529+00:00"
   }
 }
