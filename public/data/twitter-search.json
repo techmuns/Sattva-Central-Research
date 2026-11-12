@@ -2084,7 +2084,7 @@
       "pending": []
     },
     "isin:INE089C01029|Sterlite analyst day": {
-      "lastAttemptAt": "2026-11-03T20:56:54+00:00",
+      "lastAttemptAt": "2026-11-12T00:06:12+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-22T03:30:38+00:00",
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-11T22:56:41.089010+00:00"
+    "checkedAt": "2026-11-12T00:06:12.265396+00:00"
   }
 }
