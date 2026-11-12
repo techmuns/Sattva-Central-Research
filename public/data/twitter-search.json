@@ -2273,7 +2273,7 @@
       ]
     },
     "isin:INE508G01029|Time Technoplast": {
-      "lastAttemptAt": "2026-11-04T11:38:14+00:00",
+      "lastAttemptAt": "2026-11-12T10:02:29+00:00",
       "error": "search-unavailable",
       "lastResultCount": 39,
       "lastSuccessAt": "2026-10-17T04:45:35+00:00",
@@ -2977,6 +2977,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-12T09:08:48.296658+00:00"
+    "checkedAt": "2026-11-12T10:02:29.594927+00:00"
   }
 }
