@@ -10,7 +10,7 @@
       "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE423A01024|ADANIENT": {
-      "lastAttemptAt": "2026-11-04T19:31:20+00:00",
+      "lastAttemptAt": "2026-11-12T21:49:38+00:00",
       "error": "search-unavailable",
       "lastResultCount": 113,
       "targetThrough": "2026-10-12T22:32:50+00:00",
@@ -2969,6 +2969,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 242,
-    "checkedAt": "2026-11-12T21:16:40.319002+00:00"
+    "checkedAt": "2026-11-12T21:49:38.548134+00:00"
   }
 }
