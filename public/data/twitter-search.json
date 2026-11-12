@@ -2345,8 +2345,8 @@
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|Urban Company": {
-      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-12T17:21:24+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 108,
       "targetThrough": "2026-11-04T15:29:18+00:00",
       "pending": [
@@ -2977,6 +2977,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-12T17:01:46.800529+00:00"
+    "checkedAt": "2026-11-12T17:21:24.090969+00:00"
   }
 }
