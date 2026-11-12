@@ -2385,34 +2385,34 @@
       "pending": []
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
       "error": null,
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
+      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
       "error": null,
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
+      "lastResultCount": 17,
+      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
-      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 40,
-      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
+      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
+      "error": null,
+      "lastResultCount": 44,
+      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|VAML": {
-      "lastAttemptAt": "2026-11-04T16:23:37+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 87,
-      "lastSuccessAt": "2026-10-28T03:19:34+00:00",
+      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
+      "error": null,
+      "lastResultCount": 63,
+      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2433,15 +2433,11 @@
       "pending": []
     },
     "isin:INE205A01025|Vedanta": {
-      "lastAttemptAt": "2026-11-04T17:05:09+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 112,
+      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
+      "error": null,
+      "lastResultCount": 94,
       "targetThrough": "2026-09-20T00:19:51+00:00",
       "pending": [
-        {
-          "from": "2026-09-11T00:19:51.977725+00:00",
-          "to": "2026-09-13T06:19:51.733294+00:00"
-        },
         {
           "from": "2026-09-13T06:19:51.733294+00:00",
           "to": "2026-09-15T12:19:51.488863+00:00"
@@ -2455,24 +2451,20 @@
           "to": "2026-09-20T00:19:51+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-28T03:19:34+00:00"
+      "lastDiscoveryAt": "2026-11-12T20:42:43+00:00"
     },
     "isin:INE205A01025|VEDL": {
-      "lastAttemptAt": "2026-11-04T17:39:49+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 103,
+      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
+      "error": null,
+      "lastResultCount": 58,
       "targetThrough": "2026-09-20T00:19:51+00:00",
       "pending": [
-        {
-          "from": "2026-09-11T00:19:51.977725+00:00",
-          "to": "2026-09-15T12:19:51.488863+00:00"
-        },
         {
           "from": "2026-09-15T12:19:51.488863+00:00",
           "to": "2026-09-20T00:19:51+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-28T03:19:34+00:00"
+      "lastDiscoveryAt": "2026-11-12T20:42:43+00:00"
     },
     "isin:INE704J01044|Vedanta Oil and Gas": {
       "lastAttemptAt": "2026-10-07T08:39:38+00:00",
@@ -2613,7 +2605,7 @@
       "pending": []
     },
     "isin:INE0LRU01027|Aarti Pharmalabs": {
-      "lastAttemptAt": "2026-11-04T18:12:02+00:00",
+      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|AARTIPHARM": {
@@ -2975,8 +2967,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 246,
-    "checkedAt": "2026-11-12T18:44:23.382504+00:00"
+    "attempted": 7,
+    "incomplete": 242,
+    "checkedAt": "2026-11-12T20:42:43.741650+00:00"
   }
 }
