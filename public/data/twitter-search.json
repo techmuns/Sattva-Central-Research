@@ -2289,7 +2289,7 @@
       "pending": []
     },
     "isin:INE615H01020|Titagarh Rail Systems": {
-      "lastAttemptAt": "2026-11-04T13:18:51+00:00",
+      "lastAttemptAt": "2026-11-12T11:22:51+00:00",
       "error": "search-unavailable",
       "lastResultCount": 42,
       "lastSuccessAt": "2026-10-17T04:45:35+00:00",
@@ -2977,6 +2977,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-12T10:42:27.194697+00:00"
+    "checkedAt": "2026-11-12T11:22:51.300033+00:00"
   }
 }
