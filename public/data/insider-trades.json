@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-11T18:01:48.424Z",
-  "oldestDataAt": "2026-11-11T18:01:48.424Z",
-  "from": "2025-11-11",
-  "to": "2026-11-11",
+  "capturedAt": "2026-11-11T23:43:34.503Z",
+  "oldestDataAt": "2026-11-11T23:43:34.503Z",
+  "from": "2025-11-12",
+  "to": "2026-11-12",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-11T18:01:48.424Z",
+      "capturedAt": "2026-11-11T23:43:34.503Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-11T18:01:48.424Z",
+      "capturedAt": "2026-11-11T23:43:34.503Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-11T18:01:48.424Z",
+      "capturedAt": "2026-11-11T23:43:34.503Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-11T18:01:48.424Z",
+      "capturedAt": "2026-11-11T23:43:34.503Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2155,
   "emptyCount": 0,
-  "rowCount": 24393,
+  "rowCount": 24384,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -82970,28 +82970,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "CHAMBLFERT",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "CHAMBLFERT",
-          "Insider": "CM Airtime Promotion LLP",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "25000",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "319301",
-          "Post Holding %": "0.08",
-          "Mode": "Market",
-          "From Date": "2025-11-07",
-          "To Date": "2025-11-07",
-          "Broadcast Date": "2025-11-11",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "SAGILITY": [
@@ -135196,50 +135174,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "3726",
-          "Trade %": "0.01",
-          "Trade Value": "16135513",
-          "Post Holding Shares": "739155",
-          "Post Holding %": "1.55",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-07",
-          "To Date": "2025-11-07",
-          "Broadcast Date": "2025-11-11",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "483",
-          "Trade %": "0",
-          "Trade Value": "2238289",
-          "Post Holding Shares": "742881",
-          "Post Holding %": "1.55",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-06",
-          "To Date": "2025-11-06",
-          "Broadcast Date": "2025-11-11",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "AJANTPHARM": [
@@ -148813,50 +148747,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "LALPATHLAB",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "LALPATHLAB",
-          "Insider": "Dr. Lal PathLabs Employee Welfare Trust",
-          "Category": "Other",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1436",
-          "Trade %": "0",
-          "Trade Value": "627109",
-          "Post Holding Shares": "301221",
-          "Post Holding %": "0.36",
-          "Mode": "ESOP",
-          "From Date": "2025-11-07",
-          "To Date": "2025-11-07",
-          "Broadcast Date": "2025-11-11",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "LALPATHLAB",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "LALPATHLAB",
-          "Insider": "Seema Kochhar",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "950",
-          "Trade %": "0",
-          "Trade Value": "9500",
-          "Post Holding Shares": "14839",
-          "Post Holding %": "0.02",
-          "Mode": "ESOP",
-          "From Date": "2025-11-07",
-          "To Date": "2025-11-07",
-          "Broadcast Date": "2025-11-11",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "NEULANDLAB": [
@@ -152966,50 +152856,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "HSCL",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "Himadri Speciality Chemical Ltd",
-          "Insider": "Amit Choudhary",
-          "Category": "Promoter",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4000000",
-          "Trade %": "0.74",
-          "Trade Value": "1264000000",
-          "Post Holding Shares": "17750000",
-          "Post Holding %": "3.52",
-          "Mode": "Allotment",
-          "From Date": "2025-11-07",
-          "To Date": "2025-11-07",
-          "Broadcast Date": "2025-11-11",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HSCL",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "Himadri Speciality Chemical Ltd",
-          "Insider": "Anurag Choudhary",
-          "Category": "Promoter",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "6000000",
-          "Trade %": "1.04",
-          "Trade Value": "1896000000",
-          "Post Holding Shares": "43317676",
-          "Post Holding %": "8.59",
-          "Mode": "Allotment",
-          "From Date": "2025-11-07",
-          "To Date": "2025-11-07",
-          "Broadcast Date": "2025-11-11",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "MPHASIS": [
@@ -154373,28 +154219,6 @@
           "From Date": "2025-11-12",
           "To Date": "2025-11-12",
           "Broadcast Date": "2025-11-13",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "BERGEPAINT",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "BERGEPAINT",
-          "Insider": "Indrajit Amal Majumdar",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "300",
-          "Trade %": "0",
-          "Trade Value": "166360",
-          "Post Holding Shares": "9866",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-10",
-          "To Date": "2025-11-10",
-          "Broadcast Date": "2025-11-11",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -187068,28 +186892,6 @@
           "From Date": "2025-11-12",
           "To Date": "2025-11-12",
           "Broadcast Date": "2025-11-12",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "FSL",
-        "date": "2025-11-11",
-        "cells": {
-          "Company": "FSL",
-          "Insider": "Firstsource Employee Benefit Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "11790",
-          "Trade %": "0",
-          "Trade Value": "4139941",
-          "Post Holding Shares": "6135374",
-          "Post Holding %": "0.88",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-10",
-          "To Date": "2025-11-10",
-          "Broadcast Date": "2025-11-11",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
