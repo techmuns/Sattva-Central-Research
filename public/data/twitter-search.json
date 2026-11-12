@@ -2609,7 +2609,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|AARTIPHARM": {
-      "lastAttemptAt": "2026-11-04T22:00:46+00:00",
+      "lastAttemptAt": "2026-11-12T23:36:08+00:00",
       "error": "search-unavailable",
       "lastResultCount": 20,
       "lastSuccessAt": "2026-10-28T07:31:11+00:00",
@@ -2969,6 +2969,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 242,
-    "checkedAt": "2026-11-12T22:47:53.742078+00:00"
+    "checkedAt": "2026-11-12T23:36:08.846632+00:00"
   }
 }
