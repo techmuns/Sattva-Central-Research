@@ -2092,7 +2092,7 @@
       "pending": []
     },
     "isin:INE089C01029|STL analyst day": {
-      "lastAttemptAt": "2026-11-03T22:04:25+00:00",
+      "lastAttemptAt": "2026-11-12T00:49:43+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-22T03:30:38+00:00",
@@ -2951,6 +2951,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 250,
-    "checkedAt": "2026-11-12T00:06:12.265396+00:00"
+    "checkedAt": "2026-11-12T00:49:43.390649+00:00"
   }
 }
