@@ -2297,8 +2297,8 @@
       "pending": []
     },
     "isin:INE615H01020|TITAGARH": {
-      "lastAttemptAt": "2026-11-04T15:29:18+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-12T13:44:46+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 111,
       "targetThrough": "2026-10-22T10:22:06+00:00",
       "pending": [
@@ -2977,6 +2977,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-12T13:04:02.847729+00:00"
+    "checkedAt": "2026-11-12T13:44:46.305706+00:00"
   }
 }
