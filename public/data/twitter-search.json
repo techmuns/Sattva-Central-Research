@@ -2550,20 +2550,16 @@
       "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE377N01017|Waaree Energies": {
-      "lastAttemptAt": "2026-11-06T07:00:41+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 74,
-      "targetThrough": "2026-10-03T05:24:56+00:00",
-      "pending": [
-        {
-          "from": "2026-09-28T17:24:56.228683+00:00",
-          "to": "2026-10-03T05:24:56+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-13T20:29:00+00:00"
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": null,
+      "lastResultCount": 61,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-13T21:17:40+00:00",
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE377N01017|WAAREEENER": {
-      "lastAttemptAt": "2026-11-06T07:51:32+00:00",
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
       "error": "search-unavailable",
       "lastResultCount": 24,
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
@@ -2923,34 +2919,74 @@
       "error": "search-unavailable"
     },
     "isin:INE658D01029|SIMPLEXCAS": {
-      "lastAttemptAt": "2026-11-06T02:48:01+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": null,
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE092A01019|Tata Chemicals": {
-      "lastAttemptAt": "2026-11-06T03:35:29+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 103,
+      "targetThrough": "2026-11-13T21:17:40+00:00",
+      "pending": [
+        {
+          "from": "2026-11-04T21:17:40.808310+00:00",
+          "to": "2026-11-09T09:17:40.404155+00:00"
+        },
+        {
+          "from": "2026-11-09T09:17:40.404155+00:00",
+          "to": "2026-11-13T21:17:40+00:00"
+        }
+      ]
     },
     "isin:INE092A01019|TATACHEM": {
-      "lastAttemptAt": "2026-11-06T04:13:06+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": null,
+      "lastResultCount": 62,
+      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE011K01018|Tega Industries": {
-      "lastAttemptAt": "2026-11-06T04:15:37+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": null,
+      "lastResultCount": 51,
+      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE011K01018|TEGA": {
-      "lastAttemptAt": "2026-11-06T05:04:57+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 109,
+      "targetThrough": "2026-11-13T21:17:40+00:00",
+      "pending": [
+        {
+          "from": "2026-11-04T21:17:40.808310+00:00",
+          "to": "2026-11-09T09:17:40.404155+00:00"
+        },
+        {
+          "from": "2026-11-09T09:17:40.404155+00:00",
+          "to": "2026-11-13T21:17:40+00:00"
+        }
+      ]
     },
     "isin:INE0JA001018|Venus Pipes & Tubes": {
-      "lastAttemptAt": "2026-11-06T05:43:01+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": null,
+      "lastResultCount": 21,
+      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE0JA001018|VENUSPIPES": {
-      "lastAttemptAt": "2026-11-06T06:27:53+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 42,
-      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
+      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "error": null,
+      "lastResultCount": 60,
+      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2985,8 +3021,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 240,
-    "checkedAt": "2026-11-13T19:27:12.018159+00:00"
+    "attempted": 9,
+    "incomplete": 235,
+    "checkedAt": "2026-11-13T21:17:40.808310+00:00"
   }
 }
