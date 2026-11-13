@@ -2654,7 +2654,7 @@
       "lastDiscoveryAt": "2026-10-28T07:31:11+00:00"
     },
     "isin:INE0UIZ01018|BLACKBUCK": {
-      "lastAttemptAt": "2026-11-05T01:21:14+00:00",
+      "lastAttemptAt": "2026-11-13T02:29:07+00:00",
       "error": "search-unavailable",
       "lastResultCount": 105,
       "targetThrough": "2026-10-22T20:54:29+00:00",
@@ -2969,6 +2969,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 242,
-    "checkedAt": "2026-11-13T01:47:18.773445+00:00"
+    "checkedAt": "2026-11-13T02:29:07.814860+00:00"
   }
 }
