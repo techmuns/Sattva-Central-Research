@@ -2617,7 +2617,7 @@
       "pending": []
     },
     "isin:INE852O01025|Aptus Value Housing Finance India": {
-      "lastAttemptAt": "2026-11-04T23:00:21+00:00",
+      "lastAttemptAt": "2026-11-13T00:32:50+00:00",
       "error": "search-unavailable",
       "lastResultCount": 2,
       "lastSuccessAt": "2026-10-28T07:31:11+00:00",
@@ -2969,6 +2969,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 242,
-    "checkedAt": "2026-11-12T23:36:08.846632+00:00"
+    "checkedAt": "2026-11-13T00:32:50.164046+00:00"
   }
 }
