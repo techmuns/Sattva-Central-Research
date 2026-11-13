@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-13T01:49:30.278Z",
-  "oldestDataAt": "2026-11-13T01:49:30.278Z",
+  "capturedAt": "2026-11-13T09:30:38.070Z",
+  "oldestDataAt": "2026-11-13T09:30:38.070Z",
   "from": "2025-11-13",
   "to": "2026-11-13",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-13T01:49:30.278Z",
+      "capturedAt": "2026-11-13T09:30:38.070Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-13T01:49:30.278Z",
+      "capturedAt": "2026-11-13T09:30:38.070Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-11-02",
+      "latestDate": "2026-11-12",
       "oldestDate": "2026-10-26",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-13T01:49:30.278Z",
+      "capturedAt": "2026-11-13T09:30:38.070Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-13T01:49:30.278Z",
+      "capturedAt": "2026-11-13T09:30:38.070Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2168,
   "emptyCount": 0,
-  "rowCount": 24570,
+  "rowCount": 24579,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -299294,6 +299294,51 @@
     "FASCINATE": [
       {
         "ticker": "FASCINATE",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Fascinate Textiles",
+          "Insider": "PRATIUS COMMERCIALS PRIVATE LIMITED",
+          "Transaction": "Acquisition",
+          "Trade Shares": "100000",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "FASCINATE",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Fascinate Textiles",
+          "Insider": "PRATIUS COMMERCIALS PRIVATE LIMITED",
+          "Transaction": "Acquisition",
+          "Trade Shares": "76000",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "FASCINATE",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Fascinate Textiles",
+          "Insider": "Vishal Nahar",
+          "Transaction": "Acquisition",
+          "Trade Shares": "10400",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "FASCINATE",
         "date": "2026-11-04",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=2",
         "sourceId": "bulk",
@@ -342023,6 +342068,21 @@
     "VALUE360": [
       {
         "ticker": "VALUE360",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Value 360 Commu.",
+          "Insider": "Craft Emerging Marketing Fund PCC",
+          "Transaction": "Acquisition",
+          "Trade Shares": "830400",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "VALUE360",
         "date": "2026-10-29",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -342961,6 +343021,36 @@
       }
     ],
     "MAGSON": [
+      {
+        "ticker": "MAGSON",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Magson Retail",
+          "Insider": "Jayaben Maganbhai Bhuva along with pac",
+          "Transaction": "Acquisition",
+          "Trade Shares": "263400",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAGSON",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Magson Retail",
+          "Insider": "united Friends Ventures LLP along with pac",
+          "Transaction": "Acquisition",
+          "Trade Shares": "2819366",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MAGSON",
         "date": "2026-10-19",
@@ -358093,6 +358183,21 @@
       }
     ],
     "MCL": [
+      {
+        "ticker": "MCL",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "Mr. Vishal Talsibhai Monpada",
+          "Transaction": "Sell",
+          "Trade Shares": "9000",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MCL",
         "date": "2026-10-22",
@@ -451982,6 +452087,21 @@
     "PURPLEUTED": [
       {
         "ticker": "PURPLEUTED",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Purple United",
+          "Insider": "Bhawna Seth",
+          "Transaction": "Acquisition",
+          "Trade Shares": "83250",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PURPLEUTED",
         "date": "2026-10-29",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -453925,6 +454045,21 @@
       }
     ],
     "UNIHEALTH": [
+      {
+        "ticker": "UNIHEALTH",
+        "date": "2026-11-12",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Unihealth Hosp",
+          "Insider": "Dr. Anurag Shah",
+          "Transaction": "Acquisition",
+          "Trade Shares": "100000",
+          "Broadcast Date": "2026-11-12",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "UNIHEALTH",
         "date": "2026-11-02",
