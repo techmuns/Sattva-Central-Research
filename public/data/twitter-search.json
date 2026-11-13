@@ -2819,7 +2819,7 @@
       ]
     },
     "isin:INE040A01034|HDFCBANK": {
-      "lastAttemptAt": "2026-11-05T16:42:44+00:00",
+      "lastAttemptAt": "2026-11-13T15:28:56+00:00",
       "error": "search-unavailable",
       "lastResultCount": 105,
       "targetThrough": "2026-10-23T00:13:31+00:00",
@@ -2967,6 +2967,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-13T14:52:28.356340+00:00"
+    "checkedAt": "2026-11-13T15:28:56.778878+00:00"
   }
 }
