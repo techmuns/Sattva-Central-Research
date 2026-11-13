@@ -2641,7 +2641,7 @@
       ]
     },
     "isin:INE0UIZ01018|BlackBuck": {
-      "lastAttemptAt": "2026-11-05T00:15:30+00:00",
+      "lastAttemptAt": "2026-11-13T01:47:18+00:00",
       "error": "search-unavailable",
       "lastResultCount": 24,
       "targetThrough": "2026-10-22T20:54:29+00:00",
@@ -2969,6 +2969,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 242,
-    "checkedAt": "2026-11-13T01:11:16.865893+00:00"
+    "checkedAt": "2026-11-13T01:47:18.773445+00:00"
   }
 }
