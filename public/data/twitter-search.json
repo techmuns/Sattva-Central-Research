@@ -2771,7 +2771,7 @@
       ]
     },
     "isin:INE235A01022|Finolex Cables": {
-      "lastAttemptAt": "2026-11-05T12:59:19+00:00",
+      "lastAttemptAt": "2026-11-13T10:36:16+00:00",
       "lastResultCount": 53,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00",
@@ -2965,8 +2965,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 6,
+    "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-11-13T09:43:07.465130+00:00"
+    "checkedAt": "2026-11-13T10:36:16.741936+00:00"
   }
 }
