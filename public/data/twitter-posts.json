@@ -9500,9 +9500,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-13T21:18:12.734Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-13T23:16:56.513Z",
     "lastSuccessAt": null
   }
 }
