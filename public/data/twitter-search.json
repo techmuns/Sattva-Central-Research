@@ -93,8 +93,8 @@
       ]
     },
     "isin:INE0ALI01010|ADVAIT": {
-      "lastAttemptAt": "2026-11-06T11:35:34+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-14T04:18:23+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 85,
       "targetThrough": "2026-09-15T20:36:48+00:00",
       "pending": [
@@ -3022,7 +3022,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 235,
-    "checkedAt": "2026-11-14T03:37:40.844758+00:00"
+    "incomplete": 239,
+    "checkedAt": "2026-11-14T04:18:23.369571+00:00"
   }
 }
