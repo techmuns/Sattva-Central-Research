@@ -58,7 +58,7 @@
     "scripts/verify-newsletter-pdf.mjs": "7c6b62a3200963f29ae1d7b91001dc0a94e2c1a53e7b0869c99f39b737d24e24",
     "scripts/verify-newsletter-source-links.mjs": "89b9f265de4eccfc417215086421f44ae8bc4aaf10e12643812d7e45dfc1a876",
     "scripts/verify-newsletter.mjs": "f77c3c0dcbbeeae1c08a66b799406ff829558f80dac33a8fbd3e934c2d8780ff",
-    "worker/newsletter-brief.mjs": "18ac50a575284fc54e389150fcedad8903d46408a98ddf51464e55cbf7be31cb",
+    "worker/newsletter-brief.mjs": "b05c86c4f79137da47cf9011cf754d9f4864bf27d9ad80be26ea39217ce91124",
     "worker/newsletter-company-reading.mjs": "d1da8d5b78aa40d3fb0d564ab24ac4f7009cb756b5a177ef726d0b36599c5ed8",
     "worker/newsletter-content-store.mjs": "2d19416e4c2560cd183ebe54b5ce87df4000e9d4c8e7d2733020455e75c5add4",
     "worker/newsletter-content.mjs": "b8d71b6025b3981d88abd370d63571fcdcf93402b827aad953787df5cb15fe8b",
