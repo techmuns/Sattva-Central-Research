@@ -158,8 +158,8 @@
       "pending": []
     },
     "isin:INE094B01013|ASHIKA": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-14T15:43:47+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 114,
       "targetThrough": "2026-11-06T16:33:07+00:00",
       "pending": [
@@ -3023,6 +3023,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-11-14T15:10:37.398024+00:00"
+    "checkedAt": "2026-11-14T15:43:47.427935+00:00"
   }
 }
