@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-14T16:44:10.350Z",
-  "oldestDataAt": "2026-11-14T16:44:10.350Z",
-  "from": "2025-11-14",
-  "to": "2026-11-14",
+  "capturedAt": "2026-11-14T20:53:16.388Z",
+  "oldestDataAt": "2026-11-14T20:53:16.388Z",
+  "from": "2025-11-15",
+  "to": "2026-11-15",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-14T16:44:10.350Z",
+      "capturedAt": "2026-11-14T20:53:16.388Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-14T16:44:10.350Z",
+      "capturedAt": "2026-11-14T20:53:16.388Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-14T16:44:10.350Z",
+      "capturedAt": "2026-11-14T20:53:16.388Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-14T16:44:10.350Z",
+      "capturedAt": "2026-11-14T20:53:16.388Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2178,
+  "withRows": 2177,
   "emptyCount": 0,
-  "rowCount": 24819,
+  "rowCount": 24782,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -97095,28 +97095,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "POLICYBZR",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "POLICYBZR",
-          "Insider": "New World Fund, Inc.",
-          "Category": "None",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "9214138",
-          "Trade %": "2.09",
-          "Trade Value": null,
-          "Post Holding Shares": "13581056",
-          "Post Holding %": "2.95",
-          "Mode": "Market",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "PRAXIS": [
@@ -121402,248 +121380,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Ali Ahmed",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "662",
-          "Trade %": "0",
-          "Trade Value": "246734",
-          "Post Holding Shares": "15874",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Ateet Nagar Bansal",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "2500",
-          "Trade %": "0",
-          "Trade Value": "931775",
-          "Post Holding Shares": "5792",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Bhushan Shenolikar",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "906",
-          "Trade %": "0",
-          "Trade Value": "224326",
-          "Post Holding Shares": "906",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Brijesh Sharma",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "10000",
-          "Trade %": "0",
-          "Trade Value": "2233200",
-          "Post Holding Shares": "13290",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Kirat Desai",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "758",
-          "Trade %": "0",
-          "Trade Value": "7580",
-          "Post Holding Shares": "3571",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Pranay Sinha",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4123",
-          "Trade %": "0",
-          "Trade Value": "1536683",
-          "Post Holding Shares": "5123",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Rishi Garg",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "2500",
-          "Trade %": "0",
-          "Trade Value": "973200",
-          "Post Holding Shares": "2500",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Sambasivarao Burle",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "2576",
-          "Trade %": "0",
-          "Trade Value": "1287382",
-          "Post Holding Shares": "2576",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Sneha Darira",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "6946",
-          "Trade %": "0",
-          "Trade Value": "1478873",
-          "Post Holding Shares": "29673",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Sushil Hari Prasad Budhia",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "2000",
-          "Trade %": "0",
-          "Trade Value": "446640",
-          "Post Holding Shares": "2000",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAM-INDIA",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "NAM-INDIA",
-          "Insider": "Vani Doshi",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "6914",
-          "Trade %": "0",
-          "Trade Value": "1472081",
-          "Post Holding Shares": "11030",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "HINDCOPPER": [
@@ -131240,138 +130976,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "IKS",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "IKS",
-          "Insider": "BERJIS M DESAI",
-          "Category": "Director",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "12230",
-          "Trade %": "0.01",
-          "Trade Value": "20416586",
-          "Post Holding Shares": "1936770",
-          "Post Holding %": "1.13",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-11",
-          "To Date": "2025-11-11",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "IKS",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "IKS",
-          "Insider": "BERJIS M DESAI",
-          "Category": "Director",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "42000",
-          "Trade %": "0.02",
-          "Trade Value": "69262467",
-          "Post Holding Shares": "1894770",
-          "Post Holding %": "1.1",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "IKS",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "IKS",
-          "Insider": "DEVAL PRAKASH MAJMUDAR",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "15000",
-          "Trade %": "0.01",
-          "Trade Value": "24851368",
-          "Post Holding Shares": "310286",
-          "Post Holding %": "0.18",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "IKS",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "IKS",
-          "Insider": "DEVAL PRAKASH MAJMUDAR",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "6000",
-          "Trade %": "0",
-          "Trade Value": "9914572",
-          "Post Holding Shares": "325286",
-          "Post Holding %": "0.19",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-11",
-          "To Date": "2025-11-11",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "IKS",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "IKS",
-          "Insider": "MAHESH JAISALMERIA",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "479",
-          "Trade %": "0",
-          "Trade Value": "797280",
-          "Post Holding Shares": "695",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "IKS",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "IKS",
-          "Insider": "REGINA DAWN BUCHWALD",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "7000",
-          "Trade %": "0",
-          "Trade Value": "11278062",
-          "Post Holding Shares": "3502",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "FORCEMOT": [
@@ -136262,94 +135866,6 @@
           "From Date": "2025-11-14",
           "To Date": "2025-11-14",
           "Broadcast Date": "2025-11-17",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4275",
-          "Trade %": "0.01",
-          "Trade Value": "18949675",
-          "Post Holding Shares": "758847",
-          "Post Holding %": "1.59",
-          "Mode": "Market Purchase",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4321",
-          "Trade %": "0.01",
-          "Trade Value": "18948713",
-          "Post Holding Shares": "754572",
-          "Post Holding %": "1.58",
-          "Mode": "Market Purchase",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4434",
-          "Trade %": "0.01",
-          "Trade Value": "18948673",
-          "Post Holding Shares": "750251",
-          "Post Holding %": "1.57",
-          "Mode": "Market Purchase",
-          "From Date": "2025-11-11",
-          "To Date": "2025-11-11",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "6662",
-          "Trade %": "0.01",
-          "Trade Value": "31589548",
-          "Post Holding Shares": "745817",
-          "Post Holding %": "1.56",
-          "Mode": "Market Purchase",
-          "From Date": "2025-11-04",
-          "To Date": "2025-11-04",
-          "Broadcast Date": "2025-11-14",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -152568,72 +152084,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "KPITTECH",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "KPITTECH",
-          "Insider": "Ajay Bhagwat & PACs",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "40000",
-          "Trade %": "0.01",
-          "Trade Value": null,
-          "Post Holding Shares": "2305584",
-          "Post Holding %": "0.85",
-          "Mode": "Market",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "KPITTECH",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "KPITTECH",
-          "Insider": "Ajay Bhagwat",
-          "Category": "Promoter",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "40000",
-          "Trade %": "0.01",
-          "Trade Value": "49710344",
-          "Post Holding Shares": "2305584",
-          "Post Holding %": "0.85",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "KPITTECH",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "KPITTECH",
-          "Insider": "Kishor Patil & PACs",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "40000",
-          "Trade %": "0.01",
-          "Trade Value": null,
-          "Post Holding Shares": "13385605",
-          "Post Holding %": "4.88",
-          "Mode": "Market",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "GABRIEL": [
@@ -160518,72 +159968,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Peterhouse Investments India Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "100000",
-          "Trade %": "0.03",
-          "Trade Value": null,
-          "Post Holding Shares": "4466529",
-          "Post Holding %": "1.47",
-          "Mode": "Market",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Peterhouse Investments Ltd",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "210000",
-          "Trade %": "0.07",
-          "Trade Value": null,
-          "Post Holding Shares": "4090000",
-          "Post Holding %": "1.34",
-          "Mode": "Market",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Stuti Jhawar",
-          "Category": "Promoter",
-          "Security Type": null,
-          "Transaction": "Acquisition",
-          "Trade Shares": "5000",
-          "Trade %": null,
-          "Trade Value": null,
-          "Post Holding Shares": "1292000",
-          "Post Holding %": "0.42",
-          "Mode": "Market",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "JSL": [
@@ -162649,116 +162033,6 @@
           "From Date": "2025-11-14",
           "To Date": "2025-11-14",
           "Broadcast Date": "2025-11-18",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "INDGN",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "Indegene Ltd",
-          "Insider": "AMIT GUPTA",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2200",
-          "Trade %": "0",
-          "Trade Value": "1137088",
-          "Post Holding Shares": "1086",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-11",
-          "To Date": "2025-11-11",
-          "Broadcast Date": "2025-11-14",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "INDGN",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "Indegene Ltd",
-          "Insider": "BINA SANJEEV PATIL (Revised)",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2000",
-          "Trade %": "0",
-          "Trade Value": "1031700",
-          "Post Holding Shares": "270500",
-          "Post Holding %": "0.11",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-11",
-          "To Date": "2025-11-11",
-          "Broadcast Date": "2025-11-14",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "INDGN",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "Indegene Ltd",
-          "Insider": "BINA SANJEEV PATIL (Revised)",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "500",
-          "Trade %": "0",
-          "Trade Value": "262850",
-          "Post Holding Shares": "278430",
-          "Post Holding %": "0.12",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-10",
-          "To Date": "2025-11-10",
-          "Broadcast Date": "2025-11-14",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "INDGN",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "Indegene Ltd",
-          "Insider": "BINA SANJEEV PATIL (Revised)",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "5930",
-          "Trade %": "0.01",
-          "Trade Value": "3105455",
-          "Post Holding Shares": "272500",
-          "Post Holding %": "0.11",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-10",
-          "To Date": "2025-11-10",
-          "Broadcast Date": "2025-11-14",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "INDGN",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "Indegene Ltd",
-          "Insider": "BINA SANJEEV PATIL",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "13570",
-          "Trade %": "0",
-          "Trade Value": "6984905",
-          "Post Holding Shares": "256930",
-          "Post Holding %": "0.11",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
@@ -192635,30 +191909,6 @@
         }
       }
     ],
-    "TORNTPOWER": [
-      {
-        "ticker": "TORNTPOWER",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "TORNTPOWER",
-          "Insider": "Axis Mutual Fund",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "564876",
-          "Trade %": "0.11",
-          "Trade Value": null,
-          "Post Holding Shares": "15443254",
-          "Post Holding %": "3.06",
-          "Mode": "Market",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-12",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      }
-    ],
     "JSWINFRA": [
       {
         "ticker": "JSWINFRA",
@@ -205507,50 +204757,6 @@
           "From Date": "2025-11-12",
           "To Date": "2025-11-12",
           "Broadcast Date": "2025-11-17",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JINDALSTEL",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "JINDALSTEL",
-          "Insider": "Dipti Ganatra",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "498",
-          "Trade %": "0",
-          "Trade Value": "533377",
-          "Post Holding Shares": null,
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-10",
-          "To Date": "2025-11-10",
-          "Broadcast Date": "2025-11-14",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JINDALSTEL",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "JINDALSTEL",
-          "Insider": "Dipti Ganatra",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "901",
-          "Trade %": "0",
-          "Trade Value": "960466",
-          "Post Holding Shares": "498",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-10-31",
-          "To Date": "2025-10-31",
-          "Broadcast Date": "2025-11-14",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -221793,28 +220999,6 @@
           "From Date": "2026-02-11",
           "To Date": "2026-02-11",
           "Broadcast Date": "2026-02-19",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "ATHERENERG",
-        "date": "2025-11-14",
-        "cells": {
-          "Company": "ATHERENERG",
-          "Insider": "National Investment & Infrastructure Fund II",
-          "Category": "Other",
-          "Security Type": null,
-          "Transaction": "Disposal",
-          "Trade Shares": "10444294",
-          "Trade %": "2.75",
-          "Trade Value": null,
-          "Post Holding Shares": "29798666",
-          "Post Holding %": "7.84",
-          "Mode": "Market",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-14",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
