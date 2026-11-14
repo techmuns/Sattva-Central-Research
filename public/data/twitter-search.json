@@ -3007,8 +3007,8 @@
       "pending": []
     },
     "isin:INE274C01019|Wendt (India)": {
-      "lastAttemptAt": "2026-11-06T11:35:34+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-14T08:51:36+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 5,
       "lastSuccessAt": "2026-11-06T11:35:34+00:00",
       "targetThrough": null,
@@ -3023,6 +3023,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-11-14T07:36:31.659462+00:00"
+    "checkedAt": "2026-11-14T08:51:36.584821+00:00"
   }
 }
