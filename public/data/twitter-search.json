@@ -174,76 +174,78 @@
       ]
     },
     "isin:INE0Z4F01028|Atlanta Electricals": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 108,
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
+      "error": null,
+      "lastResultCount": 38,
       "targetThrough": "2026-11-06T16:33:07+00:00",
       "pending": [
-        {
-          "from": "2026-10-28T16:33:07.304301+00:00",
-          "to": "2026-11-02T04:33:07.152151+00:00"
-        },
         {
           "from": "2026-11-02T04:33:07.152151+00:00",
           "to": "2026-11-06T16:33:07+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-14T16:23:11+00:00"
     },
     "isin:INE0Z4F01028|ATLANTAELE": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
       "error": null,
-      "lastResultCount": 86,
-      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-11-14T16:23:11+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE555B01013|Axiscades Technologies": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
       "error": null,
-      "lastResultCount": 49,
-      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
+      "lastResultCount": 40,
+      "lastSuccessAt": "2026-11-14T16:23:11+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE555B01013|AXISCADES": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
       "error": null,
-      "lastResultCount": 48,
-      "targetThrough": "2026-10-14T05:17:36+00:00",
-      "pending": [
-        {
-          "from": "2026-10-09T17:17:36.303300+00:00",
-          "to": "2026-10-14T05:17:36+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-06T16:33:07+00:00"
+      "lastResultCount": 20,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-14T16:23:11+00:00",
+      "lastSuccessAt": "2026-10-14T05:17:36+00:00"
     },
     "isin:INE083K01017|Bengal and Assam Company": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
       "error": null,
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-11-14T16:23:11+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE083K01017|BENGALASM": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
       "error": null,
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-11-06T16:33:07+00:00",
+      "lastResultCount": 7,
+      "lastSuccessAt": "2026-11-14T16:23:11+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0HOQ01053|Billionbrains Garage Ventures": {
-      "lastAttemptAt": "2026-11-06T16:33:07+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 39,
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
       "lastSuccessAt": "2026-10-14T05:17:36+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-11-14T16:23:11+00:00",
+      "pending": [
+        {
+          "from": "2026-10-12T05:17:36+00:00",
+          "to": "2026-10-28T22:50:23.500000+00:00"
+        },
+        {
+          "from": "2026-10-28T22:50:23.500000+00:00",
+          "to": "2026-11-14T16:23:11+00:00"
+        }
+      ]
     },
     "isin:INE0HOQ01053|GROWW": {
-      "lastAttemptAt": "2026-11-06T17:31:47+00:00",
+      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
       "error": "search-unavailable",
       "lastResultCount": 104,
       "targetThrough": "2026-10-14T05:17:36+00:00",
@@ -256,7 +258,8 @@
           "from": "2026-10-09T17:17:36.303300+00:00",
           "to": "2026-10-14T05:17:36+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-14T16:23:11+00:00"
     },
     "isin:INE376G01013|Biocon": {
       "lastAttemptAt": "2026-11-06T18:33:17+00:00",
@@ -3021,8 +3024,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 239,
-    "checkedAt": "2026-11-14T15:43:47.427935+00:00"
+    "attempted": 8,
+    "incomplete": 235,
+    "checkedAt": "2026-11-14T16:23:11.632858+00:00"
   }
 }
