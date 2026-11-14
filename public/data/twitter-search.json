@@ -134,7 +134,7 @@
       "pending": []
     },
     "isin:INE0R4701017|Alpex Solar": {
-      "lastAttemptAt": "2026-11-06T12:19:37+00:00",
+      "lastAttemptAt": "2026-11-14T11:41:41+00:00",
       "error": "search-unavailable",
       "lastResultCount": 35,
       "lastSuccessAt": "2026-09-15T20:36:48+00:00",
@@ -3023,6 +3023,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-11-14T10:53:35.648202+00:00"
+    "checkedAt": "2026-11-14T11:41:41.248966+00:00"
   }
 }
