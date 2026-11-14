@@ -118,8 +118,8 @@
       "pending": []
     },
     "isin:INE914E01040|ALANKIT": {
-      "lastAttemptAt": "2026-11-06T11:35:34+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-14T06:50:00+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 15,
       "lastSuccessAt": "2026-11-06T11:35:34+00:00",
       "targetThrough": null,
@@ -3023,6 +3023,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 239,
-    "checkedAt": "2026-11-14T06:29:55.168904+00:00"
+    "checkedAt": "2026-11-14T06:50:00.590545+00:00"
   }
 }
