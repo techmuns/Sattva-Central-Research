@@ -334,73 +334,69 @@
       "pending": []
     },
     "isin:INE736A01011|Central Depository Services": {
-      "lastAttemptAt": "2026-11-06T23:53:14+00:00",
-      "lastResultCount": 40,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-10-19T05:32:20+00:00",
+      "lastAttemptAt": "2026-11-14T23:45:29+00:00",
+      "lastResultCount": 76,
+      "error": null,
+      "lastSuccessAt": "2026-11-14T23:45:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE736A01011|CDSL": {
-      "lastAttemptAt": "2026-11-07T00:37:13+00:00",
-      "lastResultCount": 51,
-      "error": "search-unavailable",
-      "targetThrough": "2026-09-06T22:10:33+00:00",
-      "pending": [
-        {
-          "from": "2026-09-04T16:10:33.116823+00:00",
-          "to": "2026-09-06T22:10:33+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-19T05:32:20+00:00"
+      "lastAttemptAt": "2026-11-14T23:45:29+00:00",
+      "lastResultCount": 33,
+      "error": null,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-14T23:45:29+00:00",
+      "lastSuccessAt": "2026-09-06T22:10:33+00:00"
     },
     "isin:INE067A01029|Cg Power and Ind Sol": {
-      "lastAttemptAt": "2026-11-07T02:01:30+00:00",
+      "lastAttemptAt": "2026-11-14T23:45:29+00:00",
       "lastResultCount": 0,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-10-19T05:32:20+00:00",
+      "error": null,
+      "lastSuccessAt": "2026-11-14T23:45:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE067A01029|CG Power & Ind": {
-      "lastAttemptAt": "2026-11-07T02:39:31+00:00",
-      "lastResultCount": 2,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-10-19T05:32:20+00:00",
+      "lastAttemptAt": "2026-11-14T23:45:29+00:00",
+      "lastResultCount": 1,
+      "error": null,
+      "lastSuccessAt": "2026-11-14T23:45:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE067A01029|CGPOWER": {
-      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
-      "lastResultCount": 94,
-      "error": null,
+      "lastAttemptAt": "2026-11-14T23:45:29+00:00",
+      "lastResultCount": 107,
+      "error": "result-cap-incomplete",
       "lastSuccessAt": "2026-09-20T20:53:41+00:00",
       "targetThrough": "2026-10-30T13:06:34+00:00",
       "pending": [
         {
           "from": "2026-10-09T17:00:07.500000+00:00",
+          "to": "2026-10-20T03:03:20.750000+00:00"
+        },
+        {
+          "from": "2026-10-20T03:03:20.750000+00:00",
           "to": "2026-10-30T13:06:34+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-07T03:16:27+00:00"
+      "lastDiscoveryAt": "2026-11-14T23:45:29+00:00"
     },
     "isin:INE522F01014|Coal India": {
-      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
-      "lastResultCount": 77,
+      "lastAttemptAt": "2026-11-14T23:45:29+00:00",
+      "lastResultCount": 37,
       "error": null,
-      "targetThrough": "2026-09-06T22:10:33+00:00",
-      "pending": [
-        {
-          "from": "2026-09-04T16:10:33.116823+00:00",
-          "to": "2026-09-06T22:10:33+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-07T03:16:27+00:00"
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-14T23:45:29+00:00",
+      "lastSuccessAt": "2026-09-06T22:10:33+00:00"
     },
     "isin:INE522F01014|COALINDIA": {
-      "lastAttemptAt": "2026-11-07T03:16:27+00:00",
+      "lastAttemptAt": "2026-11-14T23:45:29+00:00",
       "lastResultCount": 15,
-      "error": null,
+      "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
         {
@@ -3024,8 +3020,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 239,
-    "checkedAt": "2026-11-14T22:51:47.742943+00:00"
+    "attempted": 7,
+    "incomplete": 236,
+    "checkedAt": "2026-11-14T23:45:29.916985+00:00"
   }
 }
