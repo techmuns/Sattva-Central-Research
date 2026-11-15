@@ -606,7 +606,7 @@
       "lastDiscoveryAt": "2026-11-15T02:17:05+00:00"
     },
     "isin:INE0EDU01014|Finbud Financial Services": {
-      "lastAttemptAt": "2026-11-07T16:41:46+00:00",
+      "lastAttemptAt": "2026-11-15T02:52:04+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-09-21T00:21:30+00:00",
@@ -3037,8 +3037,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 5,
+    "attempted": 1,
     "incomplete": 231,
-    "checkedAt": "2026-11-15T02:17:05.798447+00:00"
+    "checkedAt": "2026-11-15T02:52:04.380284+00:00"
   }
 }
