@@ -743,9 +743,9 @@
       "pending": []
     },
     "isin:INE548A01028|HFCL": {
-      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "lastAttemptAt": "2026-11-15T20:15:27+00:00",
       "lastResultCount": 114,
-      "error": "result-cap-incomplete",
+      "error": "search-unavailable",
       "targetThrough": "2026-09-07T15:18:18+00:00",
       "pending": [
         {
@@ -3039,6 +3039,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 238,
-    "checkedAt": "2026-11-15T19:44:34.353630+00:00"
+    "checkedAt": "2026-11-15T20:15:27.545491+00:00"
   }
 }
