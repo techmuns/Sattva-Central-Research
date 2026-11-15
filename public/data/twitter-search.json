@@ -735,9 +735,9 @@
       ]
     },
     "isin:INE330T01021|HAPPYFORGE": {
-      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
+      "lastAttemptAt": "2026-11-15T19:44:34+00:00",
       "lastResultCount": 69,
-      "error": null,
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-11-07T23:32:09+00:00",
       "targetThrough": null,
       "pending": []
@@ -3038,7 +3038,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 232,
-    "checkedAt": "2026-11-15T17:53:17.650679+00:00"
+    "incomplete": 238,
+    "checkedAt": "2026-11-15T19:44:34.353630+00:00"
   }
 }
