@@ -831,74 +831,63 @@
       "lastDiscoveryAt": "2026-09-12T14:15:30+00:00"
     },
     "isin:INE622H01018|Indo Farm Equipment": {
-      "lastAttemptAt": "2026-11-08T02:00:14+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 5,
-      "lastSuccessAt": "2026-09-12T14:15:30+00:00",
+      "lastAttemptAt": "2026-11-15T23:28:08+00:00",
+      "error": null,
+      "lastResultCount": 24,
+      "lastSuccessAt": "2026-11-15T23:28:08+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE622H01018|INDOFARM": {
-      "lastAttemptAt": "2026-11-08T02:31:42+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 16,
-      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
+      "lastAttemptAt": "2026-11-15T23:28:08+00:00",
+      "error": null,
+      "lastResultCount": 29,
+      "lastSuccessAt": "2026-11-15T23:28:08+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE084101034|Indo-Mim": {
-      "lastAttemptAt": "2026-11-08T04:56:36+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 39,
-      "targetThrough": "2026-09-12T14:15:30+00:00",
-      "pending": [
-        {
-          "from": "2026-09-08T02:15:30.497221+00:00",
-          "to": "2026-09-12T14:15:30+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-20T07:46:04+00:00"
+      "lastAttemptAt": "2026-11-15T23:28:08+00:00",
+      "error": null,
+      "lastResultCount": 60,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-15T23:28:08+00:00",
+      "lastSuccessAt": "2026-09-12T14:15:30+00:00"
     },
     "isin:INE084101034|INDOMIM": {
-      "lastAttemptAt": "2026-11-08T06:07:43+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 12,
-      "targetThrough": "2026-09-21T14:54:36+00:00",
-      "pending": [
-        {
-          "from": "2026-09-17T02:54:36.455721+00:00",
-          "to": "2026-09-21T14:54:36+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-20T07:46:04+00:00"
+      "lastAttemptAt": "2026-11-15T23:28:08+00:00",
+      "error": null,
+      "lastResultCount": 71,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-15T23:28:08+00:00",
+      "lastSuccessAt": "2026-09-21T14:54:36+00:00"
     },
     "isin:INE00M901018|Interarch Building Products": {
-      "lastAttemptAt": "2026-11-08T06:25:50+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 8,
-      "lastSuccessAt": "2026-10-20T07:46:04+00:00",
+      "lastAttemptAt": "2026-11-15T23:28:08+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-11-15T23:28:08+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE00M901018|INTERARCH": {
-      "lastAttemptAt": "2026-11-08T07:16:25+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 102,
+      "lastAttemptAt": "2026-11-15T23:28:08+00:00",
+      "error": null,
+      "lastResultCount": 58,
       "lastSuccessAt": "2026-09-21T14:54:36+00:00",
       "targetThrough": "2026-10-20T07:46:04+00:00",
       "pending": [
         {
-          "from": "2026-09-19T14:54:36+00:00",
-          "to": "2026-10-04T23:20:20+00:00"
-        },
-        {
           "from": "2026-10-04T23:20:20+00:00",
           "to": "2026-10-20T07:46:04+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-15T23:28:08+00:00"
     },
     "isin:INE858B01029|ISGEC Heavy Engineering": {
-      "lastAttemptAt": "2026-11-08T08:03:09+00:00",
+      "lastAttemptAt": "2026-11-15T23:28:08+00:00",
       "error": "search-unavailable",
       "lastResultCount": 10,
       "lastSuccessAt": "2026-10-25T14:44:23+00:00",
@@ -3037,8 +3026,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 243,
-    "checkedAt": "2026-11-15T22:57:45.406438+00:00"
+    "attempted": 7,
+    "incomplete": 240,
+    "checkedAt": "2026-11-15T23:28:08.802879+00:00"
   }
 }
