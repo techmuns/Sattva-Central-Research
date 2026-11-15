@@ -674,8 +674,8 @@
       "pending": []
     },
     "isin:INE077F01035|GOCLCORP": {
-      "lastAttemptAt": "2026-11-07T23:32:09+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-15T15:40:09+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 3,
       "lastSuccessAt": "2026-11-07T23:32:09+00:00",
       "targetThrough": null,
@@ -3039,6 +3039,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 232,
-    "checkedAt": "2026-11-15T14:01:17.521213+00:00"
+    "checkedAt": "2026-11-15T15:40:09.361875+00:00"
   }
 }
