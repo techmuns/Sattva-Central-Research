@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-15T15:39:46.815Z",
-  "oldestDataAt": "2026-11-15T15:39:46.815Z",
-  "from": "2025-11-15",
-  "to": "2026-11-15",
+  "capturedAt": "2026-11-15T23:05:33.497Z",
+  "oldestDataAt": "2026-11-15T23:05:33.497Z",
+  "from": "2025-11-16",
+  "to": "2026-11-16",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-15T15:39:46.815Z",
+      "capturedAt": "2026-11-15T23:05:33.497Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-15T15:39:46.815Z",
+      "capturedAt": "2026-11-15T23:05:33.497Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-15T15:39:46.815Z",
+      "capturedAt": "2026-11-15T23:05:33.497Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-15T15:39:46.815Z",
+      "capturedAt": "2026-11-15T23:05:33.497Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 2177,
   "emptyCount": 0,
-  "rowCount": 24782,
+  "rowCount": 24779,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -88844,28 +88844,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "GROWW",
-        "date": "2025-11-15",
-        "cells": {
-          "Company": "GROWW",
-          "Insider": "Vikas Singh",
-          "Category": "Promoter Group",
-          "Security Type": "Equity Shares",
-          "Transaction": "Pledge",
-          "Trade Shares": "3591308",
-          "Trade %": "0.06",
-          "Trade Value": "470245869",
-          "Post Holding Shares": "3591308",
-          "Post Holding %": "0.06",
-          "Mode": "Creation Of Pledge",
-          "From Date": "2025-11-13",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "AGL": [
@@ -159921,50 +159899,6 @@
           "From Date": "2025-11-14",
           "To Date": "2025-11-14",
           "Broadcast Date": "2025-11-17",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-11-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Peterhouse Investments Ltd.",
-          "Category": "Promoter Group",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "210000",
-          "Trade %": "0.07",
-          "Trade Value": "97786500",
-          "Post Holding Shares": "4090000",
-          "Post Holding %": "1.34",
-          "Mode": "Market Sale",
-          "From Date": "2025-11-12",
-          "To Date": "2025-11-13",
-          "Broadcast Date": "2025-11-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-11-15",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Stuti Jhawar",
-          "Category": "Promoter Group",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "9000",
-          "Trade %": "0",
-          "Trade Value": "4137911",
-          "Post Holding Shares": "1301000",
-          "Post Holding %": "0.43",
-          "Mode": "Market Purchase",
-          "From Date": "2025-11-14",
-          "To Date": "2025-11-14",
-          "Broadcast Date": "2025-11-15",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
