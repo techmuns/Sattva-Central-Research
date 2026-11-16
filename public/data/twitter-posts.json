@@ -1,10 +1,158 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-16T09:51:59+00:00",
+  "capturedAt": "2026-11-16T11:41:23+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2122293505079021848",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🚨 Precision engineering deal wave continues! White Oak Capital, 360 ONE Asset &amp; others participate in pre-IPO round of Bain Capital backed auto parts platform RSB Group reports @ashwinmohansays \n\nhttps://t.co/NlsFPWGNkO",
+      "created_at": "2026-11-16T11:39:36+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122293505079021848",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122293231832691046",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | With Nvidia's earnings and the much-talked-about Anthropic IPO in focus, global markets are watching the AI trade closely. \n\nIn this conversation, market expert Ajay Bagga (@Ajay_Bagga) breaks down what these two big events could mean for investors, how the AI theme is shaping global sentiment, and what the spillover could be for Indian markets, especially tech and the broader market mood. \n\nHe also shares the key triggers and levels to track in the coming sessions, and how investors can approach this period of heightened event risk. Watch the full conversation with @Lovishadarad for a clear, no-noise view on where the markets could head next.",
+      "created_at": "2026-11-16T11:38:31+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122293231832691046",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122292529714602176",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Taking Stock: Markets bounce back; Nifty closes near 25,300, Sensex jumps 510 pts\n\n- Indian markets closed higher led by FMCG and banking stocks.\n- Sensex gained 510 points and Nifty closed near 25,300.\n- Foreign fund inflows and lower crude prices boosted sentiment.\n\nRead more:\nhttps://t.co/QXgDGZxpTS",
+      "created_at": "2026-11-16T11:35:44+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122292529714602176",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122292156027289834",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | India’s unemployment rate eases to 4.9% in October as more women find work\n\nUrban unemployment fell to 6.7%, while rural joblessness held at 4.2%. The share of women aged 15 and above who were employed rose to 33.3% from 32.8% in September\n\n@IshaanGera writes:\nhttps://t.co/iJzMDNCbvN",
+      "created_at": "2026-11-16T11:34:14+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122292156027289834",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122288876475830774",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Surendra Singh Azad, who filmed and shared visuals of dead and dying fish in the Yamuna, has been arrested and subsequently released on bail. The arrest has raised questions over the handling of a video highlighting a possible environmental crisis in the capital.\n\nIn his first statement after his release, Azad said he rushed to the riverbank after seeing fish gasping for air. He claimed Flood Department staff were collecting dead and struggling fish and told him the deaths were linked to polluted water and chemicals.\n\nAzad said he recorded the scene, questioned the staff and uploaded the footage to Facebook and Instagram. He alleged that he was later picked up by police while heading to a friend's place for Chhath Puja celebrations.\n\nPolice registered an FIR against him, alleging that the video spread misinformation and could create public mischief. Azad has said he will contest the case in court.",
+      "created_at": "2026-11-16T11:21:13+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122288876475830774",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122287313866588232",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | Silver tumbles 4.5% to Rs 1.69 lakh amid Fed rate fears: Is further correction likely?\n\n- Gold and silver prices fell sharply amid a stronger US dollar.\n- Treasury yields and rate hike fears depressed bullion prices.\n- Domestic gold falls 1.16% and silver drops nearly 4.50%.\n\n@Dipen_Journals reports:\n\nRead More:\nhttps://t.co/YJbEaVUhOh",
+      "created_at": "2026-11-16T11:15:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122287313866588232",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122278879243231334",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | 🔔Closing Bell: Nifty nears 25,300, Sensex gains 510 pts; FMCG shines, auto, metal, realty drag\n\nOn the sectoral front, Realty Index down 1.9%, Pharma index declined 1.7%, Metal index shed 1.5%, Auto index fell 1.5%, and Energy index shed 0.6%, however, FMCG index added 1.2%, while Nifty Bank, Infra, Private Bank, Media, PSU Bank rose 0.3-0.6%. The Nifty midcap index shed 0.7 percent and smallcap index fell 1.1 percent.\n\nRead More: \nhttps://t.co/usKybiXc2N",
+      "created_at": "2026-11-16T10:41:29+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122278879243231334",
+      "image": "https://pbs.twimg.com/media/HXPYKFqbQAATFb5.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122275991254950015",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | IPO-bound Mahanadi Coalfields will remain high dividend-paying stock, says DIPAM Secy; are you eligible for shareholder quota?\n\nMahanadi Coalfields shares are likely to be listed on the BSE and NSE on November 27.\n\n@ParasBisht15 reports: \n\nRead More:\nhttps://t.co/gcinPncrKE",
+      "created_at": "2026-11-16T10:30:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122275991254950015",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122272316487094413",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🚨 #MCExclusive | Iran war pushes India to scout new internet cable landing sites on east coast\n\nAround 70% of India's subsea cable infrastructure is concentrated along the western coast, making diversification important to mitigate potential disruptions to international connectivity\n\n@DanishKh4n reports 👇\nhttps://t.co/xPuVFc74Du",
+      "created_at": "2026-11-16T10:15:24+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122272316487094413",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122272296123732388",
+      "handle": "DemandZoneKing",
+      "display_name": "Demand zone King",
+      "text": "@BatesarJat @sunilgurjar01 Oswalpumps :  Fundamentals toh kaafi ache hai iske but\n\nTechnicals : Iska ghee khatm ho chuka hai, BO from this chanel may give some relief but dont expect much from this. https://t.co/RPPIfWuqFW",
+      "created_at": "2026-11-16T10:15:19+00:00",
+      "url": "https://x.com/DemandZoneKing/status/2122272296123732388",
+      "image": "https://pbs.twimg.com/media/HXPTNeAbIAAu3qq.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"OSWALPUMPS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122271162243977604",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | As long-short SIFs post uneven returns, HDFC MF bets on patience over early performance\n\n- HDFC MF enters specialised fund segment.\n- The new H-SIF Hybrid Long-Short Fund opened for subscription.\n- Strategy needs 18+ month horizon.\n\nKhushi Keswani writes:\nhttps://t.co/mbDSdXp16q",
+      "created_at": "2026-11-16T10:10:49+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122271162243977604",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122269811233443989",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🚨 Lakshmi Venu seeks partition of Venu Srinivasan family assets, issues formal notice\n\nLakshmi Venu seeks partition of Venu Srinivasan's interest in companies TVS Motor, TVS Holdings, TVS Credit and Sundaram-Clayton\n\n@jagan520 with details 👇\nhttps://t.co/tSIk9IWf9L",
+      "created_at": "2026-11-16T10:05:27+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122269811233443989",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122267888388313103",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCAnalysis | 🚨 Soaring inflation puts India Inc’s pricing power to test as Q2 margins shrink\n\nWith retail inflation crossing 6%, companies face a difficult choice between raising prices to offset higher costs and protecting demand from already stretched households\n\n@swarajdhanjal & @deborshi report ⏬\nhttps://t.co/8Ygh9rdEV7",
+      "created_at": "2026-11-16T09:57:49+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122267888388313103",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
     {
       "tweet_id": "2122265142255841307",
       "handle": "moneycontrolcom",
@@ -1015,6 +1163,26 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122217698109305043",
+      "handle": "Santosh83707516",
+      "display_name": "🙏RING AND KISHT BAN KARO 🙏",
+      "text": "@RBI @PMOIndia @nsitharaman @FinMinIndia\nRing और Kissht के खिलाफ लाखों परेशान कर्जदारों की समस्याओं की निष्पक्ष जाँच कर तत्काल कार्रवाई की जाए। कृपया पीड़ित ग्राहकों को उचित Settlement या लिखित Restructuring का विकल्प दिलाने में मदद करें। 🙏 https://t.co/hhL4g5USaH",
+      "created_at": "2026-11-16T06:38:22+00:00",
+      "url": "https://x.com/Santosh83707516/status/2122217698109305043",
+      "image": "https://pbs.twimg.com/media/HXOhunobgAAw_8P.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122215842012160088",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -1622,6 +1790,22 @@
       ]
     },
     {
+      "tweet_id": "2122203482170290180",
+      "handle": "ravibhaumiriya",
+      "display_name": "Singh in Market (SIM)",
+      "text": "#TMPV On Radar\n\n#GALLANTT #BELRISE #CUPID #GABRIEL #LICI #INOXWIND #SBIN #IDEA #OFSS #MEESHO #ACE #ZEEL #LICI #NSDL #ZEEL #IIFL #SYRMA #PTCIL #IKS #SYRMA #AMBER #SWIGGY #TARIL #ITI #LTF #TTML #ERIS #TECHNOE #CAMS #ZFCVINDIA PV #RPOWER #UBL #NUVAMA #VIJAYA #IDEA #MAXHEALTH #KAYNES https://t.co/AACXNmBlK5",
+      "created_at": "2026-11-16T05:41:53+00:00",
+      "url": "https://x.com/ravibhaumiriya/status/2122203482170290180",
+      "image": "https://pbs.twimg.com/media/HXOUzoEbIAAY9Jd.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122202662464790688",
       "handle": "movieboss_site",
       "display_name": "Indira",
@@ -1994,6 +2178,42 @@
         {
           "entityId": "isin:INE310A01015",
           "query": "\"Nilkamal\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122193482127466964",
+      "handle": "ravibhaumiriya",
+      "display_name": "Singh in Market (SIM)",
+      "text": "#KAYNES On Radar\n\n#GALLANTT #BELRISE #CUPID #GABRIEL #LICI #INOXWIND #SBIN #IDEA #OFSS #MEESHO #ACE #ZEEL #LICI #NSDL #ZEEL #IIFL #SYRMA #PTCIL #IKS #SYRMA #AMBER #SWIGGY #TARIL #ITI #LTF #TTML #ERIS #TECHNOE #CAMS #ZFCVINDIA #TMPV #RPOWER #UBL #NUVAMA #VIJAYA #IDEA #MAXHEALTH https://t.co/3z2tkdn2w2",
+      "created_at": "2026-11-16T05:02:09+00:00",
+      "url": "https://x.com/ravibhaumiriya/status/2122193482127466964",
+      "image": "https://pbs.twimg.com/media/HXOLrlNacAAcG3j.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122192943519776872",
+      "handle": "TrinetraAsset",
+      "display_name": "Trinetra Asset Managers",
+      "text": "Oswal Pumps Ltd - Q2 FY27 Results\n\n1. Financial Performance -\n- Revenue stood at ₹506.3 Cr, up 6.9% QoQ.\n- Operating EBITDA was ₹57.5 Cr, with a margin of 11.3%.\n- PAT stood at ₹39.6 Cr, with a margin of 7.7%.\n- Margins were impacted by higher prices of aluminium, solar glass, copper, zinc and steel, particularly on older fixed-price contracts. Higher employee costs and EPC-related expenses also affected profitability.\n\n2. Business Updates -\n- Executable solar pump order book stands at 9,487 pumps, with an additional pipeline of 10,000 pumps across PM-KUSUM, Magel Tyala and exports.\n- PM-KUSUM 2.0 has been delayed. Management expects its announcement within CY2026, but meaningful revenue contribution is expected only from Q1 FY28.\n- The company is diversifying into rooftop, utility-scale and C&I solar EPC. Combined order book stands at 143 MW, with an additional pipeline of 168 MW.\n- EPC business is expected to generate 12–15% operating EBITDA margins with a payment cycle of 90–120 days, significantly better than government projects.\n\n3. Backward Integration: Major Development\n- Company approved a 1.2 GW TOPCon solar cell manufacturing facility with total capex of ₹455.85 Cr.\n- Funding: ₹159.85 Cr from unutilised IPO proceeds and ₹296 Cr through debt.\n- Commercial operations targeted for April 2028.\n- The facility is expected to meet 75–80% of internal solar cell requirements.\n- Management expects a 6–7 percentage-point improvement in blended EBITDA margins after the plant becomes operational.\n\n4. Working Capital and Debt\n- Net debt stood at ₹531 Cr; net debt/equity at 0.30x.\n- Receivable days stood at 229 days and inventory days at 56 days.\n- Outstanding receivables were ₹1,300 Cr, entirely from government and government-backed entities.\n- ₹208 Cr was collected in early October, entirely from Maharashtra.\n\n5. Management Guidance -\n- FY27 revenue guidance maintained at ₹4,000–4,500 Cr despite missing the earlier Q2 growth guidance of 10–15% YoY.\n- Management expects business performance to improve progressively in H2 FY27.\n- Target is to generate more than 25% of total business from non-government verticals.\n- PM-KUSUM 2.0 is expected to contribute meaningfully from Q1 FY28.\n- Expected cash conversion cycle under PM-KUSUM 2.0 is 140–150 days.\n- Management is very confident about FY28, supported by government orders, EPC diversification and backward integration.\n\n6. Key Risks -\n- Delay in PM-KUSUM 2.0 is affecting near-term revenue growth.\n- High receivables of ₹1,300 Cr and a 257-day cash conversion cycle remain concerns.\n- Raw material inflation and competitive bidding are putting pressure on margins.\n\nOverall View -\nThe company is transitioning from a government-dependent solar pump business towards a diversified solar platform. The long-term strategy of EPC diversification and backward integration is positive. However, near-term growth, margins and cash flow remain under pressure. The key monitorables are PM-KUSUM 2.0 execution, government collections and EPC growth\n\nDisclaimer: Not Invested.                                                                                          \n\nSEBI Registered: Research Analyst                  Registration No: INH000015783\n\n#OswalPumps #Trinetra #Concallhighlights #Concallnotes #Q2FY27",
+      "created_at": "2026-11-16T05:00:00+00:00",
+      "url": "https://x.com/TrinetraAsset/status/2122192943519776872",
+      "image": "https://pbs.twimg.com/media/HXOJiS7aEAA5a2M.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        },
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"OSWALPUMPS\""
         }
       ]
     },
@@ -2376,6 +2596,22 @@
       ]
     },
     {
+      "tweet_id": "2122184617214284281",
+      "handle": "SwingTraderAdi",
+      "display_name": "Swing Trader Adi 🇮🇳 🚀",
+      "text": "@Kuldeep00969451 @DemandorSupply @Market_Edge_007 @IRInvesting Oswal pumps and Manoj Vaibhav looking good",
+      "created_at": "2026-11-16T04:26:55+00:00",
+      "url": "https://x.com/SwingTraderAdi/status/2122184617214284281",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122183752885694895",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -2543,6 +2779,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122180019560841443",
+      "handle": "mammetgzla",
+      "display_name": "sid",
+      "text": "📈 IT COMPANIES WITH STRONG FUNDAMENTALS TO WATCH FOR\n\n🔹Tata Consultancy Services (TCS)\n🔹Infosys\n🔹HCL Technologies\n🔹Wipro\n🔹Tech Mahindra\n🔹LTIMindtree\n🔹Persistent Systems\n🔹Coforge\n🔹Mphasis\n🔹Oracle Financial Services Software\n🔹L&T Technology Services\n🔹Tata Elxsi\n🔹KPIT Technologies\n🔹Cyient\n🔹Hexaware Technologies\n\nTrading Note: Watchlist only, not a buy/sell recommendation",
+      "created_at": "2026-11-16T04:08:39+00:00",
+      "url": "https://x.com/mammetgzla/status/2122180019560841443",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"Oracle Financial Services Software\""
+        }
+      ]
     },
     {
       "tweet_id": "2122178670307815456",
@@ -4378,6 +4630,26 @@
       ]
     },
     {
+      "tweet_id": "2122011031207809169",
+      "handle": "RA_PPareek",
+      "display_name": "Prashant Parek",
+      "text": "MY TOP 10 STOCKS TO WATCH FOR INTRADAY\n\n16 Nov 2026 \n\nSHARDAMOTR\nGOODYEAR\nMMFL\nALICON\nTDPOWERSYS\nMENONBE\nHEGAM\nTECHNOE\nKISSHT\nNBCC\n\nThese are stocks to watch NOT guaranteed buy recommendations \n#StockMarket #IntradayTrading  #Nifty50 #NSE #TradingView #PriceAction #MomentumStocks",
+      "created_at": "2026-11-15T16:57:09+00:00",
+      "url": "https://x.com/RA_PPareek/status/2122011031207809169",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122005913464906115",
       "handle": "mammetgzla",
       "display_name": "sid",
@@ -5768,6 +6040,26 @@
       ]
     },
     {
+      "tweet_id": "2121889100735430791",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "@Demo61877410498 Dear Customer, Your concerns are important to us and we are committed to resolving such matters on priority. Please send us a DM with your registered email address so we can look into this and take the necessary steps. Thank you! https://t.co/ZY1aPkU834",
+      "created_at": "2026-11-15T08:52:39+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2121889100735430791",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121888914768036134",
       "handle": "squeeze0range",
       "display_name": "Charles",
@@ -5934,6 +6226,38 @@
       ]
     },
     {
+      "tweet_id": "2121880722755801300",
+      "handle": "SU_zono",
+      "display_name": "Edward",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$POLYMED $OFSS\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/dmjMdFmA21\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/ftKEHeJ3Zp",
+      "created_at": "2026-11-15T08:19:21+00:00",
+      "url": "https://x.com/SU_zono/status/2121880722755801300",
+      "image": "https://pbs.twimg.com/media/HXJvO22XkAAT7ir.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121879863221191055",
+      "handle": "kaho_jinji",
+      "display_name": "William",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$MAXHEALTH $OFSS\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/rlpApJMWRx\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/9Gapiw5h9I",
+      "created_at": "2026-11-15T08:15:56+00:00",
+      "url": "https://x.com/kaho_jinji/status/2121879863221191055",
+      "image": "https://pbs.twimg.com/media/HXJucchXEAAci8y.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121879856904605996",
       "handle": "jiwrajka140405",
       "display_name": "Keshav Agarwal",
@@ -5946,6 +6270,22 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"Indo-Mim\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121879739090841911",
+      "handle": "kaho_jinji",
+      "display_name": "William",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$OFSS $DRREDDY\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/rlpApJMWRx\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/QV6XnBDP1F",
+      "created_at": "2026-11-15T08:15:27+00:00",
+      "url": "https://x.com/kaho_jinji/status/2121879739090841911",
+      "image": "https://pbs.twimg.com/media/HXJuV6UXcAAOrpE.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
         }
       ]
     },
@@ -6034,6 +6374,22 @@
       ]
     },
     {
+      "tweet_id": "2121874605287903397",
+      "handle": "squeeze0range",
+      "display_name": "Charles",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$AJANTAPHARM $OFSS\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/FBPSf27c5n\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/HK5MQDMb2M",
+      "created_at": "2026-11-15T07:55:03+00:00",
+      "url": "https://x.com/squeeze0range/status/2121874605287903397",
+      "image": "https://pbs.twimg.com/media/HXJpr6yWgAAQi8K.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121874276433444892",
       "handle": "nilkamal_ltd",
       "display_name": "Nilkamal Ltd.",
@@ -6078,6 +6434,22 @@
         {
           "entityId": "isin:INE338I01027",
           "query": "\"MOTILALOFS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121872158406201524",
+      "handle": "kaho_jinji",
+      "display_name": "William",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$GODREJCP $OFSS\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/rlpApJMp1Z\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/l6YFMgC17N",
+      "created_at": "2026-11-15T07:45:19+00:00",
+      "url": "https://x.com/kaho_jinji/status/2121872158406201524",
+      "image": "https://pbs.twimg.com/media/HXJncglXUAAhWXh.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE881D01027",
+          "query": "\"OFSS\""
         }
       ]
     },
@@ -6290,6 +6662,26 @@
       ]
     },
     {
+      "tweet_id": "2121849513660854776",
+      "handle": "Bytes_Equity",
+      "display_name": "Equity_Bytes",
+      "text": "Oswal Pumps: Q2 FY27 Results and Key Takeaways from the Concall\n\nRevenue grew quarter on quarter, but margins fell sharply because of higher raw material and operating costs. The launch of PM-KUSUM 2.0 is still delayed.\n\nQ2 FY27\nRevenue: ₹506.3 Cr (+6.9% QoQ)\nOperating EBITDA: ₹57.5 Cr, margin 11.3% (down 437 bps QoQ)\nPAT: ₹39.6 Cr, margin 7.7% (down 343 bps QoQ)\nNet debt: ₹531 Cr, net debt to equity 0.30x\n\n1.  Why margins fell-\nAbout 210 bps of the fall came from costlier aluminium frames, glass, copper, zinc and steel, mainly on orders taken at older prices. The other 227 bps came from higher staff costs to build the solar EPC team, project expenses and provisions for receivables. Management says some of these costs are temporary.\n\n2.  Moving beyond government pump schemes-\nThe solar pump order book is 9,487 pumps, with a near-term pipeline of about 10,000. Because PM-KUSUM 2.0 is delayed, the company is entering rooftop, utility-scale and commercial solar EPC. (In EPC the company designs, buys equipment for and builds the full project.) This order book is 143 MW, with another 168 MW in the pipeline.\n\n3.  New solar cell plant-\nThe company plans a 1.2 GW TOPCon solar cell plant at Karnal costing ₹455.85 Cr. Of this, ₹159.85 Cr will come from unused IPO money (subject to shareholder approval) and ₹296 Cr from debt. The plant should meet about 75% of the company's own cell needs. Government schemes require DCR (Domestic Content Requirement) modules, and Indian-made cells are currently short and expensive.\n\n4.  Capex plan reshuffled-\nTo fund the cell plant, 500 MW of planned module capacity is deferred. The EVA encapsulant plant (the layer that protects cells inside a module) is cut from 1,500 MW to 1,200 MW, and the aluminium frame plant is dropped because frames can be bought from outside.\n\n5.  Working capital is the main risk-\nThe cash conversion cycle rose to 257 days from 244. Receivables are at 229 days, all owed by government bodies. The company received ₹208 Cr from the Maharashtra government in early October. It expects more payments from Maharashtra, Haryana and Karnataka this quarter, and receivable days to come down to about 150-160.\n\nKey Guidance\n1. PM-KUSUM 2.0 launch expected within this calendar year\n2. Management says its revenue guidance of ₹4,000-4,500 Cr is intact\n3. Solar cell plant to start commercial operations in April 2028\n\n#OswalPumps",
+      "created_at": "2026-11-15T06:15:20+00:00",
+      "url": "https://x.com/Bytes_Equity/status/2121849513660854776",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"Oswal Pumps\""
+        },
+        {
+          "entityId": "isin:INE0BYP01024",
+          "query": "\"OSWALPUMPS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121848169193701445",
       "handle": "Biju_Vaisyathil",
       "display_name": "Biju Vaisyathil",
@@ -6422,6 +6814,26 @@
       ]
     },
     {
+      "tweet_id": "2121826827484463350",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "Dear Ankit, As per our recent telephonic conversation, we have successfully responded of your query and shared the necessary information and clarification with you. If you require any further assistance, please feel free to reach out to us via DM. Thank you! https://t.co/dvxOEDfccS",
+      "created_at": "2026-11-15T04:45:11+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2121826827484463350",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121825931719594346",
       "handle": "jiwrajka140405",
       "display_name": "Keshav Agarwal",
@@ -6482,6 +6894,26 @@
         {
           "entityId": "isin:INE310A01015",
           "query": "\"Nilkamal\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121822698477322415",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "Dear Ankit, Your concerns are important to us and we are committed to resolving such matters on priority. To address your concern, we have arranged a callback. Our executive will connect with you shortly and assist in resolving your query on a priority basis. For better assistance, we kindly request you to connect with us via Direct Message. Thank you! https://t.co/dvxOEDfccS",
+      "created_at": "2026-11-15T04:28:47+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2121822698477322415",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -6586,6 +7018,26 @@
         {
           "entityId": "isin:INE00M901018",
           "query": "\"INTERARCH\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121790097372938705",
+      "handle": "Santosh83707516",
+      "display_name": "🙏RING AND KISHT BAN KARO 🙏",
+      "text": "@RBI @RBIsays @PaywithRing @Kissht_EMI\n\n 🙏विषय: Ring, Kissht एवं इनके Lending Partners की कार्यप्रणाली की जांच तथा परेशान कर्जदारों को राहत देने हेतु RBI से अनुरोध\n\nमाननीय RBI,\n\nमैं आपका ध्यान भारत में डिजिटल फाइनेंस कंपनियों की कार्यप्रणाली की ओर आकर्षित करना चाहता हूँ।\n\nRing, Kissht तथा इनके Lending Partners जैसे Northern Arc Capital और SiCreva Capital से जुड़े कई कर्जदार आर्थिक संकट का सामना कर रहे हैं।\n\nकई ग्राहक बार-बार ईमेल और सोशल मीडिया के माध्यम से अपनी आर्थिक परेशानी बताते हुए Restructuring और Full & Final Settlement का अनुरोध करते हैं, लेकिन उन्हें उचित समाधान नहीं मिल रहा है।\n\nमेरी RBI से निम्नलिखित मांगें हैं:\n\n1. इन फाइनेंस कंपनियों की ऋण वसूली और शिकायत निवारण प्रणाली की निष्पक्ष जांच की जाए।\n2. RBI के लागू नियमों का पालन हो रहा है या नहीं, इसकी जांच की जाए।\n3. आर्थिक संकट में फंसे कर्जदारों को उचित Restructuring और Settlement का विकल्प दिया जाए।\n4. ब्याज, लेट फीस और पेनल्टी की गणना में पारदर्शिता सुनिश्चित की जाए।\n5. ग्राहकों की शिकायतों पर समयबद्ध कार्रवाई और लिखित जवाब सुनिश्चित किया जाए।\n6. यदि किसी कंपनी द्वारा नियमों का उल्लंघन पाया जाता है, तो नियमानुसार कार्रवाई की जाए।\n\nRBI भारत के वित्तीय क्षेत्र का नियामक है। इसलिए आम ग्राहकों की शिकायतों को नजरअंदाज नहीं किया जाना चाहिए।\n\nहमारी मांग किसी का कर्ज माफ करवाना नहीं, बल्कि निष्पक्ष व्यवस्था, पारदर्शिता और आर्थिक रूप से परेशान कर्जदारों को उचित राहत दिलाना है।\n\nकृपया इस विषय पर गंभीरता से जांच करके उचित कार्रवाई करें।\n\nधन्यवाद।\n< All loan defaulter >",
+      "created_at": "2026-11-15T02:19:14+00:00",
+      "url": "https://x.com/Santosh83707516/status/2121790097372938705",
+      "image": "https://pbs.twimg.com/media/HXIc12eaQAAwemV.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -9616,494 +10068,14 @@
           "query": "\"EDELWEISS\""
         }
       ]
-    },
-    {
-      "tweet_id": "2121748778541842662",
-      "handle": "Edelweiss_prsk",
-      "display_name": "Edelweiss/つき ☪🌙",
-      "text": "@Ka_Hosikuzu あぁ〜良きですね！\n私はポセットを希望したい🤩🌟",
-      "created_at": "2026-11-14T23:35:03+00:00",
-      "url": "https://x.com/Edelweiss_prsk/status/2121748778541842662",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121748234792206413",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Oops 🤣 — Truth hurts.",
-      "created_at": "2026-11-14T23:32:54+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121748234792206413",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121747592258437169",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Congratulations to SpaceX 🥳  🚀",
-      "created_at": "2026-11-14T23:30:20+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121747592258437169",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121747320861848040",
-      "handle": "noharashin_chan",
-      "display_name": "Shinchan-Himaa 🖤🤍",
-      "text": "(Gosip Time!!)\n\nGw baru tau ternyata ini lagi pada bahas si Boss tanam karang duluan disana & sekarang dia 😆\n\nWaktu denger \"PertSanta\" - senyum lebar sambil pura2 sibuk \n\nWaktu denger \"Lets do it together\" - eaaa kering kaga tuh gigi, By ??\n\nP White dong sampe maju 1 langka buat cie cie heboh depan muka dia 🤣\n\nKalau kita fans udah biasalah yaa cie ciein , ini sampe ke manager, team staff, team make up & MC di event solo private lu ?? 😏\n\nDan reaksi Byby tuh yaaaaa 👉👈, \nWOW 😊 - \"Rumor\" pun gak ada harga dirinya 😝🤙\n\nBtw P White ngopi ala incess yukk 😋😚\n\nMALDIVES AFFAIR WITH SANTA DAY2\n\n#FLMinMaldivesxSanta\n#Santapp #PerthSanta",
-      "created_at": "2026-11-14T23:29:16+00:00",
-      "url": "https://x.com/noharashin_chan/status/2121747320861848040",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121747129773474154",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "This is one of @GavinNewsoms boys.",
-      "created_at": "2026-11-14T23:28:30+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121747129773474154",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121746786184556688",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Not according to the predatory @GavinNewsom.",
-      "created_at": "2026-11-14T23:27:08+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121746786184556688",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121746769503736068",
-      "handle": "Maryq2nlb",
-      "display_name": "Maria09_12 🇨🇴",
-      "text": "EAAA MADRE MOLLLY",
-      "created_at": "2026-11-14T23:27:04+00:00",
-      "url": "https://x.com/Maryq2nlb/status/2121746769503736068",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121746489819214300",
-      "handle": "luckysilver91",
-      "display_name": "Shin Yoo Yaa 👒",
-      "text": "Thank you yang ngasih info 😭❤️\nSekarang gigiku kering setelah ngeklip momen flirting 🎧🐐 yang langka itu",
-      "created_at": "2026-11-14T23:25:57+00:00",
-      "url": "https://x.com/luckysilver91/status/2121746489819214300",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121744808733704605",
-      "handle": "teadzzi",
-      "display_name": "Georgie",
-      "text": "ekhm makasih yaah my bidadari jatuh dari surga dihadapankuuuu EAAA! biar makin banyak uangnya dari segala araah aamiin. &lt;3 @bibuniya 🤩💗 https://t.co/cEZ0NDvvHg",
-      "created_at": "2026-11-14T23:19:17+00:00",
-      "url": "https://x.com/teadzzi/status/2121744808733704605",
-      "image": "https://pbs.twimg.com/media/HXHzp32a0AALWVA.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121744563291521453",
-      "handle": "WeissSc51785772",
-      "display_name": "EdelWeiss Schnee",
-      "text": "Not necessarily my case but physically owning your own copy of music, nothing downloaded",
-      "created_at": "2026-11-14T23:18:18+00:00",
-      "url": "https://x.com/WeissSc51785772/status/2121744563291521453",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121744461638312084",
-      "handle": "Edelweiss_prsk",
-      "display_name": "Edelweiss/つき ☪🌙",
-      "text": "4月生まれが居ないの今後に期待(4月生まれ勢)",
-      "created_at": "2026-11-14T23:17:54+00:00",
-      "url": "https://x.com/Edelweiss_prsk/status/2121744461638312084",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121743671125246239",
-      "handle": "Catariverarlcz",
-      "display_name": "krelim",
-      "text": "EAAA https://t.co/5oJjYWatGi",
-      "created_at": "2026-11-14T23:14:45+00:00",
-      "url": "https://x.com/Catariverarlcz/status/2121743671125246239",
-      "image": "https://pbs.twimg.com/media/HXHynp-XUAARosX.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121742828497989751",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Because this is their alternative when not enough people are burned alive, become victims of his terrorists, or the monsters he lets out of prison. In winter they freeze you; in summer they claim it was more of their climate nonsense.",
-      "created_at": "2026-11-14T23:11:25+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121742828497989751",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121741192849432918",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "@FBIDirectorKash @SecRubio @SecDuffy  We have a security risk.",
-      "created_at": "2026-11-14T23:04:55+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121741192849432918",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121740396665638974",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "But @JohnStossel, “free trade” wasn’t free—it gutted our manufacturing and middle class.",
-      "created_at": "2026-11-14T23:01:45+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121740396665638974",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121739958406844549",
-      "handle": "intellectualTO",
-      "display_name": "Intellectual Takeout",
-      "text": "Dad, Mum, and some of the rest of us would invariably sing along with the song. Corny? Maybe. But in this angry era, maybe we should “corn up” this country.\nhttps://t.co/EdSJMTYIhu",
-      "created_at": "2026-11-14T23:00:00+00:00",
-      "url": "https://x.com/intellectualTO/status/2121739958406844549",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121739688675364910",
-      "handle": "Martin08hd",
-      "display_name": "𝓜artin♱ ִ",
-      "text": "EAAA PUÑETA GANO LA GALLA MIA LO TENIA SUPER MERECIDO ELLA SIEMPRE SIENDO ICONICA  https://t.co/zO7gOJZZnt",
-      "created_at": "2026-11-14T22:58:56+00:00",
-      "url": "https://x.com/Martin08hd/status/2121739688675364910",
-      "image": "https://pbs.twimg.com/media/HXHuv1QWYAETye5.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121739677099298861",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "I certainly hope so!",
-      "created_at": "2026-11-14T22:58:53+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121739677099298861",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121739621747069060",
-      "handle": "Allissonare",
-      "display_name": "༒Alis _aren🇲🇽🐎༒",
-      "text": "Eaaa se ganó una",
-      "created_at": "2026-11-14T22:58:40+00:00",
-      "url": "https://x.com/Allissonare/status/2121739621747069060",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121736715215999141",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Who’s corrupt? 😂",
-      "created_at": "2026-11-14T22:47:07+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121736715215999141",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121736307315511519",
-      "handle": "RepFine",
-      "display_name": "Congressman Randy Fine",
-      "text": "The DSA has taken over the Democratic Party.\n\nThey want open borders, to criminalize capitalism, and Medicaid for all.\n\nThe powerful will get the perks and everyone else gets to live in Cuba.\n\nI will fight it everyday. https://t.co/a9KTurLh1y",
-      "created_at": "2026-11-14T22:45:30+00:00",
-      "url": "https://x.com/RepFine/status/2121736307315511519",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121734964026974646",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Everyone knows you sold California to your terrorist friends.",
-      "created_at": "2026-11-14T22:40:10+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121734964026974646",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121734641510191141",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Yes you did and all your fire victims can attest to that.",
-      "created_at": "2026-11-14T22:38:53+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121734641510191141",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121734213896737074",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "The Electoral College insures that all states are represented in the election. \n🤦🏻‍♀️",
-      "created_at": "2026-11-14T22:37:11+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121734213896737074",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121733795028349313",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "It makes sense that you are completely ignorant about our Federalist Papers and American history.",
-      "created_at": "2026-11-14T22:35:31+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121733795028349313",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121732754085732691",
-      "handle": "Breena_Edelweis",
-      "display_name": "Breena Edelweiss ❄️",
-      "text": "@Bakugo_sn El balón de oro https://t.co/BftDyt0h1T",
-      "created_at": "2026-11-14T22:31:23+00:00",
-      "url": "https://x.com/Breena_Edelweis/status/2121732754085732691",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121731176771821954",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "Put down the crack!",
-      "created_at": "2026-11-14T22:25:07+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121731176771821954",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121730718661571024",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "🤔 black sights",
-      "created_at": "2026-11-14T22:23:17+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121730718661571024",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121730211054252048",
-      "handle": "IMpwdx4x9bz",
-      "display_name": "Heidi Edelweiss 🇺🇸🇩🇪",
-      "text": "🤣",
-      "created_at": "2026-11-14T22:21:16+00:00",
-      "url": "https://x.com/IMpwdx4x9bz/status/2121730211054252048",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121729890127143099",
-      "handle": "ImmigrantCrimes",
-      "display_name": "Illegal Alien Crimes",
-      "text": "🚨 Wyandotte County, KS: In September, Cesar Augusto Diaz-Diaz was arrested for Aggravated Indecent Liberties with a Child.\n\nHe has an immigration detainer hold. https://t.co/sYQvq1aTQG",
-      "created_at": "2026-11-14T22:20:00+00:00",
-      "url": "https://x.com/ImmigrantCrimes/status/2121729890127143099",
-      "image": "https://pbs.twimg.com/media/HXFmtX3WAAAIL_i.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 7,
-    "incomplete": 227,
-    "checkedAt": "2026-11-16T09:51:21.602025+00:00"
+    "attempted": 8,
+    "incomplete": 225,
+    "checkedAt": "2026-11-16T11:40:46.064704+00:00"
   },
   "archive": [
     {
@@ -10246,9 +10218,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-16T10:41:41.832Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-16T11:41:23.951Z",
     "lastSuccessAt": null
   }
 }

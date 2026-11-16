@@ -1346,87 +1346,99 @@
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE12F801023|OnEMI Technology Solutions": {
-      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
       "error": null,
-      "lastResultCount": 17,
-      "lastSuccessAt": "2026-11-09T21:01:42+00:00",
+      "lastResultCount": 9,
+      "lastSuccessAt": "2026-11-16T11:40:46+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE12F801023|Kissht": {
-      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
-      "error": null,
-      "lastResultCount": 76,
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 105,
       "lastSuccessAt": "2026-10-05T06:14:50+00:00",
-      "targetThrough": null,
-      "pending": [],
-      "lastDiscoveryAt": "2026-11-09T21:01:42+00:00"
-    },
-    "isin:INE12F801023|OnEMI Technology": {
-      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
-      "error": null,
-      "lastResultCount": 67,
-      "lastSuccessAt": "2026-09-13T11:04:59+00:00",
-      "targetThrough": "2026-11-01T19:49:32+00:00",
+      "targetThrough": "2026-11-16T11:40:46+00:00",
       "pending": [
         {
-          "from": "2026-10-07T03:27:15.500000+00:00",
-          "to": "2026-11-01T19:49:32+00:00"
+          "from": "2026-10-03T06:14:50+00:00",
+          "to": "2026-10-25T08:57:48+00:00"
+        },
+        {
+          "from": "2026-10-25T08:57:48+00:00",
+          "to": "2026-11-16T11:40:46+00:00"
         }
       ],
       "lastDiscoveryAt": "2026-11-09T21:01:42+00:00"
     },
-    "isin:INE12F801023|KISSHT": {
-      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
+    "isin:INE12F801023|OnEMI Technology": {
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
       "error": null,
-      "lastResultCount": 10,
+      "lastResultCount": 43,
+      "lastSuccessAt": "2026-11-01T19:49:32+00:00",
       "targetThrough": null,
       "pending": [],
+      "lastDiscoveryAt": "2026-11-16T11:40:46+00:00"
+    },
+    "isin:INE12F801023|KISSHT": {
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 105,
+      "targetThrough": "2026-11-16T11:40:46+00:00",
+      "pending": [
+        {
+          "from": "2026-09-25T12:23:53+00:00",
+          "to": "2026-10-21T12:02:19.500000+00:00"
+        },
+        {
+          "from": "2026-10-21T12:02:19.500000+00:00",
+          "to": "2026-11-16T11:40:46+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-11-09T21:01:42+00:00",
       "lastSuccessAt": "2026-09-27T12:23:53+00:00"
     },
     "isin:INE881D01027|Oracle Financial Services Software": {
-      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
-      "lastResultCount": 10,
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "lastResultCount": 18,
       "error": null,
-      "lastSuccessAt": "2026-11-09T21:01:42+00:00",
+      "lastSuccessAt": "2026-11-16T11:40:46+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE881D01027|OFSS": {
-      "lastAttemptAt": "2026-11-09T21:01:42+00:00",
-      "lastResultCount": 102,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "lastResultCount": 104,
+      "error": "result-cap-incomplete",
       "targetThrough": "2026-11-01T19:49:32+00:00",
       "pending": [
         {
-          "from": "2026-09-06T19:20:14+00:00",
-          "to": "2026-10-04T19:34:53+00:00"
-        },
-        {
           "from": "2026-10-04T19:34:53+00:00",
           "to": "2026-11-01T19:49:32+00:00"
+        },
+        {
+          "from": "2026-09-06T19:20:14+00:00",
+          "to": "2026-09-20T19:27:33.500000+00:00"
+        },
+        {
+          "from": "2026-09-20T19:27:33.500000+00:00",
+          "to": "2026-10-04T19:34:53+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-26T02:16:06+00:00",
+      "lastDiscoveryAt": "2026-11-16T11:40:46+00:00",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00"
     },
     "isin:INE0BYP01024|Oswal Pumps": {
-      "lastAttemptAt": "2026-11-09T21:38:34+00:00",
-      "lastResultCount": 22,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-09-08T19:20:14+00:00",
-      "targetThrough": "2026-09-27T12:23:53+00:00",
-      "pending": [
-        {
-          "from": "2026-09-17T03:52:03.500000+00:00",
-          "to": "2026-09-27T12:23:53+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-01T19:49:32+00:00"
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "lastResultCount": 33,
+      "error": null,
+      "lastSuccessAt": "2026-09-27T12:23:53+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-16T11:40:46+00:00"
     },
     "isin:INE0BYP01024|OSWALPUMPS": {
-      "lastAttemptAt": "2026-11-09T22:35:07+00:00",
+      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
       "lastResultCount": 37,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-26T02:16:06+00:00",
@@ -3090,8 +3102,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 227,
-    "checkedAt": "2026-11-16T10:41:26.335543+00:00"
+    "attempted": 8,
+    "incomplete": 225,
+    "checkedAt": "2026-11-16T11:40:46.064704+00:00"
   }
 }
