@@ -1,10 +1,811 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-15T23:28:36+00:00",
+  "capturedAt": "2026-11-16T06:41:30+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2122218106953011246",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Securing Tomorrow: Uttar Pradesh's Roadmap for Public Safety\n\nA secure environment is fundamental to sustainable development, public confidence and economic progress. As Uttar Pradesh continues to evolve, strengthening law enforcement, addressing emerging security challenges and building responsive policing systems remain central to ensuring public safety.\n\nRajeev Krishna, DGP, Uttar Pradesh, will join the News18 Rising Bharat Summit – North Edition, sharing his perspectives on the state's evolving security landscape, policing priorities and the road ahead for strengthening law and order through effective governance and institutional preparedness.\n\n📍 Lucknow | 17 November 2026\nRegister now!\n\n@HDFC_Bank \n@thebajajgroup \n@UPGovt \n@ITCCorpCom \n@RIL_Updates \n\n#RisingBharatSummit #NorthEdition #BuildingAnEnterpriseNation",
+      "created_at": "2026-11-16T06:40:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122218106953011246",
+      "image": "https://pbs.twimg.com/media/HXOZvgWa8AAAZOR.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122217799829586398",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🚨 SEBI may ease rules for foreign investors, raise FPI beneficial ownership threshold to 25%\n\nSEBI may propose raising the beneficial ownership threshold for foreign portfolio investors from 10% to 25%, easing disclosure requirements. The change would require amendments to PMLA rules.\n\n@BrajeshKMJi reports 👇 \nhttps://t.co/Iaqd4N97IJ",
+      "created_at": "2026-11-16T06:38:47+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122217799829586398",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122215842012160088",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Trump picks Nvidia, OpenAI, Microsoft among AI 'national champions' to take on China: Report\n\n- US plans to label top AI firms as national champions.\n- Goal is to help US tech firms compete with China.\n- Selected firms may get overseas support and financing.\n\nRead More:\nhttps://t.co/7WYLplVf2x",
+      "created_at": "2026-11-16T06:31:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122215842012160088",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122213744336089449",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Britain's Prince William and Princess Kate interact with cricket legend Sachin Tendulkar and others during their visit to Mumbai. \n\nThe Prince and Princess of Wales are in India for a three-day visit centred around the 2026 Earthshot Prize.\n\n#PrinceWilliam #PrincessKate #SachinTendulkar #Mumbai #EarthshotPrize",
+      "created_at": "2026-11-16T06:22:40+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122213744336089449",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122213430438613309",
+      "handle": "HiSolieeee",
+      "display_name": "Alex Carter",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$KALYANKJIL\n$BELRISE\n$KAYNES\n\nContact her to join a group chat for free real-time news and trading strategies👉:https://t.co/cWiziSVb4q\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks",
+      "created_at": "2026-11-16T06:21:25+00:00",
+      "url": "https://x.com/HiSolieeee/status/2122213430438613309",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122213073939284190",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Beyond the Mat: The Spirit of India's Sporting Ambition\n\nBehind every sporting achievement lies years of perseverance, resilience and an unwavering commitment to excellence. As Indian athletes continue to break barriers across disciplines, their journeys are inspiring greater participation and bringing new recognition to India's sporting talent.\n\nNeelam Sirohi, Freestyle Wrestler, will join the News18 Rising Bharat Summit – North Edition, sharing her experiences in competitive wrestling, the determination required to excel in the sport and the evolving opportunities for Indian athletes on the national and international stage.\n\n📍 Lucknow | 17 November 2026\nRegister now!\n\n@HDFC_Bank \n@thebajajgroup \n@UPGovt \n@ITCCorpCom \n@RIL_Updates \n\n#RisingBharatSummit #NorthEdition #BuildingAnEnterpriseNation",
+      "created_at": "2026-11-16T06:20:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122213073939284190",
+      "image": "https://pbs.twimg.com/media/HXOXb10bgAAcG4W.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122212432655601957",
+      "handle": "HiSolieeee",
+      "display_name": "Alex Carter",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$SBIN\n$KALYANKJIL\n$BELRISE\n\nContact her to join a group chat for free real-time news and trading strategies👉:https://t.co/cWiziSVb4q\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks",
+      "created_at": "2026-11-16T06:17:27+00:00",
+      "url": "https://x.com/HiSolieeee/status/2122212432655601957",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122212056854401462",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Britain's Prince William takes to the cricket pitch for a game of gully cricket with young players in Mumbai. Princess Kate and cricket legend Sachin Tendulkar are also present as the royal couple begins a three-day visit to India centred around the 2026 Earthshot Prize. 🏏\n\n#PrinceWilliam #PrincessKate #SachinTendulkar #Mumbai #EarthshotPrize",
+      "created_at": "2026-11-16T06:15:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122212056854401462",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122210873523818942",
+      "handle": "ghoderaokaruna",
+      "display_name": "Dr. Karuna Nirmala Prabhakar Ghoderao",
+      "text": "🔶List of 52 Week High Stocks🔶\n\nAARTIDRUGS \nAARTIPHARM \nABDL \nACUTAAS \nAGARWALEYE \nALEMBICLTD \nALICON \nANANDRATHI \nAPOLLO \nASAHIINDIA \nATHERENERG \nBONFIG \nDCBBANK \nDHANBANK \nEIMCOELECO \nEMCURE \nHONASA \nINDGN \nKALYANKJIL \nMCX \nMMFL \nMOTILALOFS\nNAVINFLUOR \nNAZARA \nNYKAA",
+      "created_at": "2026-11-16T06:11:15+00:00",
+      "url": "https://x.com/ghoderaokaruna/status/2122210873523818942",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122210842678796479",
+      "handle": "HiSolieeee",
+      "display_name": "Alex Carter",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$BHARTIARTL\n$SBIN\n$KALYANKJIL\n\nContact her to join a group chat for free real-time news and trading strategies👉:https://t.co/cWiziSVb4q\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks",
+      "created_at": "2026-11-16T06:11:08+00:00",
+      "url": "https://x.com/HiSolieeee/status/2122210842678796479",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122210116816797846",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCOpinion | Every winter, India rediscovers its anger over pollution, officialdom repeats the blame game and moves on. It is a deeper failure of urban governance, and hypocrisy around it. We surely shouldn’t have to wait till #ViksitBharat for breathing quality air, writes @ssmumbai\n\nhttps://t.co/onvGbUJCFX",
+      "created_at": "2026-11-16T06:08:15+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122210116816797846",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122210048558674284",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Cricket | Jay Shah reappointed as ICC chairman for second term\n\nJay Shah was appointed as ICC chairman in December 2024, following his administrative roles at BCCI and Asian Cricket Council.\n\nRead More:\nhttps://t.co/zYGjdLX6XI",
+      "created_at": "2026-11-16T06:07:58+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122210048558674284",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122209819935519155",
+      "handle": "HiSolieeee",
+      "display_name": "Alex Carter",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$BHARTIARTL\n$KALYANKJIL\n$BELRISE\n\nContact her to join a group chat for free real-time news and trading strategies👉:https://t.co/cWiziSVb4q\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks",
+      "created_at": "2026-11-16T06:07:04+00:00",
+      "url": "https://x.com/HiSolieeee/status/2122209819935519155",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122208930868908461",
+      "handle": "Lakhotia_Cap",
+      "display_name": "Lakhotia Capital",
+      "text": "KALYANKJIL 23 NOV 700 PUT\n\nCMP - 14.9\n\nTarget - 15.5/16/17/18\n\nStop - 13.5/13.8\n\nDYODD",
+      "created_at": "2026-11-16T06:03:32+00:00",
+      "url": "https://x.com/Lakhotia_Cap/status/2122208930868908461",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122208232248639627",
+      "handle": "wegro_app",
+      "display_name": "Wegro App",
+      "text": "📺 Kalyan Jewellers Share Price: भाग रहा Kalyan Jewellers India Share, क्या अभी एंट्री लेना सही नहीं? Kalyan Jewellers India Share Price, Kalyan Jewellers Share, Kalyan Jewellers share price, Kalyan Jewellers stock analysis ...\n\n📊 KALYAN JEWELLERS INDIA LTD | 🏷️ Video feed\n\n📹 WATCH VIDEO: https://t.co/bTGJXAvGRT\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbq5q",
+      "created_at": "2026-11-16T06:00:45+00:00",
+      "url": "https://x.com/wegro_app/status/2122208232248639627",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122208049943183792",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Rajesh Exports Q2 net profit falls nearly 44% YoY as sales fall over 98%; shares decline 2%\n\n- Rajesh Exports Q2 net profit slumped 44% to Rs 10.1 crore.\n- Quarterly revenue from operations fell over 98% year-on-year.\n- Sebi confirmed restrictions over financial misrepresentation.\n\nRead More:\nhttps://t.co/cTPeDyvrda",
+      "created_at": "2026-11-16T06:00:02+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122208049943183792",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122208048722702748",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Aiming Higher: India's Rise in Global Sports\n\nIndia's sporting ambitions are reaching new heights, with athletes making their mark through dedication, discipline and exceptional performances. From national championships to international arenas, Indian sportspersons are inspiring a generation and strengthening India's presence on the global sporting stage.\n\nRohit Yadav, Indian Javelin Thrower, will join the News18 Rising Bharat Summit – North Edition, sharing his journey in athletics, the challenges of competing at the highest level and how India's growing sporting ecosystem can nurture future champions.\n\n📍 Lucknow | 17 November 2026\nRegister now!\n\n @HDFC_Bank \n@thebajajgroup \n@UPGovt \n@ITCCorpCom \n@RIL_Updates \n\n#RisingBharatSummit #NorthEdition #BuildingAnEnterpriseNation",
+      "created_at": "2026-11-16T06:00:02+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122208048722702748",
+      "image": "https://pbs.twimg.com/media/HXOVltbbUAA0WuB.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122206995956781258",
+      "handle": "khiboubkr",
+      "display_name": "Victoria Brooks",
+      "text": "I have created an exclusive WhatsApp group for shareholders and active traders of \n$ICICIBANK \n$RELIANCE\n$KALYANKJIL —a space for us to connect, share insights, and stay updated on the latest developments.\nCome join the discussion on stock market trends!\n\n🔗https://t.co/0GofA9PCbu\n\nClick the link and reply with \"6\" to join. #Stocks",
+      "created_at": "2026-11-16T05:55:51+00:00",
+      "url": "https://x.com/khiboubkr/status/2122206995956781258",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122205612104954085",
+      "handle": "khiboubkr",
+      "display_name": "Victoria Brooks",
+      "text": "I have created an exclusive WhatsApp group for shareholders and active traders of \n$KALYANKJIL \n$AXISBANK\n$EICHERMOT —a space for us to connect, share insights, and stay updated on the latest developments.\nCome join the discussion on stock market trends!\n\n🔗https://t.co/0GofA9PCbu\n\nClick the link and reply with \"6\" to join. #Stocks",
+      "created_at": "2026-11-16T05:50:21+00:00",
+      "url": "https://x.com/khiboubkr/status/2122205612104954085",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122204716813987961",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Inox Wind shares plunge 10%, biggest fall in over two years, as Q2 profit drops 43%; margins disappoint\n\n- Inox Wind shares plunge 10% on poor Q2 results.\n- Net profit falls 43% to Rs 68.55 crore for Q2 FY27.\n- Motilal Oswal retains Buy rating with a target of Rs 74.\n\n@a_shaleen with more details\nhttps://t.co/uYlJ0MeVnx",
+      "created_at": "2026-11-16T05:46:47+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122204716813987961",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122202179423662337",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Dhan is coming to Moneycontrol FiDEX Edition 2 🤝\nMeet Bhupesh Maisuria, Product &amp; Strategy Head, Omnichannel, at Stall V12 and see what Dhan is building for partners.\n\n📍 NESCO Hall 6, Mumbai | 25–26 Nov\n\nRegister: https://t.co/IRo1524BgX https://t.co/kvovyboPqO",
+      "created_at": "2026-11-16T05:36:42+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122202179423662337",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122201304701521945",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "What's Next for India's Ever-Growing Consumer Market?\n\nIndia's consumption story continues to evolve, driven by changing consumer preferences, rising aspirations and expanding market opportunities. From everyday essentials to emerging consumption trends, understanding what drives demand will be crucial to sustaining India's economic momentum.\n\nJai Kumar Agarwal, Co-founder and MD, Gyan Dairy, will join the News18 Rising Bharat Summit – North Edition, sharing his perspectives on India's evolving consumption landscape, the changing dynamics of the dairy and FMCG sectors, and the opportunities that will drive the next phase of consumer growth.\n\n📍 Lucknow | 17 November 2026\nRegister now!\n\n@HDFC_Bank \n@thebajajgroup \n@UPGovt \n@ITCCorpCom \n@RIL_Updates \n\n#RisingBharatSummit #NorthEdition #BuildingAnEnterpriseNation",
+      "created_at": "2026-11-16T05:33:14+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122201304701521945",
+      "image": "https://pbs.twimg.com/media/HXOSyzLbYAAj3Gq.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122200490716930162",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Jensen Huang’s exit from NVIDIA unlikely to disrupt AI investment cycle in near term, says IBM CEO Arvind Krishna\n\n- Jensen Huang resigns as Nvidia CEO after 33 years.\n- IBM CEO sees no immediate AI investment slowdown.\n- CFO Colette Kress is named interim Nvidia CEO.\n\n@DanishKh4n reports:\n\nRead More:\nhttps://t.co/fqPkiEklAl",
+      "created_at": "2026-11-16T05:30:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122200490716930162",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122199918853165513",
+      "handle": "khiboubkr",
+      "display_name": "Victoria Brooks",
+      "text": "I have created an exclusive WhatsApp group for shareholders and active traders of \n$HDFCBANK \n$RELIANCE\n$KALYANKJIL —a space for us to connect, share insights, and stay updated on the latest developments.\nCome join the discussion on stock market trends!\n\n🔗https://t.co/0GofA9PCbu\n\nClick the link and reply with \"6\" to join. #Stocks",
+      "created_at": "2026-11-16T05:27:43+00:00",
+      "url": "https://x.com/khiboubkr/status/2122199918853165513",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122199485245981155",
+      "handle": "stockwatch_live",
+      "display_name": "Stockwatch.live",
+      "text": "$KALYANKJIL Kalyan Jewellers India Q2 FY27 concall: 31% growth, record PAT—but H2 vague\n\nRevenue ₹10,323 Cr (+31% YoY) · PAT ₹427 Cr (+64% YoY) · OPM 7.0% (stable YoY)\n\nKey takeaways from the call:\n• Festive season drove 31% revenue YoY in Q2\n• PAT surged 64% despite 7% gold price inflation\n• Forward H2 guidance stays conservative, vague\n\nFrom the Q&A:\nQ (UBS): SSG growth tracking clean; custom duty boost? Is Q4 30%+ growth sustainable given wedding season timing and base of last year?\nManagement: SSGs >20% in Q2. Minimum 25% revenue growth target for year. Q1 was better, Q2 better than estimates, Q3 as we speak is better. Growth trajectory very important, base is high, momentum great. Not giving number guidance.\n\nQ (HSBC): You're planning next 4 stores. Give ballpark on ATM productivity metrics. Expansion timeline?\nManagement: ATM performance exceeded expectations. Competitively sensitive so not sharing metrics. No immediate expansion beyond Tamil Nadu.\n\nGuidance: Minimum 25% SSG revenue growth for FY27; PBT margins expected stable at prior FY26 levels (5.5–5.6%) on conservative basis. Non-GML debt-free by September 2026 (claimed complete). 4 new showroom launches planned (2 Q3, 2 Q4).\n\nManagement outlook: near term optimistic, long term optimistic\n\n#Concall #KALYANKJIL #StockMarketIndia\n\nhttps://t.co/oNJJcGRq1t",
+      "created_at": "2026-11-16T05:26:00+00:00",
+      "url": "https://x.com/stockwatch_live/status/2122199485245981155",
+      "image": "https://pbs.twimg.com/media/HXORKdxa8AAfzOA.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122198620732874954",
+      "handle": "khiboubkr",
+      "display_name": "Victoria Brooks",
+      "text": "I have created an exclusive WhatsApp group for shareholders and active traders of \n$KAYNES \n$KALYANKJIL\n$BELRISE —a space for us to connect, share insights, and stay updated on the latest developments.\nCome join the discussion on stock market trends!\n\n🔗https://t.co/0GofA9PCbu\n\nClick the link and reply with \"6\" to join. #Stocks",
+      "created_at": "2026-11-16T05:22:34+00:00",
+      "url": "https://x.com/khiboubkr/status/2122198620732874954",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122196609920577971",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Aditya Birla Housing Finance may explore capital raise; IPO among options, says MD Pankaj Gadgil \n\n- Aditya Birla Housing Finance eyes Rs 1 lakh crore AUM by FY29.\n- Company may consider a stock exchange listing to raise capital.\n- Housing demand remains resilient despite rising interest rates.\n\n@archishmaaa with more details\nhttps://t.co/A3uBC5jDA6",
+      "created_at": "2026-11-16T05:14:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122196609920577971",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122195077539954758",
+      "handle": "wegro_app",
+      "display_name": "Wegro App",
+      "text": "𝗞𝗮𝗹𝘆𝗮𝗻 𝗝𝗲𝘄𝗲𝗹𝗹𝗲𝗿𝘀 𝗜𝗻𝗱𝗶𝗮 𝗟𝘁𝗱 𝗤2 𝗙𝗬27 𝗘𝗮𝗿𝗻𝗶𝗻𝗴𝘀 𝗖𝗮𝗹𝗹 𝗦𝘂𝗺𝗺𝗮𝗿𝘆 💎:\n\nKalyan Jewellers India Limited delivered a highly satisfying Q2 FY27 performance, marked by robust demand and strong same-store sales growth across key markets. The company is optimistic about the ongoing festive and wedding seasons, expecting a strong finish to the fiscal year. 📈\n\n𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀 (𝗤2 𝗙𝗬27):\n\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹10,323 Cr\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗔𝗱𝗷𝘂𝘀𝘁𝗲𝗱 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹9,943 Cr\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗘𝗕𝗜𝗧𝗗𝗔: ₹644 Cr (vs ₹497 Cr YoY)\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗣𝗿𝗼𝗳𝗶𝘁 𝗔𝗳𝘁𝗲𝗿 𝗧𝗮𝘅 (𝗣𝗔𝗧): ₹427 Cr (vs ₹261 Cr YoY)\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗔𝗱𝗷𝘂𝘀𝘁𝗲𝗱 𝗣𝗔𝗧: ₹333 Cr\n\n𝗜𝗻𝗱𝗶𝗮 𝗕𝘂𝘀𝗶𝗻𝗲𝘀𝘀 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n\n- 𝗜𝗻𝗱𝗶𝗮 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹9,007 Cr (vs ₹6,843 Cr YoY)\n- 𝗜𝗻𝗱𝗶𝗮 𝗘𝗕𝗜𝗧𝗗𝗔: ₹549 Cr (vs ₹432 Cr YoY)\n- 𝗜𝗻𝗱𝗶𝗮 𝗔𝗱𝗷𝘂𝘀𝘁𝗲𝗱 𝗘𝗕𝗜𝗧𝗗𝗔: ₹496 Cr\n- 𝗜𝗻𝗱𝗶𝗮 𝗣𝗔𝗧: ₹424 Cr (vs ₹262 Cr YoY) - a 62% growth YoY\n- 𝗜𝗻𝗱𝗶𝗮 𝗔𝗱𝗷𝘂𝘀𝘁𝗲𝗱 𝗣𝗔𝗧: ₹330 Cr\n\n𝗠𝗶𝗱𝗱𝗹𝗲 𝗘𝗮𝘀𝘁 𝗕𝘂𝘀𝗶𝗻𝗲𝘀𝘀 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹960 Cr (vs ₹860 Cr YoY)\n- 𝗘𝗕𝗜𝗧𝗗𝗔: ₹71 Cr (vs ₹61 Cr YoY)\n- 𝗣𝗿𝗼𝗳𝗶𝘁: ₹12 Cr (vs ₹15 Cr YoY)\n\n𝗙𝗶𝗿𝘀𝘁 𝗛𝗮𝗹𝗳 (𝗛1 𝗙𝗬27) 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹20,912 Cr (38% growth YoY)\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗣𝗔𝗧: ₹776 Cr (48% growth YoY)\n- 𝗔𝗱𝗷𝘂𝘀𝘁𝗲𝗱 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗣𝗔𝗧: ₹651 Cr\n\n𝗞𝗲𝘆 𝗢𝗽𝗲𝗿𝗮𝘁𝗶𝗼𝗻𝗮𝗹 & 𝗦𝘁𝗿𝗮𝘁𝗲𝗴𝗶𝗰 𝗨𝗽𝗱𝗮𝘁𝗲𝘀:\n\n- 𝗡𝗲𝘄 𝗕𝗿𝗮𝗻𝗱 𝗟𝗮𝘂𝗻𝗰𝗵: The regional brand 'ATM' launched in T. Nagar, Chennai, has shown strong revenue traction & positive reception. ✨\n- 𝗦𝗵𝗼𝘄𝗿𝗼𝗼𝗺 𝗘𝘅𝗽𝗮𝗻𝘀𝗶𝗼𝗻: Plans are underway to launch 4 new showrooms this fiscal year (2 in Q3, 2 in Q4).\n- 𝗙𝗲𝘀𝘁𝗶𝘃𝗲 𝗦𝗲𝗮𝘀𝗼𝗻: Demand remained robust during Navratri & Dhanteras, with excellent growth witnessed. The company is confident in exceeding targeted revenue growth for the festive season. 🥳\n- 𝗖𝘂𝘀𝘁𝗼𝗺𝗲𝗿 𝗕𝗲𝗵𝗮𝘃𝗶𝗼𝗿: Customers generally shop with a budget, and volume growth is observed when gold prices are stable or lower. The shift towards studded jewelry due to changing tastes & preferences is also continuing.\n- 𝗗𝗲𝗯𝘁 𝗥𝗲𝗱𝘂𝗰𝘁𝗶𝗼𝗻: The company has achieved its goal of repaying non-GML debt. Land sale proceeds are being utilized for debt reduction, with further land parcels to be released soon. 💰\n- 𝗖𝗮𝘀𝗵 𝗙𝗹𝗼𝘄 𝗨𝘁𝗶𝗹𝗶𝘇𝗮𝘁𝗶𝗼𝗻: Focus will be on strengthening existing showrooms and potentially flagship stores, with no immediate plans to launch ATM in new states beyond Tamil Nadu.\n- 𝗘𝘅𝗰𝗵𝗮𝗻𝗴𝗲 𝗣𝗿𝗼𝗴𝗿𝗮𝗺: The company has implemented strategies like the 'encash program' to make the exchange business margin-accretive, contributing to stable margins.\n\nThe management expressed confidence in maintaining stable PBT margins in H2 FY27, expecting them to be higher than H1.\n\n📊 KALYAN JEWELLERS INDIA LTD | 🏷️ Earnings Call Transcript\n\n🌐 Details: https://t.co/QducWAuYYu\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
+      "created_at": "2026-11-16T05:08:29+00:00",
+      "url": "https://x.com/wegro_app/status/2122195077539954758",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122191195179016638",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Oil India: Nomura maintains 'Neutral', keeps target price at Rs 500 after Q2 results\n\n- Nomura keeps Neutral rating on Oil India with Rs 500 target.\n- FY27 and FY28 earnings estimates raised on higher oil prices.\n- NRL throughput estimates cut due to slower ramp-up.\n\nRead More:\nhttps://t.co/zM3Iy4fTmr",
+      "created_at": "2026-11-16T04:53:03+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122191195179016638",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122189303229100167",
+      "handle": "myAlerts_in",
+      "display_name": "myAlerts.in",
+      "text": "#JUBLPHARMA\nJubilant Pharmova Ltd | Q2FY27 Earnings Concall Takeaways | Full Call Intelligence on Stocksigma Concall Monitor https://t.co/AAfVljEFxg",
+      "created_at": "2026-11-16T04:45:32+00:00",
+      "url": "https://x.com/myAlerts_in/status/2122189303229100167",
+      "image": "https://pbs.twimg.com/media/HXOH7LHaYAAvNBj.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122186349197545841",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Tata Motors PV shares plunge 7%, top Nifty loser as weak JLR margins, guidance cut weigh on outlook\n\nRead More:\nhttps://t.co/LaXoy4eHH4",
+      "created_at": "2026-11-16T04:33:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122186349197545841",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122183752885694895",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Harsh Goenka weighs in on Tata Sons listing row: Why he believes its value goes beyond market price\n\n- Harsh Goenka supports keeping Tata Sons' current structure.\n- Noel Tata warned listing could impact group philanthropy.\n- RBI regulations previously mandated a stock market listing.\n\nRead More:\nhttps://t.co/J8Ox25RhyG",
+      "created_at": "2026-11-16T04:23:29+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122183752885694895",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122183245391602068",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCOpinion | PLI has lifted investment and production, but jobs and domestic value addition lag. What must change for the manufacturing push to deliver?\n\nhttps://t.co/C4OgG00hNT",
+      "created_at": "2026-11-16T04:21:28+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122183245391602068",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122182977044291995",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCOpinion | The biggest question at Nvidia isn't who replaces Huang — It's whether interim CEO Collette Kress will cut his $500 billion backstop bet.\n\nhttps://t.co/yY0EFmKUtB",
+      "created_at": "2026-11-16T04:20:24+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122182977044291995",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122182699192619477",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCOpinion | The upward revision in fertiliser subsidy rates will bring relief to manufacturers. Higher subsidy rates will improve the production viability of manufacturers and can lower fertiliser rates for farmers.\n\nhttps://t.co/i6x0zVNAYx",
+      "created_at": "2026-11-16T04:19:18+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122182699192619477",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122181364875427870",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#India | Ties with ASEAN countries at heart of India's Act East Policy: PM Modi ahead of Manila visit\n\nThe prime minister will also interact with the Indian community in the Philippines, whose contributions, he said, strengthen the bonds of friendship between the two countries.\n\nRead More:\nhttps://t.co/AAYmOTRuJU",
+      "created_at": "2026-11-16T04:14:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122181364875427870",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122181113120788773",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#INPICS | In pictures: Devotees, leaders mark the final day of Chhath Puja\n\nFrom Delhi and Patna to Lucknow, Gorakhpur and Bhubaneswar, devotees and political leaders gather at Chhath ghats to offer ‘usha arghya’ to the rising Sun on the final day of Chhath Puja. 🙏🌅\n\n#ChhathPuja #ChhathCelebrations #Delhi #Bihar #UttarPradesh #Odisha",
+      "created_at": "2026-11-16T04:13:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122181113120788773",
+      "image": "https://pbs.twimg.com/media/HXN5egJbQAA5zJT.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122180488404295717",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#TechWithMC | Party's over: Samsung, Xiaomi raise smartphone prices by up to 19% after Diwali\n\n- Samsung and Xiaomi raise phone prices by up to 18.75% in India.\n- Hikes driven by rising costs for memory and components.\n- Oppo, Vivo, and Realme expected to raise prices soon.\n\n@DanishKh4n with more details\nhttps://t.co/hIO0O9lN6H",
+      "created_at": "2026-11-16T04:10:31+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122180488404295717",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122178670307815456",
+      "handle": "ai_EquiSense",
+      "display_name": "EquiSense_ai",
+      "text": "🎙️ Jubilant Pharmova (JUBLPHARMA) call was streaming live on EquiSense, it just ended. Here is the decode ⬇️\n\n#JUBLPHARMA #EarningsCall https://t.co/51xO7zhbzc",
+      "created_at": "2026-11-16T04:03:17+00:00",
+      "url": "https://x.com/ai_EquiSense/status/2122178670307815456",
+      "image": "https://pbs.twimg.com/media/HXN-QQqagAA6iL_.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122176662414774405",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#StartupsWithMC | Thermal power, space tech to drive Zetwerk’s next phase of growth, says CEO Amrit Acharya\n\n- Zetwerk targets thermal power and space tech for growth.\n- Order book surged 67% to Rs 14,600 crore amid supply limits.\n- Q2 revenue rose 18% as net loss widened to Rs 88.11 crore.\n\n@chandrarsrikant & @AryamanGupta_ with more details\nhttps://t.co/Q3yas4O7fC",
+      "created_at": "2026-11-16T03:55:19+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122176662414774405",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122176342792053143",
+      "handle": "Prabinmen",
+      "display_name": "PM",
+      "text": "#Kalyan Jewellers CMP 727.5 #KALYANKJIL \n🔔🔔🔔\nbrilliant move - 787 positionally and then 866 - i won't be surprised to see 4 digits at some stage",
+      "created_at": "2026-11-16T03:54:02+00:00",
+      "url": "https://x.com/Prabinmen/status/2122176342792053143",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122175576731730388",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Jimmy Tata backs Chandrasekaran's third term, Tata Sons listing amid rift with Noel Tata: Report\n\n- Jimmy Tata backs N Chandrasekaran's reappointment.\n- He supports RBI's view on Tata Sons' listing.\n- Views diverge from half-brother Noel Tata.\n\nRead More:\nhttps://t.co/siJ6R5sJFz",
+      "created_at": "2026-11-16T03:51:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122175576731730388",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122175338302349745",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#OpeningBell | Markets open in the green🟢\n\nSensex rallying 600 points and Nifty trading above 25,200. \n\nEicher Motors gains 3%, while Kaynes Technology slides 10% in early trade. 📈\n\nCatch LIVE updates⏬\nhttps://t.co/H84j3SFefn https://t.co/UT5Wv5i3Gq",
+      "created_at": "2026-11-16T03:50:03+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122175338302349745",
+      "image": "https://pbs.twimg.com/media/HXN7BJ1a4AATV3P.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122174448719806811",
+      "handle": "punitbansal14",
+      "display_name": "Punit",
+      "text": "Diagnostics | Reagent Purchase Model | AIIMs India\n\n📸1: Kopran Diagnostic – Revenue Breakup\n\nThe bulk of our revenue comes from the consumables business, which is what we call reagents. So reagents contributes to almost 80% of -- 75%, 78% of our top line.\n\n📸2: Kopran Reagent Contribution (80%) vs Diagnostic Companies' Reagent-Purchase Model - India\n\nDue to the capital-intensive nature of the equipment, large diagnostic chains are inclining towards the reagent-purchase model. In this model, diagnostic companies usually install the equipment on rent, provided they purchase reagents from the manufacturer for a certain period or agree to pay the manufacturer a specified price per test conducted\n\nKopran - AIIMS Jodhpur, AIIMS Delhi, AIIMS Patna & AIIMS Bhubaneswar - Beckman Device and Reagent Purchase Model - Repeat Business",
+      "created_at": "2026-11-16T03:46:31+00:00",
+      "url": "https://x.com/punitbansal14/status/2122174448719806811",
+      "image": "https://pbs.twimg.com/media/HXNynyAa0AAhgcj.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122168291716374972",
+      "handle": "india_BullAi",
+      "display_name": "Bull Ai - India",
+      "text": "Jubilant Pharmova's Q2 FY27 concall is LIVE 🔴\n\nManagement has started speaking. We are following the call live, and the transcript updates as they go.\n\nNot investment advice.\n\n🎧 Listen live and read the transcript: https://t.co/iXN6H64bFp https://t.co/ThXEvHKDVW",
+      "created_at": "2026-11-16T03:22:03+00:00",
+      "url": "https://x.com/india_BullAi/status/2122168291716374972",
+      "image": "https://pbs.twimg.com/media/HXN0z_eagAEBQJZ.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122164155914576317",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Global markets weak | Nvidia earnings, Anthropic IPO ahead | Crude prices decline\n\n@SurabhiUpadhyay https://t.co/jvRSsSgEww",
+      "created_at": "2026-11-16T03:05:37+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122164155914576317",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122164072066265530",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Global markets weak | Nvidia earnings, Anthropic IPO ahead | Crude prices decline https://t.co/VbtZzC8GE5",
+      "created_at": "2026-11-16T03:05:17+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122164072066265530",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122163749754671118",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#World | Nvidia crisis: Bessent calls for 'dramatic shake-up', wants next CEO from outside company\n\nScott Bessent has urged Nvidia's board to appoint an external CEO and demanded answers over alleged diversion of AI chips to China, intensifying scrutiny of the chipmaker ahead of its quarterly earnings.\n\nRead More:\nhttps://t.co/M194nka2f5",
+      "created_at": "2026-11-16T03:04:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122163749754671118",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122162951964786885",
+      "handle": "Ashish_shah72",
+      "display_name": "ASHISH SHAH",
+      "text": "STOCKS TO WATCH: SHRIRAMPPS, TIIL, MARSONS, GODREJIND, EICHERMOT, INOXGREEN, INOXWIND, SDBL, BALAJITELE, POLYPLEX, JUBLPHARMA, DEEPAKFERT, TVSSRICHAK, MBAPL, KRISHANA, PATANJALI, JAMNAAUTO, DR REDDY'S\n\nShrirampps: Q2 Cons Net Profit 216m Rupees Vs 86m (YoY)  Q2 Revenue 1.84b Rupees Vs 2b (YoY)\n\nTiil: Q2 Cons Net Profit 1.15b Rupees Vs 766.4m (YoY)  Q2 Revenue 9.35b Rupees Vs 7.25b (YoY)  Q2 EBITDA 1.75b Rupees Vs 1.23b (YoY); Q2 EBITDA Margin 18.71% Vs 16.92% (YoY)\n\nMarsons: Q2 Cons Net Profit 133.1m Rupees Vs 92m (YoY)  Q2 Revenue 965.5m Rupees Vs 598m (YoY)  Q2 EBITDA 186.8m Rupees Vs 85.7m (YoY); Q2 EBITDA Margin 19.35% Vs 14.33% (YoY)\n\nGodrejind: Q2 Cons Net Profit 5.6b Rupees Vs 2.42b (YoY)  Q2 Revenue 73.03b Rupees Vs 50.32b (YoY)  Q2 EBITDA 4.29b Rupees Vs 1.34b (YoY); Q2 EBITDA Margin 5.87% Vs 2.66% (YoY)\n\nEichermot: Q2 Cons Net Profit 15.73b Rupees Vs 13.69b (YoY)  Q2 Revenue 74.22b Rupees Vs 61.72b (YoY)  Q2 EBITDA 17.6b Rupees Vs 15.12b (YoY); Q2 EBITDA Margin 23.71% Vs 24.50% (YoY)\n\nInoxgreen: Q2 Cons Net Profit 432.5m Rupees Vs 279m (YoY)  Q2 Revenue 887.2m Rupees Vs 820.3m (YoY)  Q2 EBITDA 362.8m Rupees Vs 47.4m (YoY); Q2 EBITDA Margin 40.89% Vs 5.78% (YoY)\n\nInoxwind: Q2 Cons Net Profit 685.5m Rupees Vs 1.21b (YoY)  Q2 Revenue 13.54b Rupees Vs 11.19b (YoY)  Q2 EBITDA 2.05b Rupees Vs 2.28b (YoY); Q2 EBITDA Margin 15.15% Vs 20.35% (YoY)\n\nSdbl: Q2 Cons Net Loss 40.3m Rupees Vs Profit 190.5m (YoY)  Q2 Revenue 4.26b Rupees Vs 4.76b (YoY)  Q2 EBITDA 176.4m Rupees Vs 400.9m (YoY); Q2 EBITDA Margin 4.14% Vs 8.42% (YoY)\n\nBalajitele: Q2 Cons Net Profit 325.6m Rupees Vs Loss 48.4m (YoY)  Q2 Revenue 1.81b Rupees Vs 488.1m (YoY)  Q2 EBITDA 439.8m Rupees Vs Loss 69.8m (YoY); Q2 EBITDA Margin 24.28%\n\nPolyplex: Q2 Cons Net Profit 1b Rupees Vs 247m (YoY)  Q2 Revenue 23.24b Rupees Vs 17.94b (YoY)  Q2 EBITDA 2.88b Rupees Vs 1.03b (YoY); Q2 EBITDA Margin 12.41% Vs 5.72% (YoY)\n\nJublpharma: Q2 Cons Net Profit 312m Rupees Vs 1.2b (YoY)  Q2 Revenue 23.7b Rupees Vs 19.66b (YoY)  Q2 EBITDA 2.4b Rupees Vs 3.41b (YoY); Q2 EBITDA Margin 10.15% Vs 17.36% (YoY)\n\nDeepakfert: Q2 Cons Net Profit 3.94b Rupees Vs 2.13b (YoY)  Q2 Revenue 33.34b Rupees Vs 30.06b (YoY)  Q2 EBITDA 7.5b Rupees Vs 4.64b (YoY); Q2 EBITDA Margin 22.48% Vs 15.42% (YoY)\n\nTvssrichak: Q2 Cons Net Profit 444m Rupees Vs 110m (YoY)  Q2 Revenue 12.73b Rupees Vs 9.3b (YoY)  Q2 EBITDA 1b Rupees Vs 658m (YoY); Q2 EBITDA Margin 8.22% Vs 7.11% (YoY)\n\nMbapl: Q2 Sl Net Profit 778m Rupees Vs 305m (YoY)  Q2 Revenue 7.15b Rupees Vs 4.5b (YoY)  Q2 EBITDA 1.91b Rupees Vs 618m (YoY); Q2 EBITDA Margin 26.70% Vs 13.74% (YoY)\n\nKrishana: Q2 Sl Net Profit 779m Rupees Vs 332m (YoY)  Q2 Revenue 7b Rupees Vs 6.1b (YoY)  Q2 EBITDA 1.27b Rupees Vs 732m (YoY); Q2 EBITDA Margin 18.13% Vs 12.04% (YoY)\n\nPatanjali: Q2 Sl Net Profit 4.2b Rupees Vs 5.2b (YoY)  Q2 Revenue 113.2b Rupees Vs 97.99b (YoY)  Q2 EBITDA 4.26b Rupees Vs 5.5b (YoY); Q2 EBITDA Margin 3.76% Vs 5.63% (YoY)\n\nJamnaauto: Q2 Cons Net Profit 564m Rupees Vs 397m (YoY)  Q2 Revenue 7.9b Rupees Vs 5.3b (YoY) || Q2 EBITDA 1.07b Rupees Vs 689m (YoY); Q2 EBITDA Margin 13.62% Vs 12.98% (YoY)\n\nDr Reddy's: Co Gets Vai From FDA For Hyderabad Fto-3 Unit",
+      "created_at": "2026-11-16T03:00:50+00:00",
+      "url": "https://x.com/Ashish_shah72/status/2122162951964786885",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122159529525940240",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Trade Spotlight: How should you trade Alicon Castalloy, Ramkrishna Forgings, Kwality Walls, Indus Towers, GE Vernova T&amp;D, and others on November 16?\n\nMore details\nhttps://t.co/gyvFjs4Vvl",
+      "created_at": "2026-11-16T02:47:14+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122159529525940240",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122158608804893158",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | GIFT Nifty jumps 100 pts, signals firm start for Sensex, Nifty despite weak Asian markets; Nvidia, Fed in focus\n\n- Sensex and Nifty are likely to open firm on Monday.\n- GIFT Nifty trades with gains of nearly 100 points.\n- Asian markets decline amid uncertainty over the AI boom.\n\nRead More:\nhttps://t.co/dHMBS1QHir",
+      "created_at": "2026-11-16T02:43:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122158608804893158",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122158463916896530",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#World | US struggles to counter Iranian drone threat as Pentagon's $7 billion defence push faces setbacks\n\n- US military tested counter-drone tech in the Arizona desert.\n- Pentagon plans $7 billion spend to catch up on drone defenses.\n- Extreme heat and sensors caused some test systems to falter.\n\nRead More:\nhttps://t.co/jDyVniUFPD",
+      "created_at": "2026-11-16T02:43:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122158463916896530",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122157563747951016",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Trading Plan: Can Nifty 50, Bank Nifty rebound after profit booking?\n\n- Nifty 50 may attempt a rebound towards 25,200-25,300, followed by 25,424\n- On downside, immediate support is placed at 25,000, followed by 24,800\n- Bank Nifty needs to defend 60,700 to sustain its uptrend towards 61,300-61,600\n\nRead More:\nhttps://t.co/GYh1MsL0ak",
+      "created_at": "2026-11-16T02:39:25+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122157563747951016",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122156984774648005",
+      "handle": "rnarayanan80",
+      "display_name": "Narayanan R 🇮🇳",
+      "text": "TOP 15 Stocks In Focus - 16-11-26\n\n1-EICHERMOT/ASHOKLEY\n2-TMPV\n3-ABB/KAYNES\n4-HINDALCO\n5-WABAG\n6-ZYDUSLIFE/JUBLPHARMA\n7-TVSMOTOR/HEROMOTORS\n8-TVSSRICHAK\n9-APLLTD\n10-EIDPARRY/URBANCO\n11-GODREJIND\n12-KTKBANK\n13-DEEPAKFERT/KNRCON\n14-MEESHO/FIRSTCRY\n15-PATANJALI/SENCO",
+      "created_at": "2026-11-16T02:37:07+00:00",
+      "url": "https://x.com/rnarayanan80/status/2122156984774648005",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122156772349919509",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | RBI may raise interest rates to 6.25%, but this time the pain could be greater for India\n\n- RBI expected to raise benchmark rate to up to 6.25%.\n- Inflation climbs to a two-year high, breaching 6%.\n- High oil prices and food costs threaten growth.\n\nRead More:\nhttps://t.co/BvaSXn8lIb",
+      "created_at": "2026-11-16T02:36:16+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122156772349919509",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122155286505136247",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | 📊Global markets weak \n- Nvidia earnings, Anthropic IPO ahead \n- Crude prices decline\n\nWatch #OpeningBell LIVE with @SurabhiUpadhyay \nhttps://t.co/5G8I9VKNiY https://t.co/wp7DELBukO",
+      "created_at": "2026-11-16T02:30:22+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122155286505136247",
+      "image": "https://pbs.twimg.com/media/HXNo4-jaIAEtK9e.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122154940391202834",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Devotees gather at Kolkata’s Kadamtala Ghat along the Hooghly River to offer ‘arghya’ to the rising Sun on the final day of Chhath Puja. 🙏🌅\n\n#ChhathPuja #Kolkata #WestBengal #HooghlyRiver https://t.co/F7LZmWUHqH",
+      "created_at": "2026-11-16T02:29:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122154940391202834",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122154667098701844",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#India | PM Modi heads to Manila to attend high-stake ASEAN, East Asia Summits; what's on agenda\n\nAnnouncing the Prime Minister's visit, Secretary (East) in the Ministry of External Affairs Rudrendra Tandon said PM Modi would participate in the two major regional diplomatic engagements during his stay.\n\nRead More:\nhttps://t.co/KD1jXVMAAV",
+      "created_at": "2026-11-16T02:27:55+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122154667098701844",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122154437477106018",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketWithMC | Daily Voice: Nifty no longer cheap after 14% rally? Green Portfolio CIO flags 3 risks, names 4 sectors to watch\n\n- Expect more stability as US midterm elections are behind us\n- Market looks fairly valued. And it is no longer cheap\n- Bullish on capital goods, power equipment, engineering, specialty chemicals\n\nRead More:\nhttps://t.co/I8eIvZuu2Z",
+      "created_at": "2026-11-16T02:27:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122154437477106018",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122152350282629355",
+      "handle": "JNILindia",
+      "display_name": "Jayaswal Neco Industries Ltd",
+      "text": "Chhath Puja is a celebration of faith, gratitude, and togetherness. May the blessings of Chhathi Maiya and Surya Dev bring good health, happiness, and prosperity to every home.\n\nTeam JNIL wishes you and your loved ones a blessed and joyous Chhath Puja! \n\n#JNIL #ChhathPuja https://t.co/7PoeIeZqUb",
+      "created_at": "2026-11-16T02:18:42+00:00",
+      "url": "https://x.com/JNILindia/status/2122152350282629355",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122148355359084824",
+      "handle": "ShubhTechnicalR",
+      "display_name": "Shubham Agrawal - Shubh Technical Research",
+      "text": "2) KOPRAN (28-29 Months Potential Breakout Candidate) #KOPRAN https://t.co/bBYM2BsJKJ",
+      "created_at": "2026-11-16T02:02:50+00:00",
+      "url": "https://x.com/ShubhTechnicalR/status/2122148355359084824",
+      "image": "https://pbs.twimg.com/media/HXNhGFMa4AAajsU.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122078226302349409",
+      "handle": "K3monks",
+      "display_name": "Mayank",
+      "text": "KALYANKJIL | strong Stage 2\n\nStrong stage 2 breakout trading near 52-week highs with heavy volume.\n\nGrowth trigger: Aggressive 150-store expansion plan and debt-free status target in FY27. https://t.co/pN3NZFzl2C",
+      "created_at": "2026-11-15T21:24:10+00:00",
+      "url": "https://x.com/K3monks/status/2122078226302349409",
+      "image": "https://pbs.twimg.com/media/HXMi5u5XMAE_0Jq.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
     {
       "tweet_id": "2122071886691790855",
       "handle": "prajwal1947",
@@ -38,6 +839,54 @@
       ]
     },
     {
+      "tweet_id": "2122029544559583644",
+      "handle": "Rhaman25458818",
+      "display_name": "Rihana Rahman",
+      "text": "$KALYANKJIL\n\n$MOTILALOFS\n\n$UNOMINDA\n\n$EMCURE\n\n$AEGISVOPAK\n\nNot saying they'll all become 10x winners. But the next big opportunity could come when everyone else is too scared to buy.\n\nWhich Indian stock would you add to this list?",
+      "created_at": "2026-11-15T18:10:43+00:00",
+      "url": "https://x.com/Rhaman25458818/status/2122029544559583644",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122029371469037898",
+      "handle": "Rhaman25458818",
+      "display_name": "Rihana Rahman",
+      "text": "I'm only going to say this ONCE.\n\nIf you're under 50, the next big correction in the Indian stock market could be a golden opportunity to pick up quality stocks at discounted prices.\n\nHere are 5 stocks I believe could rise 10x:\n\n$KALYANKJIL https://t.co/Y2DDrxfVJ4",
+      "created_at": "2026-11-15T18:10:02+00:00",
+      "url": "https://x.com/Rhaman25458818/status/2122029371469037898",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122026516771180769",
+      "handle": "imhiteshmodi",
+      "display_name": "Hitesh Modi",
+      "text": "“I’m not good at investing because I have a full-time job.”\n\n If that's your answer then it's just an excuse.  \n\nIf you're serious about becoming a better investor, your weekends routine should have some time reserved for studying businesses. 🔎 \nAnd a simple place to start?  \n\nStudy businesses making fresh 52-week highs.  \n\nI track this scanner every week \nhttps://t.co/RmXKhzIksx\n\n Don't just look at the chart.  \nStudy:  What changed? What is the growth trigger? Are earnings improving? Can the growth sustain? \n\nEvery weekend, I go through the businesses on this list and try to find the fundamental story behind their breakout.  \nThis week, 34 businesses made fresh 52-week highs.\n\nI have studied all and  the study about the probable growth triggers behind them is summarised here \nBusiness 1 MSTC\nhttps://t.co/j0tZuPunj8\n\nBusiness 2 Alicon castalloy\nhttps://t.co/sYmSV042pD\n\nBusiness 3 Shalimar Paints\nhttps://t.co/w4qAln2cgS\n\nBusiness 4 Apollo Micro\nhttps://t.co/lEzpBPB2EU\n\nBusiness 5 STEL HOLDING\nhttps://t.co/sVkRAtdw2i\n\nBusiness 6 STYLE BAZAR\nhttps://t.co/RQTGOJjDEI\n\nBusiness 7 Tasty bit eatables\nhttps://t.co/2tFtKNIWnP\n\nBusiness 8 Kopran\nhttps://t.co/QX9cACFnDh\n\nBusiness 9 ESAF Small finance bank\nhttps://t.co/lP9g4DoATh\n\nBusiness 10 RPEL\nhttps://t.co/FFEz28OWDg\n\nBusiness 11 DCB bank\nhttps://t.co/XMOHj0gIx1\n\nBusiness 12 Nilkamal\nhttps://t.co/YSlYQ9ok2n\n\nBusiness 13 Hind. oil exploration \nhttps://t.co/yC5QMkbdtb\n\nBusiness 14 Minda Corp\nhttps://t.co/o9WUD2egsp\n\nBusiness 15 Jamna Auto\nhttps://t.co/VcL1Ue8R8P\n\nBusiness 16 LIC housing finance\nhttps://t.co/Dnn8dmPnhP\n\nBusiness 17 Steelcast\nhttps://t.co/k06l8Vdb0j\n\nBusiness 18 Gala precision\nhttps://t.co/vFcuOuOcKm\n\nBusiness 19 Kovai\nhttps://t.co/VzpPa9nm4d\n\nBusiness20 Sansera\nhttps://t.co/a0IK15TiM9\n\nBusiness 21Jyoti CNC\nhttps://t.co/PyS4PNzOGP\n\nBusiness 22 Dr. Agarwal health care\nhttps://t.co/Fk5HdBTH8d\n\nBusiness 23 RK Forge\nhttps://t.co/6m1mkYLqEn\n\nBusiness 24 Aarti drugs \nhttps://t.co/t1TzgdaqF9\n\nBusiness 25 Sangam india\nhttps://t.co/TSJP9EudeX\n\nBusiness 26 Alembic india\nhttps://t.co/Z5SL1k9lGK\n\nBusiness 27 Simplex infra\nhttps://t.co/oCMKgqmehl\n\nBusiness 28 Karnatka bank\nhttps://t.co/74eS63JAo2\n\nBusiness 29 Arti pharma\nhttps://t.co/eDSkDuYYjc\n\nBusiness 30 Mangal credit\nhttps://t.co/kBfC2w9cGM\n\nBusiness 31 SGFIN\nhttps://t.co/TPhINRSU3Y\n\nBusiness 32 Guficbio\nhttps://t.co/yb2GIW8670\n\nBusiness 33 PGIL\nhttps://t.co/stOx4DvSkP\n\nBusiness 34 Gabriel https://t.co/2GXNC53MXL\n\nIf you have a full-time job, you may not have time to track markets all day. \nBut you have weekends.  Use them to study businesses. \n\nI post this weekend study material every weekend so like, repost and follow this handle. \n\nLast week similar study \nhttps://t.co/xgzn00zTWT\n\nMoreover, I have developed a momentum portfolio out of these businesses which is at 3.32X from July 2022  \n\nFind my strategy and it's weekly progress 👇👇\nhttps://t.co/uOf2hvPQcY",
+      "created_at": "2026-11-15T17:58:41+00:00",
+      "url": "https://x.com/imhiteshmodi/status/2122026516771180769",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122013464336212411",
       "handle": "MaheshM01124888",
       "display_name": "Mahesh Mistry",
@@ -50,6 +899,22 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"Indo-Mim\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122013055064461592",
+      "handle": "gmigmt_",
+      "display_name": "GuideMeInvest | GuideMeTrade",
+      "text": "15 Stocks That Delivered 100%+ Returns in 2026!🎯\n\n1- KALYANKJIL\n2- APOLLO\n3- SAILIFE\n4- Syrma SGS Technology\n5- Cyient DLM\n6- TDPOWERSYS\n7- Filatex India\n8- MOREPENLAB\n9- STL Networks\n10- Quality Power Electrical Equipments\n11- OPTIEMUS\n12- Marine Electricals\n13- Creative Newtech\n14- Antelopus Selan Energy\n15- Amanta Healthcare",
+      "created_at": "2026-11-15T17:05:12+00:00",
+      "url": "https://x.com/gmigmt_/status/2122013055064461592",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -114,6 +979,38 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"INDOMIM\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121987802871255329",
+      "handle": "keshavPuro31019",
+      "display_name": "Keshavi Purohit",
+      "text": "1: $NIFTY — 25,144.30 closing level on November 13.\n\n2: 25,400 — The key resistance zone to watch after NIFTY crossed this level intraday for the first time since February.\n\n3: $SBIN, $PNB, $BANKINDIA — PSU banking stocks are leading the momentum. SBI gained 6%, PNB surged 12.8%, and Bank of India climbed 11.2% this week.\n\n4: $KALYANKJIL — One of India's hottest stocks this month, gaining approximately 40% in November so far.\n\n5: FII FLOWS — Foreign investors have poured approximately ₹84,291 crore into Indian equities during the first 13 days of November.\n\n🇮🇳 India's recovery is gaining momentum! NIFTY 50 has risen for 3 consecutive weeks, with PSU Banks leading the rally. Foreign capital is returning, but 6.09% inflation and rising oil concerns remain key risks.\n\nI'm bullish, but not chasing every green candle. 🚀\n\nNew bull run or temporary rally? 📈",
+      "created_at": "2026-11-15T15:24:51+00:00",
+      "url": "https://x.com/keshavPuro31019/status/2121987802871255329",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121987055207272607",
+      "handle": "keshavPuro31019",
+      "display_name": "Keshavi Purohit",
+      "text": "🇮🇳 India's stock market is heating up! 🔥 NIFTY 50 is holding strong, while $PNB, $SBIN and $BANKINDIA are leading the banking rally. Foreign capital is flowing back, and $KALYANKJIL is stealing the spotlight. 📈\n\nAre we witnessing India's next bull run, or is this just a temporary rally? What's on your watchlist? 👀",
+      "created_at": "2026-11-15T15:21:53+00:00",
+      "url": "https://x.com/keshavPuro31019/status/2121987055207272607",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -277,6 +1174,38 @@
       ]
     },
     {
+      "tweet_id": "2121960724037804247",
+      "handle": "Stocks_ideas",
+      "display_name": "Stock idea",
+      "text": "🚀 15 Stocks That Delivered 100%+ Returns in 2026! 🎯\n\n💎 Consumer / Jewellery\n• #KALYANKJIL \n\n💊 Pharma / Healthcare\n• #SAILIFE\n• #MOREPENLAB\n• #AMANTA\n\n⚡ Electrical Equipment / Power\n• #TDPOWERSYS\n• #QUALITYPOWER\n\n🤖 EMS / Electronics / Technology\n• #SYRMA\n• #CYIENTDLM\n• #OPTIEMUS\n• #CREATIVE\n\n🌐 Telecom / Digital Infrastructure\n• #STLNETWORKS\n\n🏭 Industrial / Manufacturing\n• #FILATEX\n• #MARINE\n• #Sansera \n\n☀️ Renewable Energy\n• #antelopus",
+      "created_at": "2026-11-15T13:37:15+00:00",
+      "url": "https://x.com/Stocks_ideas/status/2121960724037804247",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121958086235820200",
+      "handle": "karanbde",
+      "display_name": "Karan Bobade",
+      "text": "This is a good month overall till now\n\nKalyan and Eternal like stocks shine and brought some profit for me\n\nKalyan showed an impressive 64% profit growth touching 52 week high, stock price rise was inevitable and Eternal did well too.\n\n#StockMarket #trading  #KALYANKJIL https://t.co/3JVncOJM7p",
+      "created_at": "2026-11-15T13:26:46+00:00",
+      "url": "https://x.com/karanbde/status/2121958086235820200",
+      "image": "https://pbs.twimg.com/media/HXK1oZLaEAAlfIu.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121957013676810627",
       "handle": "PuneetBiz",
       "display_name": "Puneet Sindhu",
@@ -390,6 +1319,54 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2121945238683967593",
+      "handle": "callputanalystt",
+      "display_name": "Call Put Analyst",
+      "text": "⛱️ 15 Stocks That Delivered 100%+ Returns in 2026 :-\n\n1- KALYANKJIL\n2- APOLLO\n3- SAILIFE\n4- Syrma SGS Technology\n5- Cyient DLM\n6- TDPOWERSYS\n7- Filatex India\n8- MOREPENLAB\n9- STL Networks\n10- Quality Power Electrical Equipments\n11- OPTIEMUS\n12- Marine Electricals\n13- Creative Newtech\n14- Antelopus Selan Energy\n15- Amanta Healthcare",
+      "created_at": "2026-11-15T12:35:43+00:00",
+      "url": "https://x.com/callputanalystt/status/2121945238683967593",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121942036748316756",
+      "handle": "stockcepe",
+      "display_name": "STOCKCEPE",
+      "text": "2.#KOPRAN https://t.co/wAWUEmrtJN",
+      "created_at": "2026-11-15T12:22:59+00:00",
+      "url": "https://x.com/stockcepe/status/2121942036748316756",
+      "image": "https://pbs.twimg.com/media/HXKm_MSacAAmLe8.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121940024891441318",
+      "handle": "sunilgurjar01",
+      "display_name": "Sunil Gurjar, CFTe",
+      "text": "15 Stocks That Delivered 100%+ Returns in 2026!🎯\n\n1- KALYANKJIL\n2- APOLLO\n3- SAILIFE\n4- Syrma SGS Technology\n5- Cyient DLM\n6- TDPOWERSYS\n7- Filatex India\n8- MOREPENLAB\n9- STL Networks\n10- Quality Power Electrical Equipments\n11- OPTIEMUS\n12- Marine Electricals\n13- Creative Newtech\n14- Antelopus Selan Energy\n15- Amanta Healthcare",
+      "created_at": "2026-11-15T12:15:00+00:00",
+      "url": "https://x.com/sunilgurjar01/status/2121940024891441318",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121937428412002622",
       "handle": "shortterm_stock",
       "display_name": "SHORT TERM STOCK🚀",
@@ -488,6 +1465,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2121913955631378459",
+      "handle": "ThakurDebyendu",
+      "display_name": "Debyendu Thakur",
+      "text": "@me__kaushik Sir JAYNECOIND plz",
+      "created_at": "2026-11-15T10:31:24+00:00",
+      "url": "https://x.com/ThakurDebyendu/status/2121913955631378459",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121910670107292017",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -511,6 +1504,22 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"Indo-Mim\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121900677169393956",
+      "handle": "steel_indian",
+      "display_name": "Indian Steel Association",
+      "text": "We are pleased to welcome Jayaswal Neco Industries Limited as the Silver Partner for the highly anticipated 7th edition of the ISA Steel Conclave 2026.\n\nTheir association adds to the growing participation of industry leaders and organisations coming together to discuss key developments and opportunities across the steel sector.\n\n17–18 November 2026 | Le Méridien, New Delhi\nFor more information about ISA Steel Conclave 2026 and participation opportunities, kindly visit https://t.co/paWFB9C2fE\n\nFor Participation: events@indsteel.org\n\n#AtmanirbharBharat #InfrastructureDevelopment #ManufacturingIndia #SteelManufacturing #IndianEconomy #CoreSector #IndustrialGrowth #ViksitBharat #SteelIndustry #RegisterNow #Infrastructure",
+      "created_at": "2026-11-15T09:38:39+00:00",
+      "url": "https://x.com/steel_indian/status/2121900677169393956",
+      "image": "https://pbs.twimg.com/media/HXKBNbLbUAApIcO.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
         }
       ]
     },
@@ -580,6 +1589,70 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2121891019675386259",
+      "handle": "SU_zono",
+      "display_name": "Edward",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$KALYANKJIL $INFY\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/dmjMdFm2ct\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/JgHD8NNFxr",
+      "created_at": "2026-11-15T09:00:16+00:00",
+      "url": "https://x.com/SU_zono/status/2121891019675386259",
+      "image": "https://pbs.twimg.com/media/HXJ4mXsWkAEe9hx.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121889722176082239",
+      "handle": "ANI",
+      "display_name": "ANI",
+      "text": "#WATCH | Manila, Philippines | On the economic relations between India and Philippines, India's Ambassador to the Philippines, Harsh Kumar Jain, says, \"...Our economic relations are growing, but the potential is much higher than what we have achieved so far. Our bilateral trade increased to US$3.9 billion in 2025-26, which is encouraging. However, given the size, growth and complementarities of our two economies, we should be aiming much higher. Interestingly, the bilateral trade with the Philippines constitutes only about 3% of our trade with ASEAN, though the Philippines contributes nearly 11% to ASEAN GDP. This illustrates the considerable untapped potential. I am confident that the ongoing review of the ASEAN-India Trade in Goods Agreement and the proposed India-Philippines Preferential Trade Agreement will help in harnessing this untapped potential. There is considerable scope for Indian companies to participate in the Philippines' infrastructure and development priorities, pharmaceuticals, IT, semiconductors, fintech, digital services, renewable energy and critical minerals. A recent encouraging development is India's Kiri Industries acquiring a 40% stake in the Philippine MCB Copper-Gold project to secure copper ore supplies for its smelter in India. This will contribute to catering to the growing demand for critical materials for key sectors such as Renewable Energy, E-Mobility, Electronics & Semiconductors in India. Our objective is to further deepen such business partnerships and investments.\"",
+      "created_at": "2026-11-15T08:55:07+00:00",
+      "url": "https://x.com/ANI/status/2121889722176082239",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE415I01015",
+          "query": "\"Kiri Industries\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121889416729993332",
+      "handle": "SU_zono",
+      "display_name": "Edward",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$KALYANKJIL $ABB\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/dmjMdFmA21\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/jWHvFBaf9V",
+      "created_at": "2026-11-15T08:53:54+00:00",
+      "url": "https://x.com/SU_zono/status/2121889416729993332",
+      "image": "https://pbs.twimg.com/media/HXJ3JxJXcAAfFOf.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121888914768036134",
+      "handle": "squeeze0range",
+      "display_name": "Charles",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$KALYANKJIL $TORNTPHARM\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/FBPSf26EfP\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/JdVU3tJ6fK",
+      "created_at": "2026-11-15T08:51:54+00:00",
+      "url": "https://x.com/squeeze0range/status/2121888914768036134",
+      "image": "https://pbs.twimg.com/media/HXJ2rtQXYAAk3jG.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121888434600263683",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -607,6 +1680,70 @@
       ]
     },
     {
+      "tweet_id": "2121887702731964857",
+      "handle": "MycallsTrading",
+      "display_name": "Mycalls Trading",
+      "text": "Best Suggestions of this week (6th Nov to 12th Nov'26) in the FNO STOCKS Segment (Part 11) \n\n#CUB 5.67 to 10.33 💥🔥\n#KALYANKJIL 24 to 36.8 💥🎉\n#MFSL 26.35 to 69.65 🔥🚀🚀💃💃\n#GRASIM 63 to 111.45 💥🎉\n#KEI 84 to 114.8 💥🎉\n\nOur TG @ https://t.co/9Xv2yULwqD",
+      "created_at": "2026-11-15T08:47:05+00:00",
+      "url": "https://x.com/MycallsTrading/status/2121887702731964857",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121886993483452774",
+      "handle": "MycallsTrading",
+      "display_name": "Mycalls Trading",
+      "text": "Best Suggestions of this week (6th Nov to 12th Nov'26) in the FNO STOCKS Segment (Part 8) \n\n#RVNL 6.91 to 16.81 🔥🚀🚀\n#KALYANKJIL 28 to 57 🔥🚀🚀\n#UPL 10.25 to 16.3 🔥🚀🚀💃💃\n#POWERINDIA 962 to 2530.95 🔥🚀🚀💃💃\n#BHEL 8.7 to 11.45 💥🎉\n\nOur TG @ https://t.co/9Xv2yULwqD",
+      "created_at": "2026-11-15T08:44:16+00:00",
+      "url": "https://x.com/MycallsTrading/status/2121886993483452774",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121885988041748755",
+      "handle": "MycallsTrading",
+      "display_name": "Mycalls Trading",
+      "text": "Best Suggestions of this week (6th Nov to 12th Nov'26) in the FNO STOCKS Segment (Part 4) \n\n#DIVISLAB 271 to 933.25 🔥🚀🚀💃💃\n#ABB 178 to 245.65 💥🎉\n#KALYANKJIL 4.3 to 36.8 🔥🚀🚀💃💃\n#CUMMINSIND 80 to 249.2 🔥🚀🚀💃💃\n\nOur TG @ https://t.co/9Xv2yULwqD",
+      "created_at": "2026-11-15T08:40:16+00:00",
+      "url": "https://x.com/MycallsTrading/status/2121885988041748755",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121885517990306144",
+      "handle": "MycallsTrading",
+      "display_name": "Mycalls Trading",
+      "text": "Best Suggestions of this week (6th Nov to 12th Nov'26) in the FNO STOCKS Segment (Part 2) \n\n#KALYANKJIL 20.05 to 117.75 🔥🚀🚀💃💃\n#SUNPHARMA 18.55 to 63.35 🔥🚀🚀💃💃\n#HAVELLS 16.75 to 58.25 🔥🚀🚀💃💃\n#ABB 215 to 439.6 🔥🚀🚀\n\nOur TG @ https://t.co/9Xv2yULwqD",
+      "created_at": "2026-11-15T08:38:24+00:00",
+      "url": "https://x.com/MycallsTrading/status/2121885517990306144",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121883405239386171",
       "handle": "WallStreet2Web3",
       "display_name": "WallStreet2Web3",
@@ -623,6 +1760,22 @@
       ]
     },
     {
+      "tweet_id": "2121883404924858491",
+      "handle": "Kimm__yuu",
+      "display_name": "Robert",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$HDFCBANK $KALYANKJIL\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/uu114DQYg5\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/ar9OylvF0F",
+      "created_at": "2026-11-15T08:30:01+00:00",
+      "url": "https://x.com/Kimm__yuu/status/2121883404924858491",
+      "image": "https://pbs.twimg.com/media/HXJxrbPW8AA65Mm.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121883128080064799",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -632,6 +1785,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2121880889474826346",
+      "handle": "Kimm__yuu",
+      "display_name": "Robert",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$TECHM $KALYANKJIL\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/uu114DQYg5\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/jaO80vZ707",
+      "created_at": "2026-11-15T08:20:01+00:00",
+      "url": "https://x.com/Kimm__yuu/status/2121880889474826346",
+      "image": "https://pbs.twimg.com/media/HXJvYl6XQAAF1j_.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
     },
     {
       "tweet_id": "2121879856904605996",
@@ -646,6 +1815,54 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"Indo-Mim\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121878809561415864",
+      "handle": "SU_zono",
+      "display_name": "Edward",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$KALYANKJIL $JSWSTEEL\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/dmjMdFm2ct\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/VEuvrCLFwN",
+      "created_at": "2026-11-15T08:11:45+00:00",
+      "url": "https://x.com/SU_zono/status/2121878809561415864",
+      "image": "https://pbs.twimg.com/media/HXJtfk_WAAAgKz9.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121878237517353146",
+      "handle": "kaho_jinji",
+      "display_name": "William",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$DLF $KALYANKJIL\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/rlpApJMWRx\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/jp2Xh6T6Du",
+      "created_at": "2026-11-15T08:09:29+00:00",
+      "url": "https://x.com/kaho_jinji/status/2121878237517353146",
+      "image": "https://pbs.twimg.com/media/HXJs9wdXMAApRCu.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121877439420706983",
+      "handle": "Kimm__yuu",
+      "display_name": "Robert",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$KALYANKJIL $ABBOTINDIA\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/uu114DQYg5\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/n0iBu0ybWi",
+      "created_at": "2026-11-15T08:06:18+00:00",
+      "url": "https://x.com/Kimm__yuu/status/2121877439420706983",
+      "image": "https://pbs.twimg.com/media/HXJsOyUW4AAdgNn.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -666,6 +1883,22 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"INDOMIM\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121873467028967444",
+      "handle": "kaho_jinji",
+      "display_name": "William",
+      "text": "📌I swear by Lord Shiva that this WhatsApp group is very helpful for the following stocks.\n\n$OLAELEC $KALYANKJIL\n\nContact her to join a group chat for free real-time news and trading strategies👉: https://t.co/rlpApJMp1Z\n#Nifty 50 #Sensex #NSE Stocks #BSE Stocks https://t.co/YWhiJYa3RG",
+      "created_at": "2026-11-15T07:50:31+00:00",
+      "url": "https://x.com/kaho_jinji/status/2121873467028967444",
+      "image": "https://pbs.twimg.com/media/HXJoodfWYAAdQpc.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -692,6 +1925,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2121865319719612808",
+      "handle": "mehraks9",
+      "display_name": "EquiSwingIN",
+      "text": "#swing stock #kopran on focus list for Monday.\nStrict risk management applies!\nStage 2 uptrend #PriceAction\nTight VCP consolidation near multi-month supply zone Strong RS &amp; volume expansion\nTrigger: High-volume breakout above ₹296• Invalidation: Below immediate swing low/20EMA https://t.co/BOqSRjRxi1",
+      "created_at": "2026-11-15T07:18:09+00:00",
+      "url": "https://x.com/mehraks9/status/2121865319719612808",
+      "image": "https://pbs.twimg.com/media/HXJg6-sbMAABysC.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121863268843327552",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -714,6 +1963,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2121859893829451798",
+      "handle": "swing_blaster",
+      "display_name": "SWING BLASTER 🥷🕉️🔱",
+      "text": "KALYANKJIL\n\n₹397 → ₹718 🔥\n\n+80.86% RETURN 💥\n\nWhat a शानदार move!\n\nअब नजर ₹720 के ऊपर sustain करने पर है।\n\nअगर ₹720 के ऊपर टिकता है, तो अगले upside zones खुल सकते हैं:\n\n🎯 ₹800\n🎯 ₹900\n🎯 ₹1,000\n\nPrice Action speaks louder than predictions! 📈\n\n— Swing Blaster\n\n⚠️ Not SEBI Registered. Not a buy/sell recommendation. For educational purposes only. \n\n#LearningWithEarning #chart_sab_kuch_bolta_hai",
+      "created_at": "2026-11-15T06:56:35+00:00",
+      "url": "https://x.com/swing_blaster/status/2121859893829451798",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121855619321704754",
       "handle": "jiwrajka140405",
       "display_name": "Keshav Agarwal",
@@ -726,6 +1991,42 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"Indo-Mim\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121850563478626724",
+      "handle": "hitesh138",
+      "display_name": "Hitesh Kumar Singla",
+      "text": "@WealthEnrich Kiri industries",
+      "created_at": "2026-11-15T06:19:31+00:00",
+      "url": "https://x.com/hitesh138/status/2121850563478626724",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE415I01015",
+          "query": "\"Kiri Industries\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121848169193701445",
+      "handle": "Biju_Vaisyathil",
+      "display_name": "Biju Vaisyathil",
+      "text": "Kalyan Jewellers India Ltd:\n\nBreakout done, Retest held. Now heading towards ₹800. #KALYANKJIL https://t.co/ETOzPXc1qL",
+      "created_at": "2026-11-15T06:10:00+00:00",
+      "url": "https://x.com/Biju_Vaisyathil/status/2121848169193701445",
+      "image": "https://pbs.twimg.com/media/HXHIb0hbgAEJ_Xy.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -762,6 +2063,22 @@
       ]
     },
     {
+      "tweet_id": "2121830297243382190",
+      "handle": "vbhutada37",
+      "display_name": "Vishal Bhutada",
+      "text": "@EgoWithEdge Jayaswal neco",
+      "created_at": "2026-11-15T04:58:59+00:00",
+      "url": "https://x.com/vbhutada37/status/2121830297243382190",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121825931719594346",
       "handle": "jiwrajka140405",
       "display_name": "Keshav Agarwal",
@@ -774,6 +2091,38 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"Indo-Mim\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121817470701019628",
+      "handle": "punitbansal14",
+      "display_name": "Punit",
+      "text": "Anti-Diabetics | Validation & Commercialization | CVS Therapy\n\n📸1: Kopran Validation Batches - Newer Therapy\n\nWe have taken validation batches for new formulations like Rivaroxaban, Empagliflozin, Sitagliptin, Metformin, Losartan etc.\n\n📸2: Kopran Commercialization of Anti-Platelets, Anti-Diabetic & Anti-Coagulants - Newer Therapy\n\nThe new molecules like Rivaroxaban, Apixaban, Ticagrelor & Dapagliflozin have already been approved and are being supplied to our customers in India. As I mentioned we are awaiting regulatory approvals of our DMFs and post the patent we will be able to tie up with the international customers also.\n\n📸3: Kopran Ethiopian Market Launches in 2026\n\nRivaroxaban - All dosage forms\nSitagliptin & Metformin\nTicagrelor\nEmpagliflozin - All dosage forms",
+      "created_at": "2026-11-15T04:08:01+00:00",
+      "url": "https://x.com/punitbansal14/status/2121817470701019628",
+      "image": "https://pbs.twimg.com/media/HXIyux0aIAALxbA.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121813786600571392",
+      "handle": "sachittuli",
+      "display_name": "Sachit Tuli",
+      "text": "2) KOPRAN https://t.co/yqPeG6IGr7",
+      "created_at": "2026-11-15T03:53:22+00:00",
+      "url": "https://x.com/sachittuli/status/2121813786600571392",
+      "image": "https://pbs.twimg.com/media/HXIw75dbkAA0wUz.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
         }
       ]
     },
@@ -6070,6 +7419,18 @@
         {
           "entityId": "isin:INE084101034",
           "query": "\"INDOMIM\""
+        },
+        {
+          "entityId": "isin:INE700A01033",
+          "query": "\"JUBLPHARMA\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -6446,6 +7807,22 @@
         {
           "entityId": "isin:INE0HOQ01053",
           "query": "\"GROWW\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121619959759724547",
+      "handle": "mammetgzla",
+      "display_name": "sid",
+      "text": "TOP 7 STOCKS TO FOCUS ON FRIDAY (13/11/2026)📊🔥 \n\n1.  MEESHO 🚀\n2. INDUSTOWER 📈 \n\n3. FUSIONCX 🔷\n4.  KOPRAN⚡⚡\n\n5. JAYBARMARU 🏆\n6. VEEGALAND 📊\n7. TEMPSENS 🎯",
+      "created_at": "2026-11-14T15:03:10+00:00",
+      "url": "https://x.com/mammetgzla/status/2121619959759724547",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
         }
       ]
     },
@@ -7118,6 +8495,22 @@
       ]
     },
     {
+      "tweet_id": "2121605934292361669",
+      "handle": "ThakurDebyendu",
+      "display_name": "Debyendu Thakur",
+      "text": "@DemandZoneKing Sir JAYNECOIND ka chart kaisa lagta hai?",
+      "created_at": "2026-11-14T14:07:26+00:00",
+      "url": "https://x.com/ThakurDebyendu/status/2121605934292361669",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"JAYNECOIND\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121605517558882501",
       "handle": "bindumary1011",
       "display_name": "Bindu Sebastian",
@@ -7178,6 +8571,22 @@
         {
           "entityId": "isin:INE532F01054",
           "query": "\"EDELWEISS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2121603998545485988",
+      "handle": "ChartNavigators",
+      "display_name": "ChartNavigator | Momentum",
+      "text": "Add #KALYANKJIL to the List https://t.co/WyK8n7tg5J",
+      "created_at": "2026-11-14T13:59:45+00:00",
+      "url": "https://x.com/ChartNavigators/status/2121603998545485988",
+      "image": "https://pbs.twimg.com/media/HXFzGOrboAAxmnH.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
         }
       ]
     },
@@ -8122,6 +9531,22 @@
       ]
     },
     {
+      "tweet_id": "2121581944261742853",
+      "handle": "imhiteshmodi",
+      "display_name": "Hitesh Modi",
+      "text": "🚨 Lets study the Probable multibaggers list from the scanner (Part-8)\nhttps://t.co/smOMTxEpKl\n\nWhich captures fresh 52-week highs each weekend.\n\nStock 8 of 34\n\n#8 Kopran Ltd. (KOPRAN)\n\nAn integrated pharmaceutical company manufacturing APIs and finished formulations, with exports to 50+ countries.\n\n📊 Q2 FY27 Results\n\n• Revenue: ₹211.26 Cr (+79.1% YoY)\n• EBITDA: ₹18.22 Cr vs ₹2.99 Cr\n• EBITDA margin: 8.62% vs 2.53%\n• PAT: ₹4.39 Cr vs loss of ₹9.92 Cr\n• H1 FY27 revenue: ₹365.26 Cr (+44.3% YoY)\n• H1 FY27 PAT: ₹11.10 Cr vs loss of ₹2.47 Cr\n\n🚀 Key triggers\n\n➡️ New Panoli API facility: Commercial production commenced on March 31, 2026. Regulatory approvals and customer qualifications are underway. The facility could become a meaningful growth driver as utilization ramps up over the next 2–3 years.\n\n➡️ Carbapenem opportunity: Carbapenem is Kopran’s largest API product category. The company has dedicated sterile API manufacturing capabilities and a presence in this segment.\n\n➡️ Formulations capacity expansion: Planned capex of approximately ₹25 Cr in existing formulation units could support higher capacity and operational efficiency.\n\n➡️ CDMO/CMO opportunity: Development and manufacturing agreements with international pharmaceutical companies could support higher-value business and improve revenue visibility.\n\n➡️ Backward integration: Development of advanced intermediates and reduced dependence on China could improve cost competitiveness and operational resilience.\n\n➡️ Export opportunity: Kopran exports to 50+ countries. New product registrations and customer qualifications could open additional markets.\n\n➡️ Earnings recovery: Q2 FY27 showed a sharp improvement in revenue, EBITDA and PAT compared with the previous year. Sustaining this improvement will be important.\n\n➡️ Cash-flow monitor: Working-capital intensity, forex volatility and finance costs remain important risks. Earnings growth needs to translate into stronger cash flows and ROCE.\n\n➡️ Probable trigger:\n\nPanoli facility ramp-up, sustained Carbapenem demand, formulations expansion and growing CDMO/CMO business could support Kopran’s next phase of earnings growth.\n\nMy conclusion:\n\nKopran is showing a sharp recovery in revenue and profitability.\n\nThe interesting part is the combination of new manufacturing capacity, API strength and potential growth in formulations and CDMO/CMO operations.\n\nI already have this in the portfolio.\nOtherwise it should be given high priority as it's from leading sector of this bull market\n\nSomewhere I will be wrong and somewhere I will miss some multibaggers, but eventually will make money till weak stocks are getting exited.\n\nMost important part is not identifying winners rather it is cutting losers early.\n\nI have built a momentum portfolio using the same scanner. It is around 3.21X since July 2022. 🚀\n\nMy strategy and performance 👇\nhttps://t.co/WQjyvvpAdP\n\nFollow for more business research. Bookmark this post for future reference.\n\n#MomentumInvesting #Investing #StockMarket #Smallcap #Multibagger\n\nNot a recommendation. Please DYOR.",
+      "created_at": "2026-11-14T12:32:07+00:00",
+      "url": "https://x.com/imhiteshmodi/status/2121581944261742853",
+      "image": "https://pbs.twimg.com/media/HXFfhLOaoAAL5Us.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE082A01010",
+          "query": "\"Kopran\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2121581206517301383",
       "handle": "melon",
       "display_name": "Melon 멜론",
@@ -8366,1606 +9791,14 @@
           "query": "\"CDSL\""
         }
       ]
-    },
-    {
-      "tweet_id": "2121572767564959863",
-      "handle": "WealthLensHQ",
-      "display_name": "WealthLens",
-      "text": "Top 5 mutual funds, last 30 days (to 13 Nov):\n1. Invesco Pharma +15.75%\n2. SBI PSU Bank +13.45%\n3. Groww Capital Markets +13.42%\n4. Groww PSU Bank +13.33%\n5. Motilal Capital Market +13.08%\nLast month's #1: -15.9%\nPast returns may not predict future ones. Not advice. #AIgenerated https://t.co/QvwzADdhTd",
-      "created_at": "2026-11-14T11:55:39+00:00",
-      "url": "https://x.com/WealthLensHQ/status/2121572767564959863",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121572214268928346",
-      "handle": "NiftyBhaskar",
-      "display_name": "E.Bhaskar Rao",
-      "text": "📊 45 STOCKS TO TRACK | 15 HIGH-GROWTH THEMES\n\n🔹 1. DREDGING\n\n1. Dredging Corporation of India\n2. Adani Ports\n3. RKEC Projects\n\n🔹 2. HVDC / POWER TRANSMISSION\n\n1. GE Vernova T&D\n2. Hitachi Energy India\n3. Quality Power Electrical Equipments\n\n🔹 3. BATTERY ENERGY STORAGE (BESS)\n\n1. JSW Energy\n2. Tata Power\n3. ACME Solar\n\n🔹 4. B2B EMS\n\n1. Kaynes Technology\n2. Syrma SGS Technology\n3. Avalon Technologies\n\n🔹 5. CDMO / CHEMICALS\n\n1. Divi’s Laboratories\n2. Syngene International\n3. Neuland Laboratories\n\n🔹 6. FINANCIAL SERVICES\n\n1. Bajaj Finance\n2. Cholamandalam Investment\n3. HDFC Bank\n\n🔹 7. EXCHANGES / CAPITAL MARKET\n\n1. BSE\n2. CDSL\n3. KFin Technologies\n\n🔹 8. ELECTRONIC WARFARE / DEFENCE ELECTRONICS\n\n1. Bharat Electronics (BEL)\n2. Astra Microwave\n3. Data Patterns\n\n🔹 9. HEALTHCARE\n\n1. Max Healthcare\n2. Apollo Hospitals\n3. Fortis Healthcare\n\n🔹 10. MUSIC STREAMING / DIGITAL MUSIC\n\n1. Saregama India\n2. Tips Music\n3. Zee Entertainment\n\n🔹 11. DIGITAL INDIA BUSINESSES\n\n1. Bharti Airtel\n2. Info Edge\n3. Tanla Platforms\n\n🔹 12. FTA BENEFICIARIES / EXPORTS\n\n1. KPR Mill\n2. Gokaldas Exports\n3. Welspun Living\n\n🔹 13. FORGING / CASTING / BEARINGS\n\n1. Bharat Forge\n2. Happy Forgings\n3. Schaeffler India\n\n🔹 14. THERMAL POWER / INSTRUMENTATION\n\n1. NTPC\n2. BHEL\n3. Thermax\n\n🔹 15. NICHE EXPORTERS – AROMA / SPECIALITY FILMS\n\n1. Fine Organic Industries\n2. Garware Hi-Tech Films\n3. Oriental Aromatics\n\n📌 Research Parameters:\n\n• Revenue and profit growth\n• ROCE and debt position\n• Order book and execution visibility\n• Industry tailwinds and market opportunity\n• Valuation comfort\n• Technical breakout and volume confirmation\n\n⚠️ Disclaimer: educational purposes, not a buy/sell recommendatio",
-      "created_at": "2026-11-14T11:53:27+00:00",
-      "url": "https://x.com/NiftyBhaskar/status/2121572214268928346",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121572190042898599",
-      "handle": "Earninginsight_",
-      "display_name": "Earninginsight",
-      "text": "✅Buy the companies that make money EVERY time someone trades. 🤯\n\n🏛️ Exchanges & Depositories\n• BSE\n• MCX\n• CDSL\n\n📱 Brokerages & Wealth\n• Angel One\n• Motilal Oswal\n• Anand Rathi Wealth\n\n💰 Asset Management (AMCs)\n• HDFC AMC\n• Nippon Life India AMC\n• ICICI AMC\n• UTI AMC\n\n📊 RTAs\n• CAMS\n• KFINTECH\n\n🔗𝐉𝐨𝐢𝐧 𝐨𝐮𝐫 𝐓𝐞𝐥𝐞𝐠𝐫𝐚𝐦  :- https://t.co/J7MFMmYA35\n\n⚠️ Educational content. Market risk applies.",
-      "created_at": "2026-11-14T11:53:21+00:00",
-      "url": "https://x.com/Earninginsight_/status/2121572190042898599",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121572095788240931",
-      "handle": "Saivenk12860532",
-      "display_name": "Saivenkat",
-      "text": "@stocksbyrishabh GROWW",
-      "created_at": "2026-11-14T11:52:59+00:00",
-      "url": "https://x.com/Saivenk12860532/status/2121572095788240931",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121571238787330280",
-      "handle": "JAINAM2407_",
-      "display_name": "JAINAM MEHTA 📊",
-      "text": "Yeah Ca final ki exam ke chakkar me coal india ke shares buy karne reh gaye...\n\nAbb shareholders category me apply nahi hoga..😥😥",
-      "created_at": "2026-11-14T11:49:34+00:00",
-      "url": "https://x.com/JAINAM2407_/status/2121571238787330280",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121570240794636705",
-      "handle": "RealTuneTashan",
-      "display_name": "🌟 Tune Tashan ❤️",
-      "text": "#MahanadiCoalfields #MCL #MCLIP0 #CoalIndia #PSUIPO #UpcomingIPO #IPOAlert #MainboardIPO #ShareholderQuota #StockMarketIndia #ShareMarket #DalalStreet #BSE #NSE #IPOReviewByGroww",
-      "created_at": "2026-11-14T11:45:36+00:00",
-      "url": "https://x.com/RealTuneTashan/status/2121570240794636705",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121570221022691439",
-      "handle": "RealTuneTashan",
-      "display_name": "🌟 Tune Tashan ❤️",
-      "text": "🔹Listing At: BSE &amp; NSE\n\n📌 Price band and lot size to be announced shortly ahead of opening.\n\nFollow IPO Review by Groww for upcoming IPO news, subscription updates &amp; allotment details!",
-      "created_at": "2026-11-14T11:45:32+00:00",
-      "url": "https://x.com/RealTuneTashan/status/2121570221022691439",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121570160524005477",
-      "handle": "SResaerch",
-      "display_name": "Shaurent Market Research",
-      "text": "Cdsl chart",
-      "created_at": "2026-11-14T11:45:17+00:00",
-      "url": "https://x.com/SResaerch/status/2121570160524005477",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121570067888713807",
-      "handle": "me__kaushik",
-      "display_name": "Kaushik | Sebi Regd RA",
-      "text": "@sunilgurjar01 Cdsl 🔥🔥\n\nAll time high coming soon 📈",
-      "created_at": "2026-11-14T11:44:55+00:00",
-      "url": "https://x.com/me__kaushik/status/2121570067888713807",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121569668079157310",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Can homegrown innovation power India’s next defence breakthrough?\n\nBe part of the conversation on designing, developing and building India’s defence future with Bodhisattwa Sanghapriya, Founder & CEO, IG Defence. At the News18 Rising Bharat Summit – North Edition, he will share his perspective on how private enterprise can strengthen India’s defence capabilities and turn innovation into operational solutions.\n\n📍 Lucknow | 17 November 2026\nRegister now! \n\n@HDFC_Bank  @ITCCorpCom \n@RIL_Updates  @thebajajgroup \n@UPGovt \n\n#RisingBharatSummit #NorthEdition #BuildingAnEnterpriseNation",
-      "created_at": "2026-11-14T11:43:20+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121569668079157310",
-      "image": "https://pbs.twimg.com/media/HXFUWaMbYAAuUaq.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121569503779914190",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "As discussed, sharing one more post for today. \n\nCan grassroots talent power India’s next sporting triumph?\n\nFrom Uttar Pradesh to the world stage, Suresh Raina, Cricketer, is coming to the News18 Rising Bharat Summit – North Edition to share his journey in international cricket and his perspective on nurturing talent, creating opportunities and inspiring India’s next generation of champions.\n\n📍 Lucknow | 17 November 2026\nRegister now!\n\n@HDFC_Bank @ITCCorpCom\n@RIL_Updates @thebajajgroup\n@UPGovt\n\n#RisingBharatSummit #NorthEdition #BuildingAnEnterpriseNation",
-      "created_at": "2026-11-14T11:42:41+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121569503779914190",
-      "image": "https://pbs.twimg.com/media/HXFTJ0TbcAAOXvw.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121569478672781743",
-      "handle": "ETNowSwadesh",
-      "display_name": "ET Now Swadesh",
-      "text": "Weekly Technical Picks: अगले 3-4 हफ्तों में CDSL, Trent समेत 3 स्टॉक्स में तेजी की उम्मीद, 15% तक कमाई का मौका\n\n#TechnicalPicks #CDSL #Trent #StockMarket  #StocksToWatch #ETNSMarket \n\nhttps://t.co/2oBtjXw6eK",
-      "created_at": "2026-11-14T11:42:35+00:00",
-      "url": "https://x.com/ETNowSwadesh/status/2121569478672781743",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121569404035190821",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Can Uttar Pradesh become the next powerhouse of film and entertainment?\n\nFrom film studios to regional storytelling, Boney Kapoor, Filmmaker, is coming to the News18 Rising Bharat Summit – North Edition to share his perspective on building Uttar Pradesh’s creative economy and creating opportunities for talent, production and investment.\n\n📍 Lucknow | 17 November 2026\nRegister now!\n\n@HDFC_Bank  @ITCCorpCom \n@RIL_Updates  @thebajajgroup \n@UPGovt \n\n#RisingBharatSummit #NorthEdition #BuildingAnEnterpriseNation",
-      "created_at": "2026-11-14T11:42:17+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121569404035190821",
-      "image": "https://pbs.twimg.com/media/HXFT69xbsAAXaZL.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121569306655981778",
-      "handle": "groww_cs",
-      "display_name": "Groww Support",
-      "text": "@Murali1079325 Hi, we've responded to you via DM.",
-      "created_at": "2026-11-14T11:41:54+00:00",
-      "url": "https://x.com/groww_cs/status/2121569306655981778",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121569046688874529",
-      "handle": "sunilgurjar01",
-      "display_name": "Sunil Gurjar, CFTe",
-      "text": "10- GROWW https://t.co/Bx16YgNG9f",
-      "created_at": "2026-11-14T11:40:52+00:00",
-      "url": "https://x.com/sunilgurjar01/status/2121569046688874529",
-      "image": "https://pbs.twimg.com/media/HXFTGZ5bQAEWwle.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121569020982051141",
-      "handle": "sunilgurjar01",
-      "display_name": "Sunil Gurjar, CFTe",
-      "text": "𝗛𝗜𝗚𝗛 𝗖𝗢𝗡𝗩𝗜𝗖𝗧𝗜𝗢𝗡 𝗪𝗘𝗘𝗞𝗟𝗬 𝗦𝗧𝗢𝗖𝗞𝗦 🚀\n\n💥 15–25% Upside Potential on a Swing Basis \n\nA Must-Open Thread 🧵\n\n(Bookmark It) 🔖\n\n1- CDSL https://t.co/Y1DRt7BQHH",
-      "created_at": "2026-11-14T11:40:46+00:00",
-      "url": "https://x.com/sunilgurjar01/status/2121569020982051141",
-      "image": "https://pbs.twimg.com/media/HXFS1Z3bsAAheQu.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121568934268981272",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | FPIs pump over Rs 76,000 crore into equities in November so far, monthly record in sight\n\n- FPIs pumped Rs 76,188 crore into Indian equities in November.\n- Inflows follow heavy selling in September and October.\n- Shift in global sentiment and earnings boosted appeal.\n\nRead More:\nhttps://t.co/p9VsTJ0xHm",
-      "created_at": "2026-11-14T11:40:25+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121568934268981272",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121568321472786722",
-      "handle": "Jeet_chetwani17",
-      "display_name": "jeet_chetwani",
-      "text": "🚨 MAHANADI COALFIELDS IPO REVIEW ⛏️📊\n\nCoal India's subsidiary is heading to the market. But is it BLIND APPLY IPO?👀\n\n📅 Reported dates: 19-23 Nov\n🔹 Up to 66.18 crore shares, entirely OFS\n🔹 No IPO proceeds go to the company\n🔹 Price band & lot size: Awaited\n\n📊 Financials (₹ crore, consolidated)\n                   Revenue | PAT\nFY24 → ₹31,634 | ₹11,842\nFY25 → ₹31,353 | ₹10,825\nFY26 → ₹30,550 | ₹10,698 ⚠️ \n\n✅ The positives\n🔹 FY26 operating EBITDA margin: 41.69%\n🔹 FY26 RoACE: 73.26%\n🔹 Reported H1 FY27 revenue: ₹16,093 (+9.3% YoY)\n🔹 Reported H1 FY27 PAT: ₹4,881 (+6.7% YoY)\n\n⚠️ The concerns\n🔹 Revenue declined for two straight financial years\n🔹 FY26 PAT fell 1.2%\n🔹 Coal production fell from 225.17 MT to 218.31 MT\n🔹 Coal prices, power demand & environmental clearances remain key risks\n\n💭 My take: uneven growth. H1 improved, but a profitable company isn't automatically a good IPO at any price.\n\nWaiting for the price band before judging valuation or taking an apply/skip call. \nDo NOT expect MASSIVE GAINS in this IPO.\n\n#IPO #CoalIndia",
-      "created_at": "2026-11-14T11:37:59+00:00",
-      "url": "https://x.com/Jeet_chetwani17/status/2121568321472786722",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121567769707868359",
-      "handle": "Being_Trader_2",
-      "display_name": "Being Jay",
-      "text": "Weekend Updated #XIRR after any changes on Friday Position.\nMarket flat but leading against small caps but lagging top 50 a bit. Let's see what we get in coming week. \n#stockturnaround #stockreversalalert #stock #stockmarkets #nifty #banknifty #groww #stock_on_investor_radar https://t.co/ItnlDs2juc",
-      "created_at": "2026-11-14T11:35:47+00:00",
-      "url": "https://x.com/Being_Trader_2/status/2121567769707868359",
-      "image": "https://pbs.twimg.com/media/HXFSnkLbEAAl-HP.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121567490836930825",
-      "handle": "Smartinv360",
-      "display_name": "Smartinvestor.360",
-      "text": "Divi’s Laboratories, Syngene International, Neuland Laboratories, Bajaj Finance, Cholamandalam Investment, HDFC Bank, BSE, CDSL, KFin Technologies, Bharat Electronics (BEL), Astra Microwave, Data Patterns, Max Healthcare, Apollo Hospitals, Fortis Healthcare, Saregama India,",
-      "created_at": "2026-11-14T11:34:41+00:00",
-      "url": "https://x.com/Smartinv360/status/2121567490836930825",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121567448906494060",
-      "handle": "groww_cs",
-      "display_name": "Groww Support",
-      "text": "@BrahmaKiVani Hi, we’ve shared an update with you via DM. https://t.co/muPjFmY3OV",
-      "created_at": "2026-11-14T11:34:31+00:00",
-      "url": "https://x.com/groww_cs/status/2121567448906494060",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121566326061965656",
-      "handle": "groww_cs",
-      "display_name": "Groww Support",
-      "text": "@NavragSinha Hi, we’ve shared an update with you via DM. https://t.co/muPjFmY3OV",
-      "created_at": "2026-11-14T11:30:03+00:00",
-      "url": "https://x.com/groww_cs/status/2121566326061965656",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121566065419579435",
-      "handle": "NiftyBhaskar",
-      "display_name": "E.Bhaskar Rao",
-      "text": "🔥 Top Quality Stocks with Bumper Q2 Results ↓\n\n◉ Apollo \n◉ Cupid \n◉ HFCL \n◉ Aeroflex \n◉ Sterlite Tech \n◉ Astra Micro \n◉ Acutaas \n◉ TD Power \n◉ Angel One \n◉ GNG Electronics \n◉ Groww\n◉ Kanohar\n◉ MCX\n◉ MTAR Tech \n◉ DIACABS \n◉ Marine \n◉ KDDL \n◉ Knowledge Marine\n\nFour of this list in my PORTFOLIO \n\nWhat is yours? \n\nBe Ready to ride next 10X return 🔥🔥🔥\n\n#Multibagger #Stockinfocus",
-      "created_at": "2026-11-14T11:29:01+00:00",
-      "url": "https://x.com/NiftyBhaskar/status/2121566065419579435",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121565780181762303",
-      "handle": "Wealth100000x",
-      "display_name": "investorwealth",
-      "text": "@ipo_mantra ₹125 means pe 10.\nCoal india trading at 7pe.\n125 is still 30% premium.",
-      "created_at": "2026-11-14T11:27:53+00:00",
-      "url": "https://x.com/Wealth100000x/status/2121565780181762303",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121565696437957111",
-      "handle": "gmigmt_",
-      "display_name": "GuideMeInvest | GuideMeTrade",
-      "text": "✅Buy the companies that make money EVERY time someone trades. 🤯\n\n🏛️ Exchanges & Depositories\n• BSE\n• MCX\n• CDSL\n\n📱 Brokerages & Wealth\n• Angel One\n• Motilal Oswal\n• Anand Rathi Wealth\n\n💰 Asset Management (AMCs)\n• HDFC AMC\n• Nippon Life India AMC\n• ICICI AMC\n• UTI AMC\n\n📊 RTAs\n• CAMS\n• KFin Technologies",
-      "created_at": "2026-11-14T11:27:33+00:00",
-      "url": "https://x.com/gmigmt_/status/2121565696437957111",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121565233634505123",
-      "handle": "gmigmt_",
-      "display_name": "GuideMeInvest | GuideMeTrade",
-      "text": "DEMAT ACCOUNT CHARGES: TOP 4 BROKERS!📊\n\n1- Groww\n• Account Opening: ₹0\n• AMC: ₹0\n• Equity Delivery: ₹20 or 0.1% per order, whichever is lower\n• Intraday: ₹20 or 0.1% per order, whichever is lower\n• F&O: ₹20/order\n• DP Charges: ₹20 per sell transaction\n\n2. Zerodha\n• Account Opening: ₹0\n• AMC: ₹0 for 1st year\n• AMC from 2nd year: ₹300/year + GST for non-BSDA\n• Equity Delivery: ₹0 brokerage\n• Intraday/Futures: ₹20 or 0.03% per order, whichever is lower\n• Options: ₹20/order\n• DP Charges: ₹15.34 per scrip sold\n\n3. Angel One\n• Account Opening: ₹0\n• AMC: ₹0 for 1st year\n• AMC from 2nd year: ₹60 + GST/quarter for non-BSDA\n• Equity Delivery: ₹20 or 0.1% per order, whichever is lower; minimum ₹5\n• Intraday: ₹20 or 0.1% per order, whichever is lower; minimum ₹5\n• F&O: ₹20/order\n• DP Charges: ₹20 + GST per ISIN sold\n\n4. Upstox\n• Account Opening: ₹0\n• AMC: ₹0 for 1st year\n• AMC from 2nd year: ₹300 + GST/year for non-BSDA\n• Equity Delivery: ₹20/order\n• Intraday: ₹20 or 0.1% per order, whichever is lower\n• Futures: ₹20 or 0.05% per order, whichever is lower\n• Options: ₹20/order\n\n💡 ₹0 Account Opening Doesn’t Mean ₹0 Cost\n\nBrokerage + AMC + DP Charges + Taxes can make a big difference over time.",
-      "created_at": "2026-11-14T11:25:43+00:00",
-      "url": "https://x.com/gmigmt_/status/2121565233634505123",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121564870290407864",
-      "handle": "harshitt000",
-      "display_name": "Harshit paliwal",
-      "text": "@sundartsp @priyakuttytwtz Bonds in groww is safe to invest ?",
-      "created_at": "2026-11-14T11:24:16+00:00",
-      "url": "https://x.com/harshitt000/status/2121564870290407864",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121564388377448451",
-      "handle": "ca_mahesh1",
-      "display_name": "CA Naresh",
-      "text": "@me__kaushik Emmvee photophonic ltd and pace digiteck ltd -50%",
-      "created_at": "2026-11-14T11:22:21+00:00",
-      "url": "https://x.com/ca_mahesh1/status/2121564388377448451",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE1C6T01020",
-          "query": "\"EMMVEE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121562202868269522",
-      "handle": "mammetgzla",
-      "display_name": "sid",
-      "text": "India’s Aerospace & Defence Manufacturing: 17 Stocks to Watch for FY27–FY30\n\n1. Rossell Techsys\n2. NIBE\n3. Indo-MIM\n4. Unimech Aerospace\n5. Krishna Defence\n6. Axiscades Tech.\n7. Sika Interplant\n8. OBSC Perfection\n9. Technocrats Plasma\n10. CFF Fluid Control\n11. Apsis Aerocom\n12. Innomet Advanced Materials\n13. Digilogic Systems\n14. Shree Refrigerations\n15. Sigma Advanced\n16. Millworks Tech.\n17. Merritronix",
-      "created_at": "2026-11-14T11:13:40+00:00",
-      "url": "https://x.com/mammetgzla/status/2121562202868269522",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        },
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121560941993320761",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "India stands at an inflection point. The next chapter will belong to those who turn ambition into advantage.\n\nOver the past four years, Coalesce has evolved into a premier forum for India's business leadership to debate, challenge, and shape the art of the possible.  \n\nCoalesce 2026 marks a new chapter, where insight becomes execution and vision becomes impact.\n\nBuild the Apex Advantage. Navigate the bend. Accelerate to outperform.\n\nJoin the leaders building the businesses of tomorrow and defining the future of Bharat.\n\n@DeloitteIndia @AvolutionAbacus @AnthropicAI @Adobe @awscloud @Celonis @databricks @Dell  @ElevenLabs @Genesys @koredotai @googlecloud @IBM @SAP @thomsonreuters @salesforce @rubrikInc @Oracle @Netskope @ServiceNow @Snowflake @UiPath @Workday \n#Coalesce2026 #ApexAdvantage #Leadership #BusinessOfTomorrow #CXO #ArtOfThePossible #Innovation #Growth #FutureReady #Partnered",
-      "created_at": "2026-11-14T11:08:39+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121560941993320761",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121560799458267180",
-      "handle": "SUM_Dhamija",
-      "display_name": "Charts Paradise 🇮🇳🇭🇲",
-      "text": "@me__kaushik Apollo Micro \nCDSL\n\nBeen there in PF from long time now.",
-      "created_at": "2026-11-14T11:08:05+00:00",
-      "url": "https://x.com/SUM_Dhamija/status/2121560799458267180",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121560487364321510",
-      "handle": "IPOReview_Groww",
-      "display_name": "IPO Review by Groww",
-      "text": "Upcoming PSU IPO Alert 📢⛏️\n\nMahanadi Coalfields Limited (MCL) IPO\n\n🔹IPO Dates: 19 – 23 November, 2026\n🔹Issue Structure: 100% OFS of up to 66.18 Crore shares\n🔹Shareholder Quota: Up to 10% \n🔹Face Value: ₹2 per share\n🔹Registrar: KFin Technologies Limited\n🔹Listing At: BSE & NSE\n\n📌 Price band and lot size to be announced shortly ahead of opening.\n\nFollow IPO Review by Groww for upcoming IPO news, subscription updates & allotment details! \n\n#MahanadiCoalfields #MCL #MCLIP0 #CoalIndia #PSUIPO #UpcomingIPO #IPOAlert #MainboardIPO #ShareholderQuota #StockMarketIndia #ShareMarket #DalalStreet #BSE #NSE #IPOReviewByGroww",
-      "created_at": "2026-11-14T11:06:51+00:00",
-      "url": "https://x.com/IPOReview_Groww/status/2121560487364321510",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        },
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121559475417211341",
-      "handle": "profitable55282",
-      "display_name": "profitable trades",
-      "text": "bfr n aftr #CDSL LTP 1447\nfrm 1170 to 1470\nNw the RSI guy can identify CDSL is in +ve momentum\nbt we hv decoded it much earlier🤌\nNw I m expecting it to show sm respect 2 SUPPLY area\nOn retest of long term trendline along wid GREEN BOX, will overtake RED BOX\n\n #STOCKMARKETINDIA https://t.co/8FwDuIVhqP",
-      "created_at": "2026-11-14T11:02:50+00:00",
-      "url": "https://x.com/profitable55282/status/2121559475417211341",
-      "image": "https://pbs.twimg.com/media/HXFLEb4bEAARZDf.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121558057058717819",
-      "handle": "FinfinityCap",
-      "display_name": "FinFinity Capital (SEBI REGISTERED)",
-      "text": "Do you think Groww will give ATH breakout soon?",
-      "created_at": "2026-11-14T10:57:12+00:00",
-      "url": "https://x.com/FinfinityCap/status/2121558057058717819",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121557993871519989",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Canada concludes Philippines FTA talks, substantially wraps up Asean trade pact, says Carney\n\n- Canada and the Philippines concluded free trade agreement talks.\n- Canada advanced trade pact talks with ASEAN to diversify markets.\n- Carney announced C$26 million in aid for the Philippines.\n\nRead More:\nhttps://t.co/LRNS9xi9LW",
-      "created_at": "2026-11-14T10:56:57+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121557993871519989",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121557866071105951",
-      "handle": "fnind",
-      "display_name": "Focus News",
-      "text": "महानदी कोलफील्ड्स ने आईपीओ के लिए दाखिल किए मसौदा दस्तावेज\n\n#FocusNews #BusinessNews\n#MahanadiCoalfields #CoalIndia #IPO #ShareMarket #StockMarketIndia #Investing #IndianMarkets #MarketNews #IPOUpdate #EnergySector\n\n https://t.co/3ZwYMYbCbc",
-      "created_at": "2026-11-14T10:56:26+00:00",
-      "url": "https://x.com/fnind/status/2121557866071105951",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121557485005996160",
-      "handle": "ShubhamInvests",
-      "display_name": "Shubham Shukla",
-      "text": "Mahanadi Coalfields (MCL) IPO: Complete Details 🚀\n\n📅 DATES\nOpen: Thu, Nov 19, 2026\nClose: Mon, Nov 23, 2026\nAnchor bidding: Wed, 18 Nov\nAllotment: ~Wed, 25 Nov\nRefunds & demat credit: ~Thu, 26 Nov\nListing: ~Fri, 27 Nov, 2026 (NSE & BSE) \n(RHP filed 13 Nov, so cutoff date for buying CIL for shareholder quota was 12 Nov)\n\n💰 PRICE & LOT\nPrice band: Not officially announced yet (expected shortly before opening; some market estimates/tentative figures around ₹118–125)\nLot size: Not officially announced\nFV: ₹2\nShareholder quota: Up to ~6.62 crore shares (~10% of offer) for eligible Coal India shareholders (record date was Nov 13)\nEmployee reservation: Up to ~3.31 crore shares (discount to be announced)\n\n📦 ISSUE\nSize: Pure OFS of up to 66.18 crore shares (10% stake sale by parent Coal India)\nType: Book Built, Offer for Sale only (no fresh issue)\nEstimated size (media/reports): ~₹8,000–10,000 Cr range (depending on final price)\nFV: ₹2\nReservation (net offer): QIB not more than 50%, NII not less than 15%, Retail not less than 35%\nCompany receives no proceeds — all proceeds go to selling shareholder (Coal India)\nListing: Mainboard (NSE & BSE)\n\n📊 FINANCIALS\nFY26: Revenue ~₹30,550 Cr, PAT ~₹10,678–10,698 Cr\nFY25: Revenue ~₹31,353 Cr, PAT ~₹10,825 Cr\nFY24: Revenue ~₹31,634 Cr, PAT ~₹11,842 Cr\nH1/Q1 FY27: Revenue figures in the ₹8,000–16,000 Cr range across reports; PAT solid but margins slightly softer than prior years\nHigh EBITDA margins (~46–50% range in recent years); very low debt\n\n📈 VALUATION\nPost-issue market cap: Depends on final price band (media reports earlier suggested potential valuation up to ~$10 billion / ₹80,000+ Cr range in optimistic scenarios)\nEPS (FY26): ~₹16.13\nRoNW: ~54% (FY26)\nStrong cash generation; low leverage\n\n🎯 USE OF PROCEEDS\nNone to the company (100% OFS). Proceeds (net of expenses) go to Coal India.\n\n🏢 BUSINESS\nWholly-owned subsidiary of Coal India. Largest coal-producing arm of CIL. Operates mainly in Odisha (Talcher and Ib Valley coalfields). Produced ~218 million tonnes of coal in FY26 (~21% of India’s domestic coal output and ~28% of Coal India’s total). Primarily thermal (non-coking) coal via large-scale opencast mining. Miniratna Category I status. Supplies power utilities and industrial customers.\n\n🤝 Lead managers: SBI Capital Markets, Axis Capital, BOB Capital Markets, IDBI Capital Markets & Securities, IIFL Capital Services | Registrar: KFin Technologies\n\nNotes: Price band and exact lot size are still pending official announcement. Issue size in rupee terms will be clear once the band is fixed. \n\n#Investing",
-      "created_at": "2026-11-14T10:54:55+00:00",
-      "url": "https://x.com/ShubhamInvests/status/2121557485005996160",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121557474000109657",
-      "handle": "Stock_iQ_",
-      "display_name": "Trade Scope",
-      "text": "4. #GROWW https://t.co/Jy30TQQhvE",
-      "created_at": "2026-11-14T10:54:53+00:00",
-      "url": "https://x.com/Stock_iQ_/status/2121557474000109657",
-      "image": "https://pbs.twimg.com/media/HXFImv9aYAAPLoH.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121557470393102443",
-      "handle": "Stock_iQ_",
-      "display_name": "Trade Scope",
-      "text": "3. #CDSL https://t.co/561pFrjnV0",
-      "created_at": "2026-11-14T10:54:52+00:00",
-      "url": "https://x.com/Stock_iQ_/status/2121557470393102443",
-      "image": "https://pbs.twimg.com/media/HXFIdxNaoAEWK7R.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121556037438435741",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "PMO summons telecom secretary over use of fake court orders: Report\n\nThe findings have triggered a criminal investigation by state police into potential forgery and cheating by unidentified people. \n\nRead More:\nhttps://t.co/0Jokj7I4ia",
-      "created_at": "2026-11-14T10:49:10+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121556037438435741",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121553345420890372",
-      "handle": "Overhedgee",
-      "display_name": "Over Hedge",
-      "text": "Mahanadi Coalfields (MCL) IPO\n\n🏢 A wholly owned subsidiary of Coal India, MCL is India’s largest coal producer, operating major mines in Odisha’s Talcher & Ib Valley coalfields.\n\n📊 FY26 Production: 218.31 MT\n\n📅 IPO: 19–23 Nov 2026\n📝 Allotment: 25 Nov\n📈 Listing: 27 Nov\n\n💰 10% OFS by Coal India.\n\nPrice Band & Lot Size awaited.\n\n#MCLIPO #IPO #StockMarket",
-      "created_at": "2026-11-14T10:38:28+00:00",
-      "url": "https://x.com/Overhedgee/status/2121553345420890372",
-      "image": "https://pbs.twimg.com/media/HXFFhWtbIAAv-wY.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121552762060067129",
-      "handle": "fundamentalinsi",
-      "display_name": "Abhinav | Fundamental Insights | NISM CERTIFIED",
-      "text": "IPO week ahead 📅\n\n🌾 Crystal Crop Protection\nOpens 18–20 Nov | ₹259–272 | Lot 55 (₹14,960)\nSize ₹455 cr (₹355 cr fresh + ₹101 cr OFS)\nMost of the fresh money goes to repaying debt\n\n⛏️ Mahanadi Coalfields (Coal India arm)\nOpens 19–23 Nov | 100% OFS | Price band awaited\n\nWhich one are you applying for? 👇\n\n#IPO #StockMarket #Nifty",
-      "created_at": "2026-11-14T10:36:09+00:00",
-      "url": "https://x.com/fundamentalinsi/status/2121552762060067129",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121552470874968452",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "MeitY launches portal for consent manager registration, but DPBI yet to become operational\n\nThe portal will allow companies with a minimum net worth of Rs 2 crore to apply for registration as consent managers under the DPDP Act.\n\nRead More:\nhttps://t.co/7VEVFL1VFs",
-      "created_at": "2026-11-14T10:35:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121552470874968452",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121552339735884010",
-      "handle": "QularLabs",
-      "display_name": "Suryaprakash",
-      "text": "@decoder_mherwal Lets connect and groww together.",
-      "created_at": "2026-11-14T10:34:28+00:00",
-      "url": "https://x.com/QularLabs/status/2121552339735884010",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121551149677613485",
-      "handle": "GingerInvest44",
-      "display_name": "Ginger Investor",
-      "text": "Axiscades Technologies\n\nBeautiful set but high valuation https://t.co/fdnfwAvQE9",
-      "created_at": "2026-11-14T10:29:45+00:00",
-      "url": "https://x.com/GingerInvest44/status/2121551149677613485",
-      "image": "https://pbs.twimg.com/media/HXFDbfLbcAEdfhT.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"Axiscades Technologies\""
-        },
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121550722999464026",
-      "handle": "BaluGorade",
-      "display_name": "Balu Gorade",
-      "text": "2/8 Abakkus Small Cap\n\n- EAAA India Alternatives\n\n3/8 Helios Small Cap\n\n- PVR Inox\n- Zetwerk\n- Tonbo Imaging",
-      "created_at": "2026-11-14T10:28:03+00:00",
-      "url": "https://x.com/BaluGorade/status/2121550722999464026",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA India Alternatives\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121550561690726788",
-      "handle": "BhagavanEquity",
-      "display_name": "Bhagavan",
-      "text": "📊 India's Brokerage Battle!\n\n🥇 Groww leads with 1.37 crore active clients.\n\nHere's India Top 10 stockbrokers👇 https://t.co/uhvifBF60C",
-      "created_at": "2026-11-14T10:27:25+00:00",
-      "url": "https://x.com/BhagavanEquity/status/2121550561690726788",
-      "image": "https://pbs.twimg.com/media/HXFC_IUakAAhfhP.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121550558473384402",
-      "handle": "authorityiepf",
-      "display_name": "IEPFA (Investor Education and Protection Fund)",
-      "text": "DELHI, JUST 3 DAYS TO GO!\n\nHave unclaimed shares or dividends? Need assistance with your IEPF claims? Your opportunity to get expert guidance is just around the corner!\n\nJoin us at the Delhi Niveshak Shivir and get your investment-related queries addressed directly by experts. From unclaimed dividends and shares to pending claims and investor services, get the guidance you need, all under one roof.\n\n📅 Date: 17th November 2026\n📍 Venue: India Habitat Centre, Jacaranda Hall, New Delhi\n\nRegister now! Scan the QR code on the poster to secure your participation.\n\nRemember, IEPF claim filing is completely free. Stay alert, avoid agents and rely only on official channels.\n\nStay informed. Stay empowered. Be a smart investor!\n\n#DelhiNiveshakShivir #IEPFA #IEPF #InvestorAwareness #NiveshakShivir #InformedInvestor #EmpoweredInvestor #SmartInvestor #SEBI #CDSL #NSDL #BSE #NSE #InvestorEducation #DelhiEvents #FinancialLiteracy #InvestSmart #InvestorProtection",
-      "created_at": "2026-11-14T10:27:24+00:00",
-      "url": "https://x.com/authorityiepf/status/2121550558473384402",
-      "image": "https://pbs.twimg.com/media/HXFCgOhb0AAk_Nm.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121548226272891334",
-      "handle": "RajeevS85125633",
-      "display_name": "Rajeev Sharma",
-      "text": "@sunilgurjar01 BSE/NSE, CDSL, RELIANCE JIO/AIRTEL, CAMS, ANGEL ONE,ASIAN PAINTS",
-      "created_at": "2026-11-14T10:18:08+00:00",
-      "url": "https://x.com/RajeevS85125633/status/2121548226272891334",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121547998320824431",
-      "handle": "Jeet_chetwani17",
-      "display_name": "jeet_chetwani",
-      "text": "Before Mahanadi Coalfields IPO, a look at Coal India's last 2 subsidiary listings ⛏️👀\n\n1️⃣ Bharat Coking Coal (Listed: 19 Jan 2026)\n🔹 Issue price: ₹23\n🔹 Listing: ₹45 (+95.65%)\n🔹 Latest close: ₹31.54\n🔹 From listing: -29.91%\n🔹 From issue price: +37.13%\n\n2️⃣ CMPDI (Listed: 30 Mar 2026)\n🔹 Issue price: ₹172\n🔹 Listing: ₹160 (-6.98%)\n🔹 Latest close: ₹189.20\n🔹 From listing: +18.25%\n🔹 From issue price: +10.00%\n\nOne nearly doubled on debut, then fell. The other listed at a discount, then climbed 📊\n\nReturns exclude dividends.\n\n#IPO #CoalIndia",
-      "created_at": "2026-11-14T10:17:13+00:00",
-      "url": "https://x.com/Jeet_chetwani17/status/2121547998320824431",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121547105324114408",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Binance targets full reopening of withdrawals by next week\n\nBinance aims to reopen withdrawals across all remaining networks and assets by the end of next week after a security breach linked to North Korea resulted in the theft of $6.3 billion in cryptocurrency.\n\nRead More:\nhttps://t.co/fl6LslIAR2",
-      "created_at": "2026-11-14T10:13:41+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121547105324114408",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121547061527232677",
-      "handle": "VividAlerts",
-      "display_name": "Vivid Alerts",
-      "text": "🌱 Top Mutual Funds [Large Cap] (1M Return • 13 Nov 2026):\n1. SBI BSE PSU BANK INDEX FUND: +13.97%\n2. Groww Nifty PSU Bank Index Fund: +13.62%\n3. Kotak Nifty Top 10 Equal Weight Index Fund: +12.10%\n\nMore at https://t.co/MwciuyIhau https://t.co/T61LfpfbKC",
-      "created_at": "2026-11-14T10:13:30+00:00",
-      "url": "https://x.com/VividAlerts/status/2121547061527232677",
-      "image": "https://pbs.twimg.com/media/HXE_yn8acAA-9oq.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121546934422765888",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | Markets extend winning streak to third week on FII buying; rupee weakens 33 paise\n\nForeign institutional investors (FIIs) extended their buying streak for the third consecutive week, purchasing equities worth Rs 33,342.70 crore.\n\nRead:\nhttps://t.co/stUoX6LsxW",
-      "created_at": "2026-11-14T10:13:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121546934422765888",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121546823827620016",
-      "handle": "cavante_",
-      "display_name": "nesa, maaf slowresp habis ditipu",
-      "text": "wekekek entah kenapa aku suka banget video ini diliat banyak fandom 😁 https://t.co/5ztpb73GtN",
-      "created_at": "2026-11-14T10:12:33+00:00",
-      "url": "https://x.com/cavante_/status/2121546823827620016",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121544669645685214",
-      "handle": "Rudransh_012",
-      "display_name": "Rudransh Singhal",
-      "text": "Groww, Pine Labs and PhysicsWallah all listed within weeks of each other this November. All at double digit premiums.\n\nMutual funds are already building positions in all three. When the primary market window opens this wide, that itself is information.",
-      "created_at": "2026-11-14T10:04:00+00:00",
-      "url": "https://x.com/Rudransh_012/status/2121544669645685214",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121543010026680409",
-      "handle": "SResearch360",
-      "display_name": "SRA 360°",
-      "text": "Nifty Capital Markets Index:\nAngelone, BSE, Motilalofs, MCX, CDSL and many more in cash segment have just blasted.\n\nAny similar chart in Sector or Stock you are looking?\nComment below 👇👇 https://t.co/snID6atRRl",
-      "created_at": "2026-11-14T09:57:24+00:00",
-      "url": "https://x.com/SResearch360/status/2121543010026680409",
-      "image": "https://pbs.twimg.com/media/HXE8HpAaMAAZwvy.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121542774348734879",
-      "handle": "ssharmar004",
-      "display_name": "Sakshi Sharma",
-      "text": "#MahanadiCoalfieldsIPO  has filed its RHP for an IPO opening November 19, 2026. 👩‍🚒\n\nThe offer is an offer for sale of up to 66.18 crore shares by #CoalIndia, with no proceeds going to MCL. \n                   The company produced 218.31 million tonnes of coal in FY26.⛏️\n\n#IPOAlert #NIFTY #GIFTNIFTY",
-      "created_at": "2026-11-14T09:56:28+00:00",
-      "url": "https://x.com/ssharmar004/status/2121542774348734879",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121542656194978289",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Sheikh Hasina's return to Bangladesh: India sets two conditions for BNP govt, says report\n\n-India sets two conditions for Sheikh Hasina's return.\n-Bangladesh Army must fly her back in a military plane.\n-Dhaka must guarantee her fair legal trial and appeal.\n\nRead More:\nhttps://t.co/QHeXEbL1nU",
-      "created_at": "2026-11-14T09:56:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121542656194978289",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121541024581619969",
-      "handle": "chartwhisp60202",
-      "display_name": "Chart Whisperer",
-      "text": "India’s Aerospace & Defence Manufacturing: 17 Stocks to Watch for FY27–FY30\n\n1. Rossell Techsys\n2. NIBE\n3. Indo-MIM\n4. Unimech Aerospace\n5. Krishna Defence\n6. Axiscades Tech.\n7. Sika Interplant\n8. OBSC Perfection\n9. Technocrats Plasma\n10. CFF Fluid Control\n11. Apsis Aerocom\n12. Innomet Advanced Materials\n13. Digilogic Systems\n14. Shree Refrigerations\n15. Sigma Advanced\n16. Millworks Tech.\n17. Merritronix\n\n #IndianStockMarket #Manufacturing #Investing #IPO",
-      "created_at": "2026-11-14T09:49:31+00:00",
-      "url": "https://x.com/chartwhisp60202/status/2121541024581619969",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        },
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121540230696280513",
-      "handle": "Moneyfyx",
-      "display_name": "IPOScanner by Moneyfyx",
-      "text": "⛏️ Mahanadi Coalfields Limited (MCL) IPO  !\n\n👥 Shareholder Quota: Yes ☑️ \n\nDetails: https://t.co/cXYrcVgqpD\n\n✔  Min 1 share of Coal India\n⌛️ Last Date to Buy was 12 Nov 26\n\n📲 WhatsApp: https://t.co/mSOKw2jrfA\n📨 Telegram: https://t.co/9MTqyDYUuR",
-      "created_at": "2026-11-14T09:46:21+00:00",
-      "url": "https://x.com/Moneyfyx/status/2121540230696280513",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121540145333797364",
-      "handle": "DattaNalam3468",
-      "display_name": "Datta Nalam",
-      "text": "@krishankkumhar Coforge pls reply bro",
-      "created_at": "2026-11-14T09:46:01+00:00",
-      "url": "https://x.com/DattaNalam3468/status/2121540145333797364",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121540119769567275",
-      "handle": "SeriousLeee_",
-      "display_name": "Serious",
-      "text": "@Tanmay_31_ @grok i have 1 share of coal india so can i apply under shareholder quota for this one ?",
-      "created_at": "2026-11-14T09:45:55+00:00",
-      "url": "https://x.com/SeriousLeee_/status/2121540119769567275",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121540117206888607",
-      "handle": "DattaNalam3468",
-      "display_name": "Datta Nalam",
-      "text": "@krishankkumhar Coforge",
-      "created_at": "2026-11-14T09:45:54+00:00",
-      "url": "https://x.com/DattaNalam3468/status/2121540117206888607",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121537497054195760",
-      "handle": "finologyticker",
-      "display_name": "Finology Ticker",
-      "text": "📊 Axiscades Technologies - Quarterly Results Update\n\nSales rose but Net Profit declined QoQ\n\n▲ Sales: ₹195 Cr (+6.68% QoQ)\n▼ Net Profit: −₹48.12 Cr (−583% QoQ)\n\nDiscover more: https://t.co/oQaZ0evpM5",
-      "created_at": "2026-11-14T09:35:30+00:00",
-      "url": "https://x.com/finologyticker/status/2121537497054195760",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"Axiscades Technologies\""
-        },
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121536868395405600",
-      "handle": "sunilgurjar01",
-      "display_name": "Sunil Gurjar, CFTe",
-      "text": "DEMAT ACCOUNT CHARGES: TOP 4 BROKERS!📊\n\n1- Groww\n• Account Opening: ₹0\n• AMC: ₹0\n• Equity Delivery: ₹20 or 0.1% per order, whichever is lower\n• Intraday: ₹20 or 0.1% per order, whichever is lower\n• F&O: ₹20/order\n• DP Charges: ₹20 per sell transaction\n\n2. Zerodha\n• Account Opening: ₹0\n• AMC: ₹0 for 1st year\n• AMC from 2nd year: ₹300/year + GST for non-BSDA\n• Equity Delivery: ₹0 brokerage\n• Intraday/Futures: ₹20 or 0.03% per order, whichever is lower\n• Options: ₹20/order\n• DP Charges: ₹15.34 per scrip sold\n\n3. Angel One\n• Account Opening: ₹0\n• AMC: ₹0 for 1st year\n• AMC from 2nd year: ₹60 + GST/quarter for non-BSDA\n• Equity Delivery: ₹20 or 0.1% per order, whichever is lower; minimum ₹5\n• Intraday: ₹20 or 0.1% per order, whichever is lower; minimum ₹5\n• F&O: ₹20/order\n• DP Charges: ₹20 + GST per ISIN sold\n\n4. Upstox\n• Account Opening: ₹0\n• AMC: ₹0 for 1st year\n• AMC from 2nd year: ₹300 + GST/year for non-BSDA\n• Equity Delivery: ₹20/order\n• Intraday: ₹20 or 0.1% per order, whichever is lower\n• Futures: ₹20 or 0.05% per order, whichever is lower\n• Options: ₹20/order\n\n💡 ₹0 Account Opening Doesn’t Mean ₹0 Cost\n\nBrokerage + AMC + DP Charges + Taxes can make a big difference over time.",
-      "created_at": "2026-11-14T09:33:00+00:00",
-      "url": "https://x.com/sunilgurjar01/status/2121536868395405600",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121536752062193700",
-      "handle": "mammetgzla",
-      "display_name": "sid",
-      "text": "HIGHEST-PAID INDIAN IT CEOs IN 2026!📊\n\n1. Sandeep Kalra — Persistent Systems: ₹388.58 Cr\n2. C Vijayakumar — HCLTech: ₹171.93 Cr\n3. Nitin Rakesh — Mphasis: ₹104.82 Cr\n4. Salil Parekh — Infosys: ₹82.60 Cr\n5. Mohit Joshi — Tech Mahindra: ₹67.50 Cr\n6. Sudhir Singh — Coforge: ₹55.81 Cr\n7. Srinivas Pallia — Wipro: ₹49.64 Cr\n8. K. Krithivasan — TCS: ₹28.11 Cr\n9. Venu Lambu — LTIMindtree: ₹27.26 Cr\n10. Amit Chadha — L&T Technology Services: ₹14.96 Cr",
-      "created_at": "2026-11-14T09:32:32+00:00",
-      "url": "https://x.com/mammetgzla/status/2121536752062193700",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121536710727360689",
-      "handle": "snipy_in",
-      "display_name": "snipy.in",
-      "text": "Mahanadi Coalfields files RHP for IPO with 66.18 crore shares on offer\n\nThe offer for sale represents around 10 per cent stake in the company; MCL will not receive proceeds as parent Coal India sells shares https://t.co/9kVVkh1gf5",
-      "created_at": "2026-11-14T09:32:22+00:00",
-      "url": "https://x.com/snipy_in/status/2121536710727360689",
-      "image": "https://pbs.twimg.com/media/HXE2XA3aMAApaR_.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121536649234620580",
-      "handle": "ZeeBusiness",
-      "display_name": "Zee Business",
-      "text": "Mahanadi Coalfields IPO: Coal India arm files RHP; 66.18 crore shares on offer\n\nhttps://t.co/Hbv7EbJLVe",
-      "created_at": "2026-11-14T09:32:08+00:00",
-      "url": "https://x.com/ZeeBusiness/status/2121536649234620580",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121536616649163118",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Sam Pitroda goes against Rahul Gandhi's claim, says 'PM doesn't tap phones'\n\n-Sam Pitroda refutes Rahul Gandhi's phone tapping charge.\n-Pitroda believes his own devices are under surveillance.\n-BJP dismisses Rahul Gandhi's allegations as baseless.\n\nRead More:\nhttps://t.co/XQbVs9p7b2",
-      "created_at": "2026-11-14T09:32:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2121536616649163118",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2121536450533761479",
-      "handle": "veeranhq",
-      "display_name": "Bottom Line Bella 📊",
-      "text": "Mahanadi Coalfields' proposed IPO is up to 66.18 crore equity shares, about a 10% stake in the Coal India arm, and not one rupee of the proceeds reaches MCL: Coal India's filing says the issue is entirely an OFS, with all of it going to the parent as selling shareholder. That is fresh capital for no one at the company whose shares are being sold.\n\nZee Business reports MCL filed its RHP on November 14, after the September 2026 DRHP.\n\n- Issue: OFS of up to 66,18,36,300 shares held by Coal India, about a 10% stake in MCL\n- MCL's share of the proceeds: zero, since the issue is entirely an OFS\n- SECL, another Coal India arm, filed its DRHP on November 2 for up to 66.81 crore shares at Rs 2 face value, also an OFS by the parent\n\nBoth proposals remain subject to regulatory approvals and prevailing market conditions, so \"up to\" is still the operative phrase.\n\n⚠️ Not investment advice. Do your own research and speak to a licensed financial adviser before you invest.",
-      "created_at": "2026-11-14T09:31:20+00:00",
-      "url": "https://x.com/veeranhq/status/2121536450533761479",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121536031405269227",
-      "handle": "haria_neel",
-      "display_name": "Neel Haria 🇮🇳",
-      "text": "🤯 𝗪𝗛𝗔𝗧 𝗜𝗙 𝗬𝗢𝗨 𝗖𝗢𝗨𝗟𝗗 𝗜𝗡𝗩𝗘𝗦𝗧 𝗜𝗡 𝗧𝗛𝗘 𝗕𝗨𝗦𝗜𝗡𝗘𝗦𝗦𝗘𝗦 𝗧𝗛𝗔𝗧 𝗣𝗥𝗢𝗙𝗜𝗧 𝗙𝗥𝗢𝗠 𝗜𝗡𝗗𝗜𝗔'𝗦 𝗚𝗥𝗢𝗪𝗜𝗡𝗚 𝗜𝗡𝗩𝗘𝗦𝗧𝗠𝗘𝗡𝗧 𝗘𝗖𝗢𝗦𝗬𝗦𝗧𝗘𝗠? 🇮🇳💰\n\nMost investors chase the next multibagger stock…\n\n𝗕𝗨𝗧 𝗪𝗛𝗔𝗧 𝗔𝗕𝗢𝗨𝗧 𝗧𝗛𝗘 𝗖𝗢𝗠𝗣𝗔𝗡𝗜𝗘𝗦 𝗧𝗛𝗔𝗧 𝗣𝗥𝗢𝗩𝗜𝗗𝗘 𝗧𝗛𝗘 𝗣𝗟𝗔𝗧𝗙𝗢𝗥𝗠𝗦, 𝗦𝗘𝗥𝗩𝗜𝗖𝗘𝗦 𝗔𝗡𝗗 𝗜𝗡𝗙𝗥𝗔𝗦𝗧𝗥𝗨𝗖𝗧𝗨𝗥𝗘 𝗕𝗘𝗛𝗜𝗡𝗗 𝗘𝗩𝗘𝗥𝗬 𝗧𝗥𝗔𝗡𝗦𝗔𝗖𝗧𝗜𝗢𝗡?\n\n👀 𝗞𝗘𝗘𝗣 𝗧𝗛𝗜𝗦 𝗟𝗜𝗦𝗧 𝗢𝗡 𝗬𝗢𝗨𝗥 𝗥𝗔𝗗𝗔𝗥!\n\n🏛️ 𝗧𝗛𝗘 𝗠𝗔𝗥𝗞𝗘𝗧𝗣𝗟𝗔𝗖𝗘 𝗣𝗟𝗔𝗬𝗘𝗥𝗦\n• BSE\n• MCX\n• CDSL\n\n📱 𝗧𝗛𝗘 𝗕𝗥𝗢𝗞𝗘𝗥𝗔𝗚𝗘 & 𝗪𝗘𝗔𝗟𝗧𝗛 𝗣𝗟𝗔𝗬𝗘𝗥𝗦\n• Angel One\n• Motilal Oswal Financial Services\n• Anand Rathi Wealth\n\n💰 𝗧𝗛𝗘 𝗪𝗘𝗔𝗟𝗧𝗛 𝗠𝗔𝗡𝗔𝗚𝗘𝗥𝗦\n• HDFC AMC\n• Nippon Life India AMC\n• ICICI Prudential AMC\n• UTI AMC\n\n📊 𝗧𝗛𝗘 𝗕𝗔𝗖𝗞𝗘𝗡𝗗 𝗣𝗢𝗪𝗘𝗥𝗛𝗢𝗨𝗦𝗘𝗦\n• CAMS\n• KFin Technologies\n\n💡 𝗧𝗛𝗘 𝗕𝗜𝗚 𝗜𝗗𝗘𝗔:\n\nYou don't always have to predict which stock an investor will buy.\n\nSometimes, you can study the businesses that enable investing itself!\n\nAs India's financial markets expand, these companies deserve investor attention.\n\n⚠️ 𝗡𝗢𝗧 𝗘𝗩𝗘𝗥𝗬 𝗧𝗥𝗔𝗡𝗦𝗔𝗖𝗧𝗜𝗢𝗡 𝗠𝗘𝗔𝗡𝗦 𝗣𝗥𝗢𝗙𝗜𝗧. Valuations, competition and business performance matter.\n\n👇 𝗟𝗘𝗧'𝗦 𝗦𝗘𝗘 𝗪𝗛𝗔𝗧 𝗜𝗡𝗩𝗘𝗦𝗧𝗢𝗥𝗦 𝗧𝗛𝗜𝗡𝗞!\n\n𝗪𝗛𝗜𝗖𝗛 𝗢𝗡𝗘 𝗖𝗢𝗨𝗟𝗗 𝗕𝗘 𝗧𝗛𝗘 𝗡𝗘𝗫𝗧 𝗕𝗜𝗚 𝗪𝗘𝗔𝗟𝗧𝗛 𝗖𝗥𝗘𝗔𝗧𝗢𝗥? 🚀\n\n𝗡𝗔𝗠𝗘 𝗬𝗢𝗨𝗥 𝗙𝗔𝗩𝗢𝗨𝗥𝗜𝗧𝗘 𝗦𝗧𝗢𝗖𝗞 𝗕𝗘𝗟𝗢𝗪! 👇\n\n#StockMarketIndia #Investing #WealthCreation #BSE #CDSL #CAMS #KFinTech #HDFCAMC #AngelOne #Nifty50",
-      "created_at": "2026-11-14T09:29:40+00:00",
-      "url": "https://x.com/haria_neel/status/2121536031405269227",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121535945501716834",
-      "handle": "Growthvistaa",
-      "display_name": "Growthvista Research Services Pvt Ltd.",
-      "text": "⛏️ Mahanadi Coalfields IPO: A ₹10,000 Crore Mega Issue!\n\nIndia's coal sector is heading towards the IPO market! Mahanadi Coalfields (MCL), a subsidiary of Coal India, is reportedly planning a ₹10,000 crore IPO, expected to open on November 19.\n\nCoal India plans to divest up to 10% stake through the offering. The IPO could bring one of India's major coal producers into the listed market.\n\nAll eyes on this upcoming public issue!\n\n#MahanadiCoalfields #IPO #UpcomingIPO #StockMarketIndia #CoalIndia #IPO2026 #DalalStreet #stockmarkets \n\nDisclaimer: https://t.co/3RomKBVjiv",
-      "created_at": "2026-11-14T09:29:20+00:00",
-      "url": "https://x.com/Growthvistaa/status/2121535945501716834",
-      "image": "https://pbs.twimg.com/media/HXE1rfNagAABWF2.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        },
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121535188484166086",
-      "handle": "RIMOWIDARMAN",
-      "display_name": "Mrinalini Joshi",
-      "text": "MSCI's November review adds LIC, Coforge, Adani Green, and Meesho to the Global Standard index while PI Industries exits, effective 30 Nov, with roughly $1.7 bn in estimated passive inflows. Index rebalances are mechanical, so anticipate closing-session volume spikes instead of reading them as operator manipulation.",
-      "created_at": "2026-11-14T09:26:19+00:00",
-      "url": "https://x.com/RIMOWIDARMAN/status/2121535188484166086",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121535177709310193",
-      "handle": "PatrikaNews",
-      "display_name": "Patrika Hindi News",
-      "text": "Coal India की सब्सिडियरी ला रही IPO, ग्रे मार्केट में दिखा मुनाफा, 10,000 करोड़ जुटाने की है तैयारी\nhttps://t.co/LAvmm1lrP7",
-      "created_at": "2026-11-14T09:26:17+00:00",
-      "url": "https://x.com/PatrikaNews/status/2121535177709310193",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121534878248513725",
-      "handle": "Skunfiltered",
-      "display_name": "Skunfiltered",
-      "text": "@abhi2010ahm Hi Brother - Can I please request for Groww chart if possible 🙏",
-      "created_at": "2026-11-14T09:25:05+00:00",
-      "url": "https://x.com/Skunfiltered/status/2121534878248513725",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121533830691451195",
-      "handle": "i_amArko",
-      "display_name": "Arkabrata Das",
-      "text": "MSCI November review: LIC, Coforge, Adani Green and Meesho get added to the Global Standard index, PI Industries exits. Effective 30 Nov.\n\nNuvama estimates ~$1.7 bn of passive inflows from it.\n\nWhy F&O traders should care: passive funds execute around the rebalance date, so expect heavy closing-session volume in these names and in index heavyweights that day. Mark it on your calendar before you blame \"operators\" for a strange last 30 minutes.\n\nEducational only, not investment advice.",
-      "created_at": "2026-11-14T09:20:56+00:00",
-      "url": "https://x.com/i_amArko/status/2121533830691451195",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121532676461224387",
-      "handle": "groww_cs",
-      "display_name": "Groww Support",
-      "text": "@NavragSinha Hello Navrag Sinha, please share your registered contact details via DM so we can assist you better. https://t.co/muPjFmY3OV",
-      "created_at": "2026-11-14T09:16:20+00:00",
-      "url": "https://x.com/groww_cs/status/2121532676461224387",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121532582131036178",
-      "handle": "breakoutchart__",
-      "display_name": "Breakout_Buzz🐦",
-      "text": "🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥\n\nBreakout Candidate \n\n1) #Groww \n\nMust watch Thread 🧵 \n\nTill end 🔚 https://t.co/1kG1aNifYH",
-      "created_at": "2026-11-14T09:15:58+00:00",
-      "url": "https://x.com/breakoutchart__/status/2121532582131036178",
-      "image": "https://pbs.twimg.com/media/HXEyon1bEAAnz2d.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121531422112632884",
-      "handle": "groww_cs",
-      "display_name": "Groww Support",
-      "text": "@CompoundAlpha50 Hi, we’ve shared an update with you via DM. https://t.co/muPjFmY3OV",
-      "created_at": "2026-11-14T09:11:21+00:00",
-      "url": "https://x.com/groww_cs/status/2121531422112632884",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121530277830783395",
-      "handle": "ipo_mantra",
-      "display_name": "R.K.",
-      "text": "@Riddhisolan For all Shareholders of Coal India, \n\nYou cannot apply more than ₹2 lakh rupees under Shareholders Quota in Mahanadi Coalfields IPO.\n\nSo, keep this in mind if you are applying under Shareholders Category.",
-      "created_at": "2026-11-14T09:06:49+00:00",
-      "url": "https://x.com/ipo_mantra/status/2121530277830783395",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121529460529016870",
-      "handle": "Megh_9930",
-      "display_name": "Megh Shah",
-      "text": "ESOP expenses should also reduce significantly in the coming quarters.\n\nMargins should improve significantly with the revenue increasing. This journey is going to be long. #axiscades",
-      "created_at": "2026-11-14T09:03:34+00:00",
-      "url": "https://x.com/Megh_9930/status/2121529460529016870",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121529399636062267",
-      "handle": "RCBTweets",
-      "display_name": "Royal Challengers Bengaluru",
-      "text": "Wickets for Romário, fireworks from Salt! 🎯💥\n\nRomário struck thrice in just 12 balls, while Salt struck at 200 to give his team a flying start! 😮‍💨🔥\n\nFor contributions to their respective teams, BIG ROM & Salty are our Emmvee Power Performers of last night! ⚡❤️\n\n#PlayBold #ನಮ್ಮRCB",
-      "created_at": "2026-11-14T09:03:19+00:00",
-      "url": "https://x.com/RCBTweets/status/2121529399636062267",
-      "image": "https://pbs.twimg.com/media/HXEvvZpbEAAT3ct.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE1C6T01020",
-          "query": "\"EMMVEE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121529147902054552",
-      "handle": "finologyticker",
-      "display_name": "Finology Ticker",
-      "text": "📊 INDO-MIM - Quarterly Results Update\n\nSales rose but Net Profit declined QoQ\n\n▲ Sales: ₹1,271 Cr (+4.36% QoQ)\n▼ Net Profit: ₹215 Cr (−10.39% QoQ)\n\nDiscover more: https://t.co/oQaZ0evpM5",
-      "created_at": "2026-11-14T09:02:19+00:00",
-      "url": "https://x.com/finologyticker/status/2121529147902054552",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121529060748865665",
-      "handle": "Megh_9930",
-      "display_name": "Megh Shah",
-      "text": "Axiscades is going through a very significant business transformation, but the financial pain of that transformation is becoming more visible.\n\nPositive development is retained revenue has increased 55% Yoy but the finance costs and depreciation have almost doubled Yoy.",
-      "created_at": "2026-11-14T09:01:58+00:00",
-      "url": "https://x.com/Megh_9930/status/2121529060748865665",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE555B01013",
-          "query": "\"AXISCADES\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528703146680562",
-      "handle": "Gobullish_ai",
-      "display_name": "gobullish.ai",
-      "text": "📰 Market headlines\n\n• Large vs mid vs small-cap mutual funds: Which is best for long-term SIP? 10-year rolling returns from 1996–2026 compared\n• Income Tax FAST-DS 2026 scheme: Is it for you? Complete guide to file Form 1 online before December 31 deadline\n• Mahanadi Coalfields IPO: Coal India subsidiary files RHP - Latest GMP at  ₹12.5; check key dates, size, valuation, more\n• Systematix Corporate Services Q2 profit at ₹13 cr\n• Meghalaya pension scheme: Why college teachers dispute the government's claim over the preparation of 2023 draft rules",
-      "created_at": "2026-11-14T09:00:33+00:00",
-      "url": "https://x.com/Gobullish_ai/status/2121528703146680562",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528633869345102",
-      "handle": "Gobullish_ai",
-      "display_name": "gobullish.ai",
-      "text": "📰 Market headlines\n\n• Large vs mid vs small-cap mutual funds: Which is best for long-term SIP? 10-year rolling returns from 1996–2026 compared\n• Income Tax FAST-DS 2026 scheme: Is it for you? Complete guide to file Form 1 online before December 31 deadline\n• Mahanadi Coalfields IPO: Coal India subsidiary files RHP - Latest GMP at  ₹12.5; check key dates, size, valuation, more\n• Systematix Corporate Services Q2 profit at ₹13 cr\n• Meghalaya pension scheme: Why college teachers dispute the government's claim over the preparation of 2023 draft rules",
-      "created_at": "2026-11-14T09:00:17+00:00",
-      "url": "https://x.com/Gobullish_ai/status/2121528633869345102",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528586461151407",
-      "handle": "Gobullish_ai",
-      "display_name": "gobullish.ai",
-      "text": "📰 Market headlines\n\n• Large vs mid vs small-cap mutual funds: Which is best for long-term SIP? 10-year rolling returns from 1996–2026 compared\n• Income Tax FAST-DS 2026 scheme: Is it for you? Complete guide to file Form 1 online before December 31 deadline\n• Mahanadi Coalfields IPO: Coal India subsidiary files RHP - Latest GMP at  ₹12.5; check key dates, size, valuation, more\n• Systematix Corporate Services Q2 profit at ₹13 cr\n• Meghalaya pension scheme: Why college teachers dispute the government's claim over the preparation of 2023 draft rules",
-      "created_at": "2026-11-14T09:00:05+00:00",
-      "url": "https://x.com/Gobullish_ai/status/2121528586461151407",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528565267337518",
-      "handle": "sunilgurjar01",
-      "display_name": "Sunil Gurjar, CFTe",
-      "text": "HIGHEST-PAID INDIAN IT CEOs IN 2026!📊\n\n1. Sandeep Kalra — Persistent Systems: ₹388.58 Cr\n2. C Vijayakumar — HCLTech: ₹171.93 Cr\n3. Nitin Rakesh — Mphasis: ₹104.82 Cr\n4. Salil Parekh — Infosys: ₹82.60 Cr\n5. Mohit Joshi — Tech Mahindra: ₹67.50 Cr\n6. Sudhir Singh — Coforge: ₹55.81 Cr\n7. Srinivas Pallia — Wipro: ₹49.64 Cr\n8. K. Krithivasan — TCS: ₹28.11 Cr\n9. Venu Lambu — LTIMindtree: ₹27.26 Cr\n10. Amit Chadha — L&T Technology Services: ₹14.96 Cr",
-      "created_at": "2026-11-14T09:00:00+00:00",
-      "url": "https://x.com/sunilgurjar01/status/2121528565267337518",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528419129360572",
-      "handle": "RajeshB57185103",
-      "display_name": "Rajesh Bansal",
-      "text": "@sunilgurjar01 Cdsl/ Bse",
-      "created_at": "2026-11-14T08:59:25+00:00",
-      "url": "https://x.com/RajeshB57185103/status/2121528419129360572",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528282122228145",
-      "handle": "Kimm__yuu",
-      "display_name": "Robert",
-      "text": "📢📢There is one$PNB and $GROWWWhatsApp groups for real-time trading strategies and insider information\n\n$PNB $GROWW Contact her to join👉: https://t.co/uu114DQYg5️\n\nJoin this group and grow your wealth\n\n#Nifty 50 #Sensex #NSE Trading #Multibagger Stocks #Sensex https://t.co/qawrcQ4EOO",
-      "created_at": "2026-11-14T08:58:53+00:00",
-      "url": "https://x.com/Kimm__yuu/status/2121528282122228145",
-      "image": "https://pbs.twimg.com/media/HXEupBVWYAAVn6c.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528233288175788",
-      "handle": "NCL_SINGRAULI",
-      "display_name": "Northern Coalfields Limited",
-      "text": "एनसीएल के नेहरू शताब्दी चिकित्सालय, जयंत में निःशुल्क कार्डियक हेल्थ कैंप का आयोजन, 154 मरीजों ने उठाया लाभ\n\nएनसीएल के नेहरू शताब्दी चिकित्सालय, जयंत में शुक्रवार को निःशुल्क कार्डियक हेल्थ कैंप का आयोजन किया गया। शिविर में मैक्स सुपर स्पेशियलिटी हॉस्पिटल, नई दिल्ली के हृदय रोग विशेषज्ञ डॉ. राजीव राठी एवं उनकी टीम द्वारा कुल 154 मरीजों का स्वास्थ्य परीक्षण कर उन्हें विशेषज्ञ चिकित्सकीय परामर्श प्रदान किया गया।\n\nशिविर का शुभारंभ प्रमुख, चिकित्सा सेवाएं, एनसीएल; मुख्य चिकित्सा अधिकारी (प्रभारी), एनएससी, विभागाध्यक्षों, जेसीसी के प्रतिनिधियों तथा अन्य कर्मियों की उपस्थिति में हुआ।\n\nशिविर के दौरान मरीजों की हृदय संबंधी समस्याओं की जांच, आवश्यक चिकित्सकीय परामर्श एवं हृदय स्वास्थ्य के प्रति जागरूकता पर विशेष जोर दिया गया।\n#MyNCL #CoalIndia",
-      "created_at": "2026-11-14T08:58:41+00:00",
-      "url": "https://x.com/NCL_SINGRAULI/status/2121528233288175788",
-      "image": "https://pbs.twimg.com/media/HXEtZ80aUAAkQRF.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121528094897189187",
-      "handle": "PaisaSense",
-      "display_name": "Paisa Sense",
-      "text": "Mahanadi Coalfields Limited (MCL), a wholly owned subsidiary of Coal India, is coming up with its IPO. Coal India is undertaking an Offer for Sale (OFS) to divest up to 10% of its stake.\n\nMCL is one of India's largest coal producers, primarily engaged in mining and supplying non-coking coal, which is largely used by the power sector.\n\nIn FY26, the company produced 218.31 million tonnes of coal, accounting for approximately 21% of India's domestic coal production.",
-      "created_at": "2026-11-14T08:58:08+00:00",
-      "url": "https://x.com/PaisaSense/status/2121528094897189187",
-      "image": "https://pbs.twimg.com/media/HXEuhI6bIAAVlDv.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121527823253029007",
-      "handle": "kaho_jinji",
-      "display_name": "William",
-      "text": "📢📢There is one$BRITANNIA and $CDSLWhatsApp groups for real-time trading strategies and insider information\n\n$BRITANNIA $CDSL Contact her to join👉: https://t.co/rlpApJMWRx️\n\nJoin this group and grow your wealth\n\n#Nifty 50 #Sensex #NSE Trading #Multibagger Stocks #Sensex https://t.co/7h3wYk5wZL",
-      "created_at": "2026-11-14T08:57:03+00:00",
-      "url": "https://x.com/kaho_jinji/status/2121527823253029007",
-      "image": "https://pbs.twimg.com/media/HXEuP3VW8AA3kxo.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE736A01011",
-          "query": "\"CDSL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121527810120351968",
-      "handle": "Kimm__yuu",
-      "display_name": "Robert",
-      "text": "📢📢There is one$HEROMOTOCO and $CGPOWERWhatsApp groups for real-time trading strategies and insider information\n\n$HEROMOTOCO $CGPOWER Contact her to join👉: https://t.co/tgQbBS5COP️\n\nJoin this group and grow your wealth\n\n#Nifty 50 #Sensex #NSE Trading #Multibagger Stocks #Sensex",
-      "created_at": "2026-11-14T08:57:00+00:00",
-      "url": "https://x.com/Kimm__yuu/status/2121527810120351968",
-      "image": "https://pbs.twimg.com/media/HXEuPv9W0AAiu-Z.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121527651504361770",
-      "handle": "favwontmiss",
-      "display_name": "Fav",
-      "text": "Millennials, what’s something that disappeared so quietly you didn’t even realise you’d experienced it for the LAST time?",
-      "created_at": "2026-11-14T08:56:22+00:00",
-      "url": "https://x.com/favwontmiss/status/2121527651504361770",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121527229419004160",
-      "handle": "squeeze0range",
-      "display_name": "Charles",
-      "text": "📢📢There is one$TDPOWERSYS and $COFORGEWhatsApp groups for real-time trading strategies and insider information\n\n$TDPOWERSYS $COFORGE Contact her to join👉: https://t.co/pYiq3LHaFG️\n\nJoin this group and grow your wealth\n\n#Nifty 50 #Sensex #NSE Trading #Multibagger Stocks #Sensex",
-      "created_at": "2026-11-14T08:54:42+00:00",
-      "url": "https://x.com/squeeze0range/status/2121527229419004160",
-      "image": "https://pbs.twimg.com/media/HXEtvjEWQAAd7fl.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121527207227261060",
-      "handle": "Rishabh35216469",
-      "display_name": "Rishabh Jain",
-      "text": "@TrendDeskIN What's your view on indo mim q2 result",
-      "created_at": "2026-11-14T08:54:36+00:00",
-      "url": "https://x.com/Rishabh35216469/status/2121527207227261060",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121527018755948826",
-      "handle": "SU_zono",
-      "display_name": "Edward",
-      "text": "📢📢There is one$HAVELLS and $GROWWWhatsApp groups for real-time trading strategies and insider information\n\n$HAVELLS $GROWW Contact her to join👉: https://t.co/dmjMdFm2ct️\n\nJoin this group and grow your wealth\n\n#Nifty 50 #Sensex #NSE Trading #Multibagger Stocks #Sensex https://t.co/XdCyKFmZse",
-      "created_at": "2026-11-14T08:53:51+00:00",
-      "url": "https://x.com/SU_zono/status/2121527018755948826",
-      "image": "https://pbs.twimg.com/media/HXEthuhWYAAR3ne.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121526794075639869",
-      "handle": "nightstar1201",
-      "display_name": "star_jin",
-      "text": "[Chuseok Special] 140901 Everyone's Wishes\n🐹My wish is a little ambitious.\n🐹There's a building I've had my eye on. My dream is to make it mine someday. Pretty ambitious, right?\n🐨Jin hyung, how much does that building cost?\n🐹I don't know. I haven't looked into the price. \n#JIN #방탄소년단진 @BTS_twt \nTwelve years later, the Jini Building is finally here. Congratulations!🏢🥳🎂",
-      "created_at": "2026-11-14T08:52:58+00:00",
-      "url": "https://x.com/nightstar1201/status/2121526794075639869",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EDELWEISS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2121526395256136183",
-      "handle": "squeeze0range",
-      "display_name": "Charles",
-      "text": "📢📢There is one$GROWW and $TATASTEELWhatsApp groups for real-time trading strategies and insider information\n\n$GROWW $TATASTEEL Contact her to join👉: https://t.co/FBPSf27c5n️\n\nJoin this group and grow your wealth\n\n#Nifty 50 #Sensex #NSE Trading #Multibagger Stocks #Sensex https://t.co/T7MZzw9xTX",
-      "created_at": "2026-11-14T08:51:23+00:00",
-      "url": "https://x.com/squeeze0range/status/2121526395256136183",
-      "image": "https://pbs.twimg.com/media/HXEs-9EWYAAJNvM.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 7,
-    "incomplete": 240,
-    "checkedAt": "2026-11-15T23:28:08.802879+00:00"
+    "attempted": 12,
+    "incomplete": 231,
+    "checkedAt": "2026-11-16T06:40:56.999180+00:00"
   },
   "archive": [
     {
@@ -10108,9 +9941,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-16T02:54:18.287Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-16T06:41:30.864Z",
     "lastSuccessAt": null
   }
 }
