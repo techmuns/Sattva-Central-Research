@@ -10218,9 +10218,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-16T11:41:23.951Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-16T12:32:27.060Z",
     "lastSuccessAt": null
   }
 }
