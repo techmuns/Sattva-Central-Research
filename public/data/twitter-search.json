@@ -1488,7 +1488,7 @@
       "lastDiscoveryAt": "2026-10-26T02:16:06+00:00"
     },
     "isin:INE417T01026|POLICYBZR": {
-      "lastAttemptAt": "2026-11-10T03:27:28+00:00",
+      "lastAttemptAt": "2026-11-16T17:50:40+00:00",
       "lastResultCount": 109,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
@@ -3104,6 +3104,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-11-16T16:45:12.593293+00:00"
+    "checkedAt": "2026-11-16T17:50:40.461398+00:00"
   }
 }
