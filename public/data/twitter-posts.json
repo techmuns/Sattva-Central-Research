@@ -10344,9 +10344,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-16T07:51:26.972Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-16T08:17:23.270Z",
     "lastSuccessAt": null
   }
 }
