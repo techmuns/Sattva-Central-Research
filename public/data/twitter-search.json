@@ -1067,21 +1067,18 @@
       ]
     },
     "isin:INE082A01010|KOPRAN": {
-      "lastAttemptAt": "2026-11-09T01:48:13+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
+      "error": null,
+      "lastResultCount": 53,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
       "targetThrough": "2026-10-20T15:29:19+00:00",
       "pending": [
         {
-          "from": "2026-09-29T08:11:22+00:00",
-          "to": "2026-10-09T23:50:20.500000+00:00"
-        },
-        {
           "from": "2026-10-09T23:50:20.500000+00:00",
           "to": "2026-10-20T15:29:19+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-16T07:50:45+00:00"
     },
     "isin:INE237A01036|Kotak Mahindra Bank": {
       "lastAttemptAt": "2026-10-04T22:06:17+00:00",
@@ -1116,59 +1113,82 @@
       ]
     },
     "isin:INE0O6601022|Kross": {
-      "lastAttemptAt": "2026-11-09T02:14:22+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 121,
+      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 120,
       "targetThrough": "2026-10-20T15:29:19+00:00",
       "pending": [
         {
-          "from": "2026-10-11T15:29:19.233705+00:00",
-          "to": "2026-10-16T03:29:19.116853+00:00"
-        },
-        {
           "from": "2026-10-16T03:29:19.116853+00:00",
           "to": "2026-10-20T15:29:19+00:00"
+        },
+        {
+          "from": "2026-10-11T15:29:19.233705+00:00",
+          "to": "2026-10-13T21:29:19.175279+00:00"
+        },
+        {
+          "from": "2026-10-13T21:29:19.175279+00:00",
+          "to": "2026-10-16T03:29:19.116853+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-16T07:50:45+00:00"
     },
     "isin:INE0O6601022|KROSS": {
-      "lastAttemptAt": "2026-11-09T02:47:00+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 121,
+      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 120,
       "targetThrough": "2026-10-20T15:29:19+00:00",
       "pending": [
         {
-          "from": "2026-10-11T15:29:19.233705+00:00",
-          "to": "2026-10-16T03:29:19.116853+00:00"
-        },
-        {
           "from": "2026-10-16T03:29:19.116853+00:00",
           "to": "2026-10-20T15:29:19+00:00"
+        },
+        {
+          "from": "2026-10-11T15:29:19.233705+00:00",
+          "to": "2026-10-13T21:29:19.175279+00:00"
+        },
+        {
+          "from": "2026-10-13T21:29:19.175279+00:00",
+          "to": "2026-10-16T03:29:19.116853+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-16T07:50:45+00:00"
     },
     "isin:INE818H01020|LT Foods": {
-      "lastAttemptAt": "2026-11-09T05:04:13+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 20,
-      "lastSuccessAt": "2026-10-20T15:29:19+00:00",
+      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
+      "error": null,
+      "lastResultCount": 76,
+      "lastSuccessAt": "2026-11-16T07:50:45+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE818H01020|LTFOODS": {
-      "lastAttemptAt": "2026-11-09T06:48:20+00:00",
-      "error": "search-unavailable"
-    },
-    "isin:INE101A01026|Mahindra & Mahindra": {
-      "lastAttemptAt": "2026-11-09T07:22:31+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 85,
-      "lastSuccessAt": "2026-09-27T08:32:05+00:00",
+      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
+      "error": null,
+      "lastResultCount": 13,
+      "lastSuccessAt": "2026-11-16T07:50:45+00:00",
       "targetThrough": null,
       "pending": []
     },
+    "isin:INE101A01026|Mahindra & Mahindra": {
+      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 100,
+      "lastSuccessAt": "2026-09-27T08:32:05+00:00",
+      "targetThrough": "2026-11-16T07:50:45+00:00",
+      "pending": [
+        {
+          "from": "2026-09-25T08:32:05+00:00",
+          "to": "2026-10-21T08:11:25+00:00"
+        },
+        {
+          "from": "2026-10-21T08:11:25+00:00",
+          "to": "2026-11-16T07:50:45+00:00"
+        }
+      ]
+    },
     "isin:INE774D01024|Mahindra & Mahindra Financial Services": {
-      "lastAttemptAt": "2026-11-09T07:56:03+00:00",
+      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
       "error": "search-unavailable",
       "lastResultCount": 12,
       "lastSuccessAt": "2026-09-27T08:32:05+00:00",
@@ -3044,8 +3064,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 12,
-    "incomplete": 231,
-    "checkedAt": "2026-11-16T06:40:56.999180+00:00"
+    "attempted": 7,
+    "incomplete": 229,
+    "checkedAt": "2026-11-16T07:50:45.734614+00:00"
   }
 }
