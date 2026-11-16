@@ -1510,75 +1510,75 @@
       "lastDiscoveryAt": "2026-10-26T02:16:06+00:00"
     },
     "isin:INE15B701018|Pine Labs": {
-      "lastAttemptAt": "2026-11-10T04:10:57+00:00",
-      "lastResultCount": 47,
-      "error": "search-unavailable",
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "lastResultCount": 104,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-11-16T18:39:49+00:00",
+      "pending": [
+        {
+          "from": "2026-09-06T19:20:14+00:00",
+          "to": "2026-10-12T07:00:01.500000+00:00"
+        },
+        {
+          "from": "2026-10-12T07:00:01.500000+00:00",
+          "to": "2026-11-16T18:39:49+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-21T01:44:05+00:00",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00"
     },
     "isin:INE15B701018|PINELABS": {
-      "lastAttemptAt": "2026-11-10T04:43:04+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 39,
-      "targetThrough": "2026-10-16T06:34:32+00:00",
-      "pending": [
-        {
-          "from": "2026-10-11T18:34:32.415419+00:00",
-          "to": "2026-10-16T06:34:32+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-21T01:44:05+00:00"
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "error": null,
+      "lastResultCount": 40,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-16T18:39:49+00:00",
+      "lastSuccessAt": "2026-10-16T06:34:32+00:00"
     },
     "isin:INE572E01012|PNB Housing Fin": {
-      "lastAttemptAt": "2026-11-10T06:22:36+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-16T06:34:32+00:00",
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "error": null,
+      "lastResultCount": 3,
+      "lastSuccessAt": "2026-11-16T18:39:49+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE572E01012|PNBHOUSING": {
-      "lastAttemptAt": "2026-11-10T07:54:37+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 38,
-      "lastSuccessAt": "2026-09-18T06:26:21+00:00",
-      "targetThrough": "2026-10-16T06:34:32+00:00",
-      "pending": [
-        {
-          "from": "2026-10-01T06:30:26.500000+00:00",
-          "to": "2026-10-16T06:34:32+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-26T05:37:34+00:00"
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "error": null,
+      "lastResultCount": 70,
+      "lastSuccessAt": "2026-10-16T06:34:32+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-16T18:39:49+00:00"
     },
     "isin:INE722B01019|Praveg": {
-      "lastAttemptAt": "2026-11-10T08:31:21+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "error": null,
       "lastResultCount": 24,
-      "lastSuccessAt": "2026-10-26T05:37:34+00:00",
+      "lastSuccessAt": "2026-11-16T18:39:49+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE722B01019|PRAVEG": {
-      "lastAttemptAt": "2026-11-10T10:37:40+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 24,
-      "lastSuccessAt": "2026-10-26T05:37:34+00:00",
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "error": null,
+      "lastResultCount": 23,
+      "lastSuccessAt": "2026-11-16T18:39:49+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE546Y01022|Praxis Home Retails": {
-      "lastAttemptAt": "2026-11-10T11:09:35+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-11-02T06:57:57+00:00",
+      "lastSuccessAt": "2026-11-16T18:39:49+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE546Y01022|PRAXIS": {
-      "lastAttemptAt": "2026-11-10T11:40:27+00:00",
+      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
       "error": "search-unavailable",
       "lastResultCount": 123,
       "targetThrough": "2026-09-18T06:26:21+00:00",
@@ -1600,7 +1600,7 @@
           "to": "2026-09-18T06:26:21+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-02T06:57:57+00:00"
+      "lastDiscoveryAt": "2026-11-16T18:39:49+00:00"
     },
     "isin:INE811K01011|Prestige Estate Projects": {
       "lastAttemptAt": "2026-11-10T12:18:20+00:00",
@@ -3102,8 +3102,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 229,
-    "checkedAt": "2026-11-16T17:50:40.461398+00:00"
+    "attempted": 8,
+    "incomplete": 225,
+    "checkedAt": "2026-11-16T18:39:49.134612+00:00"
   }
 }
