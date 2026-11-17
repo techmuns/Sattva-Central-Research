@@ -2169,7 +2169,7 @@
       "pending": []
     },
     "isin:INE089C01029|Sterlite Technologies": {
-      "lastAttemptAt": "2026-11-11T21:56:18+00:00",
+      "lastAttemptAt": "2026-11-17T12:32:12+00:00",
       "error": "search-unavailable",
       "lastResultCount": 66,
       "targetThrough": "2026-10-22T03:30:38+00:00",
@@ -3129,6 +3129,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 219,
-    "checkedAt": "2026-11-17T11:31:38.268203+00:00"
+    "checkedAt": "2026-11-17T12:32:12.882126+00:00"
   }
 }
