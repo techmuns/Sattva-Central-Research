@@ -2290,8 +2290,8 @@
       "lastDiscoveryAt": "2026-11-17T17:46:10+00:00"
     },
     "isin:INE665A01038|Swan Corp": {
-      "lastAttemptAt": "2026-11-12T03:58:21+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-17T18:57:13+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 27,
       "lastSuccessAt": "2026-11-12T03:58:21+00:00",
       "targetThrough": null,
@@ -3120,8 +3120,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 8,
+    "attempted": 1,
     "incomplete": 214,
-    "checkedAt": "2026-11-17T17:46:10.250611+00:00"
+    "checkedAt": "2026-11-17T18:57:13.609204+00:00"
   }
 }

@@ -9290,9 +9290,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-17T17:46:41.082Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-17T18:57:29.234Z",
     "lastSuccessAt": null
   }
 }
