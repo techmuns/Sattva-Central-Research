@@ -2052,7 +2052,7 @@
       "pending": []
     },
     "isin:INE1NPP01017|ENRIN": {
-      "lastAttemptAt": "2026-11-11T13:18:32+00:00",
+      "lastAttemptAt": "2026-11-17T08:24:10+00:00",
       "error": "search-unavailable",
       "lastResultCount": 110,
       "targetThrough": "2026-10-16T14:21:24+00:00",
@@ -3142,6 +3142,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-11-17T06:59:50.188517+00:00"
+    "checkedAt": "2026-11-17T08:24:10.167531+00:00"
   }
 }
