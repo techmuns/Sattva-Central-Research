@@ -1,10 +1,76 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-17T00:33:12+00:00",
+  "capturedAt": "2026-11-17T01:28:13+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2122497447490719877",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Nvidia set to deliver first life-after-Huang briefing\n\n- Nvidia CEO Jensen Huang steps down amid crisis.\n- Interim CEO Colette Kress faces crucial earnings call.\n- Investors question AI ecosystem commitments and cash use.\n\nRead More:\nhttps://t.co/mU0AbgOeaj",
+      "created_at": "2026-11-17T01:10:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122497447490719877",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122496598852907319",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#GlobalMarkets | Stocks end lower ahead of Nvidia earnings and Anthropic IPO; oil drops\n\n- Global stock indexes fell as semiconductor shares dropped.\n- Nvidia earnings and Anthropic IPO to test AI market.\n- US dollar rose and oil prices slipped on market flows.\n\nRead More:\nhttps://t.co/vDSEJ7giWl",
+      "created_at": "2026-11-17T01:06:37+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122496598852907319",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122496331323408680",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#World | Anthropic faces a longer wait than SpaceX to join stock indexes\n\nSpaceX joined the Russell 1000 roughly a week after its June debut and the Nasdaq 100 less than a month after it began trading.\n\nRead More:\nhttps://t.co/slKm3xpEjS",
+      "created_at": "2026-11-17T01:05:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122496331323408680",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122496033746022495",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#World | United Airlines resolves systemwide tech outage after 418 flights delayed\n\nThe Chicago-based airline said the technical issue was being investigated and affected departing flights. However, flights already in the air and services operated by its United Express regional network were not impacted.\n\nRead More:\nhttps://t.co/H4cg5ZDfb6",
+      "created_at": "2026-11-17T01:04:23+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122496033746022495",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122492684279636219",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Reporter asks US President Donald Trump if he is worried about Iranian drones targeting him. \n\nTrump responds with a pointed remark: “I am worried about you, because if they get me, you are gone too. Be careful.”\n\n#DonaldTrump #Iran #USIranTensions #Drones https://t.co/OTlxHzOUc0",
+      "created_at": "2026-11-17T00:51:04+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122492684279636219",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122491520112828469",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | At the launch of Sonia Gandhi’s memoir Belonging: A Journey of Love, Rahul Gandhi recalls a childhood memory of his parents, Rajiv and Sonia Gandhi. He shares how their affection was so visible that he once wondered why his friends’ parents did not sit on each other’s laps.\n\n#RahulGandhi #SoniaGandhi #RajivGandhi #Belonging",
+      "created_at": "2026-11-17T00:46:27+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122491520112828469",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
     {
       "tweet_id": "2122455784969900523",
       "handle": "OnardAinebyona",
@@ -4755,6 +4821,22 @@
       ]
     },
     {
+      "tweet_id": "2122296241975619838",
+      "handle": "DrMalluRavi1",
+      "display_name": "Dr. Mallu Ravi",
+      "text": "Today, as part of the official visit of the Parliamentary Committee on the Welfare of Scheduled Castes and Scheduled Tribes to Mumbai, I participated in a series of important meetings with the SC/ST Employees’ Welfare Associations and the management of Shipping Corporation of India, Bank of India and Mazagon Dock Shipbuilders Limited.\n\nWe held detailed discussions on the representation of SC/ST communities in public sector employment, effective implementation of constitutional reservation policies, career advancement, equal opportunities, service-related grievances and various welfare measures undertaken for SC/ST employees.\n\nThe interactions provided an important opportunity to understand the concerns raised by employees and review the measures being implemented by these organisations to ensure social justice, dignity and inclusive participation.\n\nAs part of the scheduled programme, the Committee also visited the Indu Mill Project and Chaitya Bhoomi at Dadar, Mumbai, places closely associated with the life and legacy of Bharat Ratna Dr. B. R. Ambedkar, the architect of our Constitution.\n\nOur commitment remains firm towards protecting constitutional safeguards, strengthening social justice and ensuring that the benefits of equality, representation and empowerment reach every section of society.\n\n@BankofIndia_IN @shipmin_india @DefenceMinIndia @MSJEGOI\n\n#SocialJustice #SCSTWelfare #ParliamentaryCommittee #Mumbai #DrBRAmbedkar #malluravi",
+      "created_at": "2026-11-16T11:50:29+00:00",
+      "url": "https://x.com/DrMalluRavi1/status/2122296241975619838",
+      "image": "https://pbs.twimg.com/media/HXPougWbAAA6FV6.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE109A01011",
+          "query": "\"Shipping Corporation of India\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122295750843564147",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -7361,6 +7443,22 @@
       ]
     },
     {
+      "tweet_id": "2122217063305609513",
+      "handle": "RedandGreen0",
+      "display_name": "Red and Green",
+      "text": "SCI floated tenders for 22 ships, up to $3.2B: 8 VLGCs, 12 container ships, 2 Suezmax. Most must be built in India via tie-ups or new yards. Technical bids open Dec–Jan; awards likely 2027+. No FY27–28 earnings impact; deliveries are years away. #SCI Shipping corporation of India",
+      "created_at": "2026-11-16T06:35:51+00:00",
+      "url": "https://x.com/RedandGreen0/status/2122217063305609513",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE109A01011",
+          "query": "\"Shipping Corporation of India\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122216771822518670",
       "handle": "ProteanEgovTech",
       "display_name": "Protean",
@@ -7389,6 +7487,38 @@
         {
           "entityId": "isin:INE004A01022",
           "query": "\"PROTEAN\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122216581782708664",
+      "handle": "RedandGreen0",
+      "display_name": "Red and Green",
+      "text": "SCI has floated tenders for 22 new ships worth up to $3.2B (ET Infra), a major push for Indian shipbuilding. 🚢🇮🇳\n8 VLGCs, 12 container ships, 2 Suezmax tankers. The conditions are built to pull global shipyards into India. Shipping corporation of India.",
+      "created_at": "2026-11-16T06:33:56+00:00",
+      "url": "https://x.com/RedandGreen0/status/2122216581782708664",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE109A01011",
+          "query": "\"Shipping Corporation of India\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122216467781578773",
+      "handle": "RedandGreen0",
+      "display_name": "Red and Green",
+      "text": "#SCI Shipping corporation of India \nShipping Corporation of India Launches $3.2 Billion Shipbuilding Initiative to Boost Local Industry, ETInfra https://t.co/DsSoYOfTYt",
+      "created_at": "2026-11-16T06:33:29+00:00",
+      "url": "https://x.com/RedandGreen0/status/2122216467781578773",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE109A01011",
+          "query": "\"Shipping Corporation of India\""
         }
       ]
     },
@@ -8104,6 +8234,22 @@
       ]
     },
     {
+      "tweet_id": "2122202434634469653",
+      "handle": "BapiHaldarMP",
+      "display_name": "Bapi Haldar",
+      "text": "Attended the meeting of the Parliamentary Committee on the Welfare of Scheduled Castes and Scheduled Tribes with Shipping Corporation of India Ltd. and HPL today in Mumbai.\n\nThe meeting focused on matters concerning the welfare and representation of SC &amp; ST communities. https://t.co/Kn7KX6TkIT",
+      "created_at": "2026-11-16T05:37:43+00:00",
+      "url": "https://x.com/BapiHaldarMP/status/2122202434634469653",
+      "image": "https://pbs.twimg.com/media/HXOT1whasAEj8Gw.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE109A01011",
+          "query": "\"Shipping Corporation of India\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122202179423662337",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -8241,6 +8387,22 @@
         {
           "entityId": "isin:INE15B701018",
           "query": "\"PINELABS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122200035681251781",
+      "handle": "Bikash62468660",
+      "display_name": "Behind The Ticker 🇮🇳",
+      "text": "💰 EX-DIVIDEND TODAY — NOV 16\n\n• ASM Technologies\n• Cochin Shipyard\n• Indag Rubber\n• Shipping Corporation of India\n\nAlso:\n• BN Agrochem: 10:1 stock split.\n• Shreeji Shipping: Approved 1:5 stock split.\n\nFollow for more such updates.\n#Dividend #StockSplit",
+      "created_at": "2026-11-16T05:28:11+00:00",
+      "url": "https://x.com/Bikash62468660/status/2122200035681251781",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE109A01011",
+          "query": "\"Shipping Corporation of India\""
         }
       ]
     },
@@ -9022,6 +9184,10 @@
         {
           "entityId": "isin:INE148I01020",
           "query": "\"Sammaan Capital\""
+        },
+        {
+          "entityId": "isin:INE109A01011",
+          "query": "\"Shipping Corporation of India\""
         }
       ]
     },
@@ -9315,199 +9481,14 @@
           "query": "\"Sammaan Capital\""
         }
       ]
-    },
-    {
-      "tweet_id": "2122181113120788773",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#INPICS | In pictures: Devotees, leaders mark the final day of Chhath Puja\n\nFrom Delhi and Patna to Lucknow, Gorakhpur and Bhubaneswar, devotees and political leaders gather at Chhath ghats to offer ‘usha arghya’ to the rising Sun on the final day of Chhath Puja. 🙏🌅\n\n#ChhathPuja #ChhathCelebrations #Delhi #Bihar #UttarPradesh #Odisha",
-      "created_at": "2026-11-16T04:13:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122181113120788773",
-      "image": "https://pbs.twimg.com/media/HXN5egJbQAA5zJT.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122180776150368512",
-      "handle": "canishantsheth",
-      "display_name": "Nishant Shah",
-      "text": "#Kross \n\n👉Holding 275–280 and reclaiming 306 could revive upward momentum.\n\n👀Watch the channel support closely.\n\n🔹 Key Support: 275-280\n🔹 Channel Supports: 260-270\n🔹 Resistance: 300–305\n🔹 Upside Targets: 320–340\n\n⚠️No Reco. https://t.co/c9EF9llfqh",
-      "created_at": "2026-11-16T04:11:39+00:00",
-      "url": "https://x.com/canishantsheth/status/2122180776150368512",
-      "image": "https://pbs.twimg.com/media/HXN_Mg0bMAAGkfN.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122180488404295717",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#TechWithMC | Party's over: Samsung, Xiaomi raise smartphone prices by up to 19% after Diwali\n\n- Samsung and Xiaomi raise phone prices by up to 18.75% in India.\n- Hikes driven by rising costs for memory and components.\n- Oppo, Vivo, and Realme expected to raise prices soon.\n\n@DanishKh4n with more details\nhttps://t.co/hIO0O9lN6H",
-      "created_at": "2026-11-16T04:10:31+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122180488404295717",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122180019560841443",
-      "handle": "mammetgzla",
-      "display_name": "sid",
-      "text": "📈 IT COMPANIES WITH STRONG FUNDAMENTALS TO WATCH FOR\n\n🔹Tata Consultancy Services (TCS)\n🔹Infosys\n🔹HCL Technologies\n🔹Wipro\n🔹Tech Mahindra\n🔹LTIMindtree\n🔹Persistent Systems\n🔹Coforge\n🔹Mphasis\n🔹Oracle Financial Services Software\n🔹L&T Technology Services\n🔹Tata Elxsi\n🔹KPIT Technologies\n🔹Cyient\n🔹Hexaware Technologies\n\nTrading Note: Watchlist only, not a buy/sell recommendation",
-      "created_at": "2026-11-16T04:08:39+00:00",
-      "url": "https://x.com/mammetgzla/status/2122180019560841443",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE881D01027",
-          "query": "\"Oracle Financial Services Software\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122178670307815456",
-      "handle": "ai_EquiSense",
-      "display_name": "EquiSense_ai",
-      "text": "🎙️ Jubilant Pharmova (JUBLPHARMA) call was streaming live on EquiSense, it just ended. Here is the decode ⬇️\n\n#JUBLPHARMA #EarningsCall https://t.co/51xO7zhbzc",
-      "created_at": "2026-11-16T04:03:17+00:00",
-      "url": "https://x.com/ai_EquiSense/status/2122178670307815456",
-      "image": "https://pbs.twimg.com/media/HXN-QQqagAA6iL_.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE700A01033",
-          "query": "\"JUBLPHARMA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122177541717078228",
-      "handle": "mammetgzla",
-      "display_name": "sid",
-      "text": "📈 MY WATCHLIST FOR TODAY\n\n● Ashok Leyland\n● PTC Industries\n● Patanjali Foods\n● Sammaan Capital\n● Vikram Solar\n● Cochin Shipyard\n● Shipping Corporation of India\n● Sandhar Technologies\n● Manappuram Finance\n● TD Power Systems\n● Eicher Motors\n● ABB India\n● Grasim Industries\n● Tata Motors PV\n● Hindalco Industries\n● Vedanta\n● SBI\n● ONGC\n● Oil India\n● Trent",
-      "created_at": "2026-11-16T03:58:48+00:00",
-      "url": "https://x.com/mammetgzla/status/2122177541717078228",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE148I01020",
-          "query": "\"Sammaan Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122177446770622817",
-      "handle": "panda_nilkamal",
-      "display_name": "Nilkamal Panda",
-      "text": "@ravish_journo Wrong.... REEL MANTRI",
-      "created_at": "2026-11-16T03:58:26+00:00",
-      "url": "https://x.com/panda_nilkamal/status/2122177446770622817",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"Nilkamal\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122177010906943634",
-      "handle": "Shekhar41168801",
-      "display_name": "Shekhar Goel (CA| CPA| CISA | IS027001)",
-      "text": "📊 BROKERAGE REPORTS | MOFSL INDIA STRATEGY – 2QFY27 REVIEW\n🚀 10 KEY TAKEAWAYS FROM THE EARNINGS SEASON\n\n1️⃣ Broad-Based Earnings Strength\n▪️ 28 sectors met or exceeded estimates.\n▪️ 2QFY27 performance improved over 1QFY27.\n\n2️⃣ Key Growth Drivers\n▪️ BFSI, Metals, Oil & Gas and Automobiles.\n▪️ These sectors contributed 77% of incremental earnings growth.\n3️⃣ MOFSL Universe – Strong Earnings\n▪️ Sales: +25% YoY\n▪️ EBITDA: +23% YoY\n▪️ PAT: +32% YoY\n▪️ Ex-OMC earnings: +30% YoY\n▪️ EBITDA margin: 17.5% vs 17% estimated.\n4️⃣ Nifty-50 Earnings\n📈 PAT growth reached 27% YoY — the highest in 17 quarters.\n\n5️⃣ Market-Cap Performance (Ex-OMCs)\n▪️ Large-caps: +31%\n▪️ Mid-caps: +22%\n▪️ Small-caps: +32%\nLarge and small-caps outperformed estimates.\n6️⃣ Earnings Beat vs Miss\n▪️ 42% companies beat PAT estimates.\n▪️ 26% companies missed estimates.\n7️⃣ Earnings Upgrade Momentum\n▪️ Upgrade-to-downgrade ratio: 1.1x\n▪️ 119 companies reported earnings upgrades.\n▪️ 104 companies reported downgrades.\n(Changes exceeding 3%.)\n\n8️⃣ 1HFY27 Performance vs 2HFY27 Outlook\n▪️ MOFSL & Nifty earnings growth in 1H: 22%.\n▪️ Ex-OMC MOFSL earnings growth: 27%.\n▪️ Expected 2H growth:\n• MOFSL: 11%\n• Nifty: 18%\n• Ex-OMC MOFSL: 20%\n9️⃣ Nifty EPS Upgrades\n📌 FY27 EPS: ₹1,243 (+0.9%)\n📌 FY28 EPS: ₹1,427 (+1.4%)\n🔟 MOFSL TOP INVESTMENT IDEAS\n🏆 NIFTY-50 PICKS\n• Bharti Airtel\n• ICICI Bank\n• Larsen & Toubro\n• Titan Company\n• Mahindra & Mahindra\n• Adani Enterprises\n• Eternal\n• Bharat Electronics\n• Shriram Finance\n• BSE\n• Apollo Hospitals\n🚀 NON-NIFTY-50 PICKS\n• TVS Motor\n• Lenskart Solutions\n• Indian Hotels\n• ABB\n• Meesho\n• SBI Funds Management\n• Coforge\n• Dixon Technologies\n• Radico Khaitan\n• RBL Bank\n• Physicswallah\n• Inventurus Knowledge Solutions\n• Kirloskar Oil Engines\n• SPR Auto Tech\n🎯 KEY TAKEAWAY\n\n✅ Broad-based earnings momentum remains strong.\n✅ Large-caps and small-caps are leading earnings growth.\n✅ BFSI, Metals and Autos remain key growth engines.\n✅ FY27–FY28 Nifty EPS estimates have been upgraded.\n⚠️ Earnings growth is expected to moderate in 2HFY27.\nThe bigger picture: Corporate earnings remain resilient, but investors should watch the moderation in 2H growth and the sustainability of earnings upgrades.\n\n📌 Brokerage investment ideas are research opinions, not guaranteed returns.\n#StockMarket #Nifty50 #MOFSL #Q2FY27 #EarningsSeason #IndianStockMarket #BFSI #SmallCaps #LargeCaps #InvestmentIdeas #DalalStreet",
-      "created_at": "2026-11-16T03:56:42+00:00",
-      "url": "https://x.com/Shekhar41168801/status/2122177010906943634",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE101A01026",
-          "query": "\"Mahindra & Mahindra\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122176662414774405",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#StartupsWithMC | Thermal power, space tech to drive Zetwerk’s next phase of growth, says CEO Amrit Acharya\n\n- Zetwerk targets thermal power and space tech for growth.\n- Order book surged 67% to Rs 14,600 crore amid supply limits.\n- Q2 revenue rose 18% as net loss widened to Rs 88.11 crore.\n\n@chandrarsrikant & @AryamanGupta_ with more details\nhttps://t.co/Q3yas4O7fC",
-      "created_at": "2026-11-16T03:55:19+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122176662414774405",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122176342792053143",
-      "handle": "Prabinmen",
-      "display_name": "PM",
-      "text": "#Kalyan Jewellers CMP 727.5 #KALYANKJIL \n🔔🔔🔔\nbrilliant move - 787 positionally and then 866 - i won't be surprised to see 4 digits at some stage",
-      "created_at": "2026-11-16T03:54:02+00:00",
-      "url": "https://x.com/Prabinmen/status/2122176342792053143",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE303R01014",
-          "query": "\"KALYANKJIL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122176074570404139",
-      "handle": "panda_nilkamal",
-      "display_name": "Nilkamal Panda",
-      "text": "@HelleLyngSvends They do everything except JOURNALISM😄",
-      "created_at": "2026-11-16T03:52:58+00:00",
-      "url": "https://x.com/panda_nilkamal/status/2122176074570404139",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"Nilkamal\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122175622159933560",
-      "handle": "buenchico",
-      "display_name": "✠Kross✠",
-      "text": "@owengom15390194 @federicoalves Eso no quita que Bad Bunny sea basura bro 🫡",
-      "created_at": "2026-11-16T03:51:11+00:00",
-      "url": "https://x.com/buenchico/status/2122175622159933560",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 8,
-    "incomplete": 221,
-    "checkedAt": "2026-11-17T00:32:42.191819+00:00"
+    "attempted": 9,
+    "incomplete": 220,
+    "checkedAt": "2026-11-17T01:27:47.690590+00:00"
   },
   "archive": [
     {
@@ -9611,6 +9592,10 @@
       "month": "2024-03"
     },
     {
+      "file": "twitter-archive/2024-02.json",
+      "month": "2024-02"
+    },
+    {
       "file": "twitter-archive/2023-12.json",
       "month": "2023-12"
     },
@@ -9652,7 +9637,7 @@
     "optional": true,
     "status": "partial",
     "reason": "partial-read",
-    "lastAttemptAt": "2026-11-17T00:33:12.128Z",
+    "lastAttemptAt": "2026-11-17T01:28:14.015Z",
     "lastSuccessAt": null
   }
 }
