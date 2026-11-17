@@ -2298,8 +2298,8 @@
       "pending": []
     },
     "isin:INE665A01038|SWANCORP": {
-      "lastAttemptAt": "2026-11-12T03:58:21+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-17T19:29:49+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 104,
       "targetThrough": "2026-11-12T03:58:21+00:00",
       "pending": [
@@ -3122,6 +3122,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 214,
-    "checkedAt": "2026-11-17T18:57:13.609204+00:00"
+    "checkedAt": "2026-11-17T19:29:49.442023+00:00"
   }
 }
