@@ -2087,67 +2087,9 @@
       "lastDiscoveryAt": "2026-10-16T14:21:24+00:00"
     },
     "isin:INE01IU01018|SKYGOLD": {
-      "lastAttemptAt": "2026-11-11T14:39:14+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 110,
-      "targetThrough": "2026-10-02T10:43:50+00:00",
-      "pending": [
-        {
-          "from": "2026-09-23T10:43:50.428892+00:00",
-          "to": "2026-09-27T22:43:50.214446+00:00"
-        },
-        {
-          "from": "2026-09-27T22:43:50.214446+00:00",
-          "to": "2026-10-02T10:43:50+00:00"
-        }
-      ]
-    },
-    "isin:INE728Z01015|Softtech Engineers": {
-      "lastAttemptAt": "2026-11-11T15:16:45+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 13,
-      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
-      "targetThrough": null,
-      "pending": []
-    },
-    "isin:INE728Z01015|SOFTTECH": {
-      "lastAttemptAt": "2026-11-11T15:48:15+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 100,
-      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
-      "targetThrough": "2026-11-03T19:48:53+00:00",
-      "pending": [
-        {
-          "from": "2026-09-30T10:43:50+00:00",
-          "to": "2026-10-17T15:16:21.500000+00:00"
-        },
-        {
-          "from": "2026-10-17T15:16:21.500000+00:00",
-          "to": "2026-11-03T19:48:53+00:00"
-        }
-      ]
-    },
-    "isin:INE073K01018|Sona Blw Precision Forgings": {
-      "lastAttemptAt": "2026-11-11T16:27:43+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 105,
-      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
-      "targetThrough": "2026-11-03T19:48:53+00:00",
-      "pending": [
-        {
-          "from": "2026-09-30T10:43:50+00:00",
-          "to": "2026-10-17T15:16:21.500000+00:00"
-        },
-        {
-          "from": "2026-10-17T15:16:21.500000+00:00",
-          "to": "2026-11-03T19:48:53+00:00"
-        }
-      ]
-    },
-    "isin:INE073K01018|SONACOMS": {
-      "lastAttemptAt": "2026-11-11T17:50:48+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 58,
+      "lastAttemptAt": "2026-11-17T10:55:04+00:00",
+      "error": null,
+      "lastResultCount": 31,
       "targetThrough": "2026-10-02T10:43:50+00:00",
       "pending": [
         {
@@ -2155,18 +2097,63 @@
           "to": "2026-10-02T10:43:50+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-03T19:48:53+00:00"
+      "lastDiscoveryAt": "2026-11-17T10:55:04+00:00"
+    },
+    "isin:INE728Z01015|Softtech Engineers": {
+      "lastAttemptAt": "2026-11-17T10:55:04+00:00",
+      "error": null,
+      "lastResultCount": 9,
+      "lastSuccessAt": "2026-11-17T10:55:04+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE728Z01015|SOFTTECH": {
+      "lastAttemptAt": "2026-11-17T10:55:04+00:00",
+      "error": null,
+      "lastResultCount": 23,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": "2026-11-03T19:48:53+00:00",
+      "pending": [
+        {
+          "from": "2026-10-17T15:16:21.500000+00:00",
+          "to": "2026-11-03T19:48:53+00:00"
+        }
+      ],
+      "lastDiscoveryAt": "2026-11-17T10:55:04+00:00"
+    },
+    "isin:INE073K01018|Sona Blw Precision Forgings": {
+      "lastAttemptAt": "2026-11-17T10:55:04+00:00",
+      "error": null,
+      "lastResultCount": 45,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": "2026-11-03T19:48:53+00:00",
+      "pending": [
+        {
+          "from": "2026-10-17T15:16:21.500000+00:00",
+          "to": "2026-11-03T19:48:53+00:00"
+        }
+      ],
+      "lastDiscoveryAt": "2026-11-17T10:55:04+00:00"
+    },
+    "isin:INE073K01018|SONACOMS": {
+      "lastAttemptAt": "2026-11-17T10:55:04+00:00",
+      "error": null,
+      "lastResultCount": 44,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-17T10:55:04+00:00",
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00"
     },
     "isin:INE12Z301012|Sotefin Bharat": {
-      "lastAttemptAt": "2026-11-11T18:49:27+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-11-03T19:48:53+00:00",
+      "lastAttemptAt": "2026-11-17T10:55:04+00:00",
+      "error": null,
+      "lastResultCount": 5,
+      "lastSuccessAt": "2026-11-17T10:55:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0M4D01010|Standard Engineering Technology": {
-      "lastAttemptAt": "2026-11-11T19:01:34+00:00",
+      "lastAttemptAt": "2026-11-17T10:55:04+00:00",
       "error": "search-unavailable",
       "lastResultCount": 10,
       "lastSuccessAt": "2026-11-03T19:48:53+00:00",
@@ -3140,8 +3127,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 221,
-    "checkedAt": "2026-11-17T09:07:07.004407+00:00"
+    "attempted": 7,
+    "incomplete": 219,
+    "checkedAt": "2026-11-17T10:55:04.860076+00:00"
   }
 }
