@@ -2611,7 +2611,7 @@
       "pending": []
     },
     "isin:INE18UN01038|GAJA": {
-      "lastAttemptAt": "2026-11-12T12:28:31+00:00",
+      "lastAttemptAt": "2026-11-17T21:00:18+00:00",
       "error": "search-unavailable",
       "lastResultCount": 64,
       "targetThrough": "2026-09-20T00:19:51+00:00",
@@ -3120,8 +3120,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 7,
+    "attempted": 1,
     "incomplete": 212,
-    "checkedAt": "2026-11-17T20:02:03.678363+00:00"
+    "checkedAt": "2026-11-17T21:00:18.890373+00:00"
   }
 }
