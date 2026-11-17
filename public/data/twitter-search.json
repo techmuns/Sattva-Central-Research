@@ -2020,7 +2020,7 @@
       "pending": []
     },
     "isin:INE526E01018|SPR Auto Technologies": {
-      "lastAttemptAt": "2026-11-11T10:21:01+00:00",
+      "lastAttemptAt": "2026-11-17T02:13:29+00:00",
       "error": "search-unavailable",
       "lastResultCount": 6,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -3140,8 +3140,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 9,
+    "attempted": 1,
     "incomplete": 220,
-    "checkedAt": "2026-11-17T01:27:47.690590+00:00"
+    "checkedAt": "2026-11-17T02:13:29.908364+00:00"
   }
 }
