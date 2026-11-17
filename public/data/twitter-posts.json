@@ -1,6 +1,6 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-16T22:25:15+00:00",
+  "capturedAt": "2026-11-17T00:33:12+00:00",
   "handles": [
     "moneycontrolcom"
   ],
@@ -2150,6 +2150,22 @@
       ]
     },
     {
+      "tweet_id": "2122424149482062223",
+      "handle": "NovelMotiv",
+      "display_name": "Prateik",
+      "text": "Look for stocks standing tall with a healthy pullback on a negative broad market day.\n\nExample: #SANSERA https://t.co/13QAQ7RF3w",
+      "created_at": "2026-11-16T20:18:44+00:00",
+      "url": "https://x.com/NovelMotiv/status/2122424149482062223",
+      "image": "https://pbs.twimg.com/media/HXRdL3QXoAAsX7w.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122418830261862900",
       "handle": "SeekerGoneMad",
       "display_name": "Skulk \"Magnum\" Protean,,",
@@ -2210,6 +2226,22 @@
         {
           "entityId": "isin:INE004A01022",
           "query": "\"PROTEAN\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122404314404766127",
+      "handle": "MadridAlCielo91",
+      "display_name": "Sansera🇪🇸",
+      "text": "@RamonMateos30 Será por el Sahara",
+      "created_at": "2026-11-16T18:59:55+00:00",
+      "url": "https://x.com/MadridAlCielo91/status/2122404314404766127",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
         }
       ]
     },
@@ -3750,6 +3782,22 @@
       ]
     },
     {
+      "tweet_id": "2122378921052356933",
+      "handle": "Chandrakant_Sol",
+      "display_name": "Chandrakant Solanke",
+      "text": "Watchlist for tomorrow:\nDisc: Not a buy/sell advice.\n\n#TONBO\n#FILATEX\n#RPEL\n#LUMAXTECH\n#SANSERA\n#YATHARTH\n#Goodluck \n#ENGINERSIN\n#Entero \n#DALMIASUG\n#Apollo \n#DHOOTTRANS https://t.co/Fk0zHq4K8z",
+      "created_at": "2026-11-16T17:19:01+00:00",
+      "url": "https://x.com/Chandrakant_Sol/status/2122378921052356933",
+      "image": "https://pbs.twimg.com/media/HXQ0AAyaAAE0AZj.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122378864735498720",
       "handle": "Siradhvaja",
       "display_name": "ദേവാനാം അസുരഃ 🇮🇳 🐅🟥🟨🕉️",
@@ -3964,6 +4012,26 @@
       ]
     },
     {
+      "tweet_id": "2122361232804167921",
+      "handle": "randeep_godia",
+      "display_name": "Indian Stocks Chart",
+      "text": "SANSERA ENGINEERING \n\nBelow is just thumbnail of YouTube \nvideo you can watch full video on YouTube\nhttps://t.co/WIBmSdyTu7 https://t.co/yj1Ka7JhhH",
+      "created_at": "2026-11-16T16:08:44+00:00",
+      "url": "https://x.com/randeep_godia/status/2122361232804167921",
+      "image": "https://pbs.twimg.com/media/HXQkSjCakAA0GtD.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"Sansera Engineering\""
+        },
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122361078755553655",
       "handle": "ProteanCoder",
       "display_name": "Protean Coder",
@@ -4092,6 +4160,26 @@
       "image": "https://pbs.twimg.com/media/HXQZzaAboAAHlzu.jpg",
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122348167048085747",
+      "handle": "BNTBriefing",
+      "display_name": "Business-News-Today.com",
+      "text": "Sammaan Capital Q2 disbursements jump 62% as Rs 906cr promoter capital arrives https://t.co/UFf0jUygW3 #SammaanCapital #SAMMAANCAP #IHC #AvenirInvestment #NBFC #IndianFinance #HousingFinance #Q2FY27 #NSEIndia",
+      "created_at": "2026-11-16T15:16:49+00:00",
+      "url": "https://x.com/BNTBriefing/status/2122348167048085747",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        },
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"SAMMAANCAP\""
+        }
+      ]
     },
     {
       "tweet_id": "2122346685955477721",
@@ -4298,6 +4386,22 @@
       ]
     },
     {
+      "tweet_id": "2122326640718213539",
+      "handle": "kumudam_biznews",
+      "display_name": "Kumudam Biznews",
+      "text": "தங்க நகைக் கடன் வணிகத்தில் சம்மான் கேபிடல்: முதல்கட்டமாக 16 கிளைகளில் தொடக்கம்\n\nhttps://t.co/YiWw9Sy0Fr\n\n#Gold #Loan #Sammaan",
+      "created_at": "2026-11-16T13:51:16+00:00",
+      "url": "https://x.com/kumudam_biznews/status/2122326640718213539",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122323803858694619",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -4321,6 +4425,22 @@
         {
           "entityId": "isin:INE004A01022",
           "query": "\"PROTEAN\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122321748318154898",
+      "handle": "telescopiodigit",
+      "display_name": "telescopio digital",
+      "text": "#SanSe Una sansera, Premio Nacional de Formación Profesional https://t.co/hVsK3T5sxv https://t.co/sWMzaNbfX2",
+      "created_at": "2026-11-16T13:31:50+00:00",
+      "url": "https://x.com/telescopiodigit/status/2122321748318154898",
+      "image": "https://pbs.twimg.com/media/HXQAYVeWwAAsQyR.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
         }
       ]
     },
@@ -4356,6 +4476,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122316879746498870",
+      "handle": "Er_Vpin",
+      "display_name": "Er. Vipin | Multibagger Bloodhound",
+      "text": "🚨 Q2 FY27 RESULTS RADAR | WINNERS vs LOSERS\n\n🟢 GOOD\nABB India\nSkyways Air Services\nTechnocraft\nGodrej Industries\nManipal Health\nInox Green\nInnova Captab\nPolyplex\nTVS Supply\nPrime Focus\nPTC Industries\nBrainbees\nJamna Auto\nTVS Srichakra\nOrchid Pharma\nJindal Supreme\nSS Retail\nArham Technologies\n\n🟡 INLINE / MIXED\nShriram Properties\nAshok Leyland\nEicher Motors\nFilatex India\nRelaxo Footwear\nSunflag Iron\nJupiter Wagons\nViyash Scientific\nHindware Home\nAxiscades\nBelrise\nLA Opala\nDeepak Fertilisers\nSenco\nCMS\nFineotex\nConfidence Petroleum\nIndo-MIM\nHero Motors\nFusion CX\nDEE Development\n\n🔴 WEAK\nTata Motors PV\nZetwerk\nJagran Prakashan\nITI\nGE Power\nImagicaaworld\nIndia Glycols\nInox Wind\nKNR Construction\nRHI Magnesita\nGodawari Power\nSom Distilleries\nMTNL\nGSP Crop\nJubilant Pharmova\nGenesys\nReliance Infrastructure\nKaynes Technology\nGujarat Themis\nSammaan Capital\nRajesh Exports\nShreeji Shipping\nAhluwalia Contracts\nNIBE\nGenus Power\nBaazar Style\nMotisons Jewellers\nPatanjali Foods\nEasy Trip Planners",
+      "created_at": "2026-11-16T13:12:29+00:00",
+      "url": "https://x.com/Er_Vpin/status/2122316879746498870",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        }
+      ]
     },
     {
       "tweet_id": "2122316283081609711",
@@ -4524,6 +4660,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122305429044879509",
+      "handle": "biswalsk22",
+      "display_name": "susanta biswal",
+      "text": "#Watchlist \n\nFEDERALBNK\n\nBHEL\n\nWELSPUNLIV\n\nSANSERA\n\nKARURVYSYA\n\nGLAND\n\nACUTAAS\n\nEMCURE\n\nMAXESTATES\n\nNAVINFLUOR",
+      "created_at": "2026-11-16T12:26:59+00:00",
+      "url": "https://x.com/biswalsk22/status/2122305429044879509",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122303255342707169",
       "handle": "PineLabs",
       "display_name": "Pine Labs",
@@ -4583,6 +4735,22 @@
         {
           "entityId": "isin:INE004A01022",
           "query": "\"PROTEAN\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122300223116689629",
+      "handle": "UDSanse",
+      "display_name": "U.D. Sanse",
+      "text": "🎂 ¡Hoy uno de los nuestros está de cumple!\n\n🎉 ¡Felicidades Diego de parte de toda la familia sansera! ¡Que disfrutes de tu día! https://t.co/BydpOXTDZ5",
+      "created_at": "2026-11-16T12:06:18+00:00",
+      "url": "https://x.com/UDSanse/status/2122300223116689629",
+      "image": "https://pbs.twimg.com/media/HXPszZWXsAEPIu_.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
         }
       ]
     },
@@ -4910,6 +5078,22 @@
         {
           "entityId": "isin:INE004A01022",
           "query": "\"PROTEAN\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122281749560627421",
+      "handle": "Caatishay",
+      "display_name": "CA Atishay Jain | Finance",
+      "text": "One of India's most lucrative small-town businesses is now attracting the biggest financial institutions.\n\nAfter Tata Capital, Aditya Birla Finance and Godrej Finance, IHC backed Sammaan Capital is entering gold loan business\n\nIndia's gold loan market has grown nearly 4x in just 5 years and everyone wants a piece of it\n\nWhat was once a small-town business is becoming a major battleground for India's NBFCs",
+      "created_at": "2026-11-16T10:52:53+00:00",
+      "url": "https://x.com/Caatishay/status/2122281749560627421",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
         }
       ]
     },
@@ -5318,6 +5502,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122266997186875691",
+      "handle": "MrTalkStock",
+      "display_name": "Ali Azar",
+      "text": "💊Gland Pharma is a stand out from the Pharma pack while other CDMOs like Laurus, Divis, Sai Life, Bluejet, Acutaas are down big time \n\n⚙️Sansera Engineering is a stand out from the Precision Engineering pack while others like Azad Engineering, PTC Industries, Unimech, Happy Forgings are down big time \n\nCo-incidence or a leadership attributes being displayed ?\n\n#StockMarket #investing",
+      "created_at": "2026-11-16T09:54:16+00:00",
+      "url": "https://x.com/MrTalkStock/status/2122266997186875691",
+      "image": "https://pbs.twimg.com/media/HXPOlNuaEAAqc0Y.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"Sansera Engineering\""
+        },
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
     },
     {
       "tweet_id": "2122266981646954939",
@@ -5820,6 +6024,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122240837153357987",
+      "handle": "ShareMarket008",
+      "display_name": "Share Market™ Waale",
+      "text": "@Nigel__DSouza Samhi??",
+      "created_at": "2026-11-16T08:10:19+00:00",
+      "url": "https://x.com/ShareMarket008/status/2122240837153357987",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE08U801020",
+          "query": "\"SAMHI\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122240394490732873",
       "handle": "EmeraldHikari",
       "display_name": "Emerald || VLITYA HAVER🌿",
@@ -6253,6 +6473,26 @@
       ]
     },
     {
+      "tweet_id": "2122230315431469253",
+      "handle": "Equitymaster",
+      "display_name": "Equitymaster",
+      "text": "2. #TRUSTMFSmallCapFund\n\n2026 Return: 26.66%\nNAV: Rs 13.54\nAUM: Rs 38.8 billion\n\nMajor holdings include Lenskart, RBL Bank and Sansera Engineering.\n\nThe fund has a relatively short track record, having launched in late 2024, and its portfolio turnover is relatively high.",
+      "created_at": "2026-11-16T07:28:30+00:00",
+      "url": "https://x.com/Equitymaster/status/2122230315431469253",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"Sansera Engineering\""
+        },
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122229817336803532",
       "handle": "myquant_in",
       "display_name": "MyQuant",
@@ -6641,6 +6881,22 @@
       ]
     },
     {
+      "tweet_id": "2122222264586543132",
+      "handle": "ETBFSI",
+      "display_name": "ET BFSI",
+      "text": "Sammaan Capital joins gold loan push by large NBFCs, to launch in 16 branches in Q3\n\n#SammaanCapital #GoldLoans #NBFC #GoldLoanMarket #Lending #NonBankingFinance #TataCapital #AdityaBirlaFinance #GodrejFinance #FinancialServices #SachinChaudhary #ETBFSI\n\nhttps://t.co/WGdJsMDkWG",
+      "created_at": "2026-11-16T06:56:31+00:00",
+      "url": "https://x.com/ETBFSI/status/2122222264586543132",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122222149805162823",
       "handle": "mammetgzla",
       "display_name": "sid",
@@ -6857,6 +7113,22 @@
       ]
     },
     {
+      "tweet_id": "2122219859526496538",
+      "handle": "WealthNest01",
+      "display_name": "Wealth Nest",
+      "text": "Stocks to Watch Today | 16 November 2026\nKeep these stocks on your radar in today's trading session:\n\n1. Tata Motors Passenger Vehicles\n\nTata Motors PV reported a consolidated Q2 FY27 loss of ₹5,531 crore, while revenue increased 34% year-on-year to ₹96,920 crore.\n\n2. Eicher Motors\n\nEicher Motors reported a 14.8% year-on-year rise in Q2 net profit to ₹1,573.4 crore, supported by strong Royal Enfield sales.\n\n3. Hindalco Industries\n\nHindalco's subsidiary Novelis has agreed to sell its China businesses for approximately $265 million.\n\n4. Ashok Leyland\n\nAshok Leyland reported an 11.5% year-on-year increase in Q2 net profit to ₹842.9 crore, with revenue rising 35.4%.\n\n5. Godrej Industries\n\nGodrej Industries reported a 130.8% year-on-year jump in Q2 net profit to ₹559.6 crore.\n\n6. Kaynes Technology\n\nKaynes Technology reported Q2 revenue of ₹952.5 crore, up 4% year-on-year, while EBITDA declined 15.7%.\n\n7. Bharat Electronics (BEL)\n\nBEL secured additional orders worth ₹619 crore across defence and electronics segments.\n\n8. VA Tech Wabag\n\nVA Tech Wabag is in focus after Saudi Arabia cancelled its approximately ₹2,400 crore desalination project.\n\n9. Deepak Fertilisers\n\nDeepak Fertilisers reported an 84% year-on-year increase in Q2 net profit to ₹393.8 crore.\n\n10. Inox Green Energy Services\n\nInox Green Energy Services reported a 55% year-on-year jump in Q2 net profit to ₹43.3 crore.\n\n11. Coal India\n\nCoal India's subsidiary Mahanadi Coalfields has filed its RHP for a proposed IPO involving up to a 10% stake sale.\n\n12. Jupiter Wagons\n\nJupiter Wagons reported a 2.8% year-on-year increase in Q2 net profit, while revenue declined 1.8%.\n\n13. RHI Magnesita India\n\nRHI Magnesita India reported a 62% year-on-year increase in Q2 net profit to ₹62.09 crore.\n\n14. Yes Bank\n\nYes Bank denied reports of an alleged ₹32 crore cyber-fraud loss, bringing the lender into market focus.\n\n15. Hero MotoCorp\n\nHero MotoCorp reported a 65.1% year-on-year increase in Q2 net profit to ₹18.2 crore.\n\n16. ABB India\n\nABB India reported an 8.2% year-on-year rise in Q3 CY26 net profit to ₹442.5 crore.\n\n17. Sammaan Capital\n\nSammaan Capital reported Q2 net profit of ₹312.34 crore, up 1.3% year-on-year.\n\n18. TVS Electronics\n\nTVS Electronics reported a Q2 net loss of ₹1.41 crore against a profit in the corresponding quarter last year.\n\n19. Zetwerk\n\nZetwerk reported an 18.3% year-on-year increase in Q2 revenue, although its net loss widened to ₹68.5 crore.\n\n20. Power Grid Corporation\n\nPower Grid emerged as the successful bidder for a transmission project carrying annual transmission charges of approximately ₹243.34 crore.\n\nStay informed. Track the developments. Trade responsibly.",
+      "created_at": "2026-11-16T06:46:58+00:00",
+      "url": "https://x.com/WealthNest01/status/2122219859526496538",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122219644358627504",
       "handle": "ProteanEgovTech",
       "display_name": "Protean",
@@ -6898,6 +7170,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122218998884634973",
+      "handle": "shiladitya4u",
+      "display_name": "Shiladitya",
+      "text": "Auto ancillary stocks venturing into Precision Engineering, Aerospace & Defense tend to get re-rated.\n\nBest example is probably Sansera Engineering.\nBelrise industries is kind of trying to follow a similar path - \nConsumer Electronics Entry: Entered the ecosystem of a major American smartphone manufacturer with an order for high-precision CNC fixtures. This is seen as a high-margin, recurring business opportunity.\nExpansion funnel: already in discussions for additional fixture categories including “MLB… main logic board fixtures” and “FATP… final assembly, testing, and packaging fixtures.\n\nInitial order value is small but potential is big.\n\nAerospace Order Win: Secured the first order win post-acquisition at Kestrel Hall (UK) for manufacturing 'track beams' for a leading global aircraft OEM.\n\nManagement reiterated prior view: within 12–18 months, “>10% of our manufacturing revenues” from aerospace & defense.\nOperating model: management outlined a hub-and-spoke approach—UK/Europe as R&D + marketing hub, India as “best cost base” \n............................\nThis is not an investment advise or recommendation.\nPlease do your own due diligence before investing",
+      "created_at": "2026-11-16T06:43:32+00:00",
+      "url": "https://x.com/shiladitya4u/status/2122218998884634973",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"Sansera Engineering\""
+        },
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
     },
     {
       "tweet_id": "2122218805216882876",
@@ -8021,6 +8313,22 @@
       ]
     },
     {
+      "tweet_id": "2122199439549010147",
+      "handle": "Bikash62468660",
+      "display_name": "Behind The Ticker 🇮🇳",
+      "text": "📊 Q2 FY27 RESULTS\n\n• Prime Focus: Revenue +34.7%, PAT ₹48.5 Cr vs ₹3.6 Cr.\n• Indo-MIM: PAT ₹215 Cr vs ₹108 Cr.\n• DEE Development: PAT +30.7%.\n• Brainbees: Loss narrowed to ₹6.5 Cr.\n• Sammaan Capital: PAT +1.2%.\n\n#Q2Results #Stocks",
+      "created_at": "2026-11-16T05:25:49+00:00",
+      "url": "https://x.com/Bikash62468660/status/2122199439549010147",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122199369030242583",
       "handle": "bemiaso",
       "display_name": "Kross",
@@ -8332,6 +8640,26 @@
       ]
     },
     {
+      "tweet_id": "2122191771434434689",
+      "handle": "stockwatch_live",
+      "display_name": "Stockwatch.live",
+      "text": "Sammaan Capital: a ₹906 Cr promoter infusion lands at ₹139 a share — above where the stock trades today\n\n$SAMMAANCAP\n\nhttps://t.co/iCvII3JfKk",
+      "created_at": "2026-11-16T04:55:21+00:00",
+      "url": "https://x.com/stockwatch_live/status/2122191771434434689",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        },
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"SAMMAANCAP\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122191195179016638",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -8435,6 +8763,26 @@
         {
           "entityId": "isin:INE338I01027",
           "query": "\"Motilal Oswal Financial Services\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122188612267827437",
+      "handle": "Er_Vpin",
+      "display_name": "Er. Vipin | Multibagger Bloodhound",
+      "text": "STOCKS WITH 100%+ RETURNS IN ONE YEAR!\n\nOne stock delivered a staggering 2,862% return!\n\n📈 COMPLETE LIST | 1-YEAR RETURNS\n\n🔥 Mrugesh Trading — 2,862.75%\n\n🚀 Cupid — 503.80%\n\n🚀 Sterlite Technologies — 497.02%\n\n🚀 Sigma Advanced Systems — 323.72%\n\n🚀 Bliss GVS Pharma — 316.14%\n\n🚀 Kwality Pharmaceuticals — 299.16%\n\n🚀 Ather Energy — 199.42%\n\n🚀 Shreeji Shipping — 205.74%\n\n🚀 Spectrum Electrical — 190.70%\n\n🚀 Swan Defence — 182.30%\n\n📊 MORE STOCKS IN THE 100%+ CLUB\n\nLaurus Labs — 142.64%\n\nWelspun Corp — 142.83%\n\nAditya Infotech — 155.91%\n\nSai Life Sciences — 121.21%\n\nAcutaas Chemicals — 136.05%\n\nHFCL — 170.85%\n\nSansera Engineering — 152.91%\n\nRubicon Research — 134.97%\n\nDiamond Power — 150.91%\n\nShilpa Medicare — 161.20%\n\nMTAR Technologies — 130.58%\n\nGarware Hi-Tech Films — 100.02%\n\nSky Gold — 194.68%\n\nKarnataka Bank — 107.93%\n\nSG Mart — 161.59%\n\niDream Film Infrastructure — 152.28%\n\nE2E Networks — 111.57%\n\nKnowledge Marine — 171.22%\n\nMB Agro Products — 144.52%\n\nSteel Strips Wheels — 173.80%\n\nNeogen Chemicals — 130.76%\n\nRaymond — 119.97%\n\nTourism Finance Corporation — 143.54%\n\nKrishana Phoschem — 133.44%\n\nPaisalo Digital — 124.80%\n\nCyient DLM — 101.85%\n\nStandard Engineering Technology — 109.25%\n\nAeroflex Industries — 169.41%\n\nWheels India — 174.07%\n\nRossell Techsys — 130.55%\n\nFineotex Chemical — 106.17%\n\nIOL Chemicals — 110.76%\n\nShivalik Bimetal — 118.51%\n\nMorepen Laboratories — 115.34%\n\nEvonith Pharma — 117.45%\n\nRashi Peripherals — 104.30%\n\nV-Marc India — 139.27%\n\nYasho Industries — 110.61%\n\nDEE Development Engineers — 130.49%\n\nAimtron Electronics — 104.85%\n\n💡 The next multibagger could be hiding in this list.",
+      "created_at": "2026-11-16T04:42:48+00:00",
+      "url": "https://x.com/Er_Vpin/status/2122188612267827437",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"Sansera Engineering\""
+        },
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
         }
       ]
     },
@@ -8595,6 +8943,26 @@
       ]
     },
     {
+      "tweet_id": "2122186485847994524",
+      "handle": "Multibaggerbro",
+      "display_name": "Multibagger stocks ideas India",
+      "text": "Some Sector &amp; Themes Which Are Looking Stronger &amp; Q2 Results was also Good🚀   ( Part 2 )\n\n~Auto Sector  ( Belrise, Sonablw, UnoMinda , Sansera Engineering )\n\n~Micro Finance /NBFC ( Sg Finserve, Tamilnad Mercantile )But Finance Stocks Are To Cyclical‼️\n\nFor Educational Purpose🚀",
+      "created_at": "2026-11-16T04:34:21+00:00",
+      "url": "https://x.com/Multibaggerbro/status/2122186485847994524",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"Sansera Engineering\""
+        },
+        {
+          "entityId": "isin:INE953O01021",
+          "query": "\"SANSERA\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122186349197545841",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -8638,6 +9006,22 @@
         {
           "entityId": "isin:INE310A01015",
           "query": "\"Nilkamal\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122186100806668546",
+      "handle": "WealthGenius_",
+      "display_name": "Wealth Genius News and Updates",
+      "text": "📊 MY STOCK WATCHLIST FOR TODAY\n\n20 stocks across auto, defence, energy, banking, metals, manufacturing and consumer sectors.\n\n1. Ashok Leyland\n2. PTC Industries\n3. Patanjali Foods\n4. Sammaan Capital\n5. Vikram Solar\n6. Cochin Shipyard\n7. Shipping Corporation of India\n8. Sandhar Technologies\n9. Manappuram Finance\n10. TD Power Systems\n11. Eicher Motors\n12. ABB India\n13. Grasim Industries\n14. Tata Motors PV\n15. Hindalco Industries\n16. Vedanta\n17. SBI\n18. ONGC\n19. Oil India\n20. Trent\n\n👀 Key things to track:\n• Opening price and market sentiment\n• Volume and price action\n• Sector-wise momentum\n• Important support and resistance levels\n• Company-specific news and developments\n\nA watchlist, not a buy list. Let price action confirm the trend.\n\n#Nifty #StockMarket #StocksToWatch\n\nNo Buy/Sell Recommendation. DYOR.\n\nJoin our Telegram-  https://t.co/zh4G7Qeaxw",
+      "created_at": "2026-11-16T04:32:49+00:00",
+      "url": "https://x.com/WealthGenius_/status/2122186100806668546",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
         }
       ]
     },
@@ -8890,6 +9274,22 @@
       ]
     },
     {
+      "tweet_id": "2122181550540562910",
+      "handle": "ConcallT",
+      "display_name": "Concall Talks",
+      "text": "Sammaan Capital Ltd – Q2 & H1FY27 | Concall Insights\n\nFinancial Performance\n•Q2 AUM ₹59,188 Cr (+5.2% QoQ); loan book ₹46,482 Cr\n•Q2 disbursements ₹6,278 Cr (+62% QoQ); H1 disbursements ₹10,123 Cr\n•Q2 PBT ₹425 Cr (+30% QoQ); PAT ₹312 Cr (+28% QoQ)\n•H1 PAT ₹556 Cr; FY27 PAT target maintained at ₹1,400 Cr\n•ROA improved to 1.5% from 1.3% QoQ; return on managed assets improved to 1.3% from 1.1%\n\nAUM Growth & Disbursement Guidance\n•FY27 AUM target maintained at ₹70,700 Cr versus ₹59,188 Cr in Q2\n•FY27 loan book target ₹53,000 Cr versus ₹46,482 Cr currently\n•FY27 disbursement guidance ₹30,100 Cr, implying ~₹20,000 Cr disbursements in H2\n•Management confident of achieving FY27 disbursement and profitability targets\n•Growth strategy transitioning from balance-sheet stabilization to aggressive retail lending expansion\n•Mortgage lending expected to remain the primary growth engine over the next two years, supported by new product launches\n\nCost of Funds & Margin Expansion\n•Current cost of funds 9.8%; FY27 target ~9.3%\n•Gross lending margin currently ~2.9%, with management targeting ~3.5%\n•IHC backing, rating upgrades and access to international lenders expected to progressively reduce borrowing costs\n•UAE banking relationship already providing >$150 Mn funding at competitive rates; another similar-sized transaction anticipated\n•Company increased lending rates by 25 bps effective November, potentially improving near-term spreads\n•Declining funding costs and higher-yielding retail products remain key drivers of NIM expansion and profitability\n•Management targeting return on managed assets above 2% over time\n\nRetail Lending & Product Diversification\n•~94% of Q2 disbursements were secured loans, reflecting continued focus on asset quality\n•Personal loans being expanded from purchased portfolios toward direct origination through branches\n•Personal loan target ticket size ~₹2 lakh; indicative yields ~16–17%\n•Business installment loans targeting MSMEs with ticket sizes of ₹18–20 lakh and yields of ~14–18%\n•Gold loan soft launch planned across ~16 branches in Q3 FY27, followed by ~30 additional branches in Q4\n•Gold loans targeting ~₹2 lakh ticket size and ~11–13% yields, with broader expansion planned in FY28\n•Loan against securities, micro-LAP, rural housing finance and credit-fund partnerships provide additional AUM growth opportunities\n•Higher-yielding products retained on balance sheet, while lower-yield mortgages increasingly originated and assigned to lenders\n\nDistribution & Operating Leverage\n•Branch network expanded from 217 to 245; FY27 target ~300 branches\n•Expansion focused on Tier 2/3 cities and underserved semi-urban markets\n•H1 employee additions ~1,123, largely dedicated to retail sourcing and branch operations\n•Mortgage branches typically expected to break even within ~6 months; personal/business loan branches in ~4–6 months\n•Gold loan branches expected to take ~12–18 months to break even\n•Increasing branch productivity and technology-led processing expected to support operating leverage as disbursements scale\n\nFY27–FY28 Earnings Growth Visibility\n•H2 FY27 disbursements targeted at ~₹20,000 Cr versus ₹10,123 Cr in H1, creating significant AUM growth potential\n•FY27 PAT target of ₹1,400 Cr implies approximately ₹844 Cr profitability requirement in H2\n•Funding cost reduction from 9.8% toward 9.3% and margin expansion from 2.9% toward 3.5% offer key earnings upside\n•Gold loans, personal loans and business loans expected to become additional growth engines from FY28\n•Branch expansion and higher-yielding portfolio mix expected to improve long-term return ratios\n•IHC-backed funding access, capital infusion and governance improvements support the company’s ambition to progress from AA+ toward AAA\n•Key monitorables include H2 disbursement acceleration, cost-to-income ratio, new product asset quality and realization of funding-cost benefits",
+      "created_at": "2026-11-16T04:14:44+00:00",
+      "url": "https://x.com/ConcallT/status/2122181550540562910",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122181364875427870",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -8899,6 +9299,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122181287465394405",
+      "handle": "WealthGenius_",
+      "display_name": "Wealth Genius News and Updates",
+      "text": "📊 TODAY'S EARNINGS WATCHLIST\n\nStocks to keep on your radar today:\n\n1. Kaynes Technology\n2. Genus Power\n3. FirstCry\n4. Jeena Sikho\n5. Balu Forge\n6. Jamna Auto\n7. Sammaan Capital\n8. Skyways Airways\n\n📌 Track quarterly results, revenue growth, profit margins and management commentary.\n\n#StockMarket #Q2Results #EarningsWatchlist\n\nJoin our Telegram-  https://t.co/zh4G7Qeaxw",
+      "created_at": "2026-11-16T04:13:41+00:00",
+      "url": "https://x.com/WealthGenius_/status/2122181287465394405",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
+        }
+      ]
     },
     {
       "tweet_id": "2122181113120788773",
@@ -8971,6 +9387,22 @@
         {
           "entityId": "isin:INE700A01033",
           "query": "\"JUBLPHARMA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122177541717078228",
+      "handle": "mammetgzla",
+      "display_name": "sid",
+      "text": "📈 MY WATCHLIST FOR TODAY\n\n● Ashok Leyland\n● PTC Industries\n● Patanjali Foods\n● Sammaan Capital\n● Vikram Solar\n● Cochin Shipyard\n● Shipping Corporation of India\n● Sandhar Technologies\n● Manappuram Finance\n● TD Power Systems\n● Eicher Motors\n● ABB India\n● Grasim Industries\n● Tata Motors PV\n● Hindalco Industries\n● Vedanta\n● SBI\n● ONGC\n● Oil India\n● Trent",
+      "created_at": "2026-11-16T03:58:48+00:00",
+      "url": "https://x.com/mammetgzla/status/2122177541717078228",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE148I01020",
+          "query": "\"Sammaan Capital\""
         }
       ]
     },
@@ -9068,425 +9500,14 @@
           "query": "\"KROSS\""
         }
       ]
-    },
-    {
-      "tweet_id": "2122175576731730388",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Jimmy Tata backs Chandrasekaran's third term, Tata Sons listing amid rift with Noel Tata: Report\n\n- Jimmy Tata backs N Chandrasekaran's reappointment.\n- He supports RBI's view on Tata Sons' listing.\n- Views diverge from half-brother Noel Tata.\n\nRead More:\nhttps://t.co/siJ6R5sJFz",
-      "created_at": "2026-11-16T03:51:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122175576731730388",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122175338302349745",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#OpeningBell | Markets open in the green🟢\n\nSensex rallying 600 points and Nifty trading above 25,200. \n\nEicher Motors gains 3%, while Kaynes Technology slides 10% in early trade. 📈\n\nCatch LIVE updates⏬\nhttps://t.co/H84j3SFefn https://t.co/UT5Wv5i3Gq",
-      "created_at": "2026-11-16T03:50:03+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122175338302349745",
-      "image": "https://pbs.twimg.com/media/HXN7BJ1a4AATV3P.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122174971220816150",
-      "handle": "buenchico",
-      "display_name": "✠Kross✠",
-      "text": "@juancarloslujan @PoliciaPeru Dejalos tranquilos a los Chamos mientras se desestresen así sin joder a nadie está bien",
-      "created_at": "2026-11-16T03:48:35+00:00",
-      "url": "https://x.com/buenchico/status/2122174971220816150",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122174653229908462",
-      "handle": "SWINGSTOCKSWALA",
-      "display_name": "swingstockswala",
-      "text": "Multibaggers in last 4 years\n\n1. LT Foods - Rs 14 to 400\n2. Praj Industries - Rs 40 to 735\n3. Lloyds Engineering - Rs 1 to 75\n4. ADSL - Rs 10 to 295\n5. Jupiter Wagons - Rs 6 to 547\n6. Inox Wind Energy - Rs 99 to 11606\n\nFor next one join telegram link in bio \nNo buy sell \n#stock",
-      "created_at": "2026-11-16T03:47:20+00:00",
-      "url": "https://x.com/SWINGSTOCKSWALA/status/2122174653229908462",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE818H01020",
-          "query": "\"LT Foods\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122174448719806811",
-      "handle": "punitbansal14",
-      "display_name": "Punit",
-      "text": "Diagnostics | Reagent Purchase Model | AIIMs India\n\n📸1: Kopran Diagnostic – Revenue Breakup\n\nThe bulk of our revenue comes from the consumables business, which is what we call reagents. So reagents contributes to almost 80% of -- 75%, 78% of our top line.\n\n📸2: Kopran Reagent Contribution (80%) vs Diagnostic Companies' Reagent-Purchase Model - India\n\nDue to the capital-intensive nature of the equipment, large diagnostic chains are inclining towards the reagent-purchase model. In this model, diagnostic companies usually install the equipment on rent, provided they purchase reagents from the manufacturer for a certain period or agree to pay the manufacturer a specified price per test conducted\n\nKopran - AIIMS Jodhpur, AIIMS Delhi, AIIMS Patna & AIIMS Bhubaneswar - Beckman Device and Reagent Purchase Model - Repeat Business",
-      "created_at": "2026-11-16T03:46:31+00:00",
-      "url": "https://x.com/punitbansal14/status/2122174448719806811",
-      "image": "https://pbs.twimg.com/media/HXNynyAa0AAhgcj.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE082A01010",
-          "query": "\"Kopran\""
-        },
-        {
-          "entityId": "isin:INE082A01010",
-          "query": "\"KOPRAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122173857583026391",
-      "handle": "bullish_india",
-      "display_name": "Bullish India 🇮🇳",
-      "text": "Market Update (November 16, 2026)\n\nFIIs & DIIs (in crore)\nFII: +5,736.55\nDII: -2,253.58\nGift Nifty: +88\nPrice band change from 10% to 20%: Creative Newtech.\nPrice band change from 5% to 20%: Mold-Tek Technologies, MTAR Technologies, Speciality Restaurants.\nPrice band change from 5% to 10%: Aarti Surfactants.\nShort Term ASM (ENTER): Jyoti Structures.\n\nStocks to track as per Our Website: #MCX, #PAYTM\n\nSEBI Prohibition of Insider Trading\nRavindra Energy Ltd. where Disposal of 20,000 Equity at an average price of Rs. 142.9 was done on Nov. 14, 2026.\n\nBULK & BLOCK DEALS\nAmber Enterprises: Graviton Research Capital LLP sold 3,101 shares at Rs 6,635.72/share.\nBF Utilities: Irage Broking Services LLP bought 55,181 shares at Rs 504.16/share.\nBLS Polymers: HRTI Private Limited bought 3.53 lakh shares at Rs 262.11/share, etc.\nIIFL Capital Services: Alpha Alternatives Financial Services Private Limited sold 23.69 lakh shares at Rs 354.74/s, etc.\nManaksia Coated Metals: Growvia Trade Private Limited bought 20.36 lakh shares at Rs 167.74/share, etc.\nRallis India: ASK Investment Managers Limited sold 12.80 lakh shares at Rs 189.42/share.\nSTL Networks: Ramdoot Realtors Pvt Ltd bought 1.78 lakh shares at Rs 46.12/share.\nTD Power Systems: HRTI Private Limited sold 1.71 lakh shares at Rs 663.54/share.\nV2 Retail: QE Securities LLP bought 1.30 lakh shares at Rs 173.77/share.\nMeesho: SVF II Meerkat (DE) LLC sold 7.64 crore shares at Rs 246.75/share.\n\nInsider Trade\nStar Cement: Prem Kumar Bhajanka, promoter and director, bought 1,41,870 shares.\nIndokem: Emerald Capital Services Pvt. Ltd., promoter group, sold 5,010 shares.\nSpeciality Restaurants: Mr. Anjanmoy Chatterjee, promoter and director, bought 9,750 shares.\nCamlin Fine Sciences: Ashish Subhash Dandekar, promoter and director, pledged 3,70,000 shares.\nKarur Vysya Bank: M S Jeevarekha, promoter group, sold 10,000 shares.\nWestlife Foodworld: Horizon Impex Private Limited, promoter, bought 1,53,650 shares.\nRamkrishna Forgings: Riddhi Portfolio Private Limited, promoter, bought 50,000 shares.\n\nMoney Market Update\nThe Indian currency closed 19 paise lower at 94.22 against the US dollar on Friday.\n\n\"Wishing You A Happy Trading Day\"\nhttps://t.co/ECfZ04hTWX",
-      "created_at": "2026-11-16T03:44:10+00:00",
-      "url": "https://x.com/bullish_india/status/2122173857583026391",
-      "image": "https://pbs.twimg.com/media/HXN53gLbgAAIyvt.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE399G01023",
-          "query": "\"Ramkrishna Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122173223118782583",
-      "handle": "Michael39244008",
-      "display_name": "Michael",
-      "text": "@Noahgilberto19 Takeshita, Andrade, I'd love to see a wild card and it be Killer Kross",
-      "created_at": "2026-11-16T03:41:39+00:00",
-      "url": "https://x.com/Michael39244008/status/2122173223118782583",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122173198527828162",
-      "handle": "Hania_786Ai",
-      "display_name": "Krishan Padhiar",
-      "text": "🚀 #PINELABS — Buy Watchlist\n\nPrice is holding above the rising trendline after the pullback from ₹200. 📈\n\nCurrent Market Price (CMP): ₹176\n\n🔥 Resistance Levels: ₹180 – ₹190 (prior range)\n\n🎯 Target Prices (TGT): ₹200 → ₹215\n\n💡 Ideal Buy-on-Dip Range: ₹170 – ₹173\n\n🛡️ Support/Stop-Loss (SL) Zone: ₹165 – ₹158 (trendline)\n\n📊 MACD turning up (2.40 / 0.72; green histogram) — early bullish signal\n📦 9-Day Volume SMA at 17.79M — volumes elevated on this consolidation\n\n#PINELABS #Nifty #NSE #StockMarketIndia #DalalStreet #Fintech #IndianMarkets",
-      "created_at": "2026-11-16T03:41:33+00:00",
-      "url": "https://x.com/Hania_786Ai/status/2122173198527828162",
-      "image": "https://pbs.twimg.com/media/HXN5MqQa4AA7fqL.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE15B701018",
-          "query": "\"PINELABS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122172219845705882",
-      "handle": "BaligaSoul",
-      "display_name": "Gypsy soul",
-      "text": "Top triggers on my radar today:\n\n1. India–US Preferential Trade Access 🇺🇸🇮🇳\nCommerce Min. Piyush Goyal confirmed lower US import duties vs. peers under the upcoming BTA. \nDirect tailwind for US-export Auto Ancillaries ($RKFORGE, $SONACOMS, $ROLEXRINGS), Jewellery ($SKYGOLD), & Textiles.\n\n2. Double Trigger in $RKFORGE\nPromoter buying + direct beneficiary of US tariff relief.\n\n3. Regulatory & Defense Deal :\n• $MUFIN: Wins RBI AD-II Forex Licence — unlocks capital-light LRS remittance fee income on top of +149% YoY Q2 PAT.\n• $CYIENTDLM: Signs JV MoU with Hindustan Shipyard for indigenous naval electronics.\n• $GALAXYSURF: Global pact with LG Electronics for sustainable appliance solutions.\n\n4. Q2 Earnings Momentum:\n• $INNOVACAP (PAT +43% YoY, OCF 2x) & $PTCIL (Aerospace/Titanium).\nLet the 9:15 AM opening dust settle before taking entries! 🔔\n\n#StockMarketIndia #Nifty50 #StocksToWatch #Alpha",
-      "created_at": "2026-11-16T03:37:39+00:00",
-      "url": "https://x.com/BaligaSoul/status/2122172219845705882",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE399G01023",
-          "query": "\"RKFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122171923321036892",
-      "handle": "wegro_app",
-      "display_name": "Wegro App",
-      "text": "📺 Anuj Singhal On Motilal Oswal Report | Earning Season के बाद मोतीलाल ओसवाल की बड़ी रिपोर्ट Anuj Singhal On Motilal Oswal Report | Earning Season के बाद मोतीलाल ओसवाल की बड़ी रिपोर्ट ...\n\n📊 MOTILAL OSWAL FINANCIAL SERVICES LTD | 🏷️ Video feed\n\n📹 WATCH VIDEO: https://t.co/FDo5TmkzDo\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
-      "created_at": "2026-11-16T03:36:29+00:00",
-      "url": "https://x.com/wegro_app/status/2122171923321036892",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE338I01027",
-          "query": "\"Motilal Oswal Financial Services\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122170786941436331",
-      "handle": "StocksTrading97",
-      "display_name": "Stocks Trader / Investor",
-      "text": "🚨 TRADE SPOTLIGHT | 16 NOVEMBER\n\nWhich stocks are setting up for a potential big move today? 📊\n\n👀 Stocks in focus:\n🔹 Alicon Castalloy\n🔹 Ramkrishna Forgings\n🔹 Kwality Wall's\n🔹 Indus Towers\n🔹 GE Vernova T&D\n🔹 And more…\n\n📈 What to watch:\n• Key support & resistance levels\n• Breakout and breakdown zones\n• Volume confirmation\n• Short-term trading opportunities\n\n🔥 Which stock are you tracking for today's trading session?\n\nDrop your stock name below 👇\n\n♻️ Like | Repost | Follow for daily market updates.\n\n#StockMarket #Nifty50",
-      "created_at": "2026-11-16T03:31:58+00:00",
-      "url": "https://x.com/StocksTrading97/status/2122170786941436331",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE399G01023",
-          "query": "\"Ramkrishna Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122170002711462226",
-      "handle": "IPOACADEMY001",
-      "display_name": "IPO Investor Academy",
-      "text": "MAHINDRA LAST MILE MOBILITY IPO\n\n◆ MAHINDRA & MAHINDRA IS CONSIDERING AN IPO OF ITS ELECTRIC 3-WHEELER BUSINESS, MAHINDRA LAST MILE MOBILITY, IN APPROXIMATELY 18 MONTHS\n◆ EXPECTED IPO: AROUND 2028\n◆ JULY 2026 VALUATION: ₹10,822 CR\n◆ RECENT FUNDING: ₹322 CR\n◆ L5 ELECTRIC 3-WHEELER MARKET SHARE: ∼40%\n◆ BUSINESS EXPANSION AND PROFITABILITY ARE KEY PRIORITIES",
-      "created_at": "2026-11-16T03:28:51+00:00",
-      "url": "https://x.com/IPOACADEMY001/status/2122170002711462226",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE101A01026",
-          "query": "\"Mahindra & Mahindra\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122168291716374972",
-      "handle": "india_BullAi",
-      "display_name": "Bull Ai - India",
-      "text": "Jubilant Pharmova's Q2 FY27 concall is LIVE 🔴\n\nManagement has started speaking. We are following the call live, and the transcript updates as they go.\n\nNot investment advice.\n\n🎧 Listen live and read the transcript: https://t.co/iXN6H64bFp https://t.co/ThXEvHKDVW",
-      "created_at": "2026-11-16T03:22:03+00:00",
-      "url": "https://x.com/india_BullAi/status/2122168291716374972",
-      "image": "https://pbs.twimg.com/media/HXN0z_eagAEBQJZ.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE700A01033",
-          "query": "\"JUBLPHARMA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122167450871738382",
-      "handle": "Philie1987",
-      "display_name": "Philip Jones",
-      "text": "@AEW @MercedesVarnado @MarinaShafir People standing up in excitement for Marina to make Mercedes tap and a great moment. But you buckled it and gave it to Mercedes Hogan. It will become like Charlotte Flair where you just skip her matches as the outcomes always the same.",
-      "created_at": "2026-11-16T03:18:42+00:00",
-      "url": "https://x.com/Philie1987/status/2122167450871738382",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122165227764482122",
-      "handle": "neutralthingg",
-      "display_name": "casey ✿",
-      "text": "kris kross applesauce dreemurr i love u my little baby apple 🍎🍏❤️",
-      "created_at": "2026-11-16T03:09:52+00:00",
-      "url": "https://x.com/neutralthingg/status/2122165227764482122",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122165212174254087",
-      "handle": "juridicoderice",
-      "display_name": "▎⃞🇲🇳 𝓐yumi ╱╱",
-      "text": "@bisonabisoo9 Mas isso não é um problema apenas dele. É um problema coletivo do Madrid, desde a saída do Kross e Modric, aquele time foi pro lixo. Ou vai dizer que Real Madrid é o melhor time sendo que não tem mostrado isso nos últimos três anos?",
-      "created_at": "2026-11-16T03:09:49+00:00",
-      "url": "https://x.com/juridicoderice/status/2122165212174254087",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122164388094259377",
-      "handle": "Kross",
-      "display_name": "kross",
-      "text": "@MissGinaDarling I feel… attacked",
-      "created_at": "2026-11-16T03:06:32+00:00",
-      "url": "https://x.com/Kross/status/2122164388094259377",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122164182451966291",
-      "handle": "cmani",
-      "display_name": "Mani 🇮🇳",
-      "text": "Electric car retail deliveries rose 69% year-on-year to 40,122 units during the 32-day festive period from Navratri to Bhaidooj, according to data from JATO Dynamics reported by The Economic Times.\n\nIn contrast, overall passenger vehicle deliveries declined 7.2% to 580,719 units. Petrol car sales contracted 14.5% to 301,025 units, diesel fell 6.8% to 95,064 units, and CNG slipped 2.4% to 144,501 units. Electric vehicles expanded their total retail share to 6.9%, up from 3.8% in the previous year.\n\nTata Motors and Mahindra & Mahindra accounted for nearly 80% of all electric cars retailed in the period. Tata Motors recorded a 71% rise to 16,220 units, while M&M saw an 84% increase to 9,407 units. Both manufacturers reported supply-demand gaps and capacity constraints, with plans underway to expand monthly output.\n\nSource: The Economic Times\n\n#Automotive #ElectricVehicles #IndianEconomy",
-      "created_at": "2026-11-16T03:05:43+00:00",
-      "url": "https://x.com/cmani/status/2122164182451966291",
-      "image": "https://pbs.twimg.com/media/HXNxE_MasAAxB8H.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE101A01026",
-          "query": "\"Mahindra & Mahindra\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122164155914576317",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Global markets weak | Nvidia earnings, Anthropic IPO ahead | Crude prices decline\n\n@SurabhiUpadhyay https://t.co/jvRSsSgEww",
-      "created_at": "2026-11-16T03:05:37+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122164155914576317",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122164072066265530",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Global markets weak | Nvidia earnings, Anthropic IPO ahead | Crude prices decline https://t.co/VbtZzC8GE5",
-      "created_at": "2026-11-16T03:05:17+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122164072066265530",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122163749754671118",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#World | Nvidia crisis: Bessent calls for 'dramatic shake-up', wants next CEO from outside company\n\nScott Bessent has urged Nvidia's board to appoint an external CEO and demanded answers over alleged diversion of AI chips to China, intensifying scrutiny of the chipmaker ahead of its quarterly earnings.\n\nRead More:\nhttps://t.co/M194nka2f5",
-      "created_at": "2026-11-16T03:04:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122163749754671118",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122162951964786885",
-      "handle": "Ashish_shah72",
-      "display_name": "ASHISH SHAH",
-      "text": "STOCKS TO WATCH: SHRIRAMPPS, TIIL, MARSONS, GODREJIND, EICHERMOT, INOXGREEN, INOXWIND, SDBL, BALAJITELE, POLYPLEX, JUBLPHARMA, DEEPAKFERT, TVSSRICHAK, MBAPL, KRISHANA, PATANJALI, JAMNAAUTO, DR REDDY'S\n\nShrirampps: Q2 Cons Net Profit 216m Rupees Vs 86m (YoY)  Q2 Revenue 1.84b Rupees Vs 2b (YoY)\n\nTiil: Q2 Cons Net Profit 1.15b Rupees Vs 766.4m (YoY)  Q2 Revenue 9.35b Rupees Vs 7.25b (YoY)  Q2 EBITDA 1.75b Rupees Vs 1.23b (YoY); Q2 EBITDA Margin 18.71% Vs 16.92% (YoY)\n\nMarsons: Q2 Cons Net Profit 133.1m Rupees Vs 92m (YoY)  Q2 Revenue 965.5m Rupees Vs 598m (YoY)  Q2 EBITDA 186.8m Rupees Vs 85.7m (YoY); Q2 EBITDA Margin 19.35% Vs 14.33% (YoY)\n\nGodrejind: Q2 Cons Net Profit 5.6b Rupees Vs 2.42b (YoY)  Q2 Revenue 73.03b Rupees Vs 50.32b (YoY)  Q2 EBITDA 4.29b Rupees Vs 1.34b (YoY); Q2 EBITDA Margin 5.87% Vs 2.66% (YoY)\n\nEichermot: Q2 Cons Net Profit 15.73b Rupees Vs 13.69b (YoY)  Q2 Revenue 74.22b Rupees Vs 61.72b (YoY)  Q2 EBITDA 17.6b Rupees Vs 15.12b (YoY); Q2 EBITDA Margin 23.71% Vs 24.50% (YoY)\n\nInoxgreen: Q2 Cons Net Profit 432.5m Rupees Vs 279m (YoY)  Q2 Revenue 887.2m Rupees Vs 820.3m (YoY)  Q2 EBITDA 362.8m Rupees Vs 47.4m (YoY); Q2 EBITDA Margin 40.89% Vs 5.78% (YoY)\n\nInoxwind: Q2 Cons Net Profit 685.5m Rupees Vs 1.21b (YoY)  Q2 Revenue 13.54b Rupees Vs 11.19b (YoY)  Q2 EBITDA 2.05b Rupees Vs 2.28b (YoY); Q2 EBITDA Margin 15.15% Vs 20.35% (YoY)\n\nSdbl: Q2 Cons Net Loss 40.3m Rupees Vs Profit 190.5m (YoY)  Q2 Revenue 4.26b Rupees Vs 4.76b (YoY)  Q2 EBITDA 176.4m Rupees Vs 400.9m (YoY); Q2 EBITDA Margin 4.14% Vs 8.42% (YoY)\n\nBalajitele: Q2 Cons Net Profit 325.6m Rupees Vs Loss 48.4m (YoY)  Q2 Revenue 1.81b Rupees Vs 488.1m (YoY)  Q2 EBITDA 439.8m Rupees Vs Loss 69.8m (YoY); Q2 EBITDA Margin 24.28%\n\nPolyplex: Q2 Cons Net Profit 1b Rupees Vs 247m (YoY)  Q2 Revenue 23.24b Rupees Vs 17.94b (YoY)  Q2 EBITDA 2.88b Rupees Vs 1.03b (YoY); Q2 EBITDA Margin 12.41% Vs 5.72% (YoY)\n\nJublpharma: Q2 Cons Net Profit 312m Rupees Vs 1.2b (YoY)  Q2 Revenue 23.7b Rupees Vs 19.66b (YoY)  Q2 EBITDA 2.4b Rupees Vs 3.41b (YoY); Q2 EBITDA Margin 10.15% Vs 17.36% (YoY)\n\nDeepakfert: Q2 Cons Net Profit 3.94b Rupees Vs 2.13b (YoY)  Q2 Revenue 33.34b Rupees Vs 30.06b (YoY)  Q2 EBITDA 7.5b Rupees Vs 4.64b (YoY); Q2 EBITDA Margin 22.48% Vs 15.42% (YoY)\n\nTvssrichak: Q2 Cons Net Profit 444m Rupees Vs 110m (YoY)  Q2 Revenue 12.73b Rupees Vs 9.3b (YoY)  Q2 EBITDA 1b Rupees Vs 658m (YoY); Q2 EBITDA Margin 8.22% Vs 7.11% (YoY)\n\nMbapl: Q2 Sl Net Profit 778m Rupees Vs 305m (YoY)  Q2 Revenue 7.15b Rupees Vs 4.5b (YoY)  Q2 EBITDA 1.91b Rupees Vs 618m (YoY); Q2 EBITDA Margin 26.70% Vs 13.74% (YoY)\n\nKrishana: Q2 Sl Net Profit 779m Rupees Vs 332m (YoY)  Q2 Revenue 7b Rupees Vs 6.1b (YoY)  Q2 EBITDA 1.27b Rupees Vs 732m (YoY); Q2 EBITDA Margin 18.13% Vs 12.04% (YoY)\n\nPatanjali: Q2 Sl Net Profit 4.2b Rupees Vs 5.2b (YoY)  Q2 Revenue 113.2b Rupees Vs 97.99b (YoY)  Q2 EBITDA 4.26b Rupees Vs 5.5b (YoY); Q2 EBITDA Margin 3.76% Vs 5.63% (YoY)\n\nJamnaauto: Q2 Cons Net Profit 564m Rupees Vs 397m (YoY)  Q2 Revenue 7.9b Rupees Vs 5.3b (YoY) || Q2 EBITDA 1.07b Rupees Vs 689m (YoY); Q2 EBITDA Margin 13.62% Vs 12.98% (YoY)\n\nDr Reddy's: Co Gets Vai From FDA For Hyderabad Fto-3 Unit",
-      "created_at": "2026-11-16T03:00:50+00:00",
-      "url": "https://x.com/Ashish_shah72/status/2122162951964786885",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE700A01033",
-          "query": "\"JUBLPHARMA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122162576851448189",
-      "handle": "grifter_t7",
-      "display_name": "grifter_t7",
-      "text": "@AEW So my mind went straight to killer Kross and Scarlett....but could be Toni with the tapes I guess",
-      "created_at": "2026-11-16T02:59:20+00:00",
-      "url": "https://x.com/grifter_t7/status/2122162576851448189",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122162447050236037",
-      "handle": "JurgenKross",
-      "display_name": "hinterland",
-      "text": "Ich ziele aber nicht auf Sie. Ich beschränke mich auf einen einzigen, frei gewählten feind: die Deutsche Akademie für Sprache und Dichtung. Das übrige versagen des literaturbetriebs Deutschlands in sachen der neueren dichtung, in sachen JÜRGEN KROSS, in sachen des BLATTWERKS,",
-      "created_at": "2026-11-16T02:58:49+00:00",
-      "url": "https://x.com/JurgenKross/status/2122162447050236037",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"Kross\""
-        },
-        {
-          "entityId": "isin:INE0O6601022",
-          "query": "\"KROSS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122162215830843633",
-      "handle": "Bytes_Equity",
-      "display_name": "Equity_Bytes",
-      "text": "Man Industries (India): Q2 FY27 Results and Key Takeaways from the Concall\n\nThe company posted its highest ever quarterly EBITDA, helped by the first full quarter of its Saudi acquisition. India dispatches were hit by shipping disruption in West Asia.\n\nQ2 FY27 (Consolidated)\nRevenue: ₹1,216 Cr (+49% YoY)\nEBITDA: ₹190 Cr (+87% YoY), margin 15.6% vs 12.5%\nPAT: ₹82 Cr (+132% YoY)\nOrder book: about ₹3,500 Cr\nBid pipeline: about ₹19,000 Cr\n\n1.  Saudi acquisition is paying off-\nMan acquired National Pipe Company (NPC) in Saudi Arabia in May. In its first full quarter, NPC did revenue of ₹486 Cr, EBITDA of ₹88 Cr and PAT of ₹77 Cr, with no debt. The plant is only 40-45% utilised and has been upgraded to make the large pipes used for water lines.\n\n2.  About ₹300 Cr of revenue pushed out-\nDisruption around the Strait of Hormuz delayed raw materials and finished goods, so about ₹300-320 Cr of revenue moved out of Q2. Management says the contracts are intact and most of it should ship this quarter through other ports. The customer has also confirmed in writing that it will pay back the extra freight cost.\n\n3.  Underlying EBITDA was higher-\nA one-time accounting entry of about ₹25 Cr was shown separately. Without it, EBITDA would have been about ₹215 Cr. It came from a cancelled order where the customer's advance was kept and the goods were sold to another buyer.\n\n4.  New US plant approved-\nThe board approved a 3.5 lakh tonne pipe plant in the US at a cost of about ₹980 Cr ($110 million). US tariffs have kept Indian pipe makers out of that market, so making pipes locally is the only way in. The plant is targeted for December 2027 to January 2028, with revenue potential of ₹4,500-5,000 Cr at 75% utilisation.\n\n5.  More projects starting in April 2027-\nThe stainless steel pipe plant in Jammu starts in April 2027, with peak revenue potential of ₹1,000-1,200 Cr and 18-22% EBITDA margins. A pipe coating facility in Saudi Arabia also starts then. The Merino Shelters real estate project has launched and should bring in ₹800-900 Cr of cash over 5-6 years.\n\n6.  Debt under control for now-\nPeak gross debt this year will be about ₹1,700 Cr, with net debt of only ₹200-250 Cr by March. The US plant will be funded through a mix of debt and equity (a preferential issue or QIP), so some dilution is likely.\n\nKey Guidance\n- FY27 consolidated revenue of about ₹5,000 Cr, with consolidated EBITDA margin above 15%\n- FY28 revenue growth of 20-25%, with NPC alone doing about2,500 Cr\n- Bid win rate of 20-35%, implying an order book of ₹6,000-6,500 Cr\n\n#ManIndustries #Q2FY27",
-      "created_at": "2026-11-16T02:57:54+00:00",
-      "url": "https://x.com/Bytes_Equity/status/2122162215830843633",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE993A01026",
-          "query": "\"Man Industries (India)\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
     "attempted": 8,
-    "incomplete": 223,
-    "checkedAt": "2026-11-16T22:24:28.592695+00:00"
+    "incomplete": 221,
+    "checkedAt": "2026-11-17T00:32:42.191819+00:00"
   },
   "archive": [
     {
@@ -9629,9 +9650,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-16T23:43:08.602Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-17T00:33:12.128Z",
     "lastSuccessAt": null
   }
 }
