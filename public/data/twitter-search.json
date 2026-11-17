@@ -2314,81 +2314,81 @@
       ]
     },
     "isin:INE976I01016|Tata Capital": {
-      "lastAttemptAt": "2026-11-12T03:58:21+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 100,
+      "lastAttemptAt": "2026-11-17T20:02:03+00:00",
+      "error": null,
+      "lastResultCount": 69,
       "targetThrough": "2026-10-17T04:45:35+00:00",
       "pending": [
-        {
-          "from": "2026-10-08T04:45:35.048951+00:00",
-          "to": "2026-10-12T16:45:35.024475+00:00"
-        },
         {
           "from": "2026-10-12T16:45:35.024475+00:00",
           "to": "2026-10-17T04:45:35+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-17T20:02:03+00:00"
     },
     "isin:INE976I01016|TATACAP": {
-      "lastAttemptAt": "2026-11-12T08:09:03+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 4,
-      "lastSuccessAt": "2026-10-17T04:45:35+00:00",
+      "lastAttemptAt": "2026-11-17T20:02:03+00:00",
+      "error": null,
+      "lastResultCount": 52,
+      "lastSuccessAt": "2026-11-17T20:02:03+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE142M01025|Tata Technologies": {
-      "lastAttemptAt": "2026-11-12T08:43:16+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 102,
+      "lastAttemptAt": "2026-11-17T20:02:03+00:00",
+      "error": null,
+      "lastResultCount": 51,
       "lastSuccessAt": "2026-09-24T08:08:20+00:00",
       "targetThrough": "2026-10-17T04:45:35+00:00",
       "pending": [
         {
-          "from": "2026-09-22T08:08:20+00:00",
-          "to": "2026-10-04T18:26:57.500000+00:00"
-        },
-        {
           "from": "2026-10-04T18:26:57.500000+00:00",
           "to": "2026-10-17T04:45:35+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-17T20:02:03+00:00"
     },
     "isin:INE142M01025|TATATECH": {
-      "lastAttemptAt": "2026-11-12T09:08:48+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-11-17T20:02:03+00:00",
+      "error": null,
+      "lastResultCount": 21,
       "lastSuccessAt": "2026-09-24T08:08:20+00:00",
       "targetThrough": "2026-10-17T04:45:35+00:00",
       "pending": [
         {
-          "from": "2026-09-22T08:08:20+00:00",
-          "to": "2026-10-04T18:26:57.500000+00:00"
-        },
-        {
           "from": "2026-10-04T18:26:57.500000+00:00",
           "to": "2026-10-17T04:45:35+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-17T20:02:03+00:00"
     },
     "isin:INE508G01029|Time Technoplast": {
-      "lastAttemptAt": "2026-11-12T10:02:29+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 39,
+      "lastAttemptAt": "2026-11-17T20:02:03+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 111,
       "lastSuccessAt": "2026-10-17T04:45:35+00:00",
-      "targetThrough": null,
-      "pending": []
+      "targetThrough": "2026-11-17T20:02:03+00:00",
+      "pending": [
+        {
+          "from": "2026-10-15T04:45:35+00:00",
+          "to": "2026-11-01T00:23:49+00:00"
+        },
+        {
+          "from": "2026-11-01T00:23:49+00:00",
+          "to": "2026-11-17T20:02:03+00:00"
+        }
+      ]
     },
     "isin:INE508G01029|TIMETECHNO": {
-      "lastAttemptAt": "2026-11-12T10:42:27+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 15,
-      "lastSuccessAt": "2026-10-17T04:45:35+00:00",
+      "lastAttemptAt": "2026-11-17T20:02:03+00:00",
+      "error": null,
+      "lastResultCount": 70,
+      "lastSuccessAt": "2026-11-17T20:02:03+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE615H01020|Titagarh Rail Systems": {
-      "lastAttemptAt": "2026-11-12T11:22:51+00:00",
+      "lastAttemptAt": "2026-11-17T20:02:03+00:00",
       "error": "search-unavailable",
       "lastResultCount": 42,
       "lastSuccessAt": "2026-10-17T04:45:35+00:00",
@@ -3120,8 +3120,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 214,
-    "checkedAt": "2026-11-17T19:29:49.442023+00:00"
+    "attempted": 7,
+    "incomplete": 212,
+    "checkedAt": "2026-11-17T20:02:03.678363+00:00"
   }
 }

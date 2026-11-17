@@ -1,10 +1,42 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-17T17:46:40+00:00",
+  "capturedAt": "2026-11-17T20:02:31+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2122756406780829723",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "The wait is over! You shared stories and quirks about the men in your lives, and we turned them into a song. ❤️\n\nHere’s to the men who keep things simple and make life special. Happy Men’s Day!\n\n#TataCapital #CountOnUs #MensDay https://t.co/CcBzKl2nzf",
+      "created_at": "2026-11-17T18:19:00+00:00",
+      "url": "https://x.com/tatacapital/status/2122756406780829723",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122749022092021955",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "The Game? Shaken. Every heart? Stirred.\n\nA career of unexpected twists, unforgettable turns and iconic finishes that kept a billion hearts racing.\n\nHere’s to our very own #7.\n\n#TataCapital #Legacy #TeamSpirit #CountOnUs https://t.co/s4gR0exVt0",
+      "created_at": "2026-11-17T17:49:40+00:00",
+      "url": "https://x.com/tatacapital/status/2122749022092021955",
+      "image": "https://pbs.twimg.com/media/HXWE-zgaYAAWyd3.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
     {
       "tweet_id": "2122747932470608215",
       "handle": "BasedTrader_",
@@ -908,6 +940,26 @@
       ]
     },
     {
+      "tweet_id": "2122726466312196434",
+      "handle": "eduinvestingin",
+      "display_name": "Eduinvesting.in",
+      "text": "Tata Technologies Q2 FY27: Sales Up 28%, Profit Up 3.6%, and a ₹316 Cr Half-Year Cash Outflow\nhttps://t.co/aWbdEzAgrY",
+      "created_at": "2026-11-17T16:20:02+00:00",
+      "url": "https://x.com/eduinvestingin/status/2122726466312196434",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE142M01025",
+          "query": "\"Tata Technologies\""
+        },
+        {
+          "entityId": "isin:INE142M01025",
+          "query": "\"TATATECH\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122726172886798668",
       "handle": "iluvboyg3nius",
       "display_name": "ani ♱",
@@ -1027,6 +1079,22 @@
         {
           "entityId": "isin:INE07RO01027",
           "query": "\"SUPRIYA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122722323157635210",
+      "handle": "IPOACADEMY001",
+      "display_name": "IPO Investor Academy",
+      "text": "Q2 FY27 RESULTS\n\nFROM 1 NOV – 16 NOV 2026\n\n🟢 POSITIVE / GOOD RESULTS\n\n• Power Grid\n• State Bank of India\n• Bajaj Finserv\n• Solar Industries India\n• Apollo Hospitals\n• Nykaa\n• Power Finance Corporation\n• Dr Lal PathLabs\n• HUDCO\n• Marksans Pharma\n• Redington\n• SJS Enterprises\n• Exide Industries\n• Premier Energies\n• Titan Company\n• Mahindra & Mahindra\n• Hindalco Industries\n• Bosch\n• Honasa Consumer\n• Divi’s Laboratories\n• Tata Steel\n• ASM Technologies\n• Spectrum Electrical Industries\n• Mukka Proteins\n• Goldiam International\n• Kalyan Jewellers\n• Matrimony. com\n• Titagarh Rail Systems\n• Hindustan Copper\n• Power Mech Projects\n• GRSE\n• Hindustan Aeronautics — HAL\n• Hitachi Energy India\n• Alkem Laboratories\n• Eicher Motors\n• ABB India\n• Deepak Fertilisers\n• Black Box\n• Ashok Leyland\n• PTC Industries\n• Gufic Biosciences\n• DEE Development Engineers\n\n(FOR INFORMATION PURPOSE ONLY)",
+      "created_at": "2026-11-17T16:03:34+00:00",
+      "url": "https://x.com/IPOACADEMY001/status/2122722323157635210",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
         }
       ]
     },
@@ -1460,6 +1528,22 @@
         {
           "entityId": "isin:INE07RO01027",
           "query": "\"SUPRIYA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122715334037868827",
+      "handle": "khannanaman35",
+      "display_name": "Naman Khanna",
+      "text": "Tata Technologies: an engineering-services company in the middle of a reset\n\n1. What it does to make money\nTata Technologies is paid by manufacturers (mostly carmakers) to design, engineer and build their products, and to run the software that supports that work. Revenue splits into two segments in Q2 FY27:\na. Services (80% of revenue, ~30% gross margin): ER&D and embedded software\nEngineers billed to clients on projects, from a single component to a complete vehicle. Within services, automotive is 80% and non-automotive (aerospace, heavy machinery, others) is 20%. Delivery is 35% offshore and 65% onshore, since onshore work is billed at higher rates but at lower margin. \nb. Technology Solutions (20%, ~19% gross margin): software, education, PLM\nResale and implementation of product-lifecycle software, plus education and skilling projects. It is lumpier: it fell 6.7% sequentially in Q2 on education timing.\n\n2. Aerospace: revenue impact and visibility\nManagement calls aerospace the “second growth engine” after auto, says it is growing faster than auto.\nAerospace revenue is not disclosed.\nThe CEO said most aerospace programmes run 8–10 years, compared with a vehicle development cycle of a few years. Airbus has publicly said it will launch a next-generation single-aisle aircraft, the first new programme in about a decade; Tata Technologies expects to benefit from its incumbency.\n\n3. Q2 FY27 results and consistency\nRevenue :  +28.4% YoY, +2.1% QoQ\nFor two years to Dec 2025, revenue hovered at ₹1,244–1,366 Cr, with YoY growth between −2% and +4%. Growth then jumped to +22%, +34% and +28%, helped by the ES-Tec acquisition\nNet income :  +3.6% YoY (₹166 Cr)\nProfit grew far slower than sales as depreciation and lease interest rose.\nMargins are stable but below the old peak: 16.1% against about 18% in FY24–FY25. A 100 bps wage-hike headwind was absorbed, but subcontracting costs also rose, which the CFO said should fall as permanent hires replace them.\n\n4. Guidance given\nFY27 revenue : “Strong double-digit” growth, reiterated; no number\nMargins : Sequential improvement in Q3 and Q4, even though Q3 is seasonally soft; 18–20% described as the “North Star” with no date\nH2 drivers : Large programmes ramping, including the $138 Mn win; product business to recover in Q3\nHeadwinds flagged : ES-Tec softness in Q3, education projects delayed, stabilisation expected in 2027\nMedium term “Strong double-digit” for several years; 20%+ is increasingly hard, with capability and AI investment the constraint\n\nThe bull case\nLarge full-vehicle wins are scaling, management reports a strong pipeline, the BMW JV is ahead of plan, aerospace gives longer visibility, and there is Tata Group backing plus a high dividend payout (87% in FY26). If margins move toward 18%+ on 25% growth, profit growth catches up with revenue.\n\nThe bear case\nAt 41× earnings and 7× book, a lot is priced in while PAT is flat. \nGrowth is recent and partly acquired, the German auto exposure is weak, the margin “North Star” has no date.\nAnchor clients are concentrated in the Tata Motors group. \nCyclical auto R&D budgets and AI-driven pricing pressure on engineering hours are industry risks.\n\nWhat to track\nWhether Q3 margin really expands;\nPAT growth converging with EBITDA growth; \nES-Tec stabilisation in 2027; \ndisclosure of aerospace revenue; \n\nThis is analysis, not investment advice.\n#Tatatech",
+      "created_at": "2026-11-17T15:35:48+00:00",
+      "url": "https://x.com/khannanaman35/status/2122715334037868827",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE142M01025",
+          "query": "\"Tata Technologies\""
         }
       ]
     },
@@ -2011,6 +2095,22 @@
       ]
     },
     {
+      "tweet_id": "2122680906687058303",
+      "handle": "sunilgurjar01",
+      "display_name": "Sunil Gurjar, CFTe",
+      "text": "Q2 FY27 RESULTS\n\n📅 1 NOV – 16 NOV 2026\n\n🟢 POSITIVE / GOOD RESULTS\n\n• Power Grid\n• State Bank of India\n• Bajaj Finserv\n• Solar Industries India\n• Apollo Hospitals\n• Nykaa\n• Power Finance Corporation\n• Dr Lal PathLabs\n• HUDCO\n• Marksans Pharma\n• Redington\n• SJS Enterprises\n• Exide Industries\n• Premier Energies\n• Titan Company\n• Mahindra & Mahindra\n• Hindalco Industries\n• Bosch\n• Honasa Consumer\n• Divi’s Laboratories\n• Tata Steel\n• ASM Technologies\n• Spectrum Electrical Industries\n• Mukka Proteins\n• Goldiam International\n• Kalyan Jewellers\n• Matrimony. com\n• Titagarh Rail Systems\n• Hindustan Copper\n• Power Mech Projects\n• GRSE\n• Hindustan Aeronautics — HAL\n• Hitachi Energy India\n• Alkem Laboratories\n• Eicher Motors\n• ABB India\n• Deepak Fertilisers\n• Black Box\n• Ashok Leyland\n• PTC Industries\n• Gufic Biosciences\n• DEE Development Engineers",
+      "created_at": "2026-11-17T13:19:00+00:00",
+      "url": "https://x.com/sunilgurjar01/status/2122680906687058303",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122679217087533471",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -2300,6 +2400,22 @@
       ]
     },
     {
+      "tweet_id": "2122648618805182932",
+      "handle": "titagarhgroup",
+      "display_name": "Titagarh",
+      "text": "Shri Umesh Chowdhary and Mr. Prithish Chowdhary of Titagarh Rail Systems met Ms. Kathy Giles-Diaz, US Consul General in Kolkata, to explore international expansion and potential collaborations in rail technologies and manufacturing. \n\n#Titagarh",
+      "created_at": "2026-11-17T11:10:42+00:00",
+      "url": "https://x.com/titagarhgroup/status/2122648618805182932",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122646047151583595",
       "handle": "swing_blaster",
       "display_name": "SWING BLASTER 🥷🕉️🔱",
@@ -2381,6 +2497,22 @@
         {
           "entityId": "isin:INE073K01018",
           "query": "\"Sona Blw Precision Forgings\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122641414404309000",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@expert4advice Hi, we have taken note of your concerns and have passed them on to the relevant team. They will get back to you with an update as soon as possible.",
+      "created_at": "2026-11-17T10:42:04+00:00",
+      "url": "https://x.com/tatacapital/status/2122641414404309000",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
         }
       ]
     },
@@ -2544,6 +2676,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122621406752227584",
+      "handle": "arthlabh3",
+      "display_name": "Arthlabh.com Hindi financial news website",
+      "text": "इस रेलवे कंपनी के शेयर में एक लाख का निवेश बन सकता है 1.43 लाख रुपये\n\nhttps://t.co/rHZ7AO6HPF",
+      "created_at": "2026-11-17T09:22:34+00:00",
+      "url": "https://x.com/arthlabh3/status/2122621406752227584",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122621392072110148",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -2578,6 +2726,22 @@
         {
           "entityId": "isin:INE089C01029",
           "query": "\"STLTECH\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122619467452829907",
+      "handle": "Hyvolution_IN",
+      "display_name": "IGHA_Hyvolution_India_2026",
+      "text": "A Glimpse of Our Exhibitors !\n\nWe are pleased to feature INSOLAR, BVK Hydrotech, TIME Technoplast Ltd., Barot Renewables Private Limited, Amity University, Thermax, and the Indo-German Pavilion.\n\n📅 17–18 November \n📍India Expo Mart, Noida\n.\n.\n.\n https://t.co/KyWcgUies3 https://t.co/jHg1bLCYHg",
+      "created_at": "2026-11-17T09:14:52+00:00",
+      "url": "https://x.com/Hyvolution_IN/status/2122619467452829907",
+      "image": "https://pbs.twimg.com/media/HXUNbfBacAMRi3T.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE508G01029",
+          "query": "\"Time Technoplast\""
         }
       ]
     },
@@ -2804,6 +2968,22 @@
       ]
     },
     {
+      "tweet_id": "2122601245060014458",
+      "handle": "WealthEnrich",
+      "display_name": "Advait Arora",
+      "text": "When both FIIs and domestic mutual funds add stake in the same smallcap in the same quarter, you know smart money is entering & it's worth keeping it on your radar.\n20 growing small caps with rising institutional holding, >15% ROCE, low debt, and reasonable PEG 👇\n\nGarware Hi-Tech Films\nHonasa Consumer\nZen Technologies\nShaily Engineering Plastics\nCorona Remedies\nAction Const Equip (ACE)\nManorama Industries\nTime Technoplast\nSJS Enterprises\nFDC\nMarine Electricals\nJamna Auto Industries\nVadilal Industries\nSambhv Steel Tubes\nCARE Ratings\nYash Highvoltage\nNetwork People Ser (NPST)\nOBSC Perfection\nManaksia Coated Metals\nFlySBS Aviation\n\n#investing #Wealthenrich",
+      "created_at": "2026-11-17T08:02:27+00:00",
+      "url": "https://x.com/WealthEnrich/status/2122601245060014458",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE508G01029",
+          "query": "\"Time Technoplast\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122600810781848040",
       "handle": "tomrid01",
       "display_name": "Tom riddle",
@@ -2900,6 +3080,54 @@
       ]
     },
     {
+      "tweet_id": "2122593370787000640",
+      "handle": "wegro_app",
+      "display_name": "Wegro App",
+      "text": "📊 Titagarh Rail Systems Ltd | Broker Report | 𝘉𝘜𝘠 𝘊𝘢𝘭𝘭 🟢\n🏢 𝘉𝘶𝘺 𝘛𝘪𝘵𝘢𝘨𝘢𝘳𝘩 𝘙𝘢𝘪𝘭 𝘚𝘺𝘴𝘵𝘦𝘮𝘴: 𝘵𝘢𝘳𝘨𝘦𝘵 𝘰𝘧 𝘙𝘴 966: 𝘐𝘊𝘐𝘊𝘐 𝘚𝘦𝘤𝘶𝘳𝘪𝘵𝘪𝘦𝘴\n📈 𝘙𝘦𝘤𝘰𝘮𝘮𝘦𝘯𝘥𝘢𝘵𝘪𝘰𝘯: BUY\n🏛️ 𝘉𝘳𝘰𝘬𝘦𝘳𝘢𝘨𝘦: ICICI Securities\n\n𝗧𝗶𝘁𝗮𝗴𝗮𝗿𝗵 𝗥𝗮𝗶𝗹 𝗦𝘆𝘀𝘁𝗲𝗺𝘀 𝗟𝘁𝗱: 𝗕𝗿𝗼𝗸𝗲𝗿 𝗥𝗲𝗽𝗼𝗿𝘁 𝗨𝗽𝗱𝗮𝘁𝗲 📈:\n\nICICI Securities has upgraded 𝗧𝗶𝘁𝗮𝗴𝗮𝗿𝗵 𝗥𝗮𝗶𝗹 𝗦𝘆𝘀𝘁𝗲𝗺𝘀 𝗟𝘁𝗱 (𝗧𝗥𝗦𝗟) from 'ADD' to '𝗕𝗨𝗬', setting a new 𝗧𝗮𝗿𝗴𝗲𝘁 𝗣𝗿𝗶𝗰𝗲 𝗼𝗳 ₹966, indicating a potential upside of 31% from the current market price (CMP) of ₹737.\n\n𝗤2𝗙𝗬27 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀:\n\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: Stood flat YoY at ₹7,926 mn, primarily due to a 38% YoY decline in freight wagon deliveries.\n- 𝗘𝗕𝗜𝗧𝗗𝗔: Increased by a robust 28% YoY to ₹1,069 mn, driven by strong margins.\n- 𝗘𝗕𝗜𝗧𝗗𝗔 𝗠𝗮𝗿𝗴𝗶𝗻𝘀: Improved by 303 bps YoY to a decade-high of 13.5%.\n\n𝗦𝗲𝗴𝗺𝗲𝗻𝘁 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n\n- 𝗣𝗮𝘀𝘀𝗲𝗻𝗴𝗲𝗿 𝗥𝗮𝗶𝗹 𝗦𝘆𝘀𝘁𝗲𝗺𝘀 (𝗣𝗥𝗦): Revenue surged 146% YoY to ₹3,002 mn, with 51 metro coaches invoiced (vs. 30 in Q1FY27). Segment EBIT margins expanded significantly to 16.8%.\n- 𝗙𝗿𝗲𝗶𝗴𝗵𝘁 𝗥𝗮𝗶𝗹 𝗦𝘆𝘀𝘁𝗲𝗺𝘀 (𝗙𝗥𝗦): Revenue declined 29% YoY to ₹4,726 mn as wagon sales dropped 38% YoY.\n\n𝗞𝗲𝘆 𝗣𝗼𝘀𝗶𝘁𝗶𝘃𝗲𝘀 & 𝗢𝘂𝘁𝗹𝗼𝗼𝗸:\n\n- 𝗡𝗲𝘄 𝗙𝗿𝗲𝗶𝗴𝗵𝘁 𝗪𝗮𝗴𝗼𝗻 𝗢𝗿𝗱𝗲𝗿: A significant order for 4,955 freight wagons from Indian Railways has been secured, enhancing visibility for the FRS segment until FY28. This order is worth ~₹17 bn.\n- 𝗠𝗲𝘁𝗿𝗼 𝗖𝗼𝗮𝗰𝗵 𝗗𝗲𝗹𝗶𝘃𝗲𝗿𝗶𝗲𝘀: TRSL continues to see strong traction in metro coach sales, with guidance to deliver >200/275 coaches in FY27/FY28 remaining unchanged. 🚇\n- 𝗩𝗮𝗻𝗱𝗲 𝗕𝗵𝗮𝗿𝗮𝘁 𝗧𝗿𝗮𝗶𝗻 𝗦𝗲𝘁: Prototype approval is now expected in Q4FY27, with strong execution anticipated thereafter. 🚄\n- 𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸: The standalone order book stands at a healthy ₹153.7 bn (as of Q2FY27), with PRS accounting for 70% of it. The overall order book (including JVs) is ₹287 bn.\n- 𝗩𝗮𝗹𝘂𝗮𝘁𝗶𝗼𝗻: The upgrade factors in attractive valuations post the recent stock price correction, with the company valued at an unchanged 35x H1FY29E EPS.\n\n𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗣𝗿𝗼𝗷𝗲𝗰𝘁𝗶𝗼𝗻𝘀 (𝗘𝘀𝘁𝗶𝗺𝗮𝘁𝗲𝘀):\n\n- 𝗙𝗬27𝗘: Net Revenue ₹41,519 mn, EBITDA ₹4,567 mn, EPS ₹19.7\n- 𝗙𝗬28𝗘: Net Revenue ₹54,571 mn, EBITDA ₹6,112 mn, EPS ₹27.3\n- 𝗙𝗬29𝗘: Net Revenue ₹65,910 mn, EBITDA ₹7,448 mn, EPS ₹33.8\n\n𝗕𝗿𝗼𝗸𝗲𝗿𝗮𝗴𝗲 𝗙𝗶𝗿𝗺: ICICI Securities Limited\n𝗥𝗲𝗰𝗼𝗺𝗺𝗲𝗻𝗱𝗮𝘁𝗶𝗼𝗻: BUY (Upgrade from ADD)\n𝗧𝗮𝗿𝗴𝗲𝘁 𝗣𝗿𝗶𝗰𝗲: ₹966\n𝗥𝗮𝘁𝗶𝗼𝗻𝗮𝗹𝗲: Strong margin performance, significant metro coach traction, a large new freight wagon order boosting visibility, and attractive valuations following a stock correction. The company is well-positioned to benefit from growth in both passenger & freight rail segments. 🚀\n\n𝗞𝗲𝘆 𝗠𝗲𝘁𝗿𝗶𝗰𝘀:\n\n- 𝗤2𝗙𝗬27 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹7,926 mn (flat YoY)\n- 𝗤2𝗙𝗬27 𝗘𝗕𝗜𝗧𝗗𝗔: ₹1,069 mn (+28% YoY)\n- 𝗤2𝗙𝗬27 𝗘𝗕𝗜𝗧𝗗𝗔 𝗠𝗮𝗿𝗴𝗶𝗻: 13.5% (+303 bps YoY)\n- 𝗦𝘁𝗮𝗻𝗱𝗮𝗹𝗼𝗻𝗲 𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸: ₹153.7 bn\n- 𝗧𝗮𝗿𝗴𝗲𝘁 𝗣𝗿𝗶𝗰𝗲: ₹966\n\n🔗 𝘙𝘦𝘢𝘥 𝘍𝘶𝘭𝘭 𝘙𝘦𝘱𝘰𝘳𝘵: https://t.co/7J1fx22Oee\n\n⚡️AI-driven watchlist alerts on WhatsApp - Try FREE 👉 https://t.co/U4qorVW3nK #BrokerageReport",
+      "created_at": "2026-11-17T07:31:10+00:00",
+      "url": "https://x.com/wegro_app/status/2122593370787000640",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122593308509909136",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@MohitSa33560853 Hi, thank you for showing your interest in Tata Capital! We request you to visit our portal with current job openings and apply for a position that is relevant to your profile: https://t.co/sknRxXQhpM. Thank you!",
+      "created_at": "2026-11-17T07:30:55+00:00",
+      "url": "https://x.com/tatacapital/status/2122593308509909136",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122592806393045395",
+      "handle": "MohitSa33560853",
+      "display_name": "नरसिंग सेना",
+      "text": "@tatacapital \nDear Tata Capital Team,\n\nI am currently working in the Sales Department, handling Two-Wheeler Loans. I would like to request an opportunity to transition into an Operations role at the office level.\n\nI am interested in learning new responsibilities and contributing",
+      "created_at": "2026-11-17T07:28:55+00:00",
+      "url": "https://x.com/MohitSa33560853/status/2122592806393045395",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122587194363916702",
       "handle": "SundayTweeter",
       "display_name": "SundayTweeter",
@@ -2932,6 +3160,70 @@
       ]
     },
     {
+      "tweet_id": "2122584307458023833",
+      "handle": "AditiTalks01",
+      "display_name": "Aditi Mahanti",
+      "text": "🔴 LIVE | Time Technoplast Q2 FY27 Results | Record Earnings, Composite G... https://t.co/ofVR4tw5UG",
+      "created_at": "2026-11-17T06:55:09+00:00",
+      "url": "https://x.com/AditiTalks01/status/2122584307458023833",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE508G01029",
+          "query": "\"Time Technoplast\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122583810835374146",
+      "handle": "BusinessTimesIn",
+      "display_name": "Business Times 🇮🇳",
+      "text": "Titagarh Rail Systems Buy Rating, Target Price Raised to Rs 966 https://t.co/IxmdA0eH9Z",
+      "created_at": "2026-11-17T06:53:10+00:00",
+      "url": "https://x.com/BusinessTimesIn/status/2122583810835374146",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122581727898132706",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@NareshKumarBe17 https://t.co/PqJI7c98OZ",
+      "created_at": "2026-11-17T06:44:54+00:00",
+      "url": "https://x.com/tatacapital/status/2122581727898132706",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122581726115619306",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@NareshKumarBe17 Hi, we regret the unfavourable experience you had. Requesting you to share your registered contact number, Email ID, loan account number and type of loan via a direct message. These details will allow us to get in touch with you and provide an appropriate resolution.",
+      "created_at": "2026-11-17T06:44:53+00:00",
+      "url": "https://x.com/tatacapital/status/2122581726115619306",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122581375882838042",
       "handle": "sarkarstix",
       "display_name": "Brutal Truth",
@@ -2944,6 +3236,102 @@
         {
           "entityId": "isin:INE07RO01027",
           "query": "\"SUPRIYA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122580117574803751",
+      "handle": "wegro_app",
+      "display_name": "Wegro App",
+      "text": "📺 Titagarh Eyes Vande Bharat Sleeper Prototype Launch | Targets 850 Coaches A Year By FY29 Titagarh Rail Systems expects momentum to build in the second half after a muted start to the year in freight. A fresh wagon order ...\n\n📊 TITAGARH RAIL SYSTEMS LTD | 🏷️ Video feed\n\n📹 WATCH VIDEO: https://t.co/Ibpt98943E\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
+      "created_at": "2026-11-17T06:38:30+00:00",
+      "url": "https://x.com/wegro_app/status/2122580117574803751",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122579529613082649",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@santhoshyv3 Hi Santhosh, we request you to provide your details requested by us to address your concern. In absence of these details it will not be able to escalate your case to the concerned team https://t.co/PqJI7c98OZ",
+      "created_at": "2026-11-17T06:36:10+00:00",
+      "url": "https://x.com/tatacapital/status/2122579529613082649",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122578959212990936",
+      "handle": "Value_Ethics",
+      "display_name": "Value Ethics",
+      "text": "🚢 INDIA'S SHIPBUILDING BOOM | A NEW MARITIME OPPORTUNITY!\n\nIndia aims to become a Top 10 global shipbuilding nation by 2030 and Top 5 by 2047.\n\n🇮🇳 Key developments:\n• 5 Greenfield Shipbuilding Clusters across coastal states.\n• $8 Billion+ investment package.\n• Shipbuilding capacity target of 4.5 million gross tonnes by 2047.\n• Government financial assistance and infrastructure support.\n• Rising global orders for Indian shipyards.\n\n📌 Listed Stocks to Watch:\n🔹 Core Shipbuilding:\nMazagon Dock Shipbuilders\nCochin Shipyard\nGarden Reach Shipbuilders (GRSE)\nSwan Defence & Heavy Industries\n\n🔹 Marine & Shipping Ecosystem:\n5. Knowledge Marine & Engineering Works\n6. Shipping Corporation of India\n7. Larsen & Toubro\n8. GESHIP\n\n🔹 Defence & Engineering Ecosystem:\n9. Bharat Electronics\n10. BHEL\n11. Titagarh Rail Systems\n\nIndia's ambition to become a global shipbuilding hub could create opportunities across shipyards, marine engineering, defence electronics and maritime infrastructure.\n\nCould Shipbuilding become India's next big manufacturing theme? 🇮🇳\n\n#Shipbuilding #MakeInIndia #DefenceStocks #MaritimeIndia #IndianStockMarket #AtmanirbharBharat #MazagonDock #CochinShipyard #GRSE #GESHIP",
+      "created_at": "2026-11-17T06:33:54+00:00",
+      "url": "https://x.com/Value_Ethics/status/2122578959212990936",
+      "image": "https://pbs.twimg.com/media/HXTp6nnbMAAAXkC.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122578593943519633",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@PrashantKGhosh Hi Prashant, we understand your concern. Please DM us your contact number along with the number you're receiving calls from, and we will look into this for you on priority. https://t.co/PqJI7c98OZ",
+      "created_at": "2026-11-17T06:32:27+00:00",
+      "url": "https://x.com/tatacapital/status/2122578593943519633",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122577262285570192",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@SonamGupta96630 Hi Sonam, unfortunately, without the requested details, we are unable to fetch your case. Please share your loan account/application number, and type of loan via direct message.  https://t.co/PqJI7c98OZ",
+      "created_at": "2026-11-17T06:27:09+00:00",
+      "url": "https://x.com/tatacapital/status/2122577262285570192",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122577017669640431",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@Headoffice0000 Hi, unfortunately, without the requested details, we are unable to fetch your case. Please share your loan account/application number, and type of loan via direct message. https://t.co/PqJI7c98OZ",
+      "created_at": "2026-11-17T06:26:11+00:00",
+      "url": "https://x.com/tatacapital/status/2122577017669640431",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
         }
       ]
     },
@@ -3008,6 +3396,42 @@
         {
           "entityId": "isin:INE073K01018",
           "query": "\"Sona Blw Precision Forgings\""
+        },
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122573085295698061",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@Shalini94927073 Hi Shalini, we have taken note of your concerns and have passed them on to the relevant team. They will get back to you with an update as soon as possible.",
+      "created_at": "2026-11-17T06:10:33+00:00",
+      "url": "https://x.com/tatacapital/status/2122573085295698061",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122569287797993674",
+      "handle": "koppewar",
+      "display_name": "koppewar",
+      "text": "@mohinimaheshwa Tatatech Tata pv",
+      "created_at": "2026-11-17T05:55:28+00:00",
+      "url": "https://x.com/koppewar/status/2122569287797993674",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE142M01025",
+          "query": "\"TATATECH\""
         }
       ]
     },
@@ -3024,6 +3448,38 @@
         {
           "entityId": "isin:INE089C01029",
           "query": "\"STLTECH\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122567975429713971",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@Meghatripathi0 https://t.co/PqJI7c98OZ",
+      "created_at": "2026-11-17T05:50:15+00:00",
+      "url": "https://x.com/tatacapital/status/2122567975429713971",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122567973751902698",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@Meghatripathi0 Hi Megha, we regret the unfavourable experience you had. Requesting you to share your registered contact number, Email ID, loan account number and type of loan via a direct message. These details will allow us to get in touch with you and provide an appropriate resolution.",
+      "created_at": "2026-11-17T05:50:15+00:00",
+      "url": "https://x.com/tatacapital/status/2122567973751902698",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
         }
       ]
     },
@@ -3060,6 +3516,22 @@
       ]
     },
     {
+      "tweet_id": "2122558689056092263",
+      "handle": "WealthGenius_",
+      "display_name": "Wealth Genius News and Updates",
+      "text": "💎 5 STOCKS THAT COULD BE UNDERVALUED AND WORTH TRACKING!\n\nAre these companies being overlooked by the market?\n\n🚀 Jubilant Ingrevia\n• Target: ₹970\n• Expected Upside: 74%\n• Key Theme: Chemical sector recovery\n\n🏦 Ujjivan Small Finance Bank\n• Target: ₹95\n• Expected Upside: 51%\n• Highlight: 20% ROE\n\n🚆 Titagarh Rail Systems\n• Order Book: ₹26,635 Cr\n• Expected Upside: 50%\n\n🏗️ HG Infra Engineering\n• Average Target: ₹752\n• Expected Upside: 69%\n\n⛏️ Coal India\n• Dividend Yield: 6%\n• Target: ₹501\n\n📌 Before considering any stock, evaluate valuations, earnings visibility, debt, cash flows and execution risks.\n\nA low valuation or high analyst target does not automatically mean a stock is undervalued.\n\nDisclaimer: Targets and figures are based on supplied data and have not been independently verified. For educational purposes only. No buy/sell recommendations. DYOR.\n\n#IndianStockMarket #ValueInvesting #StocksToWatch #Investing\n\nJoin our Telegram-  https://t.co/zh4G7Qeaxw",
+      "created_at": "2026-11-17T05:13:21+00:00",
+      "url": "https://x.com/WealthGenius_/status/2122558689056092263",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122558450723140067",
       "handle": "WealthGenius_",
       "display_name": "Wealth Genius News and Updates",
@@ -3076,6 +3548,38 @@
       ]
     },
     {
+      "tweet_id": "2122554409393779107",
+      "handle": "WithRitesh",
+      "display_name": "RS",
+      "text": "@marketping_in Right, Tata Capital has good potential.",
+      "created_at": "2026-11-17T04:56:21+00:00",
+      "url": "https://x.com/WithRitesh/status/2122554409393779107",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122553837013946721",
+      "handle": "marketping_in",
+      "display_name": "MarketPing",
+      "text": "@WithRitesh The one precedent under the same rule is Tata Capital: Rs 15,511 cr raised at Rs 326 a share in Oct 2025. It closed at Rs 355.25 on Friday, 9% above the IPO price, while the Nifty was 0.3% below where it stood on Tata Capital's listing day.",
+      "created_at": "2026-11-17T04:54:04+00:00",
+      "url": "https://x.com/marketping_in/status/2122553837013946721",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122553630792499530",
       "handle": "rahul_mehrotra",
       "display_name": "Raúl",
@@ -3088,6 +3592,70 @@
         {
           "entityId": "isin:INE073K01018",
           "query": "\"SONACOMS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122541805455765641",
+      "handle": "BulllMarketMind",
+      "display_name": "BullMarketMind",
+      "text": "Brokerage Upgrades (Nov 17, 2026). ICICI Securities upgraded #Titagarh Rail Systems to a Buy rating with a target price of ₹966. Earlier, Jefferies maintained its Buy call and raised its target price to ₹1,050, citing strong passenger rail execution.",
+      "created_at": "2026-11-17T04:06:15+00:00",
+      "url": "https://x.com/BulllMarketMind/status/2122541805455765641",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122541477016539163",
+      "handle": "Shalini94927073",
+      "display_name": "Shalini",
+      "text": "@tatacapital Tata capital loan closure details required",
+      "created_at": "2026-11-17T04:04:57+00:00",
+      "url": "https://x.com/Shalini94927073/status/2122541477016539163",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122540467476697265",
+      "handle": "Ipo_lens",
+      "display_name": "IPO LENS 🇮🇳 𝕏",
+      "text": "Indian Stock Market Live News (15 New)\n\n1. Happy Forgings sees ₹115.86 crore BSE block trade 🟢\n────────────────────\n2. India battery scrap export ban may squeeze refiners 🔴\n────────────────────\n3. Diesel cracks boost refining margins for RIL, others 🟢\n────────────────────\n4. UPL arm Advanta to acquire Egypt's Misr Hytech Seed 🟢\n────────────────────\n5. Yogi secures Rs 46.21 crore order from Companion Vinimay 🟢\n────────────────────\n6. Gpt Infraprojects bags Rs 351 crore bridge deal 🟢\n────────────────────\n7. Steel Exchange India wins Rs 210 Cr order from RINL 🟢\n────────────────────\n8. Titagarh Rail Systems wins Rs 312.69 crore order 🟢\n────────────────────\n9. Cwd bags Rs 53.1 crore order from CyanConnode 🟢\n────────────────────\n10. RBI holds firm on Tata Sons upper-layer NBFC rules 🟢\n────────────────────\n11. Eternal sacrifices margins via fee freezes and deals 🟢\n────────────────────\n12. Insurance commission caps may reshape digital platform revenue 🟢\n────────────────────\n13. Bharti Group in talks with Amazon LEO for satellite tie-up 🟢\n────────────────────\n14. AXISCADES Tech sets Q3 and Q4 FY27 revenue targets 🟢\n────────────────────\n15. Brainbees Solutions targets mid-teen revenue growth 🟢\n────────────────────",
+      "created_at": "2026-11-17T04:00:56+00:00",
+      "url": "https://x.com/Ipo_lens/status/2122540467476697265",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122540153420054790",
+      "handle": "SouvikReports",
+      "display_name": "Souvik Banerjee",
+      "text": "US Consul General Kathy Giles-Diaz met Titagarh Rail Systems to explore cooperation in rail technology, engineering, manufacturing and international expansion.\n#USIndiaRelations #TitagarhRailSystems #RailInnovation #Kolkata #GlobalTrade https://t.co/bpdd4Ntkqo",
+      "created_at": "2026-11-17T03:59:42+00:00",
+      "url": "https://x.com/SouvikReports/status/2122540153420054790",
+      "image": "https://pbs.twimg.com/media/HXTG7iCW8AAiBKv.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
         }
       ]
     },
@@ -3120,6 +3688,38 @@
         {
           "entityId": "isin:INE07RO01027",
           "query": "\"Supriya Lifescience\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122518371979952430",
+      "handle": "VipulEn",
+      "display_name": "vipul",
+      "text": "@EquityValueIn Hello ameya, are you still holding time technoplast. ?",
+      "created_at": "2026-11-17T02:33:09+00:00",
+      "url": "https://x.com/VipulEn/status/2122518371979952430",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE508G01029",
+          "query": "\"Time Technoplast\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122515884145344986",
+      "handle": "DCipherMarkets",
+      "display_name": "DCipher Markets",
+      "text": "⚙️ CAPEX & MODERNIZATION | #TITAGARH\n\nTitagarh Rail Systems has outlined production targets of 200 metro cars annually by FY27 and a monthly production rate of 1,000 wagons by Q4 FY27, supported by an order book worth approximately ₹28,600 crore.\n\n• Order Book: ₹28,600 crore\n• Targets include scaling production for Indian Railways and urban metro projects.\n\n#TITAGARH #Infrastructure #Nifty #StockMarketIndia #StocksToWatch #StocksInFocus #MarketUpdate",
+      "created_at": "2026-11-17T02:23:15+00:00",
+      "url": "https://x.com/DCipherMarkets/status/2122515884145344986",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
         }
       ]
     },
@@ -3204,6 +3804,22 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122483752270270896",
+      "handle": "nusantaraeiji",
+      "display_name": "Prachi Pandey",
+      "text": "30 Indian companies with positive growth guidance\n\nBEL\nKEI\nHFCL\nSHAKTIPUMP\nBANSALWIRE\nSTEELCAST\nTARIL\nATLANTAELE\nDYCL\nINOXINDIA\nLT\nCEMINDIA\nPSPPROJECT\nSOBHA\nTINNARUBR\nMASFIN\nHOMEFIRST\nTATACAP\nAPTUS\nAADHARHFC\nEMUDHRA\nHAPPSTMNDS\nPINELABS\nPERSISTENT\nGODREJCP\nDABUR\nHNDFDS\nGHCLTEXTIL\nHSCL\nCUPID",
+      "created_at": "2026-11-17T00:15:35+00:00",
+      "url": "https://x.com/nusantaraeiji/status/2122483752270270896",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"TATACAP\""
+        }
+      ]
     },
     {
       "tweet_id": "2122455784969900523",
@@ -5942,6 +6558,22 @@
       ]
     },
     {
+      "tweet_id": "2122393087700025485",
+      "handle": "EquityValueIn",
+      "display_name": "ValueEquity",
+      "text": "Time Technoplast , growth drivers , mix play with debt reduction and shift to VAP https://t.co/ciS5Uo2m0n",
+      "created_at": "2026-11-16T18:15:18+00:00",
+      "url": "https://x.com/EquityValueIn/status/2122393087700025485",
+      "image": "https://pbs.twimg.com/media/HXRBLBRbkAA813t.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE508G01029",
+          "query": "\"Time Technoplast\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122393037028401252",
       "handle": "tobyniceinnoize",
       "display_name": "𝕃𝕠𝕦𝕕 𝕚𝕟 𝕊𝕚𝕝𝕖𝕟𝕔𝕖",
@@ -7503,6 +8135,22 @@
       ]
     },
     {
+      "tweet_id": "2122350093647171644",
+      "handle": "Lalit67079405",
+      "display_name": "Lalit ⚜️",
+      "text": "I have been observing Time Technoplast for the last two years. The company has progressed well, and there is still a lot of potential ahead. I regret not being able to invest in such companies in their initial phase. https://t.co/pREFYB0VuS",
+      "created_at": "2026-11-16T15:24:28+00:00",
+      "url": "https://x.com/Lalit67079405/status/2122350093647171644",
+      "image": "https://pbs.twimg.com/media/HXQaKETaUAEOh8E.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE508G01029",
+          "query": "\"Time Technoplast\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122349720370819393",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -7725,6 +8373,22 @@
       ]
     },
     {
+      "tweet_id": "2122333278699155862",
+      "handle": "InfraAddaofWB",
+      "display_name": "Infra Adda of West Bengal",
+      "text": "🚨 𝗨𝗦–𝗜𝗡𝗗𝗜𝗔 𝗖𝗢𝗠𝗠𝗘𝗥𝗖𝗜𝗔𝗟 𝗧𝗜𝗘𝗦 𝗚𝗔𝗜𝗡 𝗠𝗢𝗠𝗘𝗡𝗧𝗨𝗠! 🇺🇸🇮🇳\n\nUS Consul General Kathy Giles-Diaz met with Kolkata-based 𝗧𝗶𝘁𝗮𝗴𝗮𝗿𝗵 𝗥𝗮𝗶𝗹 𝗦𝘆𝘀𝘁𝗲𝗺𝘀 to explore collaboration opportunities in 𝗮𝗱𝘃𝗮𝗻𝗰𝗲𝗱 𝗿𝗮𝗶𝗹 𝘁𝗲𝗰𝗵𝗻𝗼𝗹𝗼𝗴𝗶𝗲𝘀, engineering, manufacturing and critical components, while exploring avenues for international expansion.\n\nA potential boost for cross-border industrial cooperation and Kolkata’s global manufacturing footprint! 🚆🌍\n\n#TitagarhRailSystems #USIndiaRelations #MakeInIndia #RailwayManufacturing #WestBengal #Kolkata",
+      "created_at": "2026-11-16T14:17:39+00:00",
+      "url": "https://x.com/InfraAddaofWB/status/2122333278699155862",
+      "image": "https://pbs.twimg.com/media/HXQK3OdbAAA1l4I.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122333012616794338",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -7779,6 +8443,22 @@
       ]
     },
     {
+      "tweet_id": "2122329080485814363",
+      "handle": "Ipo_lens",
+      "display_name": "IPO LENS 🇮🇳 𝕏",
+      "text": "Indian Stock Market Live News (15 New)\n\n1. Time Technoplast wins Rs 38.14 Cr LPG cylinder order 🟢\n────────────────────\n2. Cochin Shipyard wins Rs 500 crore refit order from MoD 🟢\n────────────────────\n3. Dilip Buildcon bags Rs 901.43 cr NBCC order for Srinagar township 🟢\n────────────────────\n4. Ashoka Buildcon wins Rs 58.9 crore solar order from Druk Green 🟢\n────────────────────\n5. Hle Glascoat wins Rs 45 Cr order from Int'l Energy Storage firm 🟢\n────────────────────\n6. Aadhar Housing Finance names KMPs for materiality disclosures 🟢\n────────────────────\n7. Dr Agarwal's Health Care signs media deal 🟢\n────────────────────\n8. United Foodbrands reports strong H1FY27 growth 🟢\n────────────────────\n9. Gpt Infraprojects wins Rs 103.58 Cr order from NE Railway 🟢\n────────────────────\n10. Sterlite Tech to meet investors at Goldman Sachs event 🟢\n────────────────────\n11. Vivid Electromech wins Rs 24.25 crore order from Secutech 🟢\n────────────────────\n12. Systematic Industries posts H1FY27 earnings call link 🟢\n────────────────────\n13. Spectraa wins Rs 21 Cr order from Brewery client 🟢\n────────────────────\n14. Market Creators Ltd turns profitable in Q2FY27 🟢\n────────────────────\n15. Ks Smart wins Rs 82.65 Cr order from Kerala State Electronics 🟢\n────────────────────",
+      "created_at": "2026-11-16T14:00:58+00:00",
+      "url": "https://x.com/Ipo_lens/status/2122329080485814363",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE508G01029",
+          "query": "\"Time Technoplast\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122328329768636595",
       "handle": "pratbrat",
       "display_name": "Prateek- Nivesh Wisdom",
@@ -7818,6 +8498,22 @@
         {
           "entityId": "isin:INE004A01022",
           "query": "\"PROTEAN\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122327201106542594",
+      "handle": "REDBOXINDIA",
+      "display_name": "RedboxGlobal India",
+      "text": "TITAGARH RAIL SYSTEMS: CO TARGETS PRODUCTION OF 200 METRO CARS IN FY27 AND 1,000 WAGONS PER MONTH BY Q4 FY27, ORDER BOOK AT APPROXIMATELY ₹28,600 CRORE",
+      "created_at": "2026-11-16T13:53:30+00:00",
+      "url": "https://x.com/REDBOXINDIA/status/2122327201106542594",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
         }
       ]
     },
@@ -7885,6 +8581,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122323577710207273",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "Is your financial life a Drama, Thriller or Comedy?🍿💸\n\nFrom unpaid bills to money woes, we hit the streets to find out. The plot twist? Understanding your money helps you take charge of your story.\n\nWhat’s your money genre?\n\n#TataCapital #CountOnUs #FinancialHealth https://t.co/vlOIyjiH7x",
+      "created_at": "2026-11-16T13:39:06+00:00",
+      "url": "https://x.com/tatacapital/status/2122323577710207273",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122322843178520851",
       "handle": "SundayTweeter",
       "display_name": "SundayTweeter",
@@ -7944,6 +8656,38 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122319702223622489",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@amrut_dolby that you require from us.",
+      "created_at": "2026-11-16T13:23:42+00:00",
+      "url": "https://x.com/tatacapital/status/2122319702223622489",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122319700541821370",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@amrut_dolby Hi Amrut, we understand how important it is for you to access our services. Our team is actively working to restore the services at the earliest. We appreciate your patience and understanding. In the meantime, you can reach us at customercare@tatacapital.com for any support",
+      "created_at": "2026-11-16T13:23:42+00:00",
+      "url": "https://x.com/tatacapital/status/2122319700541821370",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122319462812803380",
       "handle": "Er_Vpin",
       "display_name": "Er. Vipin | Multibagger Bloodhound",
@@ -7960,6 +8704,38 @@
       ]
     },
     {
+      "tweet_id": "2122318954932924479",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@sinha_abhijeet1 support that you require from us.",
+      "created_at": "2026-11-16T13:20:44+00:00",
+      "url": "https://x.com/tatacapital/status/2122318954932924479",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122318953217511817",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@sinha_abhijeet1 Hi Abhijeet, we understand how important it is for you to access our services. Our team is actively working to restore the services at the earliest. We appreciate your patience and understanding. In the meantime, you can reach us at customercare@tatacapital.com for any",
+      "created_at": "2026-11-16T13:20:43+00:00",
+      "url": "https://x.com/tatacapital/status/2122318953217511817",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122317908495970354",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -7969,6 +8745,38 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122317906122076505",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@jaganm that you require from us.",
+      "created_at": "2026-11-16T13:16:34+00:00",
+      "url": "https://x.com/tatacapital/status/2122317906122076505",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122317904482062540",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@jaganm Hi Jagannath, we understand how important it is for you to access our services. Our team is actively working to restore the services at the earliest. We appreciate your patience and understanding. In the meantime, you can reach us at customercare@tatacapital.com for any support",
+      "created_at": "2026-11-16T13:16:33+00:00",
+      "url": "https://x.com/tatacapital/status/2122317904482062540",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
     },
     {
       "tweet_id": "2122317404051271917",
@@ -8031,6 +8839,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122313844148347013",
+      "handle": "tatacapital",
+      "display_name": "Tata Capital",
+      "text": "@sharma_sajal Hi Sajal, we have sent a detailed email on your registered Email ID. If you have any further query we request you to write to us on the same email. We will prioritize and address your concern.",
+      "created_at": "2026-11-16T13:00:25+00:00",
+      "url": "https://x.com/tatacapital/status/2122313844148347013",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE976I01016",
+          "query": "\"Tata Capital\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122313743250137259",
       "handle": "UniviIndia",
       "display_name": "Univi India Softtech Pvt Ltd",
@@ -8075,6 +8899,14 @@
         {
           "entityId": "isin:INE15B701018",
           "query": "\"Pine Labs\""
+        },
+        {
+          "entityId": "isin:INE142M01025",
+          "query": "\"Tata Technologies\""
+        },
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
         }
       ]
     },
@@ -8327,6 +9159,22 @@
       ]
     },
     {
+      "tweet_id": "2122297745209737606",
+      "handle": "MoneycontrolH",
+      "display_name": "Moneycontrol Hindi",
+      "text": "#MarketsWithMC:  रेलवे सेक्टर की टीटागढ़ रेल सिस्टम्स पर जेफरीज ने बुलिश रुख दिखाया है। ब्रोकरेज ने नए वैगन ऑर्डर और पैसेंजर कोच डिलीवरी में तेजी के चलते टारगेट बढ़ा दिया है। नए टारगेट के हिसाब से स्टॉक 43% तक चढ़ सकता है। जानिए डिटेल।\n\nपूरी खबर👇\nhttps://t.co/S7CeBmS3Kd \n\n#Railwaystocks #Sharemarket #Stockmarket #MoneycontrolHindi",
+      "created_at": "2026-11-16T11:56:27+00:00",
+      "url": "https://x.com/MoneycontrolH/status/2122297745209737606",
+      "image": "https://pbs.twimg.com/media/HXPqiPDaQAEq_-C.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE615H01020",
+          "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122296241975619838",
       "handle": "DrMalluRavi1",
       "display_name": "Dr. Mallu Ravi",
@@ -8352,798 +9200,14 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122295179440959542",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCPersonalFinance | Gold’s hidden volatility: On half of all trading days since 1980, prices were at least 10% below their last record high\n\n- Gold spent 50 percent of trading days below previous peaks.\n- Historical data shows gold can take years to recover highs.\n- Gold delivers strong 10-year rolling annualized returns.\n\n@PriyadarshiniM9 writes:\nhttps://t.co/LT3GnliVXa",
-      "created_at": "2026-11-16T11:46:15+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122295179440959542",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122294863769047175",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | India's exports to Singapore, Malaysia, Sri Lanka surge more than 70% in Apr-Sep\n\n- Singapore, Malaysia and Sri Lanka top FTA export growth.\n- Export surge driven by electronics and petroleum products.\n- Experts emphasize the need for global cost competitiveness.\n\n@PriyanshVerma4 reports: \n\nRead More:\nhttps://t.co/6TWOB4nfm6",
-      "created_at": "2026-11-16T11:45:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122294863769047175",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122293505079021848",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "🚨 Precision engineering deal wave continues! White Oak Capital, 360 ONE Asset &amp; others participate in pre-IPO round of Bain Capital backed auto parts platform RSB Group reports @ashwinmohansays \n\nhttps://t.co/NlsFPWGNkO",
-      "created_at": "2026-11-16T11:39:36+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122293505079021848",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122293231832691046",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | With Nvidia's earnings and the much-talked-about Anthropic IPO in focus, global markets are watching the AI trade closely. \n\nIn this conversation, market expert Ajay Bagga (@Ajay_Bagga) breaks down what these two big events could mean for investors, how the AI theme is shaping global sentiment, and what the spillover could be for Indian markets, especially tech and the broader market mood. \n\nHe also shares the key triggers and levels to track in the coming sessions, and how investors can approach this period of heightened event risk. Watch the full conversation with @Lovishadarad for a clear, no-noise view on where the markets could head next.",
-      "created_at": "2026-11-16T11:38:31+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122293231832691046",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122292529714602176",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Taking Stock: Markets bounce back; Nifty closes near 25,300, Sensex jumps 510 pts\n\n- Indian markets closed higher led by FMCG and banking stocks.\n- Sensex gained 510 points and Nifty closed near 25,300.\n- Foreign fund inflows and lower crude prices boosted sentiment.\n\nRead more:\nhttps://t.co/QXgDGZxpTS",
-      "created_at": "2026-11-16T11:35:44+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122292529714602176",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122292156027289834",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | India’s unemployment rate eases to 4.9% in October as more women find work\n\nUrban unemployment fell to 6.7%, while rural joblessness held at 4.2%. The share of women aged 15 and above who were employed rose to 33.3% from 32.8% in September\n\n@IshaanGera writes:\nhttps://t.co/iJzMDNCbvN",
-      "created_at": "2026-11-16T11:34:14+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122292156027289834",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122291644955574461",
-      "handle": "ShwetaRKohli",
-      "display_name": "Shweta Rajpal Kohli",
-      "text": "🚨 Startup Policy Forum is thrilled to partner with @TiEsingapore as it hosts TiEcon SG 2026 tomorrow to mark its 25th anniversary.\n\nIt's a power-packed agenda, and here are a few sessions with our members we're especially looking forward to:\n\n🔹 @amrishrau of @PineLabs joins @a_baronca of @aspireappglobal for a fireside chat on “Building for the World from Asia,” moderated by Piyush Gupta, Chairman of Singapore Management University and Chairman of @Temasek India.\n\n🔹 @Aa_Agarwl of @just_snabbit shares the side of startup life nobody posts about in “Founder Backstories: Beyond the Glamour.”\n\n🔹 I’ll be moderating a session, “What does it take to win in the AI era,” with @PrabhuNsimhan of @brahma_ai, @realajitmohan (former Chief Business Officer at Snap) and Gaurav Kathpalia of @Singtel.\n\nThis partnership means a lot to us. Since day one, SPF’s mission has been to connect innovation ecosystems across the globe, and engagements like this fit that goal perfectly.\n\nIt's great to see Piyush Gupta champion TiEcon SG 2026, given how much of his impact is seen across Singapore's boardrooms, institutions and policy circles. Hard to think of anyone better placed to bring these two worlds together.\n\nCongrats to @pranmaz and team for putting together an exciting line-up.\n\nSee you at TiEcon SG 2026 tomorrow! \n\n@SPF_India \n@HCI_Singapore",
-      "created_at": "2026-11-16T11:32:13+00:00",
-      "url": "https://x.com/ShwetaRKohli/status/2122291644955574461",
-      "image": "https://pbs.twimg.com/media/HXPk_9VbsAAKzG7.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE15B701018",
-          "query": "\"PINELABS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122289937156374934",
-      "handle": "Prabinmen",
-      "display_name": "PM",
-      "text": "#Nifty #trendingstocks #Sensex\n\nRetail Heatmap 🔥: Top Movers You Can’t Miss\n\nStrong Set ups / trending set ups / resilient set ups- from my curated list - more details if you follow my timelines\n\n#PARAGMILK \n#PACEDIGITK \n#KALYANKJIL \n#DSSL \n#UNIPARTS\n#RKFORGE\n#ABDL \n#SANDHAR\n#NITINSPIN\n#RPEL\n#CNL\n#SBIN\n#ICICIBANK\n#DEEDEV\n#QPOWER \n#FIEMIND \n#ARTEMIS \n#APLLTD \n#ASAHIINDIA \n\nWana learn fundamentals and charts - Check below\n\nhttps://t.co/193Dli8DjS",
-      "created_at": "2026-11-16T11:25:25+00:00",
-      "url": "https://x.com/Prabinmen/status/2122289937156374934",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE399G01023",
-          "query": "\"RKFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122288876475830774",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#WATCH | Surendra Singh Azad, who filmed and shared visuals of dead and dying fish in the Yamuna, has been arrested and subsequently released on bail. The arrest has raised questions over the handling of a video highlighting a possible environmental crisis in the capital.\n\nIn his first statement after his release, Azad said he rushed to the riverbank after seeing fish gasping for air. He claimed Flood Department staff were collecting dead and struggling fish and told him the deaths were linked to polluted water and chemicals.\n\nAzad said he recorded the scene, questioned the staff and uploaded the footage to Facebook and Instagram. He alleged that he was later picked up by police while heading to a friend's place for Chhath Puja celebrations.\n\nPolice registered an FIR against him, alleging that the video spread misinformation and could create public mischief. Azad has said he will contest the case in court.",
-      "created_at": "2026-11-16T11:21:13+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122288876475830774",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122288389450056174",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@viswal Hi! Our representative tried calling you on the contact number mentioned in the PAN application but could not reach you. We request you to share your contact number. Our team shall help you to resolve the issue.",
-      "created_at": "2026-11-16T11:19:16+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122288389450056174",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122287798439092512",
-      "handle": "eduinvestingin",
-      "display_name": "Eduinvesting.in",
-      "text": "Supriya Lifescience Q2 FY27: Sales Up 3% to ₹206 Cr, Profit Down 42%, and One Shipment That Spent a Summer at Customs\n\nRead full article here - https://t.co/MizFBFdSR9 https://t.co/EJwT4udgWJ",
-      "created_at": "2026-11-16T11:16:56+00:00",
-      "url": "https://x.com/eduinvestingin/status/2122287798439092512",
-      "image": "https://pbs.twimg.com/media/HXPhgGpbIAA0wpE.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE07RO01027",
-          "query": "\"Supriya Lifescience\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122287313866588232",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCPersonalFinance | Silver tumbles 4.5% to Rs 1.69 lakh amid Fed rate fears: Is further correction likely?\n\n- Gold and silver prices fell sharply amid a stronger US dollar.\n- Treasury yields and rate hike fears depressed bullion prices.\n- Domestic gold falls 1.16% and silver drops nearly 4.50%.\n\n@Dipen_Journals reports:\n\nRead More:\nhttps://t.co/YJbEaVUhOh",
-      "created_at": "2026-11-16T11:15:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122287313866588232",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122284713608130746",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@ShazadMd_1 Hi! We have escalated it to the concerned team. We will get back to you shortly with an update. Thank you for your patience.",
-      "created_at": "2026-11-16T11:04:40+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122284713608130746",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122284507365888155",
-      "handle": "TejaswiPalam",
-      "display_name": "Tejaswi | AI Industrial Shift 🇮🇳",
-      "text": "Some stocks are quietly making a comeback 👀\n\nYatra Online +20.00%\nTVS Supply +12.43%\nBorosil +10.02%\nDynacons Systems +9.16%\nKilitch Drugs +9.15%\nBaazar Style +9.09%\nIvalue Infosolutions +8.66%\nSRM Contractors +8.01%\nSunshine Pictures +7.89%\nMax Healthcare +6.88%\nBhatia Communications +6.49%\nSandhar Technologies +5.01%\nShree Rama Multi-Tech +5.00%\nManaksia Steels +5.00%\nModern Insulators +5.00%\nString Metaverse +4.90%\nAllied Blenders +4.64%\nThe Anup Engineering +4.63%\nBorana Weaves +4.61%\nVenus Remedies +4.46%",
-      "created_at": "2026-11-16T11:03:51+00:00",
-      "url": "https://x.com/TejaswiPalam/status/2122284507365888155",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE958L01034",
-          "query": "\"String Metaverse\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122283558538764396",
-      "handle": "officialprotean",
-      "display_name": "【公式】一般社団法人プロティアン・キャリア協会",
-      "text": "プロティアン認定者の多彩な活躍をご紹介します👇\nhttps://t.co/nHm2KQNM61",
-      "created_at": "2026-11-16T11:00:05+00:00",
-      "url": "https://x.com/officialprotean/status/2122283558538764396",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122283491165692150",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@shazibasha0202 Hi! Your PAN card has been dispatched on 09-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:59:49+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122283491165692150",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122283246461521977",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@HarshVSolanki Hi! Your PAN card has been dispatched on 04-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:58:50+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122283246461521977",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122283166593593466",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@ShazadMd_1 Hi! We request you to refer our response sent from the email ID customerservice@proteantech.in for your reference.",
-      "created_at": "2026-11-16T10:58:31+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122283166593593466",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122283093356896433",
-      "handle": "PineLabs",
-      "display_name": "Pine Labs",
-      "text": "@michaelrajtut Hi, we have escalated your concern to the relevant team. They will reach out to you shortly. Thank you for your patience.",
-      "created_at": "2026-11-16T10:58:14+00:00",
-      "url": "https://x.com/PineLabs/status/2122283093356896433",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE15B701018",
-          "query": "\"Pine Labs\""
-        },
-        {
-          "entityId": "isin:INE15B701018",
-          "query": "\"PINELABS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122282984992850077",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@DevAgar17316607 Hi! Your PAN card has been dispatched on 07-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:57:48+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122282984992850077",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122282575519764936",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@KirpaRamBHU Hi! We request you to refer our response sent from the email ID customerservice@proteantech.in for your reference.",
-      "created_at": "2026-11-16T10:56:10+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122282575519764936",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122282477851156987",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@KAILASHPATEL53 Hi! Your PAN card has been dispatched on 04-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:55:47+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122282477851156987",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122282288499261746",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@ifor_india Hi! We request you to refer our response sent from the email ID tin_ain@proteantech.in. for your reference.",
-      "created_at": "2026-11-16T10:55:02+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122282288499261746",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122282067136483428",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@Sushi_Reddi Hi! Thank you for sharing your PAN Acknowledgement Number. We have forwarded your details to the concerned team for review. You will receive an update shortly.",
-      "created_at": "2026-11-16T10:54:09+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122282067136483428",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122281818510774458",
-      "handle": "puba1983",
-      "display_name": "Prem Kumar",
-      "text": "@MithunSarkari Whether #Sterlite (#STLTech) and #HFCL lost it's momentum. \n\nAny visibility to comeback? \n\nNext 2-3 years going to be bumper for optical fibres.",
-      "created_at": "2026-11-16T10:53:10+00:00",
-      "url": "https://x.com/puba1983/status/2122281818510774458",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE089C01029",
-          "query": "\"STLTECH\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122281749560627421",
-      "handle": "Caatishay",
-      "display_name": "CA Atishay Jain | Finance",
-      "text": "One of India's most lucrative small-town businesses is now attracting the biggest financial institutions.\n\nAfter Tata Capital, Aditya Birla Finance and Godrej Finance, IHC backed Sammaan Capital is entering gold loan business\n\nIndia's gold loan market has grown nearly 4x in just 5 years and everyone wants a piece of it\n\nWhat was once a small-town business is becoming a major battleground for India's NBFCs",
-      "created_at": "2026-11-16T10:52:53+00:00",
-      "url": "https://x.com/Caatishay/status/2122281749560627421",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE148I01020",
-          "query": "\"Sammaan Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122281388300967982",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@IAM_BRUNDABAN Hi! We request you to refer our response sent from the email ID customerservice@proteantech.in for your reference.",
-      "created_at": "2026-11-16T10:51:27+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122281388300967982",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122281195409154078",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@DeepakY06105769 Hi! Your PAN card has been dispatched on 03-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:50:41+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122281195409154078",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122281090878685544",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@adil_praveen Hi! Your PAN card has been dispatched on 05-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:50:16+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122281090878685544",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122280968979616144",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@iAmAlanSabu Hi! Your PAN application is processed by Protean and PAN Card will be dispatched to you shortly. We appreciate your patience.",
-      "created_at": "2026-11-16T10:49:47+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122280968979616144",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122280622781874566",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@HussainSho93321 Hi! Your PAN application is processed by Protean and PAN Card will be dispatched to you shortly. We appreciate your patience.",
-      "created_at": "2026-11-16T10:48:25+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122280622781874566",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122280575214219344",
-      "handle": "SouvikG1982",
-      "display_name": "Souvik Ghosh",
-      "text": "Inside India’s ₹1.08 Lakh Crore giant: What changed in HDFC Flexi Cap Fund last month? 👇\n\nWith cash levels down to ~2% and 83 stocks in the portfolio, fund manager Amit Ganatra made some bold moves in the October 2026 reshuffle:\n\n🟢 6 Fresh Additions\n• Sona BLW Precision Forgings (₹275.7 Cr)\n• Jio Platforms (₹191.7 Cr)\n• Dr. Reddy’s Labs & Sai Life Sciences\n• MCX & EAAA India Alternatives\n\n🔴 2 Complete Exits\n• LIC (fully exited)\n• ONGC (fully exited)\n\n📈 Major Stake Increases\n• Max Healthcare: +35.9%\n• Bharat Electronics (BEL): +20.4%\n• Reliance Industries: +8.0%\n• Bharti Airtel: +6.2%\n• ICICI Bank: +1.5% (now 9.28% of the fund)\n\n📉 Notable Trims\n• Infosys: -77.1% (slashed to just 0.12% weight)\n• Divi's Labs: -13.9%\n• Axis Bank: -6.9%\n\nThe Big Picture (2026 Shift):\nSince Amit Ganatra took the helm in Feb 2026, the fund has clearly pivoted:\nWider net: Expanded from ~51 stocks to 83 stocks, bringing top-10 concentration down to 44.2%.\nMid-cap push: Mid-cap allocation has nearly tripled this year to ~15.3%.\nCapital market theme: Heavy accumulation across exchanges & AMCs (BSE, MCX, Nippon AMC, SBI Funds).\n\nTrims in IT & select PSUs, aggressive bets on healthcare, telecom, and capital market plays.\nWhich of these moves surprises you the most? 👇\n\n#MutualFund #Investing #StockMarket #HDFC",
-      "created_at": "2026-11-16T10:48:13+00:00",
-      "url": "https://x.com/SouvikG1982/status/2122280575214219344",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE073K01018",
-          "query": "\"Sona Blw Precision Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122280444192509953",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@AmitSuryav19395 Hi! Your PAN application is processed by Protean and PAN Card will be dispatched to you shortly. We appreciate your patience.",
-      "created_at": "2026-11-16T10:47:42+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122280444192509953",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122280311841255852",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@CAKLNREDDY Hi! We request you to refer our response sent from the email ID customerservice@proteantech.in for your reference.",
-      "created_at": "2026-11-16T10:47:11+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122280311841255852",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122280251158118458",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@kha75034403 Hi! Your PAN card has been dispatched on 03-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:46:56+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122280251158118458",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122280143196725479",
-      "handle": "PineLabs",
-      "display_name": "Pine Labs",
-      "text": "@Deepakk48291450 Hi Deepak, we understand the inconvenience you’re experiencing. Our team has prioritized this issue, and we’re working to resolve it at the earliest. We appreciate your patience in the meantime.",
-      "created_at": "2026-11-16T10:46:30+00:00",
-      "url": "https://x.com/PineLabs/status/2122280143196725479",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE15B701018",
-          "query": "\"Pine Labs\""
-        },
-        {
-          "entityId": "isin:INE15B701018",
-          "query": "\"PINELABS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122279947444343123",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@SujeetSahu0 Hi! Your PAN card has been dispatched on 06-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:45:44+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122279947444343123",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122279772327915578",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@CaSagarm Hi! Your PAN card has been dispatched on 07-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:45:02+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122279772327915578",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122279692569063813",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@Sogupta07 Hi! Your PAN card has been dispatched on 29-October-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office",
-      "created_at": "2026-11-16T10:44:43+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122279692569063813",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122279567562088920",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@QcAkansha Hi! Your PAN card has been dispatched on 10-November-2026 by Postal Department at the address for communication indicated by you in the application form. Request you to visit nearest post office.",
-      "created_at": "2026-11-16T10:44:13+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122279567562088920",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122278938127057192",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@RinkuDasMbj Hi! We sincerely regret the inconvenience caused. Please be assured that we are actively following up with the concerned team to ensure the issue is resolved at the earliest.",
-      "created_at": "2026-11-16T10:41:43+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122278938127057192",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122278879243231334",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | 🔔Closing Bell: Nifty nears 25,300, Sensex gains 510 pts; FMCG shines, auto, metal, realty drag\n\nOn the sectoral front, Realty Index down 1.9%, Pharma index declined 1.7%, Metal index shed 1.5%, Auto index fell 1.5%, and Energy index shed 0.6%, however, FMCG index added 1.2%, while Nifty Bank, Infra, Private Bank, Media, PSU Bank rose 0.3-0.6%. The Nifty midcap index shed 0.7 percent and smallcap index fell 1.1 percent.\n\nRead More: \nhttps://t.co/usKybiXc2N",
-      "created_at": "2026-11-16T10:41:29+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122278879243231334",
-      "image": "https://pbs.twimg.com/media/HXPYKFqbQAATFb5.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122275991997628695",
-      "handle": "Alphamojo1",
-      "display_name": "Alphamojo",
-      "text": "🚨 TOP 20 AUTO ANCILLARY STOCKS IN INDIA!📊\n\nTop Auto Ancillary Stocks with CMP:👇\n\n• Motherson Sumi – ₹162.60\n• Bosch – ₹49,136.10\n• Schaeffler India – ₹3,621.10\n• Sona BLW Precision Forgings – ₹901.60\n• Endurance Technologies – ₹2,510.00\n• Exide Industries – ₹367.10\n• Craftsman Automation – ₹11,160.00\n• Gabriel India – ₹1,513.30\n• Asahi India Glass – ₹1,120.90\n• Motherson Sumi Wiring – ₹39.00\n• WABCO India – ₹2,214.80\n• Sundaram Clayton – ₹12,395.00\n• Timken India – ₹3,100.00\n• Belrise Industries – ₹239.40\n• Sundram Fasteners – ₹1,057.60\n• Happy Forgings – ₹1,907.90\n• Tenneco Clean Air India – ₹438.50\n• Minda Corporation – ₹718.30\n• Lumax Auto Technologies – ₹2,342.70\n• Ramkrishna Forgings – ₹774.30",
-      "created_at": "2026-11-16T10:30:01+00:00",
-      "url": "https://x.com/Alphamojo1/status/2122275991997628695",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE399G01023",
-          "query": "\"Ramkrishna Forgings\""
-        },
-        {
-          "entityId": "isin:INE073K01018",
-          "query": "\"Sona Blw Precision Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122275991254950015",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | IPO-bound Mahanadi Coalfields will remain high dividend-paying stock, says DIPAM Secy; are you eligible for shareholder quota?\n\nMahanadi Coalfields shares are likely to be listed on the BSE and NSE on November 27.\n\n@ParasBisht15 reports: \n\nRead More:\nhttps://t.co/gcinPncrKE",
-      "created_at": "2026-11-16T10:30:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122275991254950015",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122274793546531184",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@Manojjain69919 Hi Manoj! We sincerely regret the inconvenience caused. We need your Date of Birth. Once received, we'll resolve this promptly. Thank you! https://t.co/nf3qVn8Lhl https://t.co/nf3qVn8Lhl",
-      "created_at": "2026-11-16T10:25:15+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122274793546531184",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122274242939216033",
-      "handle": "CookieKunimitsu",
-      "display_name": "奈良人@九鬼邦光",
-      "text": "https://t.co/116BWj2m57\n毎週　月曜日22:30-23:00\n「変幻自在に　Be Protean」\nラジオパーソナリティ九鬼邦光\n奈良情報 https://t.co/4GAiNk6T7S",
-      "created_at": "2026-11-16T10:23:04+00:00",
-      "url": "https://x.com/CookieKunimitsu/status/2122274242939216033",
-      "image": "https://pbs.twimg.com/media/HXPVLKtbMAElkOK.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122272316487094413",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "🚨 #MCExclusive | Iran war pushes India to scout new internet cable landing sites on east coast\n\nAround 70% of India's subsea cable infrastructure is concentrated along the western coast, making diversification important to mitigate potential disruptions to international connectivity\n\n@DanishKh4n reports 👇\nhttps://t.co/xPuVFc74Du",
-      "created_at": "2026-11-16T10:15:24+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122272316487094413",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122272296123732388",
-      "handle": "DemandZoneKing",
-      "display_name": "Demand zone King",
-      "text": "@BatesarJat @sunilgurjar01 Oswalpumps :  Fundamentals toh kaafi ache hai iske but\n\nTechnicals : Iska ghee khatm ho chuka hai, BO from this chanel may give some relief but dont expect much from this. https://t.co/RPPIfWuqFW",
-      "created_at": "2026-11-16T10:15:19+00:00",
-      "url": "https://x.com/DemandZoneKing/status/2122272296123732388",
-      "image": "https://pbs.twimg.com/media/HXPTNeAbIAAu3qq.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0BYP01024",
-          "query": "\"OSWALPUMPS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122271598418043024",
-      "handle": "pinelabsonline",
-      "display_name": "Pine Labs Online",
-      "text": "@arjuarjun77 Hi Arjun, apologies for the inconvenience caused. We are working on your concern and will sort it out at the earliest.",
-      "created_at": "2026-11-16T10:12:33+00:00",
-      "url": "https://x.com/pinelabsonline/status/2122271598418043024",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE15B701018",
-          "query": "\"Pine Labs\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122271162243977604",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | As long-short SIFs post uneven returns, HDFC MF bets on patience over early performance\n\n- HDFC MF enters specialised fund segment.\n- The new H-SIF Hybrid Long-Short Fund opened for subscription.\n- Strategy needs 18+ month horizon.\n\nKhushi Keswani writes:\nhttps://t.co/mbDSdXp16q",
-      "created_at": "2026-11-16T10:10:49+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122271162243977604",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122270867090702376",
-      "handle": "ProteanEgovTech",
-      "display_name": "Protean",
-      "text": "@AlokGupta_X Hi! We are actively reviewing your case and working to resolve it at the earliest. We will share an update with you soon. Thank you for your patience and cooperation.",
-      "created_at": "2026-11-16T10:09:39+00:00",
-      "url": "https://x.com/ProteanEgovTech/status/2122270867090702376",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE004A01022",
-          "query": "\"PROTEAN\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122269882855432601",
-      "handle": "guru1_pg",
-      "display_name": "Prashant Guruwani",
-      "text": "@SureshKBN Sir, but it doesn't seem to be a panic day today.? What are you referring to?",
-      "created_at": "2026-11-16T10:05:44+00:00",
-      "url": "https://x.com/guru1_pg/status/2122269882855432601",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE089C01029",
-          "query": "\"STLTECH\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 8,
-    "incomplete": 214,
-    "checkedAt": "2026-11-17T17:46:10.250611+00:00"
+    "attempted": 7,
+    "incomplete": 212,
+    "checkedAt": "2026-11-17T20:02:03.678363+00:00"
   },
   "archive": [
     {
@@ -9235,6 +9299,10 @@
       "month": "2024-10"
     },
     {
+      "file": "twitter-archive/2024-08.json",
+      "month": "2024-08"
+    },
+    {
       "file": "twitter-archive/2024-06.json",
       "month": "2024-06"
     },
@@ -9290,9 +9358,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-17T19:30:04.941Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-17T20:02:31.628Z",
     "lastSuccessAt": null
   }
 }
