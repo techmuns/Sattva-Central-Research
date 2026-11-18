@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-18T01:19:47.127Z",
-  "oldestDataAt": "2026-11-18T01:19:47.127Z",
+  "capturedAt": "2026-11-18T07:54:18.643Z",
+  "oldestDataAt": "2026-11-18T07:54:18.643Z",
   "from": "2025-11-18",
   "to": "2026-11-18",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-18T01:19:47.127Z",
+      "capturedAt": "2026-11-18T07:54:18.643Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-18T01:19:47.127Z",
+      "capturedAt": "2026-11-18T07:54:18.643Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-18T01:19:47.127Z",
+      "capturedAt": "2026-11-18T07:54:18.643Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-18T01:19:47.127Z",
+      "capturedAt": "2026-11-18T07:54:18.643Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2205,
+  "withRows": 2206,
   "emptyCount": 0,
-  "rowCount": 25324,
+  "rowCount": 25325,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -479552,6 +479552,23 @@
           "Trade %": "4.36",
           "Mode": "Pref. Allotment",
           "Broadcast Date": "2026-10-31",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "GSTL": [
+      {
+        "ticker": "GSTL",
+        "date": "2026-11-17",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Globesecure Tech",
+          "Insider": "Mr. Ragavan Rajkumar",
+          "Transaction": "Creation",
+          "Trade Shares": "3623738",
+          "Broadcast Date": "2026-11-17",
           "Source": "Screener.in"
         }
       }
