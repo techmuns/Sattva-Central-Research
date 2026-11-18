@@ -2700,7 +2700,7 @@
       "pending": []
     },
     "isin:INE0LRU01027|Aarti Pharmalabs": {
-      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
+      "lastAttemptAt": "2026-11-18T03:33:58+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|AARTIPHARM": {
@@ -3122,6 +3122,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 215,
-    "checkedAt": "2026-11-18T02:57:33.998430+00:00"
+    "checkedAt": "2026-11-18T03:33:58.921522+00:00"
   }
 }
