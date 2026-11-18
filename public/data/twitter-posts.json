@@ -9560,9 +9560,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-18T09:29:56.770Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-18T11:06:16.703Z",
     "lastSuccessAt": null
   }
 }
