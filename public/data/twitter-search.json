@@ -2476,7 +2476,7 @@
       "lastDiscoveryAt": "2026-11-04T15:29:18+00:00"
     },
     "isin:INE879I01012|Valor Estate": {
-      "lastAttemptAt": "2026-11-12T18:44:23+00:00",
+      "lastAttemptAt": "2026-11-18T02:57:33+00:00",
       "error": "search-unavailable",
       "lastResultCount": 3,
       "lastSuccessAt": "2026-11-04T15:29:18+00:00",
@@ -3122,6 +3122,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 215,
-    "checkedAt": "2026-11-18T01:47:50.739535+00:00"
+    "checkedAt": "2026-11-18T02:57:33.998430+00:00"
   }
 }
