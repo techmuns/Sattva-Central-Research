@@ -2906,80 +2906,85 @@
       ]
     },
     "isin:INE040A01034|HDFCBANK": {
-      "lastAttemptAt": "2026-11-13T15:28:56+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 105,
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
       "targetThrough": "2026-10-23T00:13:31+00:00",
       "pending": [
         {
-          "from": "2026-10-14T00:13:31.187081+00:00",
-          "to": "2026-10-18T12:13:31.093541+00:00"
-        },
-        {
           "from": "2026-10-18T12:13:31.093541+00:00",
           "to": "2026-10-23T00:13:31+00:00"
+        },
+        {
+          "from": "2026-10-14T00:13:31.187081+00:00",
+          "to": "2026-10-16T06:13:31.140311+00:00"
+        },
+        {
+          "from": "2026-10-16T06:13:31.140311+00:00",
+          "to": "2026-10-18T12:13:31.093541+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-18T18:19:05+00:00"
     },
     "isin:INE391J01032|Jtl Industries": {
-      "lastAttemptAt": "2026-11-13T17:46:38+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 10,
-      "lastSuccessAt": "2026-10-23T00:13:31+00:00",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
+      "error": null,
+      "lastResultCount": 43,
+      "lastSuccessAt": "2026-11-18T18:19:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE391J01032|JTLIND": {
-      "lastAttemptAt": "2026-11-13T18:26:28+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 19,
-      "lastSuccessAt": "2026-10-23T00:13:31+00:00",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
+      "error": null,
+      "lastResultCount": 27,
+      "lastSuccessAt": "2026-11-18T18:19:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE04I401011|Kpit Technologies": {
-      "lastAttemptAt": "2026-11-13T18:38:20+00:00",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
       "error": null,
-      "lastResultCount": 90,
-      "lastSuccessAt": "2026-11-13T18:38:20+00:00",
+      "lastResultCount": 28,
+      "lastSuccessAt": "2026-11-18T18:19:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE04I401011|KPITTECH": {
-      "lastAttemptAt": "2026-11-13T18:38:20+00:00",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
       "error": null,
-      "lastResultCount": 72,
-      "lastSuccessAt": "2026-11-13T18:38:20+00:00",
+      "lastResultCount": 38,
+      "lastSuccessAt": "2026-11-18T18:19:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE00GO01025|Leap India": {
-      "lastAttemptAt": "2026-11-13T18:38:20+00:00",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
       "error": null,
-      "lastResultCount": 91,
-      "lastSuccessAt": "2026-11-13T18:38:20+00:00",
+      "lastResultCount": 60,
+      "lastSuccessAt": "2026-11-18T18:19:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE00GO01025|LEAPIND": {
-      "lastAttemptAt": "2026-11-13T18:38:20+00:00",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
       "error": null,
-      "lastResultCount": 70,
-      "lastSuccessAt": "2026-11-13T18:38:20+00:00",
+      "lastResultCount": 28,
+      "lastSuccessAt": "2026-11-18T18:19:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE185Q01025|Lumino Industries": {
-      "lastAttemptAt": "2026-11-13T18:38:20+00:00",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
       "error": null,
-      "lastResultCount": 32,
-      "lastSuccessAt": "2026-11-13T18:38:20+00:00",
+      "lastResultCount": 29,
+      "lastSuccessAt": "2026-11-18T18:19:05+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE185Q01025|LUMINO": {
-      "lastAttemptAt": "2026-11-13T18:38:20+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-18T18:19:05+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 111,
       "targetThrough": "2026-11-13T18:38:20+00:00",
       "pending": [
@@ -3112,8 +3117,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 224,
-    "checkedAt": "2026-11-18T17:52:10.914317+00:00"
+    "attempted": 9,
+    "incomplete": 217,
+    "checkedAt": "2026-11-18T18:19:05.756795+00:00"
   }
 }
