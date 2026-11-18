@@ -2764,68 +2764,69 @@
       "pending": []
     },
     "isin:INE120A01034|CARBORUNIV": {
-      "lastAttemptAt": "2026-11-13T07:17:22+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 6,
-      "lastSuccessAt": "2026-10-22T20:54:29+00:00",
+      "lastAttemptAt": "2026-11-18T11:49:04+00:00",
+      "error": null,
+      "lastResultCount": 44,
+      "lastSuccessAt": "2026-11-18T11:49:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE488A01050|Chemplast Sanmar": {
-      "lastAttemptAt": "2026-11-13T07:53:06+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 6,
-      "lastSuccessAt": "2026-10-22T20:54:29+00:00",
+      "lastAttemptAt": "2026-11-18T11:49:04+00:00",
+      "error": null,
+      "lastResultCount": 27,
+      "lastSuccessAt": "2026-11-18T11:49:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE488A01050|CHEMPLASTS": {
-      "lastAttemptAt": "2026-11-13T09:43:07+00:00",
+      "lastAttemptAt": "2026-11-18T11:49:04+00:00",
       "error": null,
-      "lastResultCount": 28,
-      "lastSuccessAt": "2026-11-13T09:43:07+00:00",
+      "lastResultCount": 9,
+      "lastSuccessAt": "2026-11-18T11:49:04+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE007A01025|Crisil": {
-      "lastAttemptAt": "2026-11-13T09:43:07+00:00",
-      "lastResultCount": 43,
-      "error": null,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-11-18T11:49:04+00:00",
+      "lastResultCount": 104,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-11-18T11:49:04+00:00",
+      "pending": [
+        {
+          "from": "2026-10-05T17:08:22+00:00",
+          "to": "2026-10-27T14:28:43+00:00"
+        },
+        {
+          "from": "2026-10-27T14:28:43+00:00",
+          "to": "2026-11-18T11:49:04+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-11-13T09:43:07+00:00",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00"
     },
     "isin:INE007A01025|CRISIL": {
-      "lastAttemptAt": "2026-11-13T09:43:07+00:00",
-      "lastResultCount": 59,
+      "lastAttemptAt": "2026-11-18T11:49:04+00:00",
+      "lastResultCount": 43,
       "error": null,
-      "targetThrough": "2026-10-07T17:08:22+00:00",
-      "pending": [
-        {
-          "from": "2026-10-03T05:08:22.236677+00:00",
-          "to": "2026-10-07T17:08:22+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-13T09:43:07+00:00"
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-18T11:49:04+00:00",
+      "lastSuccessAt": "2026-10-07T17:08:22+00:00"
     },
     "isin:INE255Z01027|E2E Networks": {
-      "lastAttemptAt": "2026-11-13T09:43:07+00:00",
-      "lastResultCount": 37,
+      "lastAttemptAt": "2026-11-18T11:49:04+00:00",
+      "lastResultCount": 69,
       "error": null,
-      "targetThrough": "2026-10-07T17:08:22+00:00",
-      "pending": [
-        {
-          "from": "2026-10-03T05:08:22.236677+00:00",
-          "to": "2026-10-07T17:08:22+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-13T09:43:07+00:00"
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-18T11:49:04+00:00",
+      "lastSuccessAt": "2026-10-07T17:08:22+00:00"
     },
     "isin:INE0DRI01029|Esds Software Solution": {
-      "lastAttemptAt": "2026-11-13T09:43:07+00:00",
+      "lastAttemptAt": "2026-11-18T11:49:04+00:00",
       "lastResultCount": 108,
-      "error": "result-cap-incomplete",
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00",
       "targetThrough": "2026-11-13T09:43:07+00:00",
       "pending": [
@@ -2837,7 +2838,8 @@
           "from": "2026-10-25T01:25:44.500000+00:00",
           "to": "2026-11-13T09:43:07+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-18T11:49:04+00:00"
     },
     "isin:INE0DRI01029|ESDS": {
       "lastAttemptAt": "2026-11-13T09:43:07+00:00",
@@ -3110,8 +3112,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 225,
-    "checkedAt": "2026-11-18T11:06:01.131669+00:00"
+    "attempted": 7,
+    "incomplete": 224,
+    "checkedAt": "2026-11-18T11:49:04.014597+00:00"
   }
 }

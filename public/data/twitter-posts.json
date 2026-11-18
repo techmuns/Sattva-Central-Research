@@ -1,10 +1,320 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-18T09:29:56+00:00",
+  "capturedAt": "2026-11-18T11:49:33+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2123019936826376337",
+      "handle": "sisbl_in",
+      "display_name": "Shriram Insight",
+      "text": "E2E Networks and MTAR Technologies shares snapped a two-day losing streak, rising around 3% each after Nvidia beat Q3 earnings estimates and issued strong revenue guidance.   \n\nhttps://t.co/hKgRU40YaM",
+      "created_at": "2026-11-18T11:46:11+00:00",
+      "url": "https://x.com/sisbl_in/status/2123019936826376337",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123019890579923416",
+      "handle": "sisbl_in",
+      "display_name": "Shriram Insight",
+      "text": "PVR Inox shares rallied 4% to hit a near 26-month high of ₹1,737.90 after CRISIL upgraded its long-term rating outlook from 'Stable' to 'Positive' while reaffirming its 'AA' rating.\n\nhttps://t.co/OW7yCgQEta",
+      "created_at": "2026-11-18T11:46:00+00:00",
+      "url": "https://x.com/sisbl_in/status/2123019890579923416",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123017200063906233",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCExclusive 🚨 | Key dealmaker exit! IIFL Capital’s investment banking head Nipun Goel steps down post a stint of nearly 15 years reports @ashwinmohansays \n\nMore details 👇\nhttps://t.co/6KGkTB6R5C",
+      "created_at": "2026-11-18T11:35:18+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123017200063906233",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123016135381778668",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Technical View: Break below Wednesday's low could trigger further profit booking in Nifty 50, Bank Nifty?\n\n- Nifty expected to remain in consolidation phase in short term, with support at 25,000\n- Break below this level could expose the next crucial support at 24,800\n- On upside, any rebound may face resistance in 25,400–25,500 zone\n\nRead More:\nhttps://t.co/pxMA8xOGZC",
+      "created_at": "2026-11-18T11:31:05+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123016135381778668",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123015870125621530",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Karnataka Bank appoints Udaya Kumar Hebbar as MD &amp; CEO for three-year term\n\nHebbar brings over 40 years of experience across commercial banking, banking operations, among others\n\n@archishmaaa reports:\n\nRead More:\nhttps://t.co/dwmp817rpZ",
+      "created_at": "2026-11-18T11:30:01+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123015870125621530",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123015309045190936",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "🚨 #MCExclusive: Race for Nuvama Wealth Management: binding bids for mega $2bn deal expected soon, even as Brookfield drops out. Will rival bidders EQT and ChrysCapital go solo? @ashwinmohansays reports \n\nMore details 👇\nhttps://t.co/Gna8dH6XOd",
+      "created_at": "2026-11-18T11:27:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123015309045190936",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123012967130440038",
+      "handle": "wegro_app",
+      "display_name": "Wegro App",
+      "text": "𝗚𝗲𝗻𝘂𝘀 𝗣𝗼𝘄𝗲𝗿 𝗜𝗻𝗳𝗿𝗮𝘀𝘁𝗿𝘂𝗰𝘁𝘂𝗿𝗲𝘀 𝗟𝗶𝗺𝗶𝘁𝗲𝗱: 𝗜𝗻𝘃𝗲𝘀𝘁𝗼𝗿 𝗣𝗿𝗲𝘀𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 - 𝗡𝗼𝘃𝗲𝗺𝗯𝗲𝗿 2026 📊 :\nGenus Power Infrastructures Limited (A Kailash Group Company) presented its investor update for November 2026, showcasing significant financial achievements and strategic growth initiatives.\n\n𝗞𝗲𝘆 𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀:\n\n- 𝗛1𝗙𝗬27 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n  ▸ Revenue surged by 19% YoY to ₹2,497 𝗖𝗿. 📈\n  ▸ EBITDA reached ₹485 𝗖𝗿, up 9% YoY, with a healthy EBITDA margin of 19.4%, exceeding the FY27 guidance of 18%.\n  ▸ Profit After Tax (PAT) stood at ₹296 𝗖𝗿, a 7% YoY increase.\n  ▸ Operating cash flow turned positive at ₹127 𝗖𝗿 in H1FY27, a significant improvement from an outflow of ₹158 Cr in H1FY26.\n\n- 𝗤2𝗙𝗬27 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n  ▸ Revenue was ₹1,133 𝗖𝗿, broadly in line with Q2FY26, moderated by monsoon season & project factors.\n  ▸ EBITDA was ₹225 𝗖𝗿, with an improved EBITDA margin of 19.8% (up 77 bps QoQ) driven by better supplier terms & logistics efficiency. 🚚\n  ▸ PAT stood at ₹133 𝗖𝗿, with a PAT margin of 11.8%.\n\n𝗢𝗽𝗲𝗿𝗮𝘁𝗶𝗼𝗻𝗮𝗹 & 𝗦𝘁𝗿𝗮𝘁𝗲𝗴𝗶𝗰 𝗨𝗽𝗱𝗮𝘁𝗲𝘀:\n\n- 𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸: The company maintains a robust order book of approximately ₹22,634 𝗖𝗿 (net of taxes) as of September 30, 2026, ensuring strong revenue visibility.\n- 𝗦𝗺𝗮𝗿𝘁 𝗠𝗲𝘁𝗲𝗿 𝗜𝗻𝘀𝘁𝗮𝗹𝗹𝗮𝘁𝗶𝗼𝗻𝘀: Genus Power is on track to install approximately 1 𝗰𝗿𝗼𝗿𝗲 𝘀𝗺𝗮𝗿𝘁 𝗺𝗲𝘁𝗲𝗿𝘀 𝗶𝗻 𝗙𝗬27. The AMISP portfolio includes ~3.6 crore awarded meters, with ~1.7 crore already installed.\n- 𝗙𝘂𝘁𝘂𝗿𝗲 𝗚𝗿𝗼𝘄𝘁𝗵 𝗔𝘃𝗲𝗻𝘂𝗲𝘀:\n  ▸ 𝗚𝗮𝘀 𝗠𝗲𝘁𝗲𝗿𝗶𝗻𝗴: Significant opportunity in the gas metering sector, estimated at ~₹35,000 Cr, with smart gas meter tendering expected to gain traction in FY28. 💨\n  ▸ 𝗘𝘅𝗽𝗼𝗿𝘁𝘀: Expanding export order book, with substantial O&M revenue expected from FY28.\n  ▸ 𝗦𝗺𝗮𝗿𝘁 𝗜𝗻𝗳𝗿𝗮𝘀𝘁𝗿𝘂𝗰𝘁𝘂𝗿𝗲 & 𝗚𝗿𝗶𝗱 𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗺𝗲𝗻𝘁: Focus on AI-driven predictive maintenance and expansion of smart grid technologies.\n- 𝗚𝗜𝗖 𝗣𝗮𝗿𝘁𝗻𝗲𝗿𝘀𝗵𝗶𝗽: Strategic partnership with GIC leverages a USD 2 billion platform for expanding meter supply & service contracts, supporting 3–5 crore additional meters without fresh capital.\n\n𝗖𝗼𝗺𝗽𝗮𝗻𝘆 𝗦𝘁𝗿𝗲𝗻𝗴𝘁𝗵𝘀:\n\n- 𝗠𝗮𝗻𝘂𝗳𝗮𝗰𝘁𝘂𝗿𝗶𝗻𝗴: State-of-the-art, integrated manufacturing facilities with in-house accredited testing labs. 🏭\n- 𝗧𝗲𝗰𝗵𝗻𝗼𝗹𝗼𝗴𝘆: Pioneer in smart metering solutions, offering in-house smart meters, HES, MDM, and communication solutions.\n- 𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹𝘀: Strong balance sheet, healthy EBITDA margins (~18%), and CRISIL AA-/Stable rating.\n- 𝗘𝘅𝗽𝗲𝗿𝗶𝗲𝗻𝗰𝗲: Three decades of experience in metering solutions & engineering contracts.\n\nThe company remains focused on delivering its FY27 revenue guidance of ₹6,000–6,500 Cr and maintaining its EBITDA margin guidance of 18%.\n\n📊 GENUS POWER INFRASTRUCTURES LTD | 🏷️ Investor Presentation\n\n🌐 Details: https://t.co/vq0ymjuDbN\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
+      "created_at": "2026-11-18T11:18:29+00:00",
+      "url": "https://x.com/wegro_app/status/2123012967130440038",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123012689534554493",
+      "handle": "MoneycontrolH",
+      "display_name": "Moneycontrol Hindi",
+      "text": "#MarketsWithMC: PVR Inox के शेयरों में 18 नवंबर को दिन में 3.6 प्रतिशत तक की तेजी दिखी, जिससे कीमत लगभग 26 महीने के उच्चतम स्तर पर पहुंच गई। लेकिन बाद में यह करीब 2 प्रतिशत बढ़त के साथ बंद हुआ। दरअसल रेटिंग एजेंसी CRISIL ने PVR Inox की लॉन्ग-टर्म बैंक सुविधाओं और नॉन-कनवर्टिबल डिबेंचर के लिए अपने आउटलुक को 'स्टेबल' से बदलकर 'पॉजिटिव' कर दिया है। एजेंसी ने कंपनी के लॉन्ग-टर्म डेट इंस्ट्रूमेंट्स पर अपनी 'CRISIL AA' रेटिंग को भी बरकरार रखा है। \n\nपूरी खबर👇\nhttps://t.co/h4Q36L0vgy\n\n#PVRINOX #Sharemarket #Stockmarket #MoneycontrolHindi",
+      "created_at": "2026-11-18T11:17:23+00:00",
+      "url": "https://x.com/MoneycontrolH/status/2123012689534554493",
+      "image": "https://pbs.twimg.com/media/HXZ0yNyaUAA9F_D.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123010830350602752",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Rs 1.1 lakh invested in 12 stocks becomes Rs 18.6 lakh in 5 years: Investor shares lessons from his multibagger journey\n\nAn investor who put around Rs 9,000 each into 12 smallcap stocks in February 2021 has shared how the portfolio grew to nearly Rs 18.65 lakh over the next five years.\n\nRead More:\nhttps://t.co/4rWgtm5Mmw",
+      "created_at": "2026-11-18T11:10:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123010830350602752",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123009825382728087",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Nasdaq futures rise over 1% as Nvidia leads gains post-strong Q3 results\n\n- Nasdaq futures rose over 1% after Nvidia's strong results.\n- Nvidia raised its 2028 revenue growth target.\n- Sensex and Nifty fell amid profit-taking.\n\nRead More:\nhttps://t.co/taS8KycIj8",
+      "created_at": "2026-11-18T11:06:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123009825382728087",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123006399668228499",
+      "handle": "stocks_tradeaxe",
+      "display_name": "Stocks_tradeaxe",
+      "text": "Don't miss DATA CENTRE theme. It's going to be a very high growth sector in next 2-3 years: \n\nESDS\nE2E Networks\nNetweb\nKRN HEAT\nTD POWER\nDYNACONS",
+      "created_at": "2026-11-18T10:52:23+00:00",
+      "url": "https://x.com/stocks_tradeaxe/status/2123006399668228499",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123006294479225198",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Air India Express appoints CFO Deepak Rajawat as CEO\n\nCurrently, the airline operates around 585 daily flights connecting 48 domestic and 17 international destinations with a fleet of 108 Boeing 737 and Airbus A320 family aircraft.\n\nRead More:\nhttps://t.co/tDykbENIko",
+      "created_at": "2026-11-18T10:51:58+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123006294479225198",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123000501390496140",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | A new Chinese innovation is gaining attention, with airbag-equipped helmets aimed at offering riders extra protection by cushioning their heads during collisions. \n\nHowever, the footage remains unverified and may be an AI-generated concept rather than a real product.\n\nWhat are your views on it? 🤔\n\n#Helmet #Airbags #RiderSafety #China #AI",
+      "created_at": "2026-11-18T10:28:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123000501390496140",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122998077393097059",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Taking Stock: Bears back in action on D-Street; Sensex sheds 500 pts, Nifty below 25,250\n\n- Indian equities snap two-day winning streak on Nov 18.\n- Sensex falls 500 points and Nifty drops below 25,250.\n- Consumer durables and metal sectors lead the market drag.\n\nRead More:\nhttps://t.co/oVoIwO0WHf",
+      "created_at": "2026-11-18T10:19:19+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122998077393097059",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122996784733794584",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | Shiv Sena leaders, including Shaina NC, Sanjay Nirupam and Anand Dubey, tore pages from Congress Parliamentary Party chairperson Sonia Gandhi’s memoir Belonging: A Journey of Love during a protest in Mumbai on Wednesday.\n\nThe leaders accused the book of distorting historical accounts and denigrating Veer Savarkar. They demanded that publisher HarperCollins India remove the disputed passages on pages 201 and 443.\n\nThe protest comes amid a political row over the memoir, with the BJP also accusing Gandhi of presenting a softened account of controversial episodes, including the Emergency and the 1984 anti-Sikh riots. Congress leaders have rejected the criticism, calling it an attempt to politicise a personal memoir.\n\n#SoniaGandhi #VeerSavarkar #ShivSena #Mumbai #Politics #Moneycontrol",
+      "created_at": "2026-11-18T10:14:11+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122996784733794584",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122996527799173296",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "SpiceJet board approves plan to raise up to Rs 5,500 crore, increases authorised capital\n\nSpiceJet is looking to shore up its finances and restart its growth plans as it explores fresh investments and prepares to expand its fleet and network\n\n@swarajsb reports:\nhttps://t.co/cDg8ioWY75",
+      "created_at": "2026-11-18T10:13:10+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122996527799173296",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122996078475936053",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | 🔔Closing Bell: Markets snap 2-day rally: Sensex settles 500 pts lower, Nifty ends below 25,250: key factors behind decline\n\nSensex, Nifty witnesed profit booking amid elevated technical readings and weakness across select sectors.\n\nRead More:\nhttps://t.co/Ot1AcdhkKT",
+      "created_at": "2026-11-18T10:11:23+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122996078475936053",
+      "image": "https://pbs.twimg.com/media/HXZlkDZbgAEkR7e.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122996004672930181",
+      "handle": "CNBCTV18News",
+      "display_name": "CNBC-TV18",
+      "text": "🏗️ Cement makers plan ₹75,000 crore in capex over FY27-FY28, even as rising costs pressure margins.\n\n💬 “Capacity additions will remain the primary driver,” says Crisil Ratings' Anand Kulkarni.\n\n✍️ @sheersh0510 tracks the expansion and profitability outlook.\n\nhttps://t.co/XIOG9meJBK\n\n#Cement #Capex #Infrastructure #CorporateEarnings #CNBCTV18",
+      "created_at": "2026-11-18T10:11:05+00:00",
+      "url": "https://x.com/CNBCTV18News/status/2122996004672930181",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122993963825287524",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | Six-day-old baby becomes India's youngest demat account holder. Here's how her parents opened it\n\nWith rising education costs and other long-term financial goals, parents are increasingly looking at investment options that can help build a corpus for their children's future\n\n@imNavneetDubey with details 👇\nhttps://t.co/09omepkOmk",
+      "created_at": "2026-11-18T10:02:58+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122993963825287524",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122990697779511411",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | Goldman Sachs sees RBI raising repo rate to 6.25% by mid-2027, India growth slowing to 7.2%\n\n- Goldman Sachs expects RBI to raise repo rate to 6.25 percent.\n- Headline inflation is forecast to average 5.7 percent in 2027.\n- India's GDP growth is projected to moderate to 7.2 percent.\n\nRead More:\nhttps://t.co/UgdS9oC0ZI",
+      "created_at": "2026-11-18T09:50:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122990697779511411",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122986742878007443",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Live: Capital market stocks hit on Sebi's MTF rules report, Metal stocks slide | Closing Bell\n\n@lovishadarad https://t.co/HARVybuBAZ",
+      "created_at": "2026-11-18T09:34:17+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122986742878007443",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122986693745840146",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Live: Capital market stocks hit on Sebi's MTF rules report, Metal stocks slide | Closing Bell https://t.co/kY4p1GGZ9L",
+      "created_at": "2026-11-18T09:34:05+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122986693745840146",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122986496680771600",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Closing Bell \n\n-Markets retreat from 9-months high\n- Capital market stocks hit on Sebi's MTF rules report\n- Metal stocks slide\n\nTune in live with @LovishaDarad 👇\nhttps://t.co/5iIwMtOWId\n\n#StockMarket https://t.co/mFOzgB3PPc",
+      "created_at": "2026-11-18T09:33:18+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122986496680771600",
+      "image": "https://pbs.twimg.com/media/HXZc9b4bMAAigJx.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122985664480244213",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | HSBC decodes India’s near-$40 billion October trade gap\n\n- India trade deficit widened to nearly $40B in October.\n- Investment-related purchases drove part of the import surge.\n- Goods exports rose 45% year-on-year, providing a counterweight.\n\nRead More:\nhttps://t.co/zPHDfIxUV8",
+      "created_at": "2026-11-18T09:30:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2122985664480244213",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
     {
       "tweet_id": "2122984822285197822",
       "handle": "moneycontrolcom",
@@ -26,6 +336,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122983239258341606",
+      "handle": "marketsday",
+      "display_name": "Markets Today",
+      "text": "PVR Inox shares rally 4% to hit near 26-month high as CRISIL upgrades outlook to positive\n\n- PVR Inox shares hit a 26-month high, rallying nearly 4 percent.\n- CRISIL revised the company outlook to positive from stable.\n- Anand Rathi set a target price of Rs 1,880 for the stock.",
+      "created_at": "2026-11-18T09:20:22+00:00",
+      "url": "https://x.com/marketsday/status/2122983239258341606",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
     },
     {
       "tweet_id": "2122982931174162652",
@@ -94,8 +424,33 @@
       "created_at": "2026-11-18T09:08:49+00:00",
       "url": "https://x.com/moneycontrolcom/status/2122980334656795078",
       "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122979741426930133",
+      "handle": "VinodBh87402638",
+      "display_name": "Vinod Bhandari",
+      "text": "E2E Networks, Mtar Tech shares snap 2-day decline as Nvidia earnings beat estimates\n\nhttps://t.co/uBOHaJEMPs",
+      "created_at": "2026-11-18T09:06:28+00:00",
+      "url": "https://x.com/VinodBh87402638/status/2122979741426930133",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
     },
     {
       "tweet_id": "2122979459884032322",
@@ -110,6 +465,42 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122979140181901452",
+      "handle": "praseninld",
+      "display_name": "Prasenjeet Dash",
+      "text": "📊Tech Rebounds; Gold Hits 1-Year Low!\n\n🚀E2E Networks &amp; MTAR Tech bounce on Nvidia’s earnings beat.\n🏛️FinMin weighs tax tweaks to boost cash trading and curb F&amp;O, report says.\n🪙Gold sinks to a 1-year low; fake gold scam raises purity concerns.\n\n#StockMarket #Nvidia #Gold #Nifty",
+      "created_at": "2026-11-18T09:04:04+00:00",
+      "url": "https://x.com/praseninld/status/2122979140181901452",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122978839831953580",
+      "handle": "shubham43MP",
+      "display_name": "Shubham Dixit",
+      "text": "#EFFWA \nEffwa Infra & Research H1 FY27 Concall Summary:\n\nProfits grew strongly in H1, but cash flow went the wrong way. Revenue was up 44.8% and PAT up 48.8%. Operating cash flow was negative because of working capital, and the order book is still well short of the Rs 1,000 cr target for March 2027.\n\nKey numbers:\n• Revenue Rs 130.6 cr vs Rs 90.2 cr, up 44.8% YoY\n• EBITDA Rs 21.2 cr, up 37.1%; margin 16.2%\n• PAT Rs 15.1 cr, up 48.8%; PAT margin 11.6% (up 40 bps); EPS Rs 6.52 vs 4.38\n• Order book Rs 675+ cr; bid pipeline Rs 2,400+ cr; new orders Rs 160+ cr in H1\n• Operating cash flow -Rs 23.7 cr vs +Rs 23.5 cr in H1 FY26\n• Receivables Rs 133.4 cr vs Rs 128.7 cr in March; borrowings Rs 69.5 cr; D/E 0.5x\n• ROE 22.1%, ROCE 26.5%; private sector 44% of revenue vs 38% in FY26\n\nGuidance:\n• Order book of Rs 1,000 cr by March 2027; a couple of orders are in the last stage of negotiation\n• About 80% of the Rs 675 cr order book can be executed across FY27-FY28\n• H1/H2 revenue split of about 35:65, as in the past two years\n• Rs 315 cr JSW project: 15-20% done in H1, another 30-40% expected in H2\n• EBITDA margin of 16-17%; working capital at 180-190 days\n• D/E to come back below 0.3x; growth to be funded from internal accruals unless they bid for single projects of Rs 800-1,000 cr\n• ZMD final patent expected in about 12 months; the trial project under NDA also needs about a year\n\nKey positives:\n• The 48 MLD ZLD at SAIL Rourkela (contract value above Rs 200 cr) was delivered on time\n• Provisional patent filed for zero material discharge (ZMD), which is meant to turn ZLD salt residue into byproducts that can be sold\n• CRISIL raised its rating to BBB+/Stable (long term) and A2 (short term)\n• O&M revenue up 60% to Rs 2.1 cr, and every major ZLD bid now includes O&M\n• Bids placed for data center, desalination and CBG projects (including with EIL)\n\nKey watchouts:\n• Order book of Rs 675 cr vs a Rs 1,000 cr target, with about 4.5 months left. An analyst put FY27 inflow at Rs 55-60 cr, while management said Rs 160+ cr\n• Negative operating cash flow came from payables falling to Rs 7.4 cr from Rs 25.9 cr and inventory rising to Rs 9 cr from Rs 0.3 cr\n• 10-12% retention money stays in receivables for about 3 years\n• An analyst said gross margin fell about 5 points; management blamed a higher share of supply work in the mix\n• 20% of promoter shares are pledged to banks to secure working capital limits\n• ZMD has no revenue yet: the patent and the client trial are both about a year away\n\nFinal view: Stable. Execution and profitability are on track, and ZMD gives the company a possible edge it doesn't have yet. But order inflow has to speed up, and cash conversion has to improve in H2, before the 2-3 year growth case gets stronger.",
+      "created_at": "2026-11-18T09:02:53+00:00",
+      "url": "https://x.com/shubham43MP/status/2122978839831953580",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -236,6 +627,42 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122975771400806842",
+      "handle": "marketsday",
+      "display_name": "Markets Today",
+      "text": "Shares of #PVRInox jumped around 4% on Wednesday, extending gains to over 6% in two days after ratings agency CRISIL revised its outlook for the firm’s long-term bank facilities and non-convertible debentures (NCDs) to ‘Positive’ from ‘Stable’.",
+      "created_at": "2026-11-18T08:50:41+00:00",
+      "url": "https://x.com/marketsday/status/2122975771400806842",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122975510343127500",
+      "handle": "Er_Vpin",
+      "display_name": "Er. Vipin | Multibagger Bloodhound",
+      "text": "🔥 STOCKS ON FIRE TODAY\n\n📡 IT, AI & Digital\n• Sterlite Technologies\n• E2E Networks\n• Technvision Ventures\n• Mobavenue AI Tech\n• String Metaverse\n• Quick Heal Technologies\n\n🏦 Financial Services\n• IIFL Finance\n• India Shelter Finance\n\n⚙️ Capital Goods & Engineering\n• Inox India\n• Ajax Engineering\n• Vesuvius India\n• Greaves Cotton\n• Modern Insulators\n• Simplex Infrastructures\n• Salasar Techno\n• Wonder Electricals\n• Control Print\n• Tirupati Forge\n• Neetu Yoshi\n• Modern Malleable\n• W S Industries\n• Highway Infrastructure\n• Brahm Vrit Industries\n\n🚗 Auto & Mobility\n• Zelio E-Mobility\n• NDR Auto Components\n\n⚡ Energy & Power\n• GSPL\n• Confidence Petroleum\n• India Power Corporation\n\n🧪 Pharma & Healthcare\n• Indoco Remedies\n• Syncom Formulations\n• Bharat Parenterals\n• GFL\n\n🏭 Materials, Metals & Textiles\n• Greenlam Industries\n• Sangam India\n• Monolithisch India\n• Faze Three\n\n💎 Jewellery & Consumer\n• Utsav CZ Gold\n• Advait Jewels\n• United Foodbrands\n• Urban Company\n\n✈️ Travel & Aviation\n• Easy Trip Planners\n• SpiceJet\n\n🏗️ Infrastructure & Real Estate\n• Ashoka Buildcon\n• B-Right Real Estate\n• Bluspring Enterprises\n\n🎬 Media & Entertainment\n• Sunshine Pictures\n\n📦 Trading & Diversified\n• Mrugesh Trading\n• Sobhagya Mercantile\n• Pervasive Commodities\n• HP Telecom\n\n#StocksToWatch",
+      "created_at": "2026-11-18T08:49:39+00:00",
+      "url": "https://x.com/Er_Vpin/status/2122975510343127500",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122975363492118560",
       "handle": "XO_TINKK",
       "display_name": "Simple",
@@ -252,6 +679,22 @@
       ]
     },
     {
+      "tweet_id": "2122973964045820254",
+      "handle": "SWINGSTOCKSWALA",
+      "display_name": "swingstockswala",
+      "text": "𝗠𝘂𝗹𝘁𝗶𝗯𝗮𝗴𝗴𝗲𝗿 𝗦𝘁𝗼𝗰𝗸𝘀 𝗳𝗿𝗼𝗺 𝗙𝘂𝘁𝘂𝗿𝗶𝘀𝘁𝗶𝗰 𝗦𝗲𝗰𝘁𝗼𝗿𝘀 🔥 ( for full list & level join telegram link in bio ) \n\nAI 🖥️\n👉 E2E Networks \n👉 All E tech\n👉 Netweb Tech\n\nGreen hydrogen 🏭 \n👉 Anup engineering \n👉 Advait Infra\n\nData Centre 🛜\n👉 Marine Electricals \n👉 Aurionpro \n👉 Blackbox\n\nSemiconductor 🗺️\n👉 Kaynes Tech \n👉 RIR Power\n\nFintech 🏦\n👉 NPST \n👉 Zaggle prepaid \n👉 Trust Funtech\n\nManufacturing 📺\n👉 E pack \n👉 Aimtron \n👉 PG Electroplast \n\nWater 🌊 \n👉 Jash engineering \n👉 EMS\n\nNo buy sell \n#stocks",
+      "created_at": "2026-11-18T08:43:30+00:00",
+      "url": "https://x.com/SWINGSTOCKSWALA/status/2122973964045820254",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122973927593116135",
       "handle": "SharpOncologist",
       "display_name": "Vedanta",
@@ -264,6 +707,22 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122972748670464062",
+      "handle": "sociallyoakwood",
+      "display_name": "ManInTheMirror",
+      "text": "@LightspeedIndia @SarvamAI E2E Networks, Nesta, Krutrim, IndieRouter, Yotta etc already offer this service. Why exactly did Sarvam enter this space when their mission was something entire different? Sarvam basically built a neo cloud on tax payers money and are charging back 2x to citizens who funded it!",
+      "created_at": "2026-11-18T08:38:40+00:00",
+      "url": "https://x.com/sociallyoakwood/status/2122972748670464062",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
         }
       ]
     },
@@ -304,6 +763,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122971476639019505",
+      "handle": "inderjeetKau",
+      "display_name": "inderjeet",
+      "text": "@VSR9000 any view's on icra care CRISIL they have been battered badly with near zero return for past five years kindly share thanks",
+      "created_at": "2026-11-18T08:33:37+00:00",
+      "url": "https://x.com/inderjeetKau/status/2122971476639019505",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
     },
     {
       "tweet_id": "2122971320011153455",
@@ -350,6 +829,22 @@
         {
           "entityId": "isin:INE674K01013",
           "query": "\"Aditya Birla Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122969595829219790",
+      "handle": "sociallyoakwood",
+      "display_name": "ManInTheMirror",
+      "text": "@cneuralnetwork E2E Networks, Nesta, Krutrim, IndieRouter, Yotta etc already offer this service. Why exactly did Sarvam enter this space when their mission was something entire different? Sarvam basically built a neo cloud on tax payers money and are charging back 2x to citizens who funded it!",
+      "created_at": "2026-11-18T08:26:09+00:00",
+      "url": "https://x.com/sociallyoakwood/status/2122969595829219790",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
         }
       ]
     },
@@ -447,6 +942,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122966889991385277",
+      "handle": "et_telugu",
+      "display_name": "Economic Times Telugu",
+      "text": "https://t.co/9nyhfs4ano\nCRISIL రేటింగ్ అప్ గ్రేడ్ తో దూసుకెళ్తున్న PVR INOX లిమిటెడ్ షేర్లు. ఆల్ టైమ్ హై రికార్డుని టచ్ చేసిన షేర్.",
+      "created_at": "2026-11-18T08:15:24+00:00",
+      "url": "https://x.com/et_telugu/status/2122966889991385277",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
     },
     {
       "tweet_id": "2122966688996131274",
@@ -688,6 +1203,26 @@
       ]
     },
     {
+      "tweet_id": "2122963702484013248",
+      "handle": "ETNowSwadesh",
+      "display_name": "ET Now Swadesh",
+      "text": "PVR Inox Share: कर्ज चुकाकर बना नेट कैश बनी कंपनी, CRISIL के भरोसे के बाद 2 साल के टॉप पर पहुंचा शेयर\n\n#PVRInox #PVRInoxShare #CRISIL #StockMarket #ETNSMarket \n\nhttps://t.co/Rq3qNCY52F",
+      "created_at": "2026-11-18T08:02:44+00:00",
+      "url": "https://x.com/ETNowSwadesh/status/2122963702484013248",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122963274958557585",
       "handle": "bsindia",
       "display_name": "Business Standard",
@@ -748,6 +1283,26 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122960852223725786",
+      "handle": "snipy_in",
+      "display_name": "Market Intelligence 🇮🇳",
+      "text": "PVR Inox shares jump 6% in two days to fresh 52-week high of around ₹1,740 after CRISIL upgrades outlook to Positive\n\nCRISIL reaffirms AA long-term rating, cites net cash position in H1 FY27 and diversified content mix as key drivers https://t.co/FFB99fSBMn",
+      "created_at": "2026-11-18T07:51:24+00:00",
+      "url": "https://x.com/snipy_in/status/2122960852223725786",
+      "image": "https://pbs.twimg.com/media/HXZFnbGbkAA6ozA.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -945,6 +1500,26 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122955465441386855",
+      "handle": "ETMarkets",
+      "display_name": "ETMarkets",
+      "text": "Shares of #PVRInox jumped around 4% on Wednesday, extending gains to over 6% in two days after ratings agency CRISIL revised its outlook for the firm’s long-term bank facilities and non-convertible debentures (NCDs) to ‘Positive’ from ‘Stable’.\n#ETMarkets \n\nRead more here \nhttps://t.co/Q67EzwRFqv",
+      "created_at": "2026-11-18T07:30:00+00:00",
+      "url": "https://x.com/ETMarkets/status/2122955465441386855",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -1230,6 +1805,22 @@
       ]
     },
     {
+      "tweet_id": "2122948349770994087",
+      "handle": "10PointerEquity",
+      "display_name": "VISHAL GOYAL",
+      "text": "Kanohar\nUnimech\nBluspring \nSanathan Textile\nAeroflex \nMAHABANK\nESAF SFB\nArman Fin\nL&amp;T Fin\nOne MobiKwik \nEmerald Fin\nKross Ltd\nSportking \nTimex\nTata Capital\nFusion Fin\nTARIL\nE2E Networks\nMadhusudan Masala\nStandard Eng\nRBL BANK\nBajaj Telefilms\nPremier Explosives\nZen Technologies",
+      "created_at": "2026-11-18T07:01:43+00:00",
+      "url": "https://x.com/10PointerEquity/status/2122948349770994087",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122948305197867187",
       "handle": "TheVedantaTimes",
       "display_name": "Vedanta Times",
@@ -1255,6 +1846,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2122947150460125264",
+      "handle": "FinanceFlashNow",
+      "display_name": "Finance Flash",
+      "text": "PVR INOX SHARES SURGE 6% AFTER CRISIL UPGRADE\n\nThe cinema chain's stock climbed about 6% in two days, hitting a fresh 52‑week high following CRISIL's upgrade of its outlook to positive.\n\n#Sensex #PVRInox",
+      "created_at": "2026-11-18T06:56:57+00:00",
+      "url": "https://x.com/FinanceFlashNow/status/2122947150460125264",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
     },
     {
       "tweet_id": "2122946842833060307",
@@ -1376,6 +1987,22 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122944116288012350",
+      "handle": "Investingsguru",
+      "display_name": "Investing Guru",
+      "text": "India's Next Big Wealth Creation Opportunity: 7 Sectors to Watch for 2027–2031 https://t.co/HHAVglG6FJ",
+      "created_at": "2026-11-18T06:44:54+00:00",
+      "url": "https://x.com/Investingsguru/status/2122944116288012350",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
         }
       ]
     },
@@ -1751,6 +2378,26 @@
       ]
     },
     {
+      "tweet_id": "2122940297068044670",
+      "handle": "VSR9000",
+      "display_name": "VSR",
+      "text": "If your PF doesn't own a piece of the capital markets, are you just a customer... 🫠\n\n1️⃣ NSE, BSE, MCX, CDSL, NSDL, CAMS, KFINTECH\n\n2️⃣ ANGELONE, GROWW, MOTILALOFS\n\n3️⃣ NUVAMA, 360ONE, ANANDRATHI, IIFLCAPS, EDELALTS\n\n4️⃣ ICICIAMC, SBIFUNDS, HDFCAMC, NAM-INDIA, UTIAMC, ABSLAMC, CRAMC\n\n5️⃣ CARERATING, ICRA, CRISIL",
+      "created_at": "2026-11-18T06:29:43+00:00",
+      "url": "https://x.com/VSR9000/status/2122940297068044670",
+      "image": "https://pbs.twimg.com/media/HXYvYewbAAELK4b.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122940118235505092",
       "handle": "SharpOncologist",
       "display_name": "Vedanta",
@@ -1960,6 +2607,22 @@
       ]
     },
     {
+      "tweet_id": "2122936381429420453",
+      "handle": "viralbshah",
+      "display_name": "Viral Shah",
+      "text": "It seems @grok did not reply. It seems there are only 2 common stocks! \nESDS Software Solution — Top holding for Mukul Agrawal and also in Ashish Kacholia’s top 3. \nNeuland Laboratories — Top holding for Mukul Agrawal and also a top holding for Vijay Kedia.",
+      "created_at": "2026-11-18T06:14:10+00:00",
+      "url": "https://x.com/viralbshah/status/2122936381429420453",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0DRI01029",
+          "query": "\"Esds Software Solution\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122936189661643153",
       "handle": "khiboubkr",
       "display_name": "Victoria Brooks",
@@ -2148,6 +2811,22 @@
         {
           "entityId": "isin:INE423A01024",
           "query": "\"ADANIENT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122933940491342093",
+      "handle": "chartwhisp60202",
+      "display_name": "Chart Whisperer",
+      "text": "84 COMPANIES WITH STRONG FUTURE GROWTH POTENTIAL TO TRACK!\n\n1. Netweb Technologies\n2. Cupid\n3. TD Power Systems\n4. Muthoot Finance\n5. Aequs\n6. BSE\n7. Kanohar Electricals\n8. Laurus Labs\n9. Sky Gold\n10. Apollo Micro Systems\n11. Lumax Auto Technologies\n12. Anthem Biosciences\n13. E2E Networks\n14. KSH International\n15. Solar Industries\n16. CAMS\n17. Ather Energy\n18. Yash Highvoltage\n19. Data Patterns\n20. Titan\n21. Diamond Power Infrastructure\n22. Angel One\n23. Sakar Healthcare\n24. Shyam Metalics\n25. MCX\n26. Unimech Aerospace\n27. KRN Heat Exchanger\n28. Mankind Pharma\n29. V2 Retail\n30. SEDemac Mechatronics\n31. CDSL\n32. Aarti Pharma\n33. HBL Engineering\n34. Divi's Laboratories\n35. Quality Power\n36. Motilal Oswal\n37. Milky Mist\n38. Sterlite Technologies\n39. Kalyan Jewellers\n40. Marine Electricals\n41. Morepen Laboratories\n42. Akums Drugs\n43. UNO Minda\n44. Permanent Magnets\n45. Gland Pharma\n46. Shadowfax\n47. SML Mahindra\n48. Kitex Garments\n49. Shilpa Medicare\n50. RR Kabel\n51. Netweb Technologies\n52. Capri Global Capital\n53. Acutaas\n54. Sai Life Sciences\n55. Ethos\n56. DEE Development Engineers\n57. Paytm\n58. Balaji Amines\n59. Ratnaveer Precision Engineering\n60. TVS Motor\n61. KRN Heat Exchanger\n62. Glenmark Pharmaceuticals\n63. Viviana Power\n64. Ind-Swift Laboratories\n65. SSWL\n66. Omnitech Engineering\n67. PN Gadgil Jewellers\n68. Neuland Laboratories\n69. Walchandnagar Industries\n70. TBZ\n71. Yatharth Hospital\n72. Divgi TorqTransfer\n73. SANSERA Engineering\n74. GVT&D\n75. Beta Drugs\n76. ESDS Software\n77. Jio Financial Services\n78. Minda Corporation\n79. Kabra Jewels\n80. KRBL\n81. RBL Bank\n82. Nelcast\n83. Deepa Jewellers\n84. ideaForge Technology\n\nTrack management guidance, order book growth, execution and future revenue visibility.",
+      "created_at": "2026-11-18T06:04:28+00:00",
+      "url": "https://x.com/chartwhisp60202/status/2122933940491342093",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
         }
       ]
     },
@@ -2881,6 +3560,42 @@
       ]
     },
     {
+      "tweet_id": "2122920159991980248",
+      "handle": "World_Data_A",
+      "display_name": "World Data Analysis",
+      "text": "🇮🇳🇮🇳🇮🇳\nINDIA’S JAW-DROPPING $14.5 BILLION STEEL BET \nOne planned complex. Enough annual capacity to exceed FRANCE’s entire 2025 crude steel output\n\nIndia laid the foundation stone for a new steel complex in Andhra Pradesh in March 2026. AM/NS India plans to build it in two phases. If both are completed, the complex will have the capacity to make 17.8 million tonnes of crude steel a year.\n\nHere’s how that compares with what three countries actually produced in 2025:\n🇫🇷 France  9.9 million tonnes. The complex would have 1.8 times that capacity.\n🇪🇸 Spain  11.8 million tonnes. That’s about 50% more than Spain produced.\n🇹🇷 Türkiye  38.1 million tonnes. The complex’s capacity would equal 47% of Türkiye’s output.\n\nAdditionally, this complex alone would have the equivalent of 8% of India’s entire steelmaking capacity as of June 2026.\n\nThe two-phase project was announced at about $14.5 billion at the exchange rate on the day of the ceremony. The plans include a dedicated port and a pipeline connection for iron ore. The first phase accounts for 8.2 million tonnes of annual capacity, with primary steelmaking targeted for 2030–31.\n\nIndia's output grew 10.4% that year, even as global production fell about 2%.\n\nOne detail worth watching. The first phase will use coal-based blast furnaces. A lower-emissions process is still an option for phase two, but no decision has been announced.\nSources: CRISIL Ratings, ArcelorMittal Nippon Steel India, World Steel Association",
+      "created_at": "2026-11-18T05:09:42+00:00",
+      "url": "https://x.com/World_Data_A/status/2122920159991980248",
+      "image": "https://pbs.twimg.com/media/HXYgnvHWwAAECSy.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122919928399552532",
+      "handle": "investwithyash_",
+      "display_name": "Investor Yash",
+      "text": "Meet ESDS Software Solution Ltd.\n\nIt started as a simple web hosting company. Today, ESDS is trying to become a full-stack AI infrastructure player. And it wants to do it using India's surplus power to serve global AI labs.\n\nFirst, what does ESDS actually sell? \n\nThink of it as one company that does three things for a customer's entire tech life.\n\n🏗️ IaaS (Infrastructure as a Service) Simply put: ESDS gives you the \"land and building\" for your tech.\n\n- Colocation and data centers: you rent space and power to keep your servers.\n- Cloud computing: you rent computing power instead of buying machines. It comes as public, private, hybrid and community clouds, including a Government cloud and an SAP HANA cloud.\n- Newly launched GPU-as-a-Service (GPUaaS): you rent very powerful AI chips by the hour to train and run AI.\n\n🛠️ Managed Services Simply put: ESDS becomes your IT team.\n\n- 24/7 IT support\n- Data backup and recovery\n- Migration (moving you to the cloud)\n- Database administration (including SAP Basis and HANA)\n- Security operations center (SOC), meaning a team that watches for hackers\n- Disaster recovery (the plan B if things crash)\n\n💻 SaaS (Software as a Service) Simply put: ESDS's own software products.\n\n- Data center management suites\n- Vulnerability scanners (they check for weak spots)\n- WAF (web application firewall, a security guard for websites)\n- Secure VPN (a private tunnel for your internet traffic)\n- Swaraj Cloud: a patented platform that auto-scales vertically, so it adds power to a machine when load rises\n- Swaraj Bodhi: AI for running operations\n- Swaraj Garuda: monitors how well applications perform\n- Famrut: an advisory portal for farmers\n\nThe idea: customers don't buy three separate things. ESDS supports their whole tech journey from one place.",
+      "created_at": "2026-11-18T05:08:47+00:00",
+      "url": "https://x.com/investwithyash_/status/2122919928399552532",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE0DRI01029",
+          "query": "\"Esds Software Solution\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122919173479338179",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -2904,6 +3619,26 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122918645424881948",
+      "handle": "Krishna_mok",
+      "display_name": "annualreportai.live",
+      "text": "https://t.co/aQifmiRGkV",
+      "created_at": "2026-11-18T05:03:41+00:00",
+      "url": "https://x.com/Krishna_mok/status/2122918645424881948",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -2940,6 +3675,26 @@
       ]
     },
     {
+      "tweet_id": "2122918163109335528",
+      "handle": "wegro_app",
+      "display_name": "Wegro App",
+      "text": "𝗔𝗮𝗿𝘃𝗶 𝗘𝗻𝗰𝗼𝗻 𝗟𝘁𝗱: 𝗜𝗻𝘃𝗲𝘀𝘁𝗼𝗿 𝗣𝗿𝗲𝘀𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗦𝘂𝗺𝗺𝗮𝗿𝘆 (𝗤2/𝗛1-𝗙𝗬27) 📊 :\nAarvi Encon Ltd, a leading technical manpower outsourcing company with 38 years of experience, presented its Q2 and H1 FY27 results. The company boasts a 3-year revenue CAGR of 14% and a low gearing ratio of 0.10x, alongside world-class certifications (ISO 9001, 45001, 14001). Long-term ratings are reaffirmed at CRISIL BBB/Stable.\n\n𝗞𝗲𝘆 𝗢𝗽𝗲𝗿𝗮𝘁𝗶𝗼𝗻𝗮𝗹 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀:\n\n- 𝗖𝗹𝗶𝗲𝗻𝘁 𝗔𝗰𝗾𝘂𝗶𝘀𝗶𝘁𝗶𝗼𝗻: Added over 12 new clients in Q2-FY27 & 20+ in H1-FY27, maintaining a strong 97% client retention rate. 🤝\n- 𝗢𝗿𝗱𝗲𝗿 𝗪𝗶𝗻𝘀: Secured domestic orders aggregating over INR 1,743 Mn in Q2-FY27, including a significant order from CEIL and an approx. INR 300 Mn order from MGL.\n- 𝗦𝗲𝗿𝘃𝗶𝗰𝗲 𝗠𝗶𝘅: Increasing contribution from higher-margin Operations & Maintenance (O&M) services to improve revenue quality. 📈\n- 𝗚𝗲𝗼𝗴𝗿𝗮𝗽𝗵𝗶𝗰𝗮𝗹 𝗣𝗿𝗲𝘀𝗲𝗻𝗰𝗲: Maintained a balanced mix of domestic (87%) and international (13%) operations for revenue diversification.\n- 𝗚𝗿𝗼𝘄𝘁𝗵 𝗙𝗼𝗰𝘂𝘀: Investing in skilled manpower & infrastructure for the Engineering Services division to support larger assignments.\n\n𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲 (𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱):\n\n𝗤2-𝗙𝗬27:\n\n- Operational Income: INR 1,605 Mn (YoY +1.0%)\n- Net Profit (PAT): INR 36 Mn (YoY -25.0%)\n- Diluted EPS: INR 2.39 (YoY -25.5%)\n- EBITDA Margin: 2.55%\n\n𝗛1-𝗙𝗬27:\n\n- Operational Income: INR 3,332 Mn (YoY +7.4%)\n- Net Profit (PAT): INR 96 Mn (YoY +6.7%)\n- Diluted EPS: INR 6.40 (YoY +6.0%)\n- EBITDA Margin: 2.58%\n\n𝗕𝘂𝘀𝗶𝗻𝗲𝘀𝘀 𝗢𝘃𝗲𝗿𝘃𝗶𝗲𝘄:\n\n- 𝗦𝗲𝗿𝘃𝗶𝗰𝗲𝘀: Deputation of Technical Staffing, Project Management, Construction supervision, Inspection, Pre-Commissioning & Commissioning Assistance, and O&M.\n- 𝗦𝗲𝗰𝘁𝗼𝗿𝘀 𝗦𝗲𝗿𝘃𝗲𝗱: Oil & Gas, Engineering, Power, Renewables, Petrochemicals, Infrastructure, etc.\n- 𝗠𝗮𝗻𝗽𝗼𝘄𝗲𝗿: Over 8,000+ engineers/technical personnel on payroll, with a database of over 800,000 resumes.\n- 𝗕𝘂𝘀𝗶𝗻𝗲𝘀𝘀 𝗠𝗶𝘅: Manpower Outsourcing (87%) & O&M (13%).\n- 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝘆 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: Oil & Gas (30%), Engineering (31%), Renewable (20%).\n\n𝗞𝗲𝘆 𝗠𝗲𝘁𝗿𝗶𝗰𝘀:\n\n- Net Worth (H1-FY27): INR 1,495 Mn\n- Net Debt to Equity (H1-FY27): 0.04x\n- ROE (FY26): 12.39%\n- ROCE (FY26): 9.94%\n\n📊 AARVI ENCON LTD | 🏷️ Investor Presentation\n\n🌐 Details: https://t.co/KO7alN7BC0\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
+      "created_at": "2026-11-18T05:01:46+00:00",
+      "url": "https://x.com/wegro_app/status/2122918163109335528",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122917969231798299",
       "handle": "Akhil3017",
       "display_name": "Akhil",
@@ -2972,6 +3727,46 @@
         {
           "entityId": "isin:INE423A01024",
           "query": "\"ADANIENT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122916936640274777",
+      "handle": "asrmurthy",
+      "display_name": "murthyasr",
+      "text": "For Andhra Pradesh's aquaculture economy, the recovery must reach the farmer's pond.\n\nSource: Crisil Ratings, Nov 17, 2026; Government of India data.\n\n#ShrimpExports #Aquaculture #AndhraPradesh #BizMasala",
+      "created_at": "2026-11-18T04:56:54+00:00",
+      "url": "https://x.com/asrmurthy/status/2122916936640274777",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122916931284218148",
+      "handle": "asrmurthy",
+      "display_name": "murthyasr",
+      "text": "Now comes the encouraging signal.\n\nCrisil Ratings expects India's shrimp export revenues to grow 10–12% this fiscal.\n\nThe US share of exports could recover from around 38% to 45%.\n\nValue-added shrimp exports could grow 18–20%.",
+      "created_at": "2026-11-18T04:56:52+00:00",
+      "url": "https://x.com/asrmurthy/status/2122916931284218148",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -3072,6 +3867,22 @@
       ]
     },
     {
+      "tweet_id": "2122914497900019947",
+      "handle": "NiftyBhaskar",
+      "display_name": "E.Bhaskar Rao",
+      "text": "🚨The next 10 years belong to AI!\n\nAI is not just a trend — it's a decade-long megatrend that could reshape the global economy.\n\nLooking for India's next AI small-cap opportunities? Keep these 3 stocks on your radar:\n\n🔥 E2E Networks – AI Cloud & GPU Infrastructure\n🔥 Netweb Technologies – AI Servers & Supercomputing\n🔥 Orient Technologies – IT Infrastructure & Data Centre Solutions\n\nThe AI revolution is just getting started. Today's small caps could become tomorrow's big winners!\nIs this the decade to accumulate India's AI infrastructure leaders? \n\n#AI #SmallCaps #IndianStockMarket #ArtificialIntelligence #Multibagger",
+      "created_at": "2026-11-18T04:47:12+00:00",
+      "url": "https://x.com/NiftyBhaskar/status/2122914497900019947",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122913269673521253",
       "handle": "khiboubkr",
       "display_name": "Victoria Brooks",
@@ -3152,6 +3963,42 @@
       ]
     },
     {
+      "tweet_id": "2122911854376939691",
+      "handle": "NiftyBhaskar",
+      "display_name": "E.Bhaskar Rao",
+      "text": "🚨NVIDIA's stellar results and powerful guidance reinforce one thing  the AI & Data Centre boom is far from over!\n\nIndia could be the next big beneficiary. Keep these stocks on your radar:\n\n🔥 STL Tech\n🔥 MTAR Tech\n🔥 ESDS\n🔥 E2E Networks\n🔥 HFCL\n🔥 KRN\n🔥 Aeroflex\n🔥 TD Power Systems\nThe AI revolution needs data centres, networking, cooling, power and infrastructure.\n\nCould this be the right time to ACCUMULATE quality AI infrastructure plays before the next leg of growth?\n\nSmart money should keep these names on the watchlist! 📈\n#NVIDIA #AI #DataCentre #IndianStocks #Multibagger #StockMarket",
+      "created_at": "2026-11-18T04:36:42+00:00",
+      "url": "https://x.com/NiftyBhaskar/status/2122911854376939691",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122911793534419106",
+      "handle": "CNBCTV18Live",
+      "display_name": "CNBC-TV18",
+      "text": "#CNBCTV18Market | #PVRInox rises over 3%, CRISIL revises outlook to positive from stable https://t.co/Ow6nZUzmD0",
+      "created_at": "2026-11-18T04:36:28+00:00",
+      "url": "https://x.com/CNBCTV18Live/status/2122911793534419106",
+      "image": "https://pbs.twimg.com/media/HXYY4XlaAAAp6Hq.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122911722361192831",
       "handle": "khiboubkr",
       "display_name": "Victoria Brooks",
@@ -3196,6 +4043,26 @@
         {
           "entityId": "isin:INE423A01024",
           "query": "\"Adani Enterprises\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122910975133397107",
+      "handle": "DB2Guide",
+      "display_name": "Nitin Gandhi",
+      "text": "@Ankitjhunjhunu Crisil mention 8 to 12% \nI don’t understand reason to lie which anyone can read \n\nI spoke with analyst from crisil who made that report \n\nThere are lot of ifs and buts in his analysis",
+      "created_at": "2026-11-18T04:33:12+00:00",
+      "url": "https://x.com/DB2Guide/status/2122910975133397107",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -3260,6 +4127,22 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122907852113170449",
+      "handle": "WealthGenius_",
+      "display_name": "Wealth Genius News and Updates",
+      "text": "📊 RSI ABOVE 70 | OVERBOUGHT STOCKS\n\nStocks with RSI above 70 and Market Cap above ₹1,000 Cr.\n\n📅 Screening Date: 17 November 2026\n\nRELIANCE, BHARTIARTL, HDFCBANK, ICICIBANK, SBIN, BAJFINANCE, LT, NSE, KOTAKBANK, AXISBANK, M&M, ITC, ETERNAL, ASIANPAINT, INDIGO, PNB, CHOLAFIN, UNIONBANK, GROWW, BANKBARODA, INDHOTEL, MARICO, DRREDDY, TATACONSUM, MAXHEALTH, UNOMINDA, MOTILALOFS, MAHABANK, BANKINDIA, EMCURE, ANANDRATHI, LICHSGFIN, ANGELONE, ASAHIINDIA, FORCEMOT, ABDL, APLLTD, IGIL, ERIS, DEEPAKFERT, HONASA, PVRINOX, ANURAS, SHREEJISPG, BONFIG, ABREL, KTKBANK, SAREGAMA, SGMART, SIGNATURE, YATHARTH, TANLA, TONBO, SPECTRUM, TVSSCS, FIEMIND, GREAVESCOT, SMT, THOMASCOOK, SGFIN, STEAMHOUSE, GHCL, AGIIL, STYLABAAZA, CHEMPLASTS, SHUKRAPHARMA, ANUP, SANDHARTECH, NILKAMAL, ORIENTHOT, KMCSHIL, XPRO, HINDOILEXP, RAMKY, ZELIO, KODYTECHNO, ALGOQUANT, GHVINFRA, TITANBIO, GCSL, HIIL, SKYWAYS, BFINVEST, GYFTR, DHANBANK, ALICON, JYOTISTRUC, LAXMIGOLDORNA, FAZE3Q, PERVASIVE, AKCAPITAL, NRL, BEEZAASAN, PANACHE, AERPACE, DHUNSERI, ARYAMANFIN.\n\n⚠️ RSI above 70 indicates strong momentum and a potentially overbought zone. It does not automatically signal a reversal.\n\nEducational purpose only. No buy/sell recommendation. DYOR.\n\nJoin our Telegram-  https://t.co/zh4G7QdCHY",
+      "created_at": "2026-11-18T04:20:48+00:00",
+      "url": "https://x.com/WealthGenius_/status/2122907852113170449",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE488A01050",
+          "query": "\"CHEMPLASTS\""
         }
       ]
     },
@@ -3424,6 +4307,26 @@
       ]
     },
     {
+      "tweet_id": "2122904634318537070",
+      "handle": "Mukeput",
+      "display_name": "शेयर बाजार का कीड़ा",
+      "text": "PVR INOX:* Company’s credit rating outlook has been revised to positive from 'Stable' by Crisil Ratings, with its long-term bank facilities &amp; non-convertible Debentures",
+      "created_at": "2026-11-18T04:08:01+00:00",
+      "url": "https://x.com/Mukeput/status/2122904634318537070",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122904573623103508",
       "handle": "khiboubkr",
       "display_name": "Victoria Brooks",
@@ -3472,6 +4375,26 @@
       ]
     },
     {
+      "tweet_id": "2122904083732549979",
+      "handle": "SeatradeIndia",
+      "display_name": "India Seatrade News",
+      "text": "https://t.co/J2WUr6sMHP",
+      "created_at": "2026-11-18T04:05:49+00:00",
+      "url": "https://x.com/SeatradeIndia/status/2122904083732549979",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122903884557607343",
       "handle": "khiboubkr",
       "display_name": "Victoria Brooks",
@@ -3500,6 +4423,26 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122903809290911799",
+      "handle": "Vivek_Ruparel",
+      "display_name": "ViRu",
+      "text": "3/7 📈 The good: • Revenue ₹224 Cr (FY22) → ₹1,146 Cr (FY26) • EBITDA margin 22–25% for 5 years • Order book ≈ 4.8x TTM revenue • CRISIL A/Stable; debt/net worth 0.15x (Mar-26)",
+      "created_at": "2026-11-18T04:04:44+00:00",
+      "url": "https://x.com/Vivek_Ruparel/status/2122903809290911799",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -3648,6 +4591,22 @@
       ]
     },
     {
+      "tweet_id": "2122901054765531453",
+      "handle": "JaiHindKB",
+      "display_name": "Stock Pile",
+      "text": "E2E Networks one of the best Datacenter play in India\nGlobal investing community must not miss E2E Networks\nFabulous result with Operating Margings  60%\n@BlackRock \n@Vanguard_Group",
+      "created_at": "2026-11-18T03:53:47+00:00",
+      "url": "https://x.com/JaiHindKB/status/2122901054765531453",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122900728260034627",
       "handle": "sauravanand04",
       "display_name": "Saurav Anand",
@@ -3744,6 +4703,22 @@
       ]
     },
     {
+      "tweet_id": "2122898234184216771",
+      "handle": "Supernova_star7",
+      "display_name": "Khalid",
+      "text": "Nvidia Q3 results...100%+ revenue gorwth....AI story growing and thriving... Positive for E2E Networks, Sterlite Tech and ESDS https://t.co/0UML6eJLWu",
+      "created_at": "2026-11-18T03:42:35+00:00",
+      "url": "https://x.com/Supernova_star7/status/2122898234184216771",
+      "image": "https://pbs.twimg.com/media/HXYMsYZbwAAcqCB.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122898087324643460",
       "handle": "avinashchby",
       "display_name": "Vedanta Today",
@@ -3792,6 +4767,26 @@
       ]
     },
     {
+      "tweet_id": "2122894464876429730",
+      "handle": "NipponIndiaMF",
+      "display_name": "Nippon India Mutual Fund",
+      "text": "A clear investment horizon with SDLs may bring clarity to your investment approach.\n\nIntroducing the Nippon India CRISIL - IBX SDL - June 2037 Index Fund, an open-ended Target Maturity Index Fund that invests in State Government Securities maturing between July 1, 2036 and June 30, 2037, subject to tracking error.\n\nWith a buy-and-hold strategy and an exposure to sovereign securities, the fund offers an opportunity to align investments with a defined maturity horizon.\n\nNFO period: 18 November to 26 November 2026.",
+      "created_at": "2026-11-18T03:27:36+00:00",
+      "url": "https://x.com/NipponIndiaMF/status/2122894464876429730",
+      "image": "https://pbs.twimg.com/media/HXYJQp_aQAAZlZ-.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122893006277915091",
       "handle": "Achalpandey150",
       "display_name": "Achal Pandey",
@@ -3804,6 +4799,26 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122892736324157567",
+      "handle": "me__kaushik",
+      "display_name": "Kaushik | Sebi Regd RA",
+      "text": "Today's Market Buzz - 18th November 2026.\n\n- HCLTech: Partners with Cohere to build, deliver sovereign AI solutions\n\n- Glenmark Ph: Ichnos Glenmark submits US FDA IND for ISB 2301, Phase 1 planned in 2027\n\n- Cipla: US FDA classifies October inspection at InvaGen’s Hauppauge facility as NAI\n\n- Groww: Ribbit Cap entities seller, BlackRock, Morgan Stanley among buyers in block deal\n\n- IIFL Fin: Fairfax likely to sell up to 13.25% eq via block deals, floor price Rs 611/sh\n\n- Supreme Petro: Signs Versalis tech pact for second 70 KTPA mABS line, ₹450 cr capex\n\n- Ashoka Buildcon: Emerges lowest bidder for NHAI project, quoted EPC price ₹1,465 cr\n\n- IMFA: Commences hot metal tapping from second furnace at Kalinganagar ferro chrome proj\n\n- Prestige Estates: Inks 50:50 JV with Advent for ₹4,500 cr commercial project in Andheri\n\n- PVR Inox: CRISIL revises outlook to positive from stable, AA rating reaffirmed",
+      "created_at": "2026-11-18T03:20:44+00:00",
+      "url": "https://x.com/me__kaushik/status/2122892736324157567",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -3836,6 +4851,26 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122890578480574471",
+      "handle": "Ankitjhunjhunu",
+      "display_name": "Ankit Sharma",
+      "text": "Glad I decided to exit Oriana Power a few days ago after going through the CRISIL report. The management initially guided for 100% growth, later revised it to 50%, whereas CRISIL's report mentions just 6–7%. What's even more concerning is that the management hasn't bothered to clarify where CRISIL's numbers come from.\n\nI was also aware that EPC is essentially a one-time business. The delays in tenders due to the absence of adequate grid infrastructure, coupled with the slow progress in the hydrogen business, made me believe that the market would continue to derate the stock. Considering all these factors, I felt it was better to exit rather than wait for further deterioration.\n\nI had entered the stock at ₹60–65 levels.",
+      "created_at": "2026-11-18T03:12:09+00:00",
+      "url": "https://x.com/Ankitjhunjhunu/status/2122890578480574471",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -3932,6 +4967,42 @@
         {
           "entityId": "isin:INE674K01013",
           "query": "\"Aditya Birla Capital\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122882023501254770",
+      "handle": "CNBCTV18Live",
+      "display_name": "CNBC-TV18",
+      "text": "#StocksToWatch | Here's a list of stocks that are in focus going into trade today\n\n🟢ACME Solar: Commissions 209 MWh Battery Storage At Bikaner, Total Capacity 990 MWh\n\n🟢Advait Energy: Bags ₹130 Cr GETCO Order For 220kV Line Reconductoring\n\n🟢Prime Focus: DNEG Partners Meta To Deliver 3D Movie Titles For Meta VR Glasses\n\n🟡Vedanta/HOEC: Govt Eases PSC Extension Norms, Allowed Till End Of A Field's Eco Life\n\n🔴Godrej Properties: Haryana Pollution Board Orders Closure At Sector 3 Gurugram Housing Project\n\n🔴Ion Exchange: CRISIL Cuts Outlook To Negative On Weak FY27 Show, EPC Provisions",
+      "created_at": "2026-11-18T02:38:10+00:00",
+      "url": "https://x.com/CNBCTV18Live/status/2122882023501254770",
+      "image": "https://pbs.twimg.com/media/HXX9u6eakAAGkkB.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122879675152400517",
+      "handle": "MarketMake83820",
+      "display_name": "MarketMaker",
+      "text": "*The AI Trio of India: Netweb vs E2E vs ESDS*\n\nAll 3 are called \"AI stocks\" but they sell completely different things. Don't buy them as one basket.\n\nHere's the breakdown 🧵\n\n*1/ NETWEB - The Seller*\n\nSells the box.\nMakes AI servers / HPC systems for Govt, Neoclouds, Enterprises.\n\nQ2 FY27:\nRevenue: ₹1,323 Cr (+336% YoY)\nPAT: ₹137 Cr (+335% YoY)\nEBITDA margin: 14.9%\nPAT margin: 10.2%\n\nOrder Book: ₹2,629 Cr + L1 ₹653 Cr + Pipeline ₹11,152 Cr\n\nValuation: ~₹24,800 Cr mkt cap, ∼66x PE\nBalance Sheet: Net cash, QIP ₹1,200 Cr done. Cleanest of the 3.\n\nRisk: Lumpy orders, Govt dependence, only 15% margin.\nStrength: Scale + execution proven. H1 PAT already > full FY26 PAT.\n\nIn one line: Biggest, most proven, but low margin.\n\n*2/ E2E NETWORKS - The Landlord*\n\nRents the box.\nGPU-as-a-Service, rents NVIDIA GPUs by the hour.\n\nQ2 FY27:\nRevenue: ₹224 Cr (+411% YoY)\nPAT: ₹73 Cr (vs loss last year)\nEBITDA margin: 76.6% - highest\nPAT margin: 32.5%\n\nOrder Book: ~₹1,000 Cr Sovereign AI deal till Jun-29\n\nValuation: ~₹10,600 Cr mkt cap, ∼90-160x TTM PE - meaningless, earnings just turned.\nBalance Sheet: Debt ₹450 Cr, up from ₹103 Cr. Capex heavy.\n\nRisk: Utilisation risk, GPU price crash, depreciation eats PAT. ROE only ∼6.5% despite 76% margin.\nStrength: Operating leverage. Every extra GPU = almost pure profit.\n\nIn one line: Highest margin, highest leverage, highest risk.\n\n*3/ ESDS - The Option Bet*\n\nSells cloud + services.\nOwn data centres, cloud, managed services, SaaS + GPUaaS.\n\nQ2 FY27:\nRevenue: ₹138 Cr (+48% YoY)\nPAT: ₹31 Cr (+41% YoY)\nEBITDA margin: 41.8%\nPAT margin: 22.5%\n\nOrder Book: $1,250 mn (~₹11,000 Cr) SharonAI deal - 8,200 B300 GPUs, starts Q3 FY27\n\nValuation: ~₹13,900 Cr mkt cap, ∼110x+ on old earnings - will crash if SharonAI executes.\nBalance Sheet: IPO ₹720 Cr, ₹673 Cr still unused. Debt low.\n\nRisk: Single-customer risk. SharonAI = 4.5x its current annual revenue. If delayed, stock collapses.\nStrength: Diversified, sticky. 86.7% revenue from existing customers. 2,545 customers.\n\nIn one line: Smallest base today, but revenue can 5x in 1 year if deal bills.\n\n*Final Take:*\n\nNetweb = Execution\nE2E = Leverage\nESDS = Lottery ticket on one contract\n\n*Disclaimer:* For education only. Not investment advice. I am not SEBI-registered. Please do your own research and consult a SEBI-registered advisor before investing. \n\n#ESDS #Netweb #E2ENetworks #AIStocks #GPU #DataCentre #IndiaAI #Nvidia #CloudComputing #StockMarketIndia #Investing #Q2Results #FundamentalAnalysis",
+      "created_at": "2026-11-18T02:28:50+00:00",
+      "url": "https://x.com/MarketMake83820/status/2122879675152400517",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
         }
       ]
     },
@@ -4084,6 +5155,26 @@
       ]
     },
     {
+      "tweet_id": "2122852079186395389",
+      "handle": "AnkushModi1983",
+      "display_name": "Ankush Modi | Indian Equity & Corporate News",
+      "text": "Adani Ports: Rating Update\n\nCrisil has reaffirmed AAA/Stable rating for Bank Loans &amp; NCDs\n\nCurrent Net Debt/EBIDTA &lt; 2.5x \n\nManagement has guided to keep this ratio in spite of the ongoing Capex.\n\n#AdaniPorts #adanigroup https://t.co/RK4jtBhdCv",
+      "created_at": "2026-11-18T00:39:11+00:00",
+      "url": "https://x.com/AnkushModi1983/status/2122852079186395389",
+      "image": "https://pbs.twimg.com/media/HXXitfFaMAARC0A.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122849783585140995",
       "handle": "vkendra",
       "display_name": "Vivekananda Kendra 🇮🇳",
@@ -4096,6 +5187,22 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"Vedanta\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122848103346864133",
+      "handle": "SECTOR_RES0123",
+      "display_name": "SECTOR RESEARCH 🌳",
+      "text": "Fake Selling 🚨🚨\n\nDon't miss DATA CENTRE theme. It's going to be a very high growth sector in next 2-3 years: \n\nESDS\nE2E Networks\nNetweb\nKRN HEAT\nTD POWER",
+      "created_at": "2026-11-18T00:23:23+00:00",
+      "url": "https://x.com/SECTOR_RES0123/status/2122848103346864133",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
         }
       ]
     },
@@ -4460,6 +5567,22 @@
       ]
     },
     {
+      "tweet_id": "2122782812281688240",
+      "handle": "stockmarket108",
+      "display_name": "GOVIND 🩵",
+      "text": "Can you belive these small cap stock delivered Block Buster profit growth on YOY basis. 🔥🔥🔥\n\n* MTAR Tech: +1300%\n * Bodal Chemical: +1250%\n * Yasho Industries: +1000%\n * E2E Networks: +650%\n * HFCL: +450%\n * PG Electroplast: +400%\n * Savita Oil: +400%\n * Netweb Tech: +350%\n * Diamond Power: +320%\n * Roto Pumps: +250%\n * Confidence Petroleum: +240%\n * Deepak Nitrite: +235%\n * Steel Strips Wheels: +200%\n\nPlease DYOR 🙏\n#StockMarket #Earnings #SmallCap #MultiBagger",
+      "created_at": "2026-11-17T20:03:56+00:00",
+      "url": "https://x.com/stockmarket108/status/2122782812281688240",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122782478469324834",
       "handle": "rangl_david",
       "display_name": "David Rangl",
@@ -4568,6 +5691,26 @@
         {
           "entityId": "isin:INE205A01025",
           "query": "\"VEDL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122759297662898444",
+      "handle": "wegro_app",
+      "display_name": "Wegro App",
+      "text": "𝗟𝘂𝗺𝗶𝗻𝗼 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗲𝘀 𝗟𝘁𝗱: 𝗜𝗻𝘃𝗲𝘀𝘁𝗼𝗿 𝗣𝗿𝗲𝘀𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀 (𝗡𝗼𝘃 2026) 📊 :\nLumino Industries Ltd has released its investor presentation for November 2026, offering insights into its H1 FY27 performance and future outlook.\n\n𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲 (𝗛1 𝗙𝗬27):\n\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹1,183 Cr\n- 𝗘𝗕𝗜𝗧𝗗𝗔 𝗠𝗮𝗿𝗴𝗶𝗻: 13.1%\n- 𝗖𝗮𝗽𝗶𝘁𝗮𝗹 𝗦𝘁𝗿𝘂𝗰𝘁𝘂𝗿𝗲: Strong ROCE of 22.2% & ROE of 18.4%\n- 𝗖𝗮𝘀𝗵𝗳𝗹𝗼𝘄 𝗳𝗿𝗼𝗺 𝗢𝗽𝗲𝗿𝗮𝘁𝗶𝗼𝗻𝘀: ₹56 Cr (excluding ₹74 Cr Trade Acceptance Repayment)\n\n𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸:\n\n- 𝗘𝗣𝗖 𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸: ₹1,963 Cr (as on 30th September 2026)\n- 𝗠𝗮𝗻𝘂𝗳𝗮𝗰𝘁𝘂𝗿𝗶𝗻𝗴 𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸: ₹922 Cr\n\n𝗘𝘅𝗽𝗮𝗻𝘀𝗶𝗼𝗻 & 𝗚𝗿𝗼𝘄𝘁𝗵:\n\n- 𝗡𝗲𝘄 𝗙𝗮𝗰𝗶𝗹𝗶𝘁𝘆: Upcoming 35,000 MT cable manufacturing facility with a planned capex of ₹200 Cr.\n- 𝗖𝗼𝗺𝗺𝗲𝗻𝗰𝗲𝗺𝗲𝗻𝘁: Operations expected to begin in phases from H2 FY28.\n- 𝗣𝗿𝗼𝗱𝘂𝗰𝘁 𝗙𝗼𝗰𝘂𝘀: Expansion into High Temperature (HT) power cables up to 66 kV.\n- 𝗖𝗮𝗽𝗮𝗰𝗶𝘁𝘆: Additional capacity of 35,000 MT.\n\n𝗠𝗮𝗻𝘂𝗳𝗮𝗰𝘁𝘂𝗿𝗶𝗻𝗴 & 𝗘𝗣𝗖 𝗖𝗮𝗽𝗮𝗯𝗶𝗹𝗶𝘁𝗶𝗲𝘀:\n\n- 𝗠𝗮𝗻𝘂𝗳𝗮𝗰𝘁𝘂𝗿𝗶𝗻𝗴: Integrated setup for conductors, power cables, & electrical wires. One of the few companies qualified to supply HTLS Conductors. ⚡\n- 𝗘𝗣𝗖: Expertise in EHV Substations, Power T&D, & HTLS Re-Conductoring across India.\n\n𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝘆 𝗢𝘂𝘁𝗹𝗼𝗼𝗸:\n\n- 𝗙𝗮𝘃𝗼𝗿𝗮𝗯𝗹𝗲 𝗘𝗻𝘃𝗶𝗿𝗼𝗻𝗺𝗲𝗻𝘁: Government initiatives like NIP, PM Gati Shakti, NMP, & PLI schemes are driving infrastructure growth. 📈\n- 𝗠𝗮𝗿𝗸𝗲𝘁 𝗚𝗿𝗼𝘄𝘁𝗵: Conductor market size projected to reach ~₹400-460 billion by FY31. Wires & cables expected to grow at 13–14% CAGR.\n- 𝗞𝗲𝘆 𝗗𝗿𝗶𝘃𝗲𝗿𝘀: Shift towards HTLS conductors, expansion of high-voltage transmission lines, & renewable energy integration.\n\n𝗞𝗲𝘆 𝗠𝗶𝗹𝗲𝘀𝘁𝗼𝗻𝗲𝘀 & 𝗥𝗮𝘁𝗶𝗻𝗴𝘀:\n\n- 𝗖𝗥𝗜𝗦𝗜𝗟 𝗥𝗮𝘁𝗶𝗻𝗴: Upgraded to A+/Stable (Long Term) & reaffirmed A1 (Short Term).\n- 𝗘𝘅𝗽𝗼𝗿𝘁𝘀: Recognized as a Two Star Export House. 🌍\n- 𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗧𝗿𝗮𝗰𝗸 𝗥𝗲𝗰𝗼𝗿𝗱: Revenue CAGR of 20.4% & EBITDA CAGR of 32.1% from FY24 to FY26.\n\n📊 LUMINO INDUSTRIES LTD | 🏷️ Investor Presentation\n\n🌐 Details: https://t.co/fAROKkZGiG\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
+      "created_at": "2026-11-17T18:30:30+00:00",
+      "url": "https://x.com/wegro_app/status/2122759297662898444",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -5575,6 +6718,26 @@
         {
           "entityId": "isin:INE852O01025",
           "query": "\"APTUS\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122736035951943681",
+      "handle": "CoalitionGrnwch",
+      "display_name": "Crisil Coalition Greenwich",
+      "text": "Banking on AI: Moving corporate treasury from automation to transformation\n\nIn our latest webinar, industry leaders from Bank of America, BNP Paribas, and HSBC shared their perspectives on how treasury teams are...\n\nRead key takeaways:\nhttps://t.co/J8gM1BWltr https://t.co/tHd259endZ",
+      "created_at": "2026-11-17T16:58:04+00:00",
+      "url": "https://x.com/CoalitionGrnwch/status/2122736035951943681",
+      "image": "https://pbs.twimg.com/media/HXV5KPNWQAEcaBG.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -6818,6 +7981,26 @@
       ]
     },
     {
+      "tweet_id": "2122712924280004839",
+      "handle": "CoalitionGrnwch",
+      "display_name": "Crisil Coalition Greenwich",
+      "text": "A thoughtful Price &amp; Value Management Program can help firms develop more effective pricing strategies, better communicate their value, and ensure fees align with the services they deliver. \n\nRead the report to learn more: https://t.co/2JnpCGhFcU https://t.co/i4gkNg6iHz",
+      "created_at": "2026-11-17T15:26:13+00:00",
+      "url": "https://x.com/CoalitionGrnwch/status/2122712924280004839",
+      "image": "https://pbs.twimg.com/media/HXVjsZKXYAADucF.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122712831288291356",
       "handle": "Bharatvasi49541",
       "display_name": "supriya 🇮🇳",
@@ -7005,6 +8188,26 @@
       ]
     },
     {
+      "tweet_id": "2122708664343777471",
+      "handle": "equitybulls",
+      "display_name": "EquityBulls.com",
+      "text": "Crisil Ratings : Shrimp export revenues to grow 10-12% as US demand revives\n\n#CRISIL #INE007A01025 #Shrimp #Exports #US #DemandRevival\n\nhttps://t.co/K28NTPLg6k",
+      "created_at": "2026-11-17T15:09:18+00:00",
+      "url": "https://x.com/equitybulls/status/2122708664343777471",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122708367806542310",
       "handle": "Sacchinpa",
       "display_name": "Sacchin Panpaliya 🇮🇳",
@@ -7076,6 +8279,26 @@
         {
           "entityId": "isin:INE07RO01027",
           "query": "\"SUPRIYA\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122707860832580017",
+      "handle": "LokeshY24",
+      "display_name": "Lokesh Yadav",
+      "text": "Rentomojo Ltd - Q2 FY27 Concall Summary\n\nRevenue Grew 52%;  Live Subscribers Grew 42%, with 43% Expansion in Stores and Warehouse Capacity, ₹690 Cr Contractual Revenue and 40-50% Growth Ambition, Supported by Rising Rental Penetration\n\n1.  Financials (Consolidated)\n\nQ2 revenue +52% YoY; +12.5% QoQ \nNormalised EBITDA ~₹58.8 Cr (₹38 Cr last year); \n+52% YoY; +12.6% QoQ\nReported EBITDA +53% YoY; +44% QoQ (Q1 ~₹40 Cr after fire loss)\n\nQ2 one-offs: gratuity and leave liability reversal ~₹1.2 Cr; IPO expense ~₹0.8 Cr\nNormalised PAT ~₹24 Cr (₹15.7 Cr last year); +9.4% QoQ\nReported PAT down 62% YoY (last year's ₹48 Cr included ~₹33 Cr deferred tax asset) and up 132% QoQ\nQ1 reported PAT ₹7.8 Cr vs normalised ~₹22 Cr (fire ~₹11 Cr, deferred tax ~₹2.7 Cr)\nROCE and ROE slightly lower after IPO; still above the 20% aspiration\n\n2.  Business Performance\n\nPurchase value displaced ~₹450 Cr in Q2 (+60% YoY); ~₹850 Cr in H1\nItems ordered ~3.8 lakh in Q2 (+45% YoY); ~7 lakh in H1\nLive subscribers +42%; live items +44%\nWarehouse capacity +51%; store count +43%\nRevenue per item +4.65% QoQ; +6% H1; items per user ~2.8; occupancy 83-87%\n\nWebsite traffic +~50%; 'Rento' keyword searches +~66% (industry keyword +20-25%)\nGrowth broad-based across categories; water purifiers and air purifiers added (no selling, rental only)\nSeven new experience stores in Q2 (Delhi, Mumbai, Pune)\n\nCore cities ~90-91% of revenue; new cities perform well but contribute less\nFree relocation is a key differentiator\nAverage customer life ~18 months (16 earlier)\nGrowth rates: 35% to 40% to 45% to 50% (Q1) to 52% (Q2)\n\n3.  Order Book & Demand\n\nContractual revenue ~₹690 Cr at end of Q2\nBusiness starts each quarter with an existing subscriber base\n~4.8 crore rental apartments; ~3.8 crore addressable\nOnly 10-15% of rentals are furnished (Vietnam: 40-50%)\nIndustry rental households ~15-20 lakh so far\nAwareness is the main constraint; marketing spend stable as share of revenue\nCompetition: market largely a duopoly; Rentomojo is larger\nNCLT matter: hearing in December; no further comment\n\n4.  Capacity & Capex\n\nH1 capex ~₹190 Cr (FY26 full year ~₹175 Cr); capex growth ~140%\nCapex front-loaded; occupancy rose from 83% to 86%\nAC capex is 3-4x normal in April-July season\nGross block ₹529 Cr to ~₹702 Cr; net fixed assets ₹426 Cr to ₹565 Cr\nRun-rate suggests about double H1 for the year (management hint)\nCapex growth faster than revenue growth\nImplied value per item ~₹11,700 (₹10,600 a year ago): mix and AC\n\n5.  Balance Sheet & Cash Flow\n\nIPO proceeds ~₹150 Cr\nDebt ₹187 Cr to ~₹230 Cr; net debt ~₹130 Cr\nFunding waterfall: internal accruals first, then debt, then free cash flow focus\nMarginal cost of debt ~8.6%; long-term debt from large banks\nRated by CRISIL; revised rating process started\nNegative working capital business\nComfortable up to ~1x debt-to-equity if growth requires\n\n6.  Margins & Costs\n\nEBITDA margin ~40-41% on normalised basis\nCosts linked to items deployed, revenue is cumulative\nH1 deploys more items, so H2 margins are historically better (H1 ~40-41%, H2 ~42-43% last year)\nMarketing is a stable share of other expenses\nBuffer exists to trim experience investment if needed\nCost of funds less critical than occupancy and useful life\n\n7.  Guidance & Outlook\n\nFY27 PBT indicated ~₹90-95 Cr; no item-per-user growth built in\nNo revenue guidance; growth aspiration 40-50%+\nAims for ROCE above 20% while growing faster\nStronger H2 profit and cash flow historically\nAmbition to grow aggressively; depth in core cities\n\n8.  Key Risks\n\nNCLT matter\nReported profit volatility from one-offs\nRising capex and debt\nSeasonality in AC capex and revenue per item\nCompetition from furniture and appliance rentals and online\nCustomer awareness and acquisition cost",
+      "created_at": "2026-11-17T15:06:06+00:00",
+      "url": "https://x.com/LokeshY24/status/2122707860832580017",
+      "image": "https://pbs.twimg.com/media/HXVfFySbwAAoCGy.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -7539,6 +8762,22 @@
       ]
     },
     {
+      "tweet_id": "2122702446451712260",
+      "handle": "chetankale_",
+      "display_name": "Chetan Kale",
+      "text": "India's AI champion just opened a shop. Most of what it sells is Chinese.\n\nSo is Sarvam really India's answer to AI? Let's look.\n\nSarvam is a Bengaluru AI startup. In April 2025, it was the first company the government picked to build India's own AI model. The government now pays its full chip bill: ₹246.72 crore ($26.4M) for 4,096 NVIDIA chips.\n\nOn 16 Nov, Sarvam opened Token Factory. Think of it as an AI shop. Companies send in text, get AI answers back, pay in rupees, and their data stays in India.\n\nThe shop has 7 chat models. Only 1 is Sarvam's own. Five are Chinese, including DeepSeek. One is Google's.\n\nSo how good is Sarvam's own model? Artificial Analysis, an independent tester, scored it 18 at launch. A similar-sized free model from OpenAI scored 33. Sarvam shines in Indian languages and voice. But it's not close to the top labs.\n\nNow the money. Sarvam has raised about $341M (₹3,190 crore). Backers include Lightspeed, Peak XV, Khosla, HCLTech, Bessemer, and NVIDIA. It's valued at $1.5B.\n\nIts revenue last year? ₹45.1 crore ($4.8M), unaudited. So it's valued at about 311 times revenue. OpenAI is valued at about 25 times its revenue run rate (reported).\n\nAnd the shop isn't the cheapest. E2E Networks (@e2enetworks), an Indian cloud company, sells the same DeepSeek model for ₹4.2 per million tokens in. Sarvam charges ₹14.\n\nToken Factory keeps the data at home. But most of the intelligence on its shelves is still imported.\n\nMy read: Sarvam isn't India's OpenAI yet. Today it's India's AI landlord. That pays the bills. The real test is whether its own models get good enough to fill the shelves.",
+      "created_at": "2026-11-17T14:44:35+00:00",
+      "url": "https://x.com/chetankale_/status/2122702446451712260",
+      "image": "https://pbs.twimg.com/media/HXVZ0GbawAEbzir.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122701988307914908",
       "handle": "VedicArya123",
       "display_name": "Vedic Aryan",
@@ -7785,6 +9024,26 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2122692237570236799",
+      "handle": "ConcallT",
+      "display_name": "Concall Talks",
+      "text": "Texmaco Rail & Engineering Ltd – Q2FY27 | Concall Insights\n\nFinancial Performance\n•Q2 standalone revenue ₹863 Cr (+15% QoQ, ~31% YoY decline); EBITDA ₹88 Cr, margin 10.2%; PAT ₹36 Cr.\n•Wagon deliveries increased to 1,106 units; foundry production reached 6,468 MT.\n•Management expects stronger execution and profitability in H2 FY27.\n\nOrder Book & Revenue Visibility\n•Total order book ~₹11,000–11,500 Cr, including ~₹8,000 Cr freight rolling stock and ₹3,000–3,500 Cr other businesses.\n•~54% of order book comprises exports versus 9% YoY, supporting potential margin improvement.\n•Private and export orders account for ~80–85% of the freight order portfolio, reducing dependence on Indian Railways.\n•Rolling stock orders provide execution visibility over approximately 10 quarters.\n\nExports – Major Growth Driver\n•South African wagon orders ~₹4,000 Cr, alongside ~₹1,300 Cr locomotive orders.\n•South African contract revenue expected from FY28 onwards, with deliveries extending into FY29.\n•Long-term maintenance obligations provide additional recurring revenue opportunities.\n•Export contracts carry better margins than conventional domestic railway orders.\n\nRail Infrastructure & Electrical Business\n•Rail infrastructure revenue grew ~41–42% QoQ; electrical infrastructure ~38% QoQ.\n•Electrical business approaching ₹250 Cr quarterly revenue, with potential to reach ₹1,000 Cr annual run rate.\n•Electrical order backlog ~₹1,600 Cr, executable over FY27 and FY28.\n•Legacy EPC issues largely addressed; infrastructure business returning to profitability.\n\nFoundry & Railway Adjacencies\n•Foundry capacity expanded to 60,000 MT annually, with no immediate capacity constraints.\n•Management indicated potential dispatches of ~35,000–40,000 MT, with 25–30% exports.\n•Wheel manufacturing JV, NYMWAG rolling stock JV and RVNL partnership provide future diversification opportunities, though commercial ramp-up timelines remain uncertain.\n\nMargins, CapEx & Balance Sheet\n•Higher-margin exports, operational efficiencies and cost reductions expected to support margin expansion.\n•~₹200 Cr CapEx initially earmarked for growth initiatives; core wagon business requires limited incremental CapEx.\n•Debt declining sequentially; management expects near-term CapEx to be funded through internal accruals.\n•CRISIL long-term credit rating upgraded to A+.\n\nLong-Term Growth Ambition\n•Texmaco 2.0 targets ₹9,000–10,000 Cr annual revenue by FY30.\n•Core railway businesses targeted to contribute ₹4,000–5,000 Cr, with ₹5,000–6,000 Cr from adjacencies and diversification.\n•Potential expansion into passenger rail components, wheels, defense and renewable energy.\n\nKey Takeaway\n•Strong multi-year revenue visibility from export-heavy order book, South African contracts and expanding electrical infrastructure business.\n•Major earnings trigger: Higher export execution from FY28, improving product mix and operating leverage.\n•Key monitorables: H2 execution recovery, South African project ramp-up, margin sustainability and clarity on the earlier ~₹700 Cr risk-related provision.",
+      "created_at": "2026-11-17T14:04:01+00:00",
+      "url": "https://x.com/ConcallT/status/2122692237570236799",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122690670628659422",
       "handle": "fnohacked",
       "display_name": "FnoHacked | Futures and Options",
@@ -7885,6 +9144,22 @@
       ]
     },
     {
+      "tweet_id": "2122685265072505294",
+      "handle": "tenfingoals",
+      "display_name": "TENFIN GOALS",
+      "text": "📊 #RSI Above > 70 📈\nMarket Cap > 1000 crore\n\n#OVERBOUGHT STOCKS\n( 17 NOV 2026 )\n\n📈 RELIANCE\n📈 BHARTIARTL\n📈 HDFCBANK\n📈 ICICIBANK\n📈 SBIN\n📈 BAJFINANCE\n📈 L & T\n📈 NSE\n📈 KOTAKBANK\n📈 AXISBANK\n📈 M & M\n📈 ITC\n📈 ETERNAL\n📈 ASIANPAINT\n📈 INDIGO\n📈 PNB\n📈 CHOLAFIN\n📈 UNIONBANK\n📈 GROWW\n📈 BANKBARODA\n📈 INDHOTEL\n📈 MARICO\n📈 DRREDDY\n📈 TATACONSUM\n📈 MAXHEALTH\n📈 UNOMINDA\n📈 MOTILALOFS\n📈 MAHABANK\n📈 BANKINDIA\n📈 EMCURE\n📈 ANANDRATHI\n📈 LICHSGFIN\n📈 ANGLEONE\n📈 ASAHIINDIA\n📈 FORCEMOTOR\n📈 ABDL\n📈 APLLTD\n📈 IGIL\n📈 ERIS\n📈 DEEPAKFERT\n📈 HONASA\n📈 PVRINOX\n📈 ANURAS\n📈 SHREEJISPG\n📈 BONFIG\n📈 ABREL\n📈 KTKBANK\n📈 ANURAS\n📈 SAREGAMA\n📈 SGMART\n📈 SIGNATURE\n📈 YATHARTH\n📈 TANLA\n📈 TONBO\n📈 SPECTRUM\n📈 TVSSCS\n📈 FIEMIND\n📈 GREAVESCOT\n📈 SMT\n📈 THOMASCOOK\n📈 SGFIN\n📈 STEAMHOUSE\n📈 GHCL\n📈 AGIIL\n📈 STYLABAAZA\n📈 CHEMPLASTS\n📈 SHUKRA PHARMA\n📈 ANUP\n📈 SANDHARTECH\n📈 NILKAMAL\n📈 ORIENTHOT\n📈 KMCSHIL\n📈 XPRO\n📈 HINDOILEXP\n📈 RAMKY\n📈 ZELIO\n📈 KODYTECHNO\n📈 ALGOQUANT\n📈 GHVINFRA\n📈 TITANBIO\n📈 GCSL\n📈 HIIL\n📈 SKYWAYS\n📈 BFINVEST\n📈 GYFTR\n📈 DHANBANK\n📈 ALICON\n📈 JYOTISTRUC\n📈 LAXMI GOLDORNA\n📈 FAZE3Q\n📈 PERVASIVE\n📈 AKCAPITAL\n📈 NRL\n📈 BEEZAASAN\n📈 PANACHE\n📈 AERPACE\n📈 DHUNSERI\n📈 ARYAMANFIN\n( 17 NOV 2026 )\n⚠️ Note : info only\n#RSI #OverBoughtStocks\n#MomentumStocks",
+      "created_at": "2026-11-17T13:36:19+00:00",
+      "url": "https://x.com/tenfingoals/status/2122685265072505294",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE488A01050",
+          "query": "\"CHEMPLASTS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2122685101662523812",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -7919,6 +9194,46 @@
         {
           "entityId": "isin:INE089C01029",
           "query": "\"STLTECH\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122684518339657750",
+      "handle": "vishnuagarwal64",
+      "display_name": "Vishnu Agarwal",
+      "text": "In August, Parliament passed the MMDR Amendment Act, 2026. It bars new state levies on mineral land without the Centre’s approval, and it cancels backdated dues that were never collected.\n\nOn paper, that removes most of the risk. But:\n\n- Karnataka, Kerala and Telangana have challenged the law in the Supreme Court. Jharkhand has said it will too.\n\n- The Centre’s own curative petition against the 2024 ruling is still pending.\n\n- The CAG asked MCL to put a number on the exposure. MCL called it “not ascertainable.”\n\nThe RHP mentions the new law only inside the CRISIL industry report, not in MCL’s own risk factors.\n\n8/13",
+      "created_at": "2026-11-17T13:33:21+00:00",
+      "url": "https://x.com/vishnuagarwal64/status/2122684518339657750",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122684498215330163",
+      "handle": "vishnuagarwal64",
+      "display_name": "Vishnu Agarwal",
+      "text": "The change in coal is in who still wants it, and at what price.\n\n- The RHP says MCL’s sales to power plants fell 4.8% in FY26 because renewables fed more power into the grid.\n\n- Power plants imported 27% less coal.\n\n- Captive and commercial mines now produce 20.2% of India’s coal, up from 10.9% in FY22.\n\nThe likely reason for the auction drop is that power plants already get enough coal on long-term contracts, so few pay extra at auction. CRISIL still expects coal demand to grow until FY36.\n\n2/13",
+      "created_at": "2026-11-17T13:33:16+00:00",
+      "url": "https://x.com/vishnuagarwal64/status/2122684498215330163",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"Crisil\""
+        },
+        {
+          "entityId": "isin:INE007A01025",
+          "query": "\"CRISIL\""
         }
       ]
     },
@@ -7993,6 +9308,22 @@
         {
           "entityId": "isin:INE615H01020",
           "query": "\"Titagarh Rail Systems\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2122679900322820592",
+      "handle": "CABHARATHPATEL",
+      "display_name": "CA BHARATH PATEL",
+      "text": "1. E2E Networks\n2. HFCL",
+      "created_at": "2026-11-17T13:15:00+00:00",
+      "url": "https://x.com/CABHARATHPATEL/status/2122679900322820592",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE255Z01027",
+          "query": "\"E2E Networks\""
         }
       ]
     },
@@ -8194,1218 +9525,14 @@
           "query": "\"APTUS\""
         }
       ]
-    },
-    {
-      "tweet_id": "2122676172631003311",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#RisingBharatSummit | \"The UCC law was first implemented in Uttarakhand.\"  Uttarakhand Chief Minister, Pushkar Singh Dhami (@pushkardhami ) highlighted the state's development journey, citing the implementation of the Uniform Civil Code (UCC), improved governance, and transparent government recruitment as key achievements.\n\nHe also highlighted the state's performance in the Sustainable Development Goals (SDG) Index, saying Devbhoomi Uttarakhand had secured the top position.\n\n\"In Sustainable Development Goals Index, Devbhoomi is at number 1,\" he said.\n\nTrack LIVE updates 👇\nhttps://t.co/KGLKRAldSb\n\nTune in LIVE 👇\nhttps://t.co/uEVxYv2sic\n\n#RisingBharat #Uttarakhand",
-      "created_at": "2026-11-17T13:00:11+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122676172631003311",
-      "image": "https://pbs.twimg.com/media/HXVCcz8bsAEFciV.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122676139567329771",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Block deal alert: FIH Mauritius to sell up to 13.25% stake in IIFL Finance for $370 mn\n\nThe floor price has been set at Rs 611 per share, about 3.9% below IIFL Finance’s BSE closing price of Rs 636.05 on November 17\n\nRead More:\nhttps://t.co/QHGcGQhq5r",
-      "created_at": "2026-11-17T13:00:03+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122676139567329771",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122675878924796299",
-      "handle": "stockmarket108",
-      "display_name": "GOVIND 🩵",
-      "text": "2015 — You missed Eicher Motors.\n2016 — You missed Bajaj Finance.\n2017 — You missed Titan.\n2018 — You missed TCS’s IT breakout.\n2019 — You missed IRCTC’s IPO.\n2020 — You missed Dixon Technologies.\n2021 — You missed Tata Elxsi.\n2022 — You missed Adani Enterprises.\n2023 — You missed HAL & Defence.\n2024 — You missed Trent & BSE.\n2025 — You missed Ather Energy & MCX.\n\n2026 — What are you still missing?\n\n#StockMarket #Nifty50",
-      "created_at": "2026-11-17T12:59:01+00:00",
-      "url": "https://x.com/stockmarket108/status/2122675878924796299",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122675572140904657",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@Prakhar42 Hi Prakhar, kindly share your concern in detail, so that we can understand the issue better and forward it to the relevant team for further assistance. For your privacy, kindly delete this comment and reach out to us via private message with your details. ~ Sid https://t.co/CwoaiHo6lr",
-      "created_at": "2026-11-17T12:57:48+00:00",
-      "url": "https://x.com/abcapital/status/2122675572140904657",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122672981415710929",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Every enterprise reaches a bend. Markets shift. Technology rewrites the economics. Decisions can’t wait.\n\nThe straight rewards speed. The bend demands judgement, precision and control. It’s at the apex that momentum is built, and where leaders pull ahead.\n\nCoalesce 2026 brings together C-suite leaders, business owners, board members and alliance partners to explore the art of the possible: to pressure-test strategic choices, unlock enterprise value and turn direction into outcomes.\n\nThe right leaders. The right questions. A clearer way forward.\n\nSo, where will you build your Apex Advantage?\n\nNavigate the bend. Accelerate to outperform.\n\n18–20 November 2026, Goa | See you there\n\n#Coalesce2026 #ApexAdvantage #ArtOfThePossible #DeloitteIndia #Partnered",
-      "created_at": "2026-11-17T12:47:30+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122672981415710929",
-      "image": "https://pbs.twimg.com/media/HXU_zXAbAAARLH_.png",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122672853556297750",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#TechWithMC | India's electronics exports jump 44% to $32 billion in April-September, non-smartphone shipments lead growth\n\nSmartphone exports increased to $18.17 billion from $13.38 billion a year ago. However, their share in total electronic goods exports declined to 56.8% from 60.3%, as other electronics categories gained ground.\n\n@DanishKh4n with details 👇\nhttps://t.co/Ux3Q3LGPEl",
-      "created_at": "2026-11-17T12:47:00+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122672853556297750",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122672205419147478",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#RisingBharatSummit | ‘KASHI IS 90% DONE, MATHURA IS NEXT’, Nandi Makes Big Statement On Mathura\n\nUttar Pradesh has transformed significantly over the past nine to ten years and is now working towards becoming a $1 trillion economy, Cabinet Minister Nand Gopal Gupta (@NandiGuptaBJP) said.\n\nin conversation with Managing Editor, @nalinmehta \n\n#RisingBharat #UttarPradesh",
-      "created_at": "2026-11-17T12:44:25+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122672205419147478",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122671678597599551",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "For food lovers, Qatar isn't just a destination—it’s a feast. From traditional Qatari hospitality to cutting-edge global gastronomy, every dish tells a story. Ready to taste your way through your next holiday? Read the full story here: https://t.co/UnCAfRQUED\n\n#CulinaryTravel #VisitQatar #FoodieTravel #Qatar #Partnered @qatartourism",
-      "created_at": "2026-11-17T12:42:20+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122671678597599551",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122670557238010074",
-      "handle": "Bikash62468660",
-      "display_name": "Behind The Ticker 🇮🇳",
-      "text": "📈 Stocks Blasted Today\n\n1. Brainbees — +12.87%\n2. Signatureglobal  — +9.14%\n3. Welspun India — +7.92%\n4. Aptus Housing — +7.22%\n5. Deepak Fertilisers — +6.72%\n6. Tata Chemicals — +6.11%\n7. Tata Investment — +5.74%\n8. Laurus Labs — +5.32%",
-      "created_at": "2026-11-17T12:37:52+00:00",
-      "url": "https://x.com/Bikash62468660/status/2122670557238010074",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE852O01025",
-          "query": "\"APTUS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122670057323139534",
-      "handle": "scalpersense",
-      "display_name": "Scalper Sense 🇮🇳",
-      "text": "Market close · 17 Nov\n\nNIFTY 50 25,387.40 (+0.38%)\nTop gainers: ADANIENT +3.24%, EICHERMOT +3.01%, MAXHEALTH +2.08%\nTop losers: HCLTECH -2.09%, POWERGRID -1.60%, HDFCLIFE -1.56%\nBest sector: PSU BANK +1.95% · Worst: IT -0.90%\nBreadth 257 up / 242 down\n\n#Nifty #Sensex #BankNifty https://t.co/3mO4rqo6xr",
-      "created_at": "2026-11-17T12:35:53+00:00",
-      "url": "https://x.com/scalpersense/status/2122670057323139534",
-      "image": "https://pbs.twimg.com/media/HXU9EgSawAAcaLU.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122669238783746300",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "Hi Alesh, we would like to inform you that your policy no. ending with 2712 is currently in Premium Paying status. As confirmed during our telephonic conversation with our representative, you have stated that there are no pending concerns or grievances regarding your policy. Please feel free to reach out if you require any further assistance. ~ Kabir",
-      "created_at": "2026-11-17T12:32:38+00:00",
-      "url": "https://x.com/abcapital/status/2122669238783746300",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122668883534606390",
-      "handle": "myAlerts_in",
-      "display_name": "myAlerts.in",
-      "text": "#ADANIENT\n📢 ICRA Upgrades Adani Enterprises Long-Term Rating to ICRA AA Stable\n\n📌 Update: Adani Enterprises announced that ICRA Limited upgraded its long-term credit rating to 'ICRA AA; Stable' from 'ICRA AA-; Stable'. The upgrade applies across Rs 16,505.00 crore long-term/short-term bank facilities, Rs 4,000.00 crore long-term bank facilities, and non-convertible debentures totaling Rs 6,000.00 crore (including Rs 45.04 crore upgraded and withdrawn). Meanwhile, short-term ratings on Rs 240.00 crore bank facilities and Rs 2,000.00 crore commercial paper were reaffirmed at 'ICRA A1+'.\n\n📰 Source: Exchange Filings\n\nDisc: AI generated, please verify",
-      "created_at": "2026-11-17T12:31:13+00:00",
-      "url": "https://x.com/myAlerts_in/status/2122668883534606390",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        },
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122668857186021869",
-      "handle": "speedystox",
-      "display_name": "Speedy Stox",
-      "text": "📊 ADANI ENTERPRISES LTD - 512599 | 🏷️ General\n\nICRA upgraded long-term ratings for ₹16,505 Cr bank facilities from ICRA AA- to ICRA AA; stable and ₹3,754.96 Cr non-convertible debentures, with the latter also withdrawn. Short-term ratings for ₹240 Cr bank facilities and ₹2,000 Cr commercial paper reaffirmed at ICRA A1+.\n\n💰 CMP: ₹2,743.00 (+3.12%)\n🏢 MCap: ₹3.7L Cr\n\n🌐Details: https://t.co/X45JGa7qet\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/wUEwoEsiQ2",
-      "created_at": "2026-11-17T12:31:07+00:00",
-      "url": "https://x.com/speedystox/status/2122668857186021869",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122668767323041831",
-      "handle": "BharatEquator",
-      "display_name": "Equator",
-      "text": "Trading day wrap up - Nifty \nNovember 17, 2026\n\nNifty closed 96 points higher (+0.38%) ending 25,387. \n\nTop Gainers: \nAdani Enterprises (+3.24%) \nEicher Motors (+3.01%) \nMax Health (+2.08%) \n\nTop Losers \nHCL Technologies (-2.09%) \nPowergrid (-1.60%)\nHDFC Life (-1.56%) https://t.co/xFZK1g3ot0",
-      "created_at": "2026-11-17T12:30:46+00:00",
-      "url": "https://x.com/BharatEquator/status/2122668767323041831",
-      "image": "https://pbs.twimg.com/media/HXU7nUvacAAW-4f.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122668579636101198",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "FICCI seeks LTCG tax exemption on listed shares, proposes zero tax on holdings over 3 years\n\nIn its budget recommendations ahead of a meeting with the Finance Minister, FICCI said the government could consider restoring the LTCG exemption that was in place when STT was introduced in 2004.\n\nRead More:\nhttps://t.co/lAIQbZ2mvh",
-      "created_at": "2026-11-17T12:30:01+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122668579636101198",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122668020321722607",
-      "handle": "MarketTimesTv",
-      "display_name": "Market Times TV",
-      "text": "Adani Enterprises में तेजी ! क्या शेयर में आएगी नई रफ्तार ?\n#AdaniEnterprises #AdaniStocks #ShareMarket https://t.co/Vrg5Hg2kgi",
-      "created_at": "2026-11-17T12:27:47+00:00",
-      "url": "https://x.com/MarketTimesTv/status/2122668020321722607",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122666961595498728",
-      "handle": "Akash17971",
-      "display_name": "Akash Chaudhary",
-      "text": "Q2 FY27 RESULTS SEASON OVER NOW – 105 COMPANIES THAT POSTED GOOD TO EXCELLENT RESULTS 🔥🔥🔥\n\nINCREASE IN SALES SHOWN BELOW 👇\n\n▪️ Kesar India – 554%\n▪️ Gretex Industrie – 503%\n▪️ Acme India – 367%\n▪️ Hemant Surgical – 329%\n▪️ OneClick Logistics – 320%\n▪️ Vans Electroengineerings – 308%\n▪️ Anawil Wire – 272%\n▪️ Aptus Pharma – 240%\n▪️ GRE Renew – 223%\n▪️ Blue Water – 211%\n▪️ Teamtech Formwork – 199%\n▪️ Mach Travel Solutions – 182%\n▪️ Anlon Tech – 181%\n▪️ Bizotic Commercial – 172%\n▪️ Sheetal Universal – 160%\n▪️ B-Right Real – 159%\n▪️ Dynamic Services – 157%\n▪️ Prizor Viztech – 154%\n▪️ Organic Recycling – 152%\n▪️ Airfloa Rail – 143%\n▪️ Akiko – 138%\n▪️ Innomat Advanced – 137%\n▪️ Sunita Tools – 133%\n▪️ Bai-Kakaji Poly – 124%\n▪️ Simca Advertis. – 124%\n▪️ Optivalue Tek – 122%\n▪️ Madhusudan Masala – 118%\n▪️ Zelio E-Mobility – 117%\n▪️ Prime Cable Ind. – 117%\n▪️ TechD Cybersec. – 114%\n▪️ Savy Infra – 113%\n▪️ Iware Supplych. – 108%\n▪️ Infinity Infoway – 106%\n▪️ Purple United – 104%\n▪️ Sathlokhar Sys. – 100%\n▪️ Afcom Holdings – 98%\n▪️ Technocrats Plasma – 97%\n▪️ Kody Technolab – 97%\n▪️ OBSC Perfection – 97%\n▪️ Yash Highvoltage – 95%\n▪️ Concord Control – 95%\n▪️ Indo SMC – 92%\n▪️ Hoac Foods – 91%\n▪️ Merritronix – 90%\n▪️ Shreedhar Spinners – 90%\n▪️ Freshara Agro – 89%\n▪️ Monolithisch Ind – 88%\n▪️ Cospower Engine. – 87%\n▪️ Maxvolt Energy – 87%\n▪️ HP Telecom – 85%\n▪️ Shree Refrigerations – 85%\n▪️ Sahana Systems – 85%\n▪️ Pushpa Jewellers – 84%\n▪️ Aimtron Electronics – 83%\n▪️ Utssav CZ Gold – 83%\n▪️ Digilogic Systems – 83%\n▪️ Felix Industries – 82%\n▪️ ANB Metal – 79%\n▪️ Fabtech Cleanrooms – 75%\n▪️ Sunlite Recycling – 75%\n▪️ Taurian MPS – 73%\n▪️ Sugs Lloyd – 73%\n▪️ V-Marc India – 73%\n▪️ Encompass Design – 69%\n▪️ Parmeshwar Metal – 69%\n▪️ Poojaa Precision Engineering – 68%\n▪️ Proventus Agro – 63%\n▪️ B.R. Goyal Infra – 62%\n▪️ Gayatri Rubbers – 59%\n▪️ Supreme Power – 58%\n▪️ Foce India – 57%\n▪️ Apsis Aerocom – 55%\n▪️ Infinium Pharma – 54%\n▪️ Connplex Cinemas – 54%\n▪️ Msafe Equipments – 54%\n▪️ Remus Pharma – 53%\n▪️ Credent Connect N Care – 53%\n▪️ Tankup Engineering – 52%\n▪️ L.T. Elevator – 52%\n▪️ Silkflex Polymer – 52%\n▪️ Unified Data – 50%\n▪️ Admach Systems – 48%\n▪️ Adisoft Technologies – 48%\n▪️ Amic Forging – 47%\n▪️ Vegorama Punjabi – 47%\n▪️ KRM Ayurveda – 47%\n▪️ TIPCO Engineering – 46%\n▪️ M.V.K. Agro – 46%\n▪️ Rajesh Power – 46%\n▪️ E to E Transportation – 45%\n▪️ Chandan Healthcare – 45%\n▪️ Effwa Infra – 45%\n▪️ Astonea Labs – 45%\n▪️ Macfos – 44%\n▪️ Cryogenic OGS – 44%\n▪️ Shreeji Global – 44%\n▪️ Hi-Green Carbon – 43%\n▪️ Parth Electrical – 42%\n▪️ Namo eWaste – 40%\n▪️ FlySBS Aviation – 40%\n▪️ Exato Technologies – 40%\n▪️ Danish Power – 38%\n▪️ Maharaja & Speedex India – 36%\n▪️ Anondita Medicare – 36%\n▪️ Monarch Surveyors – 36%\n\nThese are the companies that posted good to excellent results during the Q2 FY27 results season across the SME segment.\n\nWith strong sales growth and encouraging business performance, these companies are worth tracking and studying closely.\n\nHowever, revenue growth alone should not be the deciding factor. Investors should also analyse profitability, margins, cash flows, working capital, order books and future growth prospects before making any investment decision.\n\nDisclaimer: This post is for educational and informational purposes only. It is not investment advice or a buy/sell recommendation. Please do your own research before making any investment decision.",
-      "created_at": "2026-11-17T12:23:35+00:00",
-      "url": "https://x.com/Akash17971/status/2122666961595498728",
-      "image": "https://pbs.twimg.com/media/HXU6TWYaAAEG20y.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE852O01025",
-          "query": "\"APTUS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122666618031681662",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@mrhalder172003 Hi there, we understand your concern and regret the inconvenience caused. Please share your loan account number, registered contact number and email ID via DM, so we can investigate and assist you further. ~ Sid https://t.co/CwoaiHo6lr",
-      "created_at": "2026-11-17T12:22:13+00:00",
-      "url": "https://x.com/abcapital/status/2122666618031681662",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122666495016911264",
-      "handle": "BajajBroking",
-      "display_name": "Bajaj Broking",
-      "text": "Sensex and Nifty extend gains for the second consecutive session as the rupee strengthens. PSU Banks and Realty lead sector gains, while IT stocks lag.\n\n– Sensex closed at 82,532.19, up 0.52%, while Nifty gained 0.38% to 25,387.40.\n\n– Nifty Midcap 100 rose 0.25% to 61,730.00, while Nifty Smallcap 100 declined 0.22% to 19,398.70. Bank Nifty surged 1.13% to 62,273.25.\n\n– Nifty PSU Bank led sector gains, up 1.95%, followed by Realty at 1.94%. Nifty Pharma gained 0.21%, while Nifty IT led sector losses, down 0.90%.\n\n– ADANIENT was the top gainer, up 3.24%, while HCLTECH was the top loser, down 2.09%.\n\n– USD/INR stood at 93.57, down 0.58%, while India VIX declined 1.00% to 15.52.\n\nTrade Setup: A move above 25,501 could take Nifty towards 25,800, while failure to break higher may extend consolidation between 25,000–25,500.",
-      "created_at": "2026-11-17T12:21:44+00:00",
-      "url": "https://x.com/BajajBroking/status/2122666495016911264",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122665854139773355",
-      "handle": "TejaswiPalam",
-      "display_name": "Tejaswi | AI Industrial Shift 🇮🇳",
-      "text": "Here are some stocks catching market's attention \n\nToday’s momentum screen 🔥\n\nKDDL Ltd +16.52%\nKMC Speciality +15.63%\nLeap India +9.94%\nSG Finserve +7.23%\nHexagon Nutrition +7.20%\nAptus Value Housing +7.19%\nSejal Glass +6.94%\nSandhar Technologies +6.87%\nGreaves Cotton +6.74%\nDEE Development +6.43%\nArtemis Medicare +6.42%\nAmanta Healthcare +6.39%\nIvalue Infosolutions +6.05%\nSharat Industries +5.95%\nJyoti Resins +5.85%\nFredun Pharma +5.63%\nDAM Capital Advisors +5.40%\nSonaselection India +5.20%\nCaliber Mining +5.13%\nSML Mahindra +5.00%\nSC Agrotech +4.99%\nModern Insulators +4.99%\nSpiceJet +4.97%\nUnivastu India +4.92%\nSenco Gold +4.89%\nFilatex India +4.84%\nString Metaverse +4.80%\nHighway Infrastructure +4.79%\nDharmaj Crop Guard +4.65%\nAries Agro +4.57%\nPace Digitek +4.34%\nRajasthan Securities +4.32%\nKSH International +4.27%\nGEE +4.21%\nKnowledge Marine +4.19%\nGarware Hi-Tech Films +4.18%\nCSL Finance +4.16%\nCemindia Projects +4.14%",
-      "created_at": "2026-11-17T12:19:11+00:00",
-      "url": "https://x.com/TejaswiPalam/status/2122665854139773355",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE958L01034",
-          "query": "\"String Metaverse\""
-        },
-        {
-          "entityId": "isin:INE852O01025",
-          "query": "\"APTUS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122665309815652727",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | 📊 Bank Nifty pares gains but closes at all-time high: Where is sectoral index headed? Check support and resistance levels\n\nStrong September quarter earnings and attractive valuations have supported sentiment towards the sector, analysts said.\n\n@ParasBisht15 with details \nhttps://t.co/Ie7oDram5c",
-      "created_at": "2026-11-17T12:17:01+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122665309815652727",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122665233617473655",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCPersonalFinance | Kotak Mutual Fund launches second SIF strategy, Infinity Equity Long-Short Fund\n\n- Kotak launches Infinity Equity Long-Short Fund.\n- NFO opens Nov 17 and closes Dec 1, 2026.\n- Focuses on large-caps with derivatives hedging.\n\n@imNavneetDubey brings in details:\nhttps://t.co/xctGK7mvzI",
-      "created_at": "2026-11-17T12:16:43+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122665233617473655",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122664466001318189",
-      "handle": "marketsday",
-      "display_name": "Markets Today",
-      "text": "Indian Stock Market Closing Update & Market Wrap - November 17, 2026\n\n🔹 Domestic benchmark equity indices closed higher for a second consecutive session on Tuesday, November 17, 2026, decoupling from overnight Wall Street and broader Asian market weakness on the back of sustained foreign institutional inflows and lower global crude oil prices.\n\n🔹 At the closing bell, the NSE Nifty 50 gained 96.30 points or 0.38 percent to settle at 25,387.40 (compared to its previous close of 25,291.10), while the BSE Sensex climbed 427.40 points or 0.52 percent to finish at 82,532.19 (against its prior close of 82,104.79).\n\n🔹 Banking stocks led the market advance as the Nifty Bank index surged to a fresh record high of 62,379.15—surpassing its previous all-time peak of 61,764.85—supported by healthy credit growth, improving asset quality, and strong capital adequacy levels.\n\n🔹 Sectoral gains were spearheaded by Nifty PSU Bank (+2.0%), Nifty Auto (+0.7%), and Nifty Financial Services (+0.6%), while broader market breadth remained constructive with 27 Nifty 50 constituents closing in positive territory against 23 decliners.\n\n🔹 Top Nifty 50 gainers included Adani Enterprises (+3.2%), Eicher Motors (+3.01%), Max Healthcare (+2.08%), Asian Paints (+2.02%), Axis Bank (+1.98%), and State Bank of India (+1.66%), whereas major laggards comprised HCL Technologies (-2.0%), Power Grid Corporation (-1.6%), HDFC Life Insurance (-1.5%), ONGC (-1.5%), Coal India (-1.5%), Infosys (-1.3%), and Tata Motors PV (-1.2%).\n\n🔹 Foreign Institutional Investors (FIIs) continued to anchor domestic large-cap sentiment—having accumulated approximately ₹89,856 crore in net Indian equity inflows—as global funds rotated toward attractive domestic valuations amid an international artificial intelligence and semiconductor sell-off.\n\n🔹 On the macroeconomic front, Brent crude oil touched an intraday low of $91.26 per barrel (a 5.6 percent pullback from the prior session's peak) before trading near $92.74 per barrel (+0.34%) at 4:27 PM IST, easing raw material and input cost pressures for domestic corporates.\n\n#IndianStockMarket #MarketWrap #Nifty50 #Sensex #BankNifty #FII #CrudeOil #StockMarketClosing #Equities",
-      "created_at": "2026-11-17T12:13:40+00:00",
-      "url": "https://x.com/marketsday/status/2122664466001318189",
-      "image": "https://pbs.twimg.com/media/HXU4AS2asAAyf0-.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122664310795346384",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#TechWithMC | Razorpay bets on customised AI agents to expand beyond its payments business\n\nThe Bengaluru-based company is positioning AI agents as a new layer of merchant services, as it looks to tap the growing use of conversational and voice-led commerce.\n\n@AnandJRAnand with details 👇\nhttps://t.co/eQwkYQgv3P",
-      "created_at": "2026-11-17T12:13:03+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122664310795346384",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122663955546206583",
-      "handle": "marketsday",
-      "display_name": "Markets Today",
-      "text": "🔹 Nifty 50 Gainers on November 17, 2026\n\n🔹 Adani Enterprises rose 3.24%\n\n🔹 Eicher Motors gained 3.01%\n\n🔹 Max Healthcare Institute advanced 2.08%\n\n🔹 Asian Paints climbed 2.02%\n\n🔹 Axis Bank moved up 1.98%",
-      "created_at": "2026-11-17T12:11:38+00:00",
-      "url": "https://x.com/marketsday/status/2122663955546206583",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122663520924024913",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Sports | An imperfect farewell for the perfect finisher: MS Dhoni's IPL journey enters a new chapter\n\nMS Dhoni's retirement marks the end of a golden IPL chapter. From leading CSK to five titles to becoming the league's biggest crowd-puller, Thala leaves behind a legacy that may never be matched.\n\n@BoriaMajumdar writes 👇\nhttps://t.co/1qgb1gIsLN",
-      "created_at": "2026-11-17T12:09:55+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122663520924024913",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122663324374450300",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | Technical View: Sustained move above 25,500 key to further Nifty 50 upside; consolidation likely as momentum indicators near overbought zone\n\nThe 25,500 level is expected to act as a crucial resistance zone for the Nifty 50. A decisive close above this level could open the door for a move towards 25,650, followed by 25,800–25,900. However, the key support is placed in the 25,100–25,000 zone.\n\nRead More:\nhttps://t.co/zm7OH0UA9k",
-      "created_at": "2026-11-17T12:09:08+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122663324374450300",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122662926125605199",
-      "handle": "marketsday",
-      "display_name": "Markets Today",
-      "text": "NSE & BSE Closing Market #Breadth Summary - November 17, 2026\n\n🔹 Indian equity benchmarks extended their winning streak for a second consecutive session on Tuesday, November 17, 2026, supported by easing global crude oil prices, strong foreign institutional investor (FII) inflows, and robust buying in banking and real estate stocks, even as broader market breadth finished slightly negative.\n\n🔹 At the closing bell, the BSE Sensex gained 427.40 points or 0.52 percent to settle at 82,532.19, while the NSE Nifty 50 advanced 96.30 points or 0.38 percent to close at 25,387.40.\n\n🔹 Overall exchange market breadth tilted marginally in favor of decliners, with approximately 2,012 shares advancing against 2,148 shares declining, while 167 stocks ended unchanged.\n\n🔹 Broader market indices closed on a mixed note alongside selective mid- and small-cap rotation, with the Nifty Midcap 100 rising 0.25 percent and the Nifty Smallcap 100 slipping 0.22 percent.\n\n🔹 Within the Nifty 50 index, 27 constituents closed in positive territory against 23 decliners, led by Mahindra & Mahindra, Axis Bank, Eicher Motors, Adani Enterprises, and Asian Paints, while HCL Technologies, Power Grid Corporation, Coal India, HDFC Life Insurance, and Infosys lagged behind.\n\n🔹 Sectoral breadth remained broadly constructive as Nifty Realty and Nifty PSU Bank spearheaded gains with surges of nearly 2 percent each, followed by steady advances of 0.5 percent to 0.9 percent across Media, Metal, Oil & Gas, Auto, Private Bank, and Infrastructure indices, whereas Nifty IT (-0.9%) and Nifty FMCG (-0.3%) ended in the red.\n\n#IndianStockMarket #MarketBreadth #NSE #BSE #Nifty50 #Sensex #StockMarketClosing #Equities\n\nDisclaimer: The information shared is for general informational and educational purposes only and should not be construed as financial, investment, legal, or tax advice. Analyst ratings, target prices, and market views represent the opinions of their respective research firms or institutions and do not guarantee future performance. Past performance is not indicative of future results. All investments are subject to market risks, and each investor's financial situation, objectives, and risk tolerance are unique. While every effort is made to ensure the accuracy and timeliness of the information presented, no warranty is provided regarding its completeness or reliability, and no liability is assumed for any errors, omissions, or decisions made based on this information. Readers are advised to consult a SEBI-registered investment advisor or other qualified professional before making any investment decisions.",
-      "created_at": "2026-11-17T12:07:33+00:00",
-      "url": "https://x.com/marketsday/status/2122662926125605199",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122662868810400114",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Darius Khambata hits back at Venu Srinivasan, Vijay Singh, questions Tata Sons listing U-turn\n\nFormer Tata Trusts trustee rejects allegations of plotting to remove Srinivasan, questions handling of Chandrasekaran’s third term.\n\n@deborshi with details 👇\nhttps://t.co/yidC3Zg66W",
-      "created_at": "2026-11-17T12:07:19+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122662868810400114",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122662720197759003",
-      "handle": "marketsday",
-      "display_name": "Markets Today",
-      "text": "Indian Stock Market 52-Week High & Low Highlights - November 17, 2026\n\n🔹 Benchmark indices extended their upward momentum on Tuesday, November 17, 2026, with the BSE Sensex rising 427.40 points (+0.52%) to close at 82,532.19 and the NSE Nifty 50 adding 96.30 points (+0.38%) to settle at 25,387.40, led by Adani Enterprises (+3.24% to ₹2,745.10), Shriram Finance, and Eicher Motors while Power Grid Corporation and Hindalco paced the declines.\n\n🔹 On the National Stock Exchange (NSE), market breadth across extreme price bands saw 90 securities hit fresh 52-week highs compared to 19 securities touching new 52-week lows during the session.\n\n🔹 Sectoral benchmark Nifty Bank surged to a fresh all-time and 52-week peak of 62,379.15 during intraday trade, driven by sustained foreign institutional inflows and strong accumulation across private and public sector banking heavyweights.\n\n🔹 Capital market infrastructure and brokerage stocks dominated the 52-week high list, led by National Stock Exchange of India Ltd. hitting a record high of ₹2,134.00 (pushing its market capitalization past ₹5.25 lakh crore), Groww parent Billionbrains Garage Ventures climbing to a fresh 52-week high above ₹233 amid a ₹1,905 crore block deal, and Angel One surging 8 percent to a new 52-week peak of ₹374.80.\n\n🔹 Real estate heavyweight DLF notched a fresh 52-week high as the Nifty Realty index extended its monthly rally, while large-cap counters including HCL Technologies, UltraTech Cement, Divi's Laboratories, and Bharat Electronics traded near or at their respective 52-week highs during the session.\n\n#IndianStockMarket #52WeekHigh #52WeekLow #Nifty50 #Sensex #BankNifty #NSE #BSE #StockMarketUpdate #Equities",
-      "created_at": "2026-11-17T12:06:44+00:00",
-      "url": "https://x.com/marketsday/status/2122662720197759003",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122662391494463916",
-      "handle": "Agrawal_Raj",
-      "display_name": "Raj Agrawal",
-      "text": "[Automated]\n\n#NSE #Nifty50 EOD Summary as on 17-Nov-2026.\n\nGainers: 27, Losers: 23\nMax Volume Change: ADANIENT (148.71%)\nMax IntraDay Change: ADANIENT (3.69%)\nNear 52W High (~99%): KOTAKBANK, DRREDDY, ICICIBANK, ET...\n\nDisclaimer: Provided for reference on a best-effort basis. https://t.co/6RwL2B38Jq",
-      "created_at": "2026-11-17T12:05:25+00:00",
-      "url": "https://x.com/Agrawal_Raj/status/2122662391494463916",
-      "image": "https://pbs.twimg.com/media/HXU2MeGakAAEYxR.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122662295264440484",
-      "handle": "pavel_duron",
-      "display_name": "Pavel Duroň",
-      "text": "@Sedlacek_Jan 🧵 4/6\nMarek Frauwirth, jeden z popravených, byl židovského původu. Adam B. Bartoš, který Vaši stranu roky vedl, má dvě pravomocné podmínky za protižidovské texty a knihy. 👇",
-      "created_at": "2026-11-17T12:05:03+00:00",
-      "url": "https://x.com/pavel_duron/status/2122662295264440484",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122661078643700093",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Centre, states to discuss AI, infrastructure, manufacturing at chief secretaries’ meet\n\nThe meeting will also focus on Centre-state cooperative federalism ahead of Union Budget\n\n@Meghnamittal23 with details 👇\nhttps://t.co/j9FMBYiLPA",
-      "created_at": "2026-11-17T12:00:12+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122661078643700093",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122660052821741889",
-      "handle": "Paytmcare",
-      "display_name": "Paytm Care",
-      "text": "@AdvocateAnupamh Hi Anupam, I'm Digvijay. Your loan facility with Aditya Birla Capital Limited has been assigned to Kotak Mahindra Bank Limited. You may mail at rard.customercare@kotak.com or call on- 1800-120-9820 for your loan related queries.",
-      "created_at": "2026-11-17T11:56:08+00:00",
-      "url": "https://x.com/Paytmcare/status/2122660052821741889",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122659337772634615",
-      "handle": "MK39117817",
-      "display_name": "StableAnalysis",
-      "text": "Supriya Lifescience | ₹1,000 Cr Sales, But Where Will Profit Come From?\n\nOne more thing about Supriya after going little deeper into Q2 concall.\n\nSome answers were quite interesting, specially when management talked about next 3–4 years.\n\nCompany still maintaining ₹1,000 Cr revenue guidance.\n\nBut H1 sales only ₹396 Cr. Means ₹604 Cr required in H2, almost ₹302 Cr every quarter against Q2 sales of ₹206 Cr.\n\nAnalyst asked where this much sales will come from.\n\nManagement said newer products doing well in semi regulated markets and orders are there.\n\nBut clear breakup not given.\n\nAnd these products coming at lower margins than earlier business.\n\nSo sales may come back, but will profit also come in same proportion?\n\nNow Ambernath. This part was more surprising.\n\nCompany spending around ₹60 Cr annually, but FY27 revenue expected almost zero.\n\nCFO said ₹160–200 Cr annual sales needed just to break even.\n\nEven after positive EU audit, meaningful scale may take another 1–1.5 years.\n\nSo plant getting approval and plant making profit are two different things.\n\nNow big liquid anaesthetic contract.\n\nManagement said discussions going on, but deal not signed yet.\n\nInitially API supply for first couple of years. Formulations later after approvals.\n\nEven large customer may take 4–5 years to reach full volumes.\n\nBig opportunity, but profit may take much longer.\n\nWhat about other products?\n\nContrast media expected to start commercial production.\n\nWhey samples accepted, waiting for first commercial orders.\n\nStatin intermediate production started, bigger contracts under discussion.\n\nADHD intermediate with US customer, approvals expected in 3–4 months.\n\nAll these looks interesting. But most still waiting to become regular paying business.\n\nManagement expecting 20%+ revenue growth for next 3–4 years.\n\nAmbernath itself having eventual ₹450–500 Cr revenue potential.\n\nBut when analyst asked FY28 margins, CFO declined giving guidance.\n\nNow valuation is also important.\n\nAt around ₹620 share price, market cap nearly ₹5,000 Cr.\n\nTrailing PE around 28 and price to sales 5.7 times.\n\nNot exactly cheap considering H1 PAT fallen 37%.\n\nSuppose company achieve ₹300 Cr sustainable PAT in next 3–4 years. Even at 25 PE, market cap becomes ₹7,500 Cr.\n\nAround 50% upside from present valuation. Good, but not extraordinary considering risks and time involved.\n\nAnd ₹300 Cr PAT itself need significant improvement from present earnings.\n\nThis is where things becoming complicated.\n\nOld high margin business facing regulatory problems.\n\nNew products giving lower margins.\n\nAmbernath expenses already coming, but revenue not coming.\n\nAll three happening together.\n\nOne question which is bothering.\n\nWill Supriya's future ₹1,000 Cr sales business earn same profit as its earlier ₹700–800 Cr business?\n\nBecause sales increasing 25% with margins falling 10 percentage points doesnt necessarily create more value.\n\nManagement have good chemistry capabilities and many products under development.\n\nBut older concalls shows timelines are not always reliable.\n\nNext few quarters should tell lot.\n\nLATAM shipments restarting, inventory converting into cash and new products getting repeat commercial orders.\n\nSupriya may become much bigger company in next 4–5 years. But bigger sales doesnt always means bigger profits.\n\nAnd if Ambernath needs ₹200 Cr sales just to break even, how much more required to earn decent ROCE?\n\nFor me opportunity is there, but at 28 PE, market is not giving future growth free also.\n\n#SupriyaLifescience\n\nDisclaimer: Personal views only. Not SEBI registered. Not buy/sell advice. DYOR.",
-      "created_at": "2026-11-17T11:53:17+00:00",
-      "url": "https://x.com/MK39117817/status/2122659337772634615",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE07RO01027",
-          "query": "\"Supriya Lifescience\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122658389398626379",
-      "handle": "jainambroking",
-      "display_name": "Jainam",
-      "text": "📊 Top Gainers & Losers | 17 November 2026\n────────────\nNIFTY 50 BASKET\n────────────\nGainers:\n🔼 ADANIENT: +3.24%\n🔼 EICHERMOT: +3.01%\n🔼 MAXHEALTH: +2.08%\n🔼 ASIANPAINT: +2.02%\n🔼 AXISBANK: +1.98%\nLosers:\n🔽 HCLTECH: -2.09%\n🔽 POWERGRID: -1.6%\n🔽 HDFCLIFE: -1.56%\n🔽 ONGC: -1.53%\n🔽 COALINDIA: -1.5%\n────────────\nSENSEX BASKET\n────────────\nGainers:\n🔼 AXISBANK: +2.06%\n🔼 RELIANCE: +2.01%\n🔼 SBIN: +1.74%\n🔼 TCS: +1.67%\n🔼 ADANIPORTS: +1.56%\nLosers:\n🔽 HCLTECH: -1.95%\n🔽 POWERGRID: -1.53%\n🔽 TECHM: -1.43%\n🔽 INFY: -1.2%\n🔽 ITC: -0.61%\n\nSource: Jainam Research (17.11.2026)\n\nJainam Broking Limited | INZ000198735 | INH000006448 | INP000006785\nDisclaimer: Investments in the securities market are subject to market risks; read all the related documents carefully before investing. For more details, visit: https://t.co/oYg24ArfLQ This is for informational purposes only.",
-      "created_at": "2026-11-17T11:49:31+00:00",
-      "url": "https://x.com/jainambroking/status/2122658389398626379",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122658042747687100",
-      "handle": "NiftyMapsX",
-      "display_name": "Nifty Maps",
-      "text": "Top gainers: autos and banks out front.\n\nM&amp;M, Axis Bank, Eicher Motors and IndiGo led the charge, with Adani Enterprises and Max Healthcare also higher.\n\nAdani Enterprises ▲ 3.24%\nEicher Motors ▲ 3.01%\nMax Healthcare ▲ 2.08%\nAsian Paints ▲ 2.02%\nAxis Bank ▲ 1.98% https://t.co/90ENZqH5Pt",
-      "created_at": "2026-11-17T11:48:09+00:00",
-      "url": "https://x.com/NiftyMapsX/status/2122658042747687100",
-      "image": "https://pbs.twimg.com/media/HXUyPPdboAAMI8J.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122657496213143900",
-      "handle": "Shrish_1987",
-      "display_name": "श्रीष त्रिपाठी 🇮🇳",
-      "text": "When a global investment bank sees strong potential across an entire business portfolio, it certainly deserves attention.\n\nJefferies has assigned Buy ratings to all six Adani companies under its coverage: Adani Enterprises, Adani Green Energy, Adani Ports, Adani Energy Solutions, Adani Power and Ambuja Cements.\n\nEven more significant is its projection of 23% CAGR in both EBITDA and earnings per share between FY26 and FY29.\n\nThe brokerage sees expansion in volumes, market share gains and new capacities becoming revenue-generating assets as key growth drivers.\n\nA strong outlook for a group operating across some of India's most important infrastructure and energy sectors.\n\nhttps://t.co/Wbbv1oL01K",
-      "created_at": "2026-11-17T11:45:58+00:00",
-      "url": "https://x.com/Shrish_1987/status/2122657496213143900",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122656432877449544",
-      "handle": "theanonlurker",
-      "display_name": "Field Marshall Bkchodgang",
-      "text": "For all their faults, Gujju industrialists seem to be more risk-takers than rest of country. Vadodara has like 90% of india's transformer manufacturing capacity, and nearly every company there is massively expanding production, from Hitachi and TARIL to Voltamp and this",
-      "created_at": "2026-11-17T11:41:45+00:00",
-      "url": "https://x.com/theanonlurker/status/2122656432877449544",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE540H01012",
-          "query": "\"VOLTAMP\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122654689229500890",
-      "handle": "PetrMiro",
-      "display_name": "Petr M.",
-      "text": "@jura_haczek Juro, nedivte se, že někteří tleskají a jiní pískají. I pan prezident má svou minulost. A každý ji může vidět jinak. On kousek odtud tady tehdy chodil do školy. Pan redaktor vedl rozhovor taky moudře.",
-      "created_at": "2026-11-17T11:34:49+00:00",
-      "url": "https://x.com/PetrMiro/status/2122654689229500890",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122652432186695851",
-      "handle": "radhikakum187",
-      "display_name": "Radhika 🌸",
-      "text": "Jefferies Gives Buy Ratings To All 6 Adani Stocks Under Coverage\n\nJefferies has maintained a positive outlook across six Adani Group companies, with Buy ratings on Adani Enterprises, Adani Green Energy, Adani Ports, Adani Energy Solutions, Adani Power and Ambuja Cements.\n\nThe brokerage sees a 23% earnings CAGR and a $51 billion growth investment pipeline supporting the Group’s expansion.",
-      "created_at": "2026-11-17T11:25:51+00:00",
-      "url": "https://x.com/radhikakum187/status/2122652432186695851",
-      "image": "https://pbs.twimg.com/media/HXUtIXub0AAc2eV.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122651974600712303",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@csnandani Hi Chetan, we’re reviewing your concern on priority and assure you that it has been forwarded to the concerned team. Kindly allow us some time to look into this. We’ll get back to you with an update. ~ Sam",
-      "created_at": "2026-11-17T11:24:02+00:00",
-      "url": "https://x.com/abcapital/status/2122651974600712303",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122651310373650907",
-      "handle": "manavi_sm",
-      "display_name": "Manavi",
-      "text": "Jefferies Turns Positive On Six Major Adani Group Companies\n\nSix stocks, six Buy ratings.\n\nJefferies’ positive outlook covers Adani Enterprises, Adani Green Energy, Adani Ports, Adani Energy Solutions, Adani Power and Ambuja Cements, reflecting expectations of continued growth across infrastructure, energy and cement.",
-      "created_at": "2026-11-17T11:21:24+00:00",
-      "url": "https://x.com/manavi_sm/status/2122651310373650907",
-      "image": "https://pbs.twimg.com/media/HXUsHSFakAAFVho.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122651098041213331",
-      "handle": "frank_uzb",
-      "display_name": "Frank.uz",
-      "text": "🏭 Voltamp и Techno Cable Group построят в Узбекистане завод за $50 млн\n\nЗавод будет выпускать 10 тыс. тонн медных проводников в год для трансформаторов и электрооборудования. Соглашение заключили на узбекско-оманском бизнес-форуме.\n\nhttps://t.co/l4aYKvv1Ky",
-      "created_at": "2026-11-17T11:20:33+00:00",
-      "url": "https://x.com/frank_uzb/status/2122651098041213331",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE540H01012",
-          "query": "\"VOLTAMP\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122650566392521126",
-      "handle": "RizakGill",
-      "display_name": "Rizak Gill",
-      "text": "@ShrutiAgar73770 VEDL",
-      "created_at": "2026-11-17T11:18:26+00:00",
-      "url": "https://x.com/RizakGill/status/2122650566392521126",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE205A01025",
-          "query": "\"VEDL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122650455679668353",
-      "handle": "logical_traderr",
-      "display_name": "The Loggical Investor",
-      "text": "https://t.co/EQ6zpxXWwZ\n\nSupriya Lifescience Ltd : A difficult margin reset, but are the long-term growth drivers intact?\n\nMargin reset, guidance concerns, growth opportunities and my final investor perspective on what's next.|Q2FY27 Earnings call, November 2026",
-      "created_at": "2026-11-17T11:18:00+00:00",
-      "url": "https://x.com/logical_traderr/status/2122650455679668353",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE07RO01027",
-          "query": "\"Supriya Lifescience\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122649238509371717",
-      "handle": "MitulBhavsar9",
-      "display_name": "Rashi RA",
-      "text": "▲ #Today #Nifty [25,387.40]\nCloses Up +96.3 (+0.44%)\n\n🟢 Gainers\n#ADANIENT #EICHERMOT #MAXHEALTH #ASIANPAINT #AXISBANK\n\n🔴 Losers\n#HCLTECH #POWERGRID #HDFCLIFE #ONGC #COALINDIA\n\n #StocksToWatch #StocksInFocus #StockMarketNews \n #Sensex #BSE #NSE #StockMarketIndia https://t.co/e4sgG9Cp3L",
-      "created_at": "2026-11-17T11:13:10+00:00",
-      "url": "https://x.com/MitulBhavsar9/status/2122649238509371717",
-      "image": "https://pbs.twimg.com/media/HXUqJNgb0AAT9s0.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122648897608921543",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "Hi there, we understand the seriousness of your concern and sincerely apologize for the inconvenience caused. Kindly ask the loan account holder to share their loan account number, registered contact number, and email ID via DM, so we can escalate the complaint to the concerned team for investigation and necessary action. ~ Shiv",
-      "created_at": "2026-11-17T11:11:48+00:00",
-      "url": "https://x.com/abcapital/status/2122648897608921543",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122648618805182932",
-      "handle": "titagarhgroup",
-      "display_name": "Titagarh",
-      "text": "Shri Umesh Chowdhary and Mr. Prithish Chowdhary of Titagarh Rail Systems met Ms. Kathy Giles-Diaz, US Consul General in Kolkata, to explore international expansion and potential collaborations in rail technologies and manufacturing. \n\n#Titagarh",
-      "created_at": "2026-11-17T11:10:42+00:00",
-      "url": "https://x.com/titagarhgroup/status/2122648618805182932",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE615H01020",
-          "query": "\"Titagarh Rail Systems\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122647107278713291",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@AdvocateAnupamh Hi Anupam, to ensure your privacy, we recommend removing your comment as it contains personal information. Please share the same with us via private message, so we can assist you securely. ~ Sam https://t.co/CwoaiHo6lr",
-      "created_at": "2026-11-17T11:04:41+00:00",
-      "url": "https://x.com/abcapital/status/2122647107278713291",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122646864386519363",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@AdvocateAnupamh Hi Anupam, we sincerely regret the inconvenience caused. We understand your concern and assure you that it has been forwarded to the concerned team for review. Kindly allow us some time to look into this, and we’ll get back to you with an update. ~ Sam",
-      "created_at": "2026-11-17T11:03:43+00:00",
-      "url": "https://x.com/abcapital/status/2122646864386519363",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122646695427326000",
-      "handle": "JU_BlackBuck",
-      "display_name": "BLACKBUCK",
-      "text": "@ImRossyRibon D no reflection in water",
-      "created_at": "2026-11-17T11:03:03+00:00",
-      "url": "https://x.com/JU_BlackBuck/status/2122646695427326000",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122646107742523603",
-      "handle": "wegro_app",
-      "display_name": "Wegro App",
-      "text": "𝗚𝗿𝗮𝘀𝗶𝗺 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗲𝘀 𝗤2 𝗙𝗬27 𝗘𝗮𝗿𝗻𝗶𝗻𝗴𝘀 𝗖𝗮𝗹𝗹 𝗦𝘂𝗺𝗺𝗮𝗿𝘆:\n\n𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀:\n- 𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹50,105 Cr, up 26% YoY. 📈\n- 𝗦𝘁𝗮𝗻𝗱𝗮𝗹𝗼𝗻𝗲 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹12,747 Cr, up 33% YoY (all-time high).\n- 𝗘𝘅𝗰𝗲𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗜𝘁𝗲𝗺: ₹825 Cr charge recognized for the AV Group NB (Canadian pulp mill JV) due to idling operations. Excluding this, PAT was ₹536 Cr (Consolidated) and ₹3,132 Cr (Standalone).\n\n𝗕𝘂𝘀𝗶𝗻𝗲𝘀𝘀 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n\n𝗣𝗮𝗶𝗻𝘁𝘀 𝗕𝘂𝘀𝗶𝗻𝗲𝘀𝘀 (𝗕𝗶𝗿𝗹𝗮 𝗢𝗽𝘂𝘀):\n\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹1,337 Cr, up 35% YoY in Q2 FY27. H1 FY27 revenue was ₹3,000 Cr (up 50% YoY).\n- 𝗩𝗼𝗹𝘂𝗺𝗲 𝗚𝗿𝗼𝘄𝘁𝗵: Q2 volume up 20% YoY.\n- 𝗠𝗮𝗿𝗸𝗲𝘁 𝗦𝗵𝗮𝗿𝗲: Combined market share (Birla Opus & Birla White Putty) in early teens. Aiming for double-digit revenue market share for Birla Opus alone in H2 FY27.\n- 𝗗𝗶𝘀𝘁𝗿𝗶𝗯𝘂𝘁𝗶𝗼𝗻: 61,000+ dealers billed cumulatively; 1,760+ exclusive franchise stores operational.\n- 𝗣𝗿𝗼𝗱𝘂𝗰𝘁 𝗣𝗼𝗿𝘁𝗳𝗼𝗹𝗶𝗼: Expanded to 239 products & 2,300+ SKUs.\n- 𝗕𝗿𝗮𝗻𝗱 𝗔𝘄𝗮𝗿𝗲𝗻𝗲𝘀𝘀: Aided at 92%, unaided at 59%.\n- 𝗢𝘂𝘁𝗹𝗼𝗼𝗸: Strong October sales indicate positive momentum for H2 FY27. Guidance of 50% YoY revenue growth for FY27 maintained.\n\n𝗕2𝗕 𝗘-𝗰𝗼𝗺𝗺𝗲𝗿𝗰𝗲 (𝗕𝗶𝗿𝗹𝗮 𝗣𝗶𝘃𝗼𝘁):\n\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: ₹2,785 Cr, up 66% YoY in Q2 FY27.\n- 𝗔𝗻𝗻𝘂𝗮𝗹𝗶𝘇𝗲𝗱 𝗥𝗲𝘃𝗲𝗻𝘂𝗲 𝗥𝘂𝗻 𝗥𝗮𝘁𝗲: Crossed ₹11,000 Cr, aiming for ₹12,000 Cr for FY27.\n- 𝗣𝗿𝗼𝗳𝗶𝘁𝗮𝗯𝗶𝗹𝗶𝘁𝘆: Retail business is EBITDA profitable. Expected to reach break-even in H2 FY27.\n- 𝗚𝗿𝗼𝘄𝘁𝗵 𝗗𝗿𝗶𝘃𝗲𝗿𝘀: Expanding product portfolio, deeper customer relationships, retail proposition growth, integrated financing ecosystem (Pivot Vault).\n\n𝗖𝗲𝗹𝗹𝘂𝗹𝗼𝘀𝗶𝗰 𝗙𝗶𝗯𝗲𝗿𝘀:\n\n- 𝗚𝗹𝗼𝗯𝗮𝗹 𝗠𝗮𝗿𝗸𝗲𝘁: CSF prices rose 23% YoY to $1.85/kg in Q2 FY27.\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: Grew 29% YoY to ₹5,344 Cr, driven by volume & favorable mix.\n- 𝗘𝘅𝗽𝗮𝗻𝘀𝗶𝗼𝗻: Planned capacity of 165,000 TPA in two phases.\n\n𝗖𝗵𝗲𝗺𝗶𝗰𝗮𝗹𝘀:\n\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲: Grew 15% YoY to ₹2,759 Cr.\n- 𝗡𝗲𝘄 𝗣𝗿𝗼𝗷𝗲𝗰𝘁𝘀: 50,000 TPA CPVC plant commissioned (Aug '26), 50,000 TPA epichlorohydrin plant commissioned (Oct '26).\n- 𝗖𝗮𝘂𝘀𝘁𝗶𝗰 𝗣𝗿𝗶𝗰𝗲𝘀: Remained under pressure internationally, but domestic prices showed some firmness.\n\n𝗢𝘁𝗵𝗲𝗿 𝗕𝘂𝘀𝗶𝗻𝗲𝘀𝘀𝗲𝘀:\n\n- 𝗔𝗱𝗶𝘁𝘆𝗮 𝗕𝗶𝗿𝗹𝗮 𝗖𝗮𝗽𝗶𝘁𝗮𝗹: Revenue up 32% YoY to ₹13,990 Cr.\n- 𝗥𝗲𝗻𝗲𝘄𝗮𝗯𝗹𝗲𝘀: Capacity at 2.2 GWp. Acquisition of Sprng approved, aiming for ~10 GW post-acquisition.\n- 𝗖𝗮𝗽𝗲𝘅: Standalone capex earmarked at ₹3,157 Cr for FY27; ₹1,022 Cr invested in H1 FY27.\n\n𝗡𝗼𝘁𝗮𝗯𝗹𝗲 𝗤&𝗔 𝗣𝗼𝗶𝗻𝘁𝘀:\n- 𝗣𝗮𝗶𝗻𝘁𝘀 𝗛2 𝗢𝘂𝘁𝗹𝗼𝗼𝗸: Management expects H2 to be significantly better than H1, maintaining 50% YoY revenue growth guidance for FY27.\n- 𝗩𝗦𝗙 𝗠𝗮𝗿𝗴𝗶𝗻𝘀: Expected to remain range-bound in Q3/Q4 FY27, with slight moderation in sulfur prices.\n- 𝗖𝗵𝗲𝗺𝗶𝗰𝗮𝗹𝘀 𝗠𝗮𝗿𝗴𝗶𝗻𝘀: Chlorine prices improving due to local demand/supply. Epoxy value chain margins under pressure due to input costs, but expected to improve in Q4.\n- 𝗔𝗩 𝗡𝗮𝗰𝗸𝗮𝘄𝗶𝗰 𝗝𝗩: ₹625 Cr fund infusion to cover liabilities and avoid future losses; Grasim's contribution is 45% stake.\n- 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝘆 𝗣𝗮𝗶𝗻𝘁 𝗚𝗿𝗼𝘄𝘁𝗵: Expected at 15%-20% for H2 FY27, driven by organized sector gaining share from unorganized players & price increases.\n- 𝗕𝗶𝗿𝗹𝗮 𝗢𝗽𝘂𝘀 𝗤2 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲: Lower sequential performance attributed to industry seasonality & reliance on retail throughput vs. wholesale stocking by competitors.\n- 𝗣𝗼𝘄𝗲𝗿 𝗣𝗹𝗮𝗻𝘁 𝗜𝘀𝘀𝘂𝗲𝘀: Largely resolved with improved reliability and new boiler commissioning.\n\n📊 GRASIM INDUSTRIES LTD | 🏷️ Earnings Call Transcript\n\n🌐 Details: https://t.co/hQWNqqHDtw\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
-      "created_at": "2026-11-17T11:00:43+00:00",
-      "url": "https://x.com/wegro_app/status/2122646107742523603",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122646047151583595",
-      "handle": "swing_blaster",
-      "display_name": "SWING BLASTER 🥷🕉️🔱",
-      "text": "🚨 AHMEDABAD SMART CITY INFRASTRUCTURE – BIG OPPORTUNITY!\n\nAhmedabad is planning a massive infrastructure upgrade:\n\n💡 Nearly 2 lakh streetlight poles to be modernised.\n🌐 2,000+ KM Optical Fibre Network planned.\n\nSome companies reported in connection with the tender process:\n\n1️⃣ SURYAROSNI\n2️⃣ TRANSRAIL LIGHTING\n3️⃣ TATA COMMUNICATIONS\n4️⃣ CITELUM INDIA\n\n📌 Stocks to TRACK:\n• STLTECH\n• HFCL\n• SURYAROSNI\n• TRANSRAIL\n• TATACOMM\n\n⚠️ Important: Names mentioned in pre-bid participation reports are NOT confirmed final bidders or project winners.\n\nThe real opportunity will emerge from final tender awards and order announcements.\n\nGujarat Infrastructure Theme – Keep These Stocks on Your Radar! 👀\n\nNot SEBI registered. Not a buy/sell recommendation. Educational purpose only.",
-      "created_at": "2026-11-17T11:00:29+00:00",
-      "url": "https://x.com/swing_blaster/status/2122646047151583595",
-      "image": "https://pbs.twimg.com/media/HXUnU3HbUAAtiqC.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE089C01029",
-          "query": "\"STLTECH\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122645915525861406",
-      "handle": "willowwhis22170",
-      "display_name": "Willow Whispers",
-      "text": "EOD scan, Tue 17 Nov: 11 stocks at 52-week closing highs, banks lead\n\n52-week closing highs\nBank of Maharashtra +4.3%\nPNB +3.7%\nLIC Housing Finance +2.8%\nPVR Inox +2.3%\n360 ONE +2.0%\nDLF +1.5%\nUnion Bank +1.1%\nKarur Vysya +0.8%\nSaregama +0.7%\nKotak Mahindra Bank +0.6%\nAngel One +0.5%\n\nBiggest risers\nKPI Green +7.8%\nAptus Value Housing +7.2%\nDeepak Fertilisers +6.7%\nTata Chemicals +6.1%\nLaurus Labs +5.3%\n\nBiggest fallers\nSterlite Technologies -5.0%\nKEI Industries -4.2%\nAshok Leyland -4.2%\nKaynes Technology -4.1%\nCummins India -4.0%\n\nVolume spikes (times normal)\nAngel One 9.6x\nTata Chemicals 9.5x\nAptus Value Housing 6.5x\nDeepak Fertilisers 5.3x\n\nBreadth: 132 of 232 liquid stocks up, 99 down. 56 stocks sit in a full EMA 20 > 50 > 200 uptrend.\n\nScan output on closing data for stocks with over Rs 15 Cr daily turnover. A list of what moved, not recommendations or causes. Not SEBI advice. DYOR.\n#StockScanner #52WeekHigh",
-      "created_at": "2026-11-17T10:59:57+00:00",
-      "url": "https://x.com/willowwhis22170/status/2122645915525861406",
-      "image": "https://pbs.twimg.com/media/HXUnNAQagAAoLFa.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE852O01025",
-          "query": "\"APTUS\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122644872951939334",
-      "handle": "ivyasaa",
-      "display_name": "iVyasa",
-      "text": "2️⃣ [2/3] 17 NOV, Tuesday – India Dalal Street Official Closure Track 🇮🇳🚀\n\n📊 Domestic Benchmark Closures (Final Official Settlement)\n\n  - 🏛️ BSE Sensex | 82,532.19 | +0.52% (+427.40 pts) | 🚀 Extends Rally to 2nd Session\n  - 📈 NSE Nifty 50 | 25,387.40 | +0.38% (+96.30 pts) | 🚀 Approaching 25,400 Milestone\n  - 🏦 Nifty Bank | 62,273.25 | +1.13% (+697.35 pts) | 🚀 Prints Fresh All-Time High >62k\n  - 🛡️ Key Nifty Floor | 25,250–25,300 | 🧱 Solid Intraday Support Base\n  - 🎯 Key Nifty Ceiling | 25,450–25,550 | 🚧 Immediate Overhead Hurdle\n\n👁️ Dalal Street Catalysts & Mover Action\n\n  - 🌏 Global AI Rotation Fuels India Inflows | Overseas funds continue rotating capital out of expensive global AI hardware into Indian heavyweights, insulating Dalal Street from Wall Street's tech slump\n  - 🏦 Banks & Realty Power Breakout | Nifty Bank surges past 62,000 to record peaks while Nifty Realty and PSU Bank jump ~2% each, led by Axis Bank, M&M, Eicher Motors, Adani Enterprises, and Max Healthcare\n  - 🛢️ Easing Oil Boosts Macro Comfort | Brent retreating below $92/bbl and WTI near $85.20/bbl eases domestic fuel import anxieties and supports aviation (IndiGo) and auto counters\n  - 💻 IT & FMCG Lag Broad Gains | Nifty IT (-0.90%) and FMCG (-0.30%) trail benchmark momentum on selective profit-taking across HCL Tech, Infosys, and ITC\n\n🔗 \nhttps://t.co/xfGZoedX5i\n\n#IndianStockMarket #Sensex #Nifty50 #BankNifty #DalalStreet #MarketClosure #MarketVyasa",
-      "created_at": "2026-11-17T10:55:49+00:00",
-      "url": "https://x.com/ivyasaa/status/2122644872951939334",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122644768962543835",
-      "handle": "ivyasaa",
-      "display_name": "iVyasa",
-      "text": "1️⃣ [1/3] 17 NOV, Tuesday (11:54 AM CET) – European Markets Live Track & Sector Trends 🇪🇺📊\n\n📊 European Benchmark Indices (Live Mid-Day Session)\n\n  - 🇫🇷 France CAC 40 | 8,312.00 | -0.48% (-40.00 pts) | 🔴 Luxury & Tech Softening\n  - 🇮🇹 Italy FTSE MIB | 51,245.00 | -0.53% (-275.00 pts) | 🔴 Southern Europe Bank Drag\n  - 🇪🇸 Spain IBEX 35 | 19,816.00 | -0.66% (-131.00 pts) | 🔴 Broad Cyclical Pullback\n  - 🇬🇧 United Kingdom FTSE 100 | 10,808.00 | -0.68% (-74.00 pts) | 🔴 Energy & Tech Weigh\n  - 🇩🇪 Germany DAX 40 | 26,399.00 | -0.75% (-200.00 pts) | 🔴 Deutsche Bank & Chip Drag\n  - 🇪🇺 Pan-European STOXX 600 | 656.29 | -0.90% (-5.96 pts) | 🔴 Broad Continental Slide\n  - 🇪🇺 Euro Stoxx 50 | 6,290.79 | -0.91% (-57.46 pts) | 🔴 Blue-Chip Tech & Bank Rout\n\n👁️ European Sector Drivers & Themes\n\n  - 💻 US AI Chip Curbs Hit Tech | ASML (-1.7%), SAP (-2.2%), and Prosus (-2.3%) slide after Washington restricts remote access to advanced AI chips and servers for Chinese firms ahead of Nvidia results\n  - 🏦 Deutsche Bank Plunges Nearly 5% | Continental financials come under sharp scrutiny following leaked internal document revelations over client and asset controls\n  - 🛢️ Sub-$92 Crude Eases Input Burden | Brent crude sliding toward $91.87/bbl (-0.62%) on global supply surplus expectations provides a partial margin cushion to transport and industrials\n  - 📊 Macro & Data Radar | European desks weigh stagnant UK labor prints alongside ZEW economic sentiment surveys for Germany and the Eurozone\n\n🔗 \nhttps://t.co/c0qOp2mVAh\n\n#EuropeanMarkets #DAX40 #FTSE100 #EuroStoxx50 #Stoxx600 #CAC40 #LiveMarkets #MarketVyasa",
-      "created_at": "2026-11-17T10:55:24+00:00",
-      "url": "https://x.com/ivyasaa/status/2122644768962543835",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122644652637687978",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Together, these two factors --low farm incomes and moderation in salary growth in the IT sector-- can weigh on demand and limit the pricing action of companies.",
-      "created_at": "2026-11-17T10:54:56+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122644652637687978",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122644561285783886",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Meanwhile, in urban areas, IT services, a large employer, is seeing an AI led-revenue deflation.",
-      "created_at": "2026-11-17T10:54:34+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122644561285783886",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122644404322369925",
-      "handle": "JU_BlackBuck",
-      "display_name": "BLACKBUCK",
-      "text": "@alishaknnq 2 one look at her desk",
-      "created_at": "2026-11-17T10:53:57+00:00",
-      "url": "https://x.com/JU_BlackBuck/status/2122644404322369925",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122643540836770178",
-      "handle": "wegro_app",
-      "display_name": "Wegro App",
-      "text": "𝗦𝗼𝗳𝘁𝗧𝗲𝗰𝗵 𝗘𝗻𝗴𝗶𝗻𝗲𝗲𝗿𝘀 𝗟𝗶𝗺𝗶𝘁𝗲𝗱: 𝗤2 & 𝗛1 𝗙𝗬27 𝗘𝗮𝗿𝗻𝗶𝗻𝗴𝘀 𝗖𝗮𝗹𝗹 𝗦𝘂𝗺𝗺𝗮𝗿𝘆 🗓️:\n\nSoftTech Engineers Limited hosted its earnings call for Q2 & H1 FY27, highlighting robust standalone financial performance and strategic expansion initiatives. The company is leveraging its expertise in construction & urban development technology to tap into broader digital infrastructure opportunities.\n\n𝗙𝗶𝗻𝗮𝗻𝗰𝗶𝗮𝗹 𝗛𝗶𝗴𝗵𝗹𝗶𝗴𝗵𝘁𝘀 (𝗦𝘁𝗮𝗻𝗱𝗮𝗹𝗼𝗻𝗲):\n\n- 𝗛1 𝗙𝗬27 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n  ▸ Revenue from operations grew 26.1% YoY to ₹64.92 Cr.\n  ▸ EBITDA increased 37.9% to ₹21.07 Cr, with margins improving to 32.5%.\n  ▸ Profit After Tax (PAT) surged 69.5% to ₹5.55 Cr.\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲 𝗠𝗶𝘅 𝗜𝗺𝗽𝗿𝗼𝘃𝗲𝗺𝗲𝗻𝘁:\n  ▸ Recurring revenue grew 46.2% to ₹28.21 Cr, contributing 43.5% to total sales (up from 37.5% YoY).\n  ▸ SaaS/transaction-based revenue increased 32.7% to ₹18 Cr.\n- 𝗤2 𝗙𝗬27 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n  ▸ Standalone revenue grew 27.2% YoY to ₹32.70 Cr.\n  ▸ EBITDA increased 50.8% to ₹11.47 Cr, with margins expanding to 35.1%.\n  ▸ PAT grew 120.8% to ₹3.63 Cr.\n\n𝗖𝗼𝗻𝘀𝗼𝗹𝗶𝗱𝗮𝘁𝗲𝗱 𝗣𝗲𝗿𝗳𝗼𝗿𝗺𝗮𝗻𝗰𝗲:\n\n- 𝗛1 𝗙𝗬27: Revenue grew 20.4% YoY to ₹64.82 Cr. EBITDA grew 18.6% to ₹17.04 Cr. PAT stood at ₹1.37 Cr. The consolidated performance was impacted by investments in the German market & deferment of a Middle East order.\n- 𝗤2 𝗙𝗬27: Consolidated revenue grew 17.6% to ₹31.53 Cr. EBITDA increased 14.4% to ₹7.99 Cr. PAT was ₹0.21 Cr.\n\n𝗦𝘁𝗿𝗮𝘁𝗲𝗴𝗶𝗰 𝗚𝗿𝗼𝘄𝘁𝗵 𝗣𝗶𝗹𝗹𝗮𝗿𝘀 & 𝗘𝘅𝗽𝗮𝗻𝘀𝗶𝗼𝗻:\n\nSoftTech is focusing on three interconnected areas:\n\n1. 𝗖𝗶𝘁𝗶𝗲𝘀 (𝗖𝗶𝘃𝗶𝘁𝗖𝗜𝗧𝗬): Expanding permitting solutions, safety management, & infrastructure management with a platform-based approach. Leveraging AI & Digital Twin technologies.\n2. 𝗣𝗼𝗿𝘁𝘀 & 𝗜𝗻𝗳𝗿𝗮𝘀𝘁𝗿𝘂𝗰𝘁𝘂𝗿𝗲: Targeting major ports, airports, & highways. Secured a significant ₹92.95 Cr order from JNPT for an AI-powered digital twin solution to enhance port operations. 🚢\n3. 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗮𝗹 𝗖𝗼𝗿𝗿𝗶𝗱𝗼𝗿𝘀: Providing integrated digital solutions for industrial parks & development corporations.\n\n- 𝗲𝗧𝗗𝗥 𝗘𝘅𝗰𝗵𝗮𝗻𝗴𝗲 𝗣𝗹𝗮𝘁𝗳𝗼𝗿𝗺: Launched a first-of-its-kind platform for Trade Development Rights (TDR) in Mumbai, charging a 0.5% facilitation fee. Seeing traction & interest from other cities. 📈\n- 𝗜𝗻𝘁𝗲𝗿𝗻𝗮𝘁𝗶𝗼𝗻𝗮𝗹 𝗘𝘅𝗽𝗮𝗻𝘀𝗶𝗼𝗻: Significant investments in Germany, aligning products with local market needs. Advanced discussions for a government permitting solution in the Middle East, potentially opening doors to Saudi Arabia & other markets. 🌍\n\n𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸 & 𝗣𝗶𝗽𝗲𝗹𝗶𝗻𝗲:\n\n- 𝗢𝗿𝗱𝗲𝗿 𝗕𝗼𝗼𝗸: ₹300 Cr. Expected to execute ₹100-125 Cr in the next 12 months.\n- 𝗦𝗮𝗹𝗲𝘀 𝗣𝗶𝗽𝗲𝗹𝗶𝗻𝗲: ₹625 Cr. Targeting a 40% win rate, with 50-75% of the pipeline expected to be delivered in the next 12 months.\n\n𝗡𝗼𝘁𝗮𝗯𝗹𝗲 𝗤&𝗔 𝗣𝗼𝗶𝗻𝘁𝘀:\n\n- 𝗠𝗘𝗔 𝗢𝗿𝗱𝗲𝗿 𝗗𝗲𝗳𝗲𝗿𝗿𝗮𝗹: An order of approx. ₹1.7-1.8 Cr was deferred due to geopolitical situations, impacting H1 revenue by ~₹1 Cr. No risk of cancellation; customer is engaged for future timelines. This is not expected to significantly impact FY27 guidance.\n- 𝗲𝗧𝗗𝗥 𝗩𝗼𝗹𝘂𝗺𝗲𝘀: Lower volumes in Q1/Q2 FY27 attributed to a slow real estate market. Expecting growth in subsequent quarters as the market picks up. Interest from other cities for the eTDR platform is strong.\n- 𝗗𝗲𝗽𝗿𝗲𝗰𝗶𝗮𝘁𝗶𝗼𝗻 & 𝗔𝗺𝗼𝗿𝘁𝗶𝘇𝗮𝘁𝗶𝗼𝗻: Costs are expected to remain elevated due to ongoing investments in product development for overseas markets & new platforms (TDR, Civit). However, the percentage of these costs relative to overall sales is expected to decrease as business scales.\n- 𝗥𝗲𝘃𝗲𝗻𝘂𝗲 𝗠𝗶𝘅: Transitioning towards a higher recurring revenue base is a key strategy for improved earnings predictability & quality. 💰\n\n📊 SOFTTECH ENGINEERS LTD | 🏷️ Earnings Call Transcript\n\n🌐 Details: https://t.co/zLaZD71cEx\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
-      "created_at": "2026-11-17T10:50:31+00:00",
-      "url": "https://x.com/wegro_app/status/2122643540836770178",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE728Z01015",
-          "query": "\"Softtech Engineers\""
-        },
-        {
-          "entityId": "isin:INE728Z01015",
-          "query": "\"SOFTTECH\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122643526790070482",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCExplains | In early June, the Pro Panorama newsletter wondered if Nifty 50 is the best place to invest in FY27. Corporate earnings were expected to recover in FY27, notwithstanding global macroeconomic headwinds.\n\nFollow the thread for more updates 👇\n\n#Earnings",
-      "created_at": "2026-11-17T10:50:28+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122643526790070482",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122643091341644090",
-      "handle": "MycallsTrading",
-      "display_name": "Mycalls Trading",
-      "text": "#ADANIENT Achieved it's Target\n\n28 to 52.75 🔥🔥🚀🚀💃💃\n\nSuggested in our FNO STOCKS Premium group just 15min back \n\nRunning more than 6K profit per lot 🔥🔥💰💰🚀🚀 https://t.co/Zz0fzlYtQY",
-      "created_at": "2026-11-17T10:48:44+00:00",
-      "url": "https://x.com/MycallsTrading/status/2122643091341644090",
-      "image": "https://pbs.twimg.com/media/HXUko8OboAIbrjC.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122642728416641102",
-      "handle": "superpotato08",
-      "display_name": "Potato™",
-      "text": "@mehul_n_trivedi Sona BLW Precision Forgings Ltd",
-      "created_at": "2026-11-17T10:47:17+00:00",
-      "url": "https://x.com/superpotato08/status/2122642728416641102",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE073K01018",
-          "query": "\"Sona Blw Precision Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122642650893549769",
-      "handle": "abcapital",
-      "display_name": "Aditya Birla Capital",
-      "text": "@A34921Harshitha Hi Harshitha, we regret the inconvenience you’ve experienced. Could you please share your registered contact number, email ID, and loan account number via DM, so that we can look into your concern and assist you further? ~ Sam https://t.co/CwoaiHo6lr",
-      "created_at": "2026-11-17T10:46:59+00:00",
-      "url": "https://x.com/abcapital/status/2122642650893549769",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122641414404309000",
-      "handle": "tatacapital",
-      "display_name": "Tata Capital",
-      "text": "@expert4advice Hi, we have taken note of your concerns and have passed them on to the relevant team. They will get back to you with an update as soon as possible.",
-      "created_at": "2026-11-17T10:42:04+00:00",
-      "url": "https://x.com/tatacapital/status/2122641414404309000",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE976I01016",
-          "query": "\"Tata Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122640471206006784",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Currency | Robust inflows, pullback in shorts lift rupee to seven-month peak\n\nOn Tuesday, three traders pointed to sizeable flows in the dollar-rupee non-deliverable forward market, likely linked to the unwinding of bearish rupee wagers.\n\nThe rupee closed at 93.47 per dollar, up 0.5% from its previous close and after touching a high of 93.40 in afternoon trading.\n\nRead More:\nhttps://t.co/SIhdEKx3zw",
-      "created_at": "2026-11-17T10:38:19+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122640471206006784",
-      "image": "https://pbs.twimg.com/media/HXUiE8ib0AA11xT.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122640404210430377",
-      "handle": "JU_BlackBuck",
-      "display_name": "BLACKBUCK",
-      "text": "@alishaknnq A look at horse eyes",
-      "created_at": "2026-11-17T10:38:03+00:00",
-      "url": "https://x.com/JU_BlackBuck/status/2122640404210430377",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122640171304960045",
-      "handle": "TheCredencecap",
-      "display_name": "The Credence Capital",
-      "text": "📈 Indian Market Closing Summary | 17 Nov 2026\n \n🟢 Nifty 50: 25,387.40 (+0.38%)\n🟢 Sensex: 82,532.19 (+0.52%)\n🟢 Bank Nifty: 62,273.25 (+1.13%)\n\nTop Nifty 50 Gainers 🚀\n• Adani Enterprises (ADANIENT): +3.24%\n• Eicher Motors (EICHERMOT): +3.01%\n• Mahindra & Mahindra (M&M): +1.80%\n• InterGlobe Aviation (INDIGO): +1.21%\n• Maruti Suzuki (MARUTI): +0.43%\n\nTop Nifty 50 Losers 📉\n• HCL Technologies (HCLTECH): -2.09%\n• Grasim Industries (GRASIM): -0.96%\n• Trent (TRENT): -0.86%\n• Apollo Hospitals (APOLLOHOSP): -0.67%\n• BSE (BSE): -0.58%\n\nMarket Note 📝\nIndian benchmarks extended their winning streak for a second straight session, shrugging off weak global cues and a tech-led selloff on Wall Street. Bank Nifty led the rally—scaling a fresh record high on strong PSU and private banking demand—while cooling crude oil prices and sustained FII inflows supported sentiment. Profit booking in IT and select defensive counters capped broader upside.\n\n#StockMarketIndia #Nifty50 #Sensex #BankNifty #IndianEquities #NSE #BSE #MarketSummary",
-      "created_at": "2026-11-17T10:37:08+00:00",
-      "url": "https://x.com/TheCredencecap/status/2122640171304960045",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        },
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122639821621674146",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketWithMC | Taking Stock: Markets extend gains; Nifty ends near 25,400, Sensex jumps 427 pts\n- Indian indices extended gains for a second session.\n\n- Sensex rose 427 points and Nifty crossed 25,500 intraday.\n- Realty and PSU Bank indices rallied nearly 2 percent each.\nRead More:\n\nhttps://t.co/WDRFsybMmD",
-      "created_at": "2026-11-17T10:35:44+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122639821621674146",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122638527532003489",
-      "handle": "CNBCTV18Live",
-      "display_name": "CNBC-TV18",
-      "text": "#StockMarket Highlights: #Nifty closes above 25,380, #Sensex rises over 400 pts; #AdaniEnt, #EicherMotors lead gainers\n\nhttps://t.co/Im5ye9GjrQ",
-      "created_at": "2026-11-17T10:30:36+00:00",
-      "url": "https://x.com/CNBCTV18Live/status/2122638527532003489",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"ADANIENT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122638520250749164",
-      "handle": "nubra_io",
-      "display_name": "Nubra",
-      "text": "17th Closing Bell 🔔 A steady climb today: Sensex up 427 pts, Nifty ends at 25,387. Adani Enterprises, Eicher Motors and Max Healthcare led the gains, while HCLTech and Power Grid dragged. 🟢\n\n#ClosingBell #Nubra #Sensex #Nifty https://t.co/VGmqg9z5en",
-      "created_at": "2026-11-17T10:30:34+00:00",
-      "url": "https://x.com/nubra_io/status/2122638520250749164",
-      "image": "https://pbs.twimg.com/media/HXUgcYLbgAAU-m6.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122637842069266663",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#RisingBharatSummit | \"We have received proposals worth Rs 7.5 lakh crore from industry for investments. These proposals range from renewable energy, defence, data centres.\"\n\nUP Cabinet Minister for Industrial Development, Export Promotion, NRI, Investment Promotion, Nand Gopal Gupta 'Nandi' (@NandiGuptaBJP), in conversation with Nalin Mehta (@nalinmehta ).\n\nTune in LIVE 👇\nhttps://t.co/uEVxYv1UsE\n\nTrack LIVE updates 👇\nhttps://t.co/KGLKRAkG2D\n\n#RisingBharat #UttarPradesh",
-      "created_at": "2026-11-17T10:27:52+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2122637842069266663",
-      "image": "https://pbs.twimg.com/media/HXUe8PaaIAAE8Bu.jpg",
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2122637644563923017",
-      "handle": "JU_BlackBuck",
-      "display_name": "BLACKBUCK",
-      "text": "@jessica_0441 D for sure look at his shoes .....",
-      "created_at": "2026-11-17T10:27:05+00:00",
-      "url": "https://x.com/JU_BlackBuck/status/2122637644563923017",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122637385858953419",
-      "handle": "AdityaBirlaGrp",
-      "display_name": "Aditya Birla Group",
-      "text": "@padmajuturuu Hello, please get in touch with Aditya Birla Capital (@abcapital), and the team will address your concern at the earliest.",
-      "created_at": "2026-11-17T10:26:04+00:00",
-      "url": "https://x.com/AdityaBirlaGrp/status/2122637385858953419",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE674K01013",
-          "query": "\"Aditya Birla Capital\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122636931985273153",
-      "handle": "JU_BlackBuck",
-      "display_name": "BLACKBUCK",
-      "text": "@Suraj19who Hmmmm bsdk ke rituraaj ban jaye phir",
-      "created_at": "2026-11-17T10:24:15+00:00",
-      "url": "https://x.com/JU_BlackBuck/status/2122636931985273153",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122636459194847341",
-      "handle": "sainik636",
-      "display_name": "SAINIK",
-      "text": "POST MARKET COMMENTARY ( 17/11/2026). THE TIDE IS TURNING. \n\nSlowly but surely. reflected in the A-D line which shows Even Stevens, but any astute screen reader can feel it that more & more are coming to the Party which seems to be beginning for the Broader Market.  \n\nVolumes improved to Rs. 1.20 Lakh crores. Bank Nifty was the cynosure of all eyes as it effortlessly leapt to an ATH.Closed up by 697 @ 62273. Nifty dutifully followed slightly behind @ 25387 a gain of 96. \n\nWhile Small & Microcap Indices were flat,Mid caps were mildly in the Green. Across sectors, the standout were PSU Banks & Realty. Losers included Capital Goods; CNXIT & Defense. \n\nWhile Oil cracked, Precious Metals struggled. Rupee strengthened by breaking through the 93.5 levels. 10 Y yield  was down. A relief. \n\nAmong Nifty stocks,  Adani Enterprises ; Eicher Motors & Max Health were the Winners while  HCL Tech; Power Grid & HDFC Life were on the losing side. \n\nAfter quite some time the Bulls can say : GAME ON.",
-      "created_at": "2026-11-17T10:22:23+00:00",
-      "url": "https://x.com/sainik636/status/2122636459194847341",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122636296254582949",
-      "handle": "JU_BlackBuck",
-      "display_name": "BLACKBUCK",
-      "text": "@roopk120710 Movie:- saawan",
-      "created_at": "2026-11-17T10:21:44+00:00",
-      "url": "https://x.com/JU_BlackBuck/status/2122636296254582949",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BlackBuck\""
-        },
-        {
-          "entityId": "isin:INE0UIZ01018",
-          "query": "\"BLACKBUCK\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2122635672276344947",
-      "handle": "willowwhis22170",
-      "display_name": "Willow Whispers",
-      "text": "Close: Nifty ends at 25,387 (+0.38%), off a nine-month high; Bank Nifty +1.13% at 62,273, smallcaps slip\n\n🟢 Nifty 50 25,387 (+0.38%), 27 of 50 up. It touched a nine-month high above 25,500 in the day. Bank Nifty +1.13%, Midcap 100 +0.25%. India VIX 15.52\n\n🔴 Smallcap 100 -0.22%. Midday it was up 0.6%, so the gains faded into the close\n\n🟢 PSU Bank +1.95%, Realty +1.94%, Private Bank +0.89%, Auto +0.72%. 🔴 IT -0.90%, Energy -0.27%, FMCG -0.20%\n\n🟢 Adani Enterprises +3.2%, Eicher Motors +3.0%, Asian Paints +2.0%, Axis Bank +2.0%, M&M +1.8%, SBI +1.7%. 🔴 HCLTech -2.1%, Wipro -1.9%, Power Grid -1.6%, HDFC Life -1.6%, ONGC -1.5%\n\n🟡 Nvidia reports Q3 tonight after the US close. We have not tied any stock move to a cause.\n\nSource: NSE, Yahoo Finance closing data. Not SEBI advice. DYOR.\n#Nifty #MarketClose",
-      "created_at": "2026-11-17T10:19:15+00:00",
-      "url": "https://x.com/willowwhis22170/status/2122635672276344947",
-      "image": "https://pbs.twimg.com/media/HXUd4xGakAAY06t.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
     "attempted": 7,
-    "incomplete": 223,
-    "checkedAt": "2026-11-18T09:29:30.012321+00:00"
+    "incomplete": 224,
+    "checkedAt": "2026-11-18T11:49:04.014597+00:00"
   },
   "archive": [
     {
@@ -9560,9 +9687,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-18T11:06:16.703Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-18T11:49:33.516Z",
     "lastSuccessAt": null
   }
 }
