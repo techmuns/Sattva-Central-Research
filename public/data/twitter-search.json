@@ -1,44 +1,45 @@
 {
   "queries": {
     "isin:INE423A01024|Adani Enterprises": {
-      "lastAttemptAt": "2026-11-12T21:16:40+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 98,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 102,
+      "targetThrough": "2026-11-18T09:12:08+00:00",
+      "pending": [
+        {
+          "from": "2026-10-01T05:24:56+00:00",
+          "to": "2026-10-25T07:18:32+00:00"
+        },
+        {
+          "from": "2026-10-25T07:18:32+00:00",
+          "to": "2026-11-18T09:12:08+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-12T22:32:50+00:00",
       "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE423A01024|ADANIENT": {
-      "lastAttemptAt": "2026-11-12T21:49:38+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 113,
+      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
+      "error": null,
+      "lastResultCount": 65,
       "targetThrough": "2026-10-12T22:32:50+00:00",
       "pending": [
-        {
-          "from": "2026-09-13T20:36:48+00:00",
-          "to": "2026-09-28T09:34:49+00:00"
-        },
         {
           "from": "2026-09-28T09:34:49+00:00",
           "to": "2026-10-12T22:32:50+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-07T09:11:18+00:00",
+      "lastDiscoveryAt": "2026-11-18T09:12:08+00:00",
       "lastSuccessAt": "2026-09-15T20:36:48+00:00"
     },
     "isin:INE674K01013|Aditya Birla Capital": {
-      "lastAttemptAt": "2026-11-12T22:47:53+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 13,
-      "targetThrough": "2026-09-15T20:36:48+00:00",
-      "pending": [
-        {
-          "from": "2026-09-11T08:36:48.415313+00:00",
-          "to": "2026-09-15T20:36:48+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-12T22:32:50+00:00"
+      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
+      "error": null,
+      "lastResultCount": 20,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-18T09:12:08+00:00",
+      "lastSuccessAt": "2026-09-15T20:36:48+00:00"
     },
     "isin:INE674K01013|ABCAPITAL": {
       "lastAttemptAt": "2026-11-14T00:02:52+00:00",
@@ -2532,15 +2533,11 @@
       "pending": []
     },
     "isin:INE205A01025|Vedanta": {
-      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
-      "error": null,
-      "lastResultCount": 94,
+      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 118,
       "targetThrough": "2026-09-20T00:19:51+00:00",
       "pending": [
-        {
-          "from": "2026-09-13T06:19:51.733294+00:00",
-          "to": "2026-09-15T12:19:51.488863+00:00"
-        },
         {
           "from": "2026-09-15T12:19:51.488863+00:00",
           "to": "2026-09-17T18:19:51.244431+00:00"
@@ -2548,22 +2545,26 @@
         {
           "from": "2026-09-17T18:19:51.244431+00:00",
           "to": "2026-09-20T00:19:51+00:00"
+        },
+        {
+          "from": "2026-09-13T06:19:51.733294+00:00",
+          "to": "2026-09-14T09:19:51.611078+00:00"
+        },
+        {
+          "from": "2026-09-14T09:19:51.611078+00:00",
+          "to": "2026-09-15T12:19:51.488863+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-12T20:42:43+00:00"
+      "lastDiscoveryAt": "2026-11-18T09:12:08+00:00"
     },
     "isin:INE205A01025|VEDL": {
-      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
+      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
       "error": null,
-      "lastResultCount": 58,
-      "targetThrough": "2026-09-20T00:19:51+00:00",
-      "pending": [
-        {
-          "from": "2026-09-15T12:19:51.488863+00:00",
-          "to": "2026-09-20T00:19:51+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-12T20:42:43+00:00"
+      "lastResultCount": 48,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-18T09:12:08+00:00",
+      "lastSuccessAt": "2026-09-20T00:19:51+00:00"
     },
     "isin:INE704J01044|Vedanta Oil and Gas": {
       "lastAttemptAt": "2026-10-07T08:39:38+00:00",
@@ -2704,7 +2705,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|AARTIPHARM": {
-      "lastAttemptAt": "2026-11-12T23:36:08+00:00",
+      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
       "error": "search-unavailable",
       "lastResultCount": 20,
       "lastSuccessAt": "2026-10-28T07:31:11+00:00",
@@ -3120,8 +3121,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
+    "attempted": 6,
     "incomplete": 226,
-    "checkedAt": "2026-11-18T08:09:38.345335+00:00"
+    "checkedAt": "2026-11-18T09:12:08.122456+00:00"
   }
 }
