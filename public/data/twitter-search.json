@@ -2842,7 +2842,7 @@
       "lastDiscoveryAt": "2026-11-18T11:49:04+00:00"
     },
     "isin:INE0DRI01029|ESDS": {
-      "lastAttemptAt": "2026-11-13T09:43:07+00:00",
+      "lastAttemptAt": "2026-11-18T12:20:45+00:00",
       "lastResultCount": 115,
       "error": "search-unavailable",
       "targetThrough": "2026-10-07T17:08:22+00:00",
@@ -3112,8 +3112,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 7,
+    "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-11-18T11:49:04.014597+00:00"
+    "checkedAt": "2026-11-18T12:20:45.330563+00:00"
   }
 }
