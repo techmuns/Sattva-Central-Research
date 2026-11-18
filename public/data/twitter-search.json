@@ -2492,8 +2492,8 @@
       "pending": []
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-11-12T20:42:43+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-18T06:05:04+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 17,
       "lastSuccessAt": "2026-11-12T20:42:43+00:00",
       "targetThrough": null,
@@ -3122,6 +3122,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 215,
-    "checkedAt": "2026-11-18T04:05:56.688200+00:00"
+    "checkedAt": "2026-11-18T06:05:04.685568+00:00"
   }
 }
