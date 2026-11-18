@@ -2462,7 +2462,7 @@
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|URBANCO": {
-      "lastAttemptAt": "2026-11-12T18:04:28+00:00",
+      "lastAttemptAt": "2026-11-18T01:47:50+00:00",
       "error": "search-unavailable",
       "lastResultCount": 17,
       "lastSuccessAt": "2026-10-17T05:23:01+00:00",
@@ -3122,6 +3122,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 215,
-    "checkedAt": "2026-11-18T01:41:58.798087+00:00"
+    "checkedAt": "2026-11-18T01:47:50.739535+00:00"
   }
 }
