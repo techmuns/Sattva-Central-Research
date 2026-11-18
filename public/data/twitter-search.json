@@ -3015,8 +3015,8 @@
       "error": "search-unavailable"
     },
     "isin:INE658D01029|SIMPLEXCAS": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-18T22:51:49+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 4,
       "lastSuccessAt": "2026-11-13T21:17:40+00:00",
       "targetThrough": null,
@@ -3118,7 +3118,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 221,
-    "checkedAt": "2026-11-18T22:12:34.023875+00:00"
+    "incomplete": 223,
+    "checkedAt": "2026-11-18T22:51:49.725394+00:00"
   }
 }
