@@ -2604,10 +2604,10 @@
       "pending": []
     },
     "isin:INE564S01019|Vikram Kamats Hospitality": {
-      "lastAttemptAt": "2026-11-13T03:00:29+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 4,
-      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
+      "lastAttemptAt": "2026-11-18T09:29:30+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-18T09:29:30+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2633,15 +2633,15 @@
       "lastDiscoveryAt": "2026-10-22T10:22:06+00:00"
     },
     "isin:INE540H01012|Voltamp Transformers": {
-      "lastAttemptAt": "2026-11-13T03:02:49+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 24,
-      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
+      "lastAttemptAt": "2026-11-18T09:29:30+00:00",
+      "error": null,
+      "lastResultCount": 34,
+      "lastSuccessAt": "2026-11-18T09:29:30+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE540H01012|VOLTAMP": {
-      "lastAttemptAt": "2026-11-13T03:37:26+00:00",
+      "lastAttemptAt": "2026-11-18T09:29:30+00:00",
       "error": "search-unavailable",
       "lastResultCount": 55,
       "targetThrough": null,
@@ -2713,32 +2713,38 @@
       "pending": []
     },
     "isin:INE852O01025|Aptus Value Housing Finance India": {
-      "lastAttemptAt": "2026-11-13T00:32:50+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
+      "lastAttemptAt": "2026-11-18T09:29:30+00:00",
+      "error": null,
+      "lastResultCount": 10,
+      "lastSuccessAt": "2026-11-18T09:29:30+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE852O01025|APTUS": {
-      "lastAttemptAt": "2026-11-13T01:11:16+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 105,
+      "lastAttemptAt": "2026-11-18T09:29:30+00:00",
+      "error": null,
+      "lastResultCount": 25,
       "targetThrough": "2026-10-28T07:31:11+00:00",
       "pending": [
-        {
-          "from": "2026-10-19T07:31:11.845567+00:00",
-          "to": "2026-10-23T19:31:11.422783+00:00"
-        },
         {
           "from": "2026-10-23T19:31:11.422783+00:00",
           "to": "2026-10-28T07:31:11+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-18T09:29:30+00:00"
     },
     "isin:INE0UIZ01018|BlackBuck": {
-      "lastAttemptAt": "2026-11-13T01:47:18+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-18T09:29:30+00:00",
+      "error": null,
+      "lastResultCount": 78,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-18T09:29:30+00:00",
+      "lastSuccessAt": "2026-10-22T20:54:29+00:00"
+    },
+    "isin:INE0UIZ01018|BLACKBUCK": {
+      "lastAttemptAt": "2026-11-18T09:29:30+00:00",
+      "error": null,
       "lastResultCount": 24,
       "targetThrough": "2026-10-22T20:54:29+00:00",
       "pending": [
@@ -2747,24 +2753,7 @@
           "to": "2026-10-22T20:54:29+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-28T07:31:11+00:00"
-    },
-    "isin:INE0UIZ01018|BLACKBUCK": {
-      "lastAttemptAt": "2026-11-13T02:29:07+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 105,
-      "targetThrough": "2026-10-22T20:54:29+00:00",
-      "pending": [
-        {
-          "from": "2026-10-13T20:54:29.963576+00:00",
-          "to": "2026-10-18T08:54:29.481788+00:00"
-        },
-        {
-          "from": "2026-10-18T08:54:29.481788+00:00",
-          "to": "2026-10-22T20:54:29+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-28T07:31:11+00:00"
+      "lastDiscoveryAt": "2026-11-18T09:29:30+00:00"
     },
     "isin:INE120A01034|Carborundum Universal": {
       "lastAttemptAt": "2026-11-13T06:25:20+00:00",
@@ -3121,8 +3110,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 6,
-    "incomplete": 226,
-    "checkedAt": "2026-11-18T09:12:08.122456+00:00"
+    "attempted": 7,
+    "incomplete": 223,
+    "checkedAt": "2026-11-18T09:29:30.012321+00:00"
   }
 }
