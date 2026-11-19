@@ -220,8 +220,8 @@
       "pending": []
     },
     "isin:INE555B01013|AXISCADES": {
-      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-19T08:11:11+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 20,
       "targetThrough": null,
       "pending": [],
@@ -3150,6 +3150,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-11-19T08:07:58.292690+00:00"
+    "checkedAt": "2026-11-19T08:11:11.754242+00:00"
   }
 }
