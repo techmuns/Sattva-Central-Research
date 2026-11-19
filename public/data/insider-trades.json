@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-11-19T00:43:56.243Z",
-  "oldestDataAt": "2026-11-19T00:43:56.243Z",
+  "capturedAt": "2026-11-19T07:57:33.563Z",
+  "oldestDataAt": "2026-11-19T07:57:33.563Z",
   "from": "2025-11-19",
   "to": "2026-11-19",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-19T00:43:56.243Z",
+      "capturedAt": "2026-11-19T07:57:33.563Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-19T00:43:56.243Z",
+      "capturedAt": "2026-11-19T07:57:33.563Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-11-17",
+      "latestDate": "2026-11-18",
       "oldestDate": "2026-11-10",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-19T00:43:56.243Z",
+      "capturedAt": "2026-11-19T07:57:33.563Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-11-19T00:43:56.243Z",
+      "capturedAt": "2026-11-19T07:57:33.563Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 2221,
+  "withRows": 2222,
   "emptyCount": 0,
-  "rowCount": 25586,
+  "rowCount": 25590,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -362088,6 +362088,51 @@
     "SAJHOTELS": [
       {
         "ticker": "SAJHOTELS",
+        "date": "2026-11-18",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Saj Hotels",
+          "Insider": "KARTIK MAGANLAL TIMBADIA",
+          "Transaction": "Acquisition",
+          "Trade Shares": "12000",
+          "Broadcast Date": "2026-11-18",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SAJHOTELS",
+        "date": "2026-11-18",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Saj Hotels",
+          "Insider": "Rahul Maganlal Timbadia",
+          "Transaction": "Acquisition",
+          "Trade Shares": "38000",
+          "Broadcast Date": "2026-11-18",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SAJHOTELS",
+        "date": "2026-11-18",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Saj Hotels",
+          "Insider": "Rahul Maganlal Timbadia",
+          "Transaction": "Acquisition",
+          "Trade Shares": "52000",
+          "Broadcast Date": "2026-11-18",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SAJHOTELS",
         "date": "2026-11-12",
         "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
         "sourceId": "insiders",
@@ -484097,6 +484142,23 @@
           "Trade Shares": "5145455",
           "Trade Value": "84.05 crore",
           "Broadcast Date": "2026-11-17",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "PARIN": [
+      {
+        "ticker": "PARIN",
+        "date": "2026-11-18",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Parin Enterpris.",
+          "Insider": "P.P. Furniture Private Limited",
+          "Transaction": "Sell",
+          "Trade Shares": "8011",
+          "Broadcast Date": "2026-11-18",
           "Source": "Screener.in"
         }
       }
