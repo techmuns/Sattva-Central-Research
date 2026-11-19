@@ -309,7 +309,7 @@
       ]
     },
     "isin:INE476A01022|Canara Bank": {
-      "lastAttemptAt": "2026-11-14T19:49:22+00:00",
+      "lastAttemptAt": "2026-11-19T09:25:46+00:00",
       "error": "search-unavailable",
       "lastResultCount": 101,
       "targetThrough": "2026-10-14T05:17:36+00:00",
@@ -3146,8 +3146,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 6,
+    "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-11-19T08:49:47.658424+00:00"
+    "checkedAt": "2026-11-19T09:25:46.914671+00:00"
   }
 }
