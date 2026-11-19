@@ -9480,9 +9480,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-19T03:43:47.246Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-19T04:23:57.870Z",
     "lastSuccessAt": null
   }
 }
