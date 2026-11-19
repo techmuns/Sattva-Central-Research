@@ -474,8 +474,8 @@
       "pending": []
     },
     "isin:INE0N0J01014|Concord Control Systems": {
-      "lastAttemptAt": "2026-11-15T01:21:10+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-19T18:15:49+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 5,
       "lastSuccessAt": "2026-11-15T01:21:10+00:00",
       "targetThrough": null,
@@ -3152,8 +3152,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 7,
-    "incomplete": 222,
-    "checkedAt": "2026-11-19T17:29:43.950409+00:00"
+    "attempted": 1,
+    "incomplete": 227,
+    "checkedAt": "2026-11-19T18:15:49.060873+00:00"
   }
 }

@@ -9602,9 +9602,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-19T17:30:15.961Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-19T18:16:04.611Z",
     "lastSuccessAt": null
   }
 }
