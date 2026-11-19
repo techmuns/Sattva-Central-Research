@@ -482,8 +482,8 @@
       "pending": []
     },
     "isin:INE532F01054|Edelweiss Financial Services": {
-      "lastAttemptAt": "2026-11-15T01:21:10+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-19T19:13:25+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 76,
       "lastSuccessAt": "2026-11-15T01:21:10+00:00",
       "targetThrough": null,
@@ -3154,6 +3154,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 227,
-    "checkedAt": "2026-11-19T18:15:49.060873+00:00"
+    "checkedAt": "2026-11-19T19:13:25.055345+00:00"
   }
 }
