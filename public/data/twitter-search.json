@@ -42,76 +42,70 @@
       "lastSuccessAt": "2026-09-15T20:36:48+00:00"
     },
     "isin:INE674K01013|ABCAPITAL": {
-      "lastAttemptAt": "2026-11-14T00:02:52+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 103,
+      "lastAttemptAt": "2026-11-19T01:27:57+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 105,
       "targetThrough": "2026-10-29T16:20:30+00:00",
       "pending": [
         {
-          "from": "2026-09-13T20:36:48+00:00",
-          "to": "2026-10-06T18:28:39+00:00"
-        },
-        {
           "from": "2026-10-06T18:28:39+00:00",
           "to": "2026-10-29T16:20:30+00:00"
+        },
+        {
+          "from": "2026-09-13T20:36:48+00:00",
+          "to": "2026-09-25T07:32:43.500000+00:00"
+        },
+        {
+          "from": "2026-09-25T07:32:43.500000+00:00",
+          "to": "2026-10-06T18:28:39+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-23T12:25:00+00:00",
+      "lastDiscoveryAt": "2026-11-19T01:27:57+00:00",
       "lastSuccessAt": "2026-09-15T20:36:48+00:00"
     },
     "isin:INE679V01027|Aditya Vision": {
-      "lastAttemptAt": "2026-11-14T01:42:19+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 104,
+      "lastAttemptAt": "2026-11-19T01:27:57+00:00",
+      "error": null,
+      "lastResultCount": 26,
       "lastSuccessAt": "2026-10-29T16:20:30+00:00",
       "targetThrough": "2026-11-06T11:35:34+00:00",
       "pending": [
         {
-          "from": "2026-10-27T16:20:30+00:00",
-          "to": "2026-11-01T13:58:02+00:00"
-        },
-        {
           "from": "2026-11-01T13:58:02+00:00",
           "to": "2026-11-06T11:35:34+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-19T01:27:57+00:00"
     },
     "isin:INE0ALI01010|Advait Energy Transitions": {
-      "lastAttemptAt": "2026-11-14T03:37:40+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 105,
+      "lastAttemptAt": "2026-11-19T01:27:57+00:00",
+      "error": null,
+      "lastResultCount": 28,
       "lastSuccessAt": "2026-10-29T16:20:30+00:00",
       "targetThrough": "2026-11-06T11:35:34+00:00",
       "pending": [
         {
-          "from": "2026-10-27T16:20:30+00:00",
-          "to": "2026-11-01T13:58:02+00:00"
-        },
-        {
           "from": "2026-11-01T13:58:02+00:00",
           "to": "2026-11-06T11:35:34+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-19T01:27:57+00:00"
     },
     "isin:INE0ALI01010|ADVAIT": {
-      "lastAttemptAt": "2026-11-14T04:18:23+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 85,
+      "lastAttemptAt": "2026-11-19T01:27:57+00:00",
+      "error": null,
+      "lastResultCount": 75,
       "targetThrough": "2026-09-15T20:36:48+00:00",
       "pending": [
-        {
-          "from": "2026-09-11T08:36:48.415313+00:00",
-          "to": "2026-09-13T14:36:48.207657+00:00"
-        },
         {
           "from": "2026-09-13T14:36:48.207657+00:00",
           "to": "2026-09-15T20:36:48+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-06T11:35:34+00:00"
+      "lastDiscoveryAt": "2026-11-19T01:27:57+00:00"
     },
     "isin:INE914E01040|Alankit": {
-      "lastAttemptAt": "2026-11-14T06:29:55+00:00",
+      "lastAttemptAt": "2026-11-19T01:27:57+00:00",
       "error": "search-unavailable",
       "lastResultCount": 14,
       "lastSuccessAt": "2026-11-06T11:35:34+00:00",
@@ -3106,10 +3100,10 @@
       "pending": []
     },
     "isin:INE625G01013|WELENT": {
-      "lastAttemptAt": "2026-11-13T23:50:15+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 21,
-      "lastSuccessAt": "2026-10-13T20:29:00+00:00",
+      "lastAttemptAt": "2026-11-19T01:27:57+00:00",
+      "error": null,
+      "lastResultCount": 35,
+      "lastSuccessAt": "2026-11-19T01:27:57+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -3128,8 +3122,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 224,
-    "checkedAt": "2026-11-19T00:36:57.808832+00:00"
+    "attempted": 6,
+    "incomplete": 228,
+    "checkedAt": "2026-11-19T01:27:57.036524+00:00"
   }
 }
