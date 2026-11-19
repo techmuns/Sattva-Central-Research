@@ -2650,16 +2650,25 @@
       "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE377N01017|Waaree Energies": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
-      "error": null,
-      "lastResultCount": 61,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 101,
+      "targetThrough": "2026-11-19T00:28:57+00:00",
+      "pending": [
+        {
+          "from": "2026-10-01T05:24:56+00:00",
+          "to": "2026-10-25T14:56:56.500000+00:00"
+        },
+        {
+          "from": "2026-10-25T14:56:56.500000+00:00",
+          "to": "2026-11-19T00:28:57+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-11-13T21:17:40+00:00",
       "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE377N01017|WAAREEENER": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
       "error": "search-unavailable",
       "lastResultCount": 24,
       "lastSuccessAt": "2026-10-13T20:29:00+00:00",
@@ -3023,66 +3032,68 @@
       "pending": []
     },
     "isin:INE092A01019|Tata Chemicals": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 103,
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
+      "error": null,
+      "lastResultCount": 40,
       "targetThrough": "2026-11-13T21:17:40+00:00",
       "pending": [
-        {
-          "from": "2026-11-04T21:17:40.808310+00:00",
-          "to": "2026-11-09T09:17:40.404155+00:00"
-        },
         {
           "from": "2026-11-09T09:17:40.404155+00:00",
           "to": "2026-11-13T21:17:40+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-19T00:28:57+00:00"
     },
     "isin:INE092A01019|TATACHEM": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
       "error": null,
-      "lastResultCount": 62,
-      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "lastResultCount": 39,
+      "lastSuccessAt": "2026-11-19T00:28:57+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE011K01018|Tega Industries": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
       "error": null,
-      "lastResultCount": 51,
-      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "lastResultCount": 28,
+      "lastSuccessAt": "2026-11-19T00:28:57+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE011K01018|TEGA": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
       "error": "result-cap-incomplete",
-      "lastResultCount": 109,
+      "lastResultCount": 118,
       "targetThrough": "2026-11-13T21:17:40+00:00",
       "pending": [
         {
-          "from": "2026-11-04T21:17:40.808310+00:00",
-          "to": "2026-11-09T09:17:40.404155+00:00"
-        },
-        {
           "from": "2026-11-09T09:17:40.404155+00:00",
           "to": "2026-11-13T21:17:40+00:00"
+        },
+        {
+          "from": "2026-11-04T21:17:40.808310+00:00",
+          "to": "2026-11-07T03:17:40.606232+00:00"
+        },
+        {
+          "from": "2026-11-07T03:17:40.606232+00:00",
+          "to": "2026-11-09T09:17:40.404155+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-19T00:28:57+00:00"
     },
     "isin:INE0JA001018|Venus Pipes & Tubes": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
       "error": null,
-      "lastResultCount": 21,
-      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "lastResultCount": 11,
+      "lastSuccessAt": "2026-11-19T00:28:57+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0JA001018|VENUSPIPES": {
-      "lastAttemptAt": "2026-11-13T21:17:40+00:00",
+      "lastAttemptAt": "2026-11-19T00:28:57+00:00",
       "error": null,
-      "lastResultCount": 60,
-      "lastSuccessAt": "2026-11-13T21:17:40+00:00",
+      "lastResultCount": 10,
+      "lastSuccessAt": "2026-11-19T00:28:57+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -3117,8 +3128,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 223,
-    "checkedAt": "2026-11-18T22:51:49.725394+00:00"
+    "attempted": 8,
+    "incomplete": 219,
+    "checkedAt": "2026-11-19T00:28:57.915453+00:00"
   }
 }
