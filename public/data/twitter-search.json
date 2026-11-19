@@ -229,73 +229,71 @@
       "lastSuccessAt": "2026-10-14T05:17:36+00:00"
     },
     "isin:INE083K01017|Bengal and Assam Company": {
-      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
+      "lastAttemptAt": "2026-11-19T08:49:47+00:00",
       "error": null,
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-11-14T16:23:11+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-19T08:49:47+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE083K01017|BENGALASM": {
-      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
+      "lastAttemptAt": "2026-11-19T08:49:47+00:00",
       "error": null,
-      "lastResultCount": 7,
-      "lastSuccessAt": "2026-11-14T16:23:11+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-19T08:49:47+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0HOQ01053|Billionbrains Garage Ventures": {
-      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-11-19T08:49:47+00:00",
+      "error": null,
+      "lastResultCount": 53,
       "lastSuccessAt": "2026-10-14T05:17:36+00:00",
       "targetThrough": "2026-11-14T16:23:11+00:00",
       "pending": [
         {
-          "from": "2026-10-12T05:17:36+00:00",
-          "to": "2026-10-28T22:50:23.500000+00:00"
-        },
-        {
           "from": "2026-10-28T22:50:23.500000+00:00",
           "to": "2026-11-14T16:23:11+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-19T08:49:47+00:00"
     },
     "isin:INE0HOQ01053|GROWW": {
-      "lastAttemptAt": "2026-11-14T16:23:11+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 104,
+      "lastAttemptAt": "2026-11-19T08:49:47+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
       "targetThrough": "2026-10-14T05:17:36+00:00",
       "pending": [
         {
-          "from": "2026-10-05T05:17:36.606600+00:00",
-          "to": "2026-10-09T17:17:36.303300+00:00"
+          "from": "2026-10-09T17:17:36.303300+00:00",
+          "to": "2026-10-14T05:17:36+00:00"
         },
+        {
+          "from": "2026-10-05T05:17:36.606600+00:00",
+          "to": "2026-10-07T11:17:36.454950+00:00"
+        },
+        {
+          "from": "2026-10-07T11:17:36.454950+00:00",
+          "to": "2026-10-09T17:17:36.303300+00:00"
+        }
+      ],
+      "lastDiscoveryAt": "2026-11-19T08:49:47+00:00"
+    },
+    "isin:INE376G01013|Biocon": {
+      "lastAttemptAt": "2026-11-19T08:49:47+00:00",
+      "error": null,
+      "lastResultCount": 22,
+      "targetThrough": "2026-10-14T05:17:36+00:00",
+      "pending": [
         {
           "from": "2026-10-09T17:17:36.303300+00:00",
           "to": "2026-10-14T05:17:36+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-14T16:23:11+00:00"
-    },
-    "isin:INE376G01013|Biocon": {
-      "lastAttemptAt": "2026-11-14T17:07:31+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 103,
-      "targetThrough": "2026-10-14T05:17:36+00:00",
-      "pending": [
-        {
-          "from": "2026-10-05T05:17:36.606600+00:00",
-          "to": "2026-10-09T17:17:36.303300+00:00"
-        },
-        {
-          "from": "2026-10-09T17:17:36.303300+00:00",
-          "to": "2026-10-14T05:17:36+00:00"
-        }
-      ]
+      "lastDiscoveryAt": "2026-11-19T08:49:47+00:00"
     },
     "isin:INE376G01013|BIOCON": {
-      "lastAttemptAt": "2026-11-14T18:54:47+00:00",
+      "lastAttemptAt": "2026-11-19T08:49:47+00:00",
       "error": "search-unavailable",
       "lastResultCount": 103,
       "targetThrough": "2026-10-14T05:17:36+00:00",
@@ -3148,8 +3146,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 223,
-    "checkedAt": "2026-11-19T08:11:11.754242+00:00"
+    "attempted": 6,
+    "incomplete": 221,
+    "checkedAt": "2026-11-19T08:49:47.658424+00:00"
   }
 }
