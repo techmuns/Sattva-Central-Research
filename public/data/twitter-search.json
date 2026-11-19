@@ -507,7 +507,7 @@
       ]
     },
     "isin:INE532F01054|EAAA": {
-      "lastAttemptAt": "2026-11-15T01:21:10+00:00",
+      "lastAttemptAt": "2026-11-19T21:15:33+00:00",
       "error": "search-unavailable",
       "lastResultCount": 111,
       "targetThrough": "2026-10-04T00:14:44+00:00",
@@ -3154,6 +3154,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-11-19T20:44:10.508593+00:00"
+    "checkedAt": "2026-11-19T21:15:33.743722+00:00"
   }
 }
