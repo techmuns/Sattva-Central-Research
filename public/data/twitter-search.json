@@ -1102,8 +1102,8 @@
       ]
     },
     "isin:INE082A01010|KOPRAN": {
-      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-20T17:54:06+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 53,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
       "targetThrough": "2026-10-20T15:29:19+00:00",
@@ -3166,8 +3166,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 11,
+    "attempted": 1,
     "incomplete": 216,
-    "checkedAt": "2026-11-20T17:12:38.585067+00:00"
+    "checkedAt": "2026-11-20T17:54:06.804046+00:00"
   }
 }
