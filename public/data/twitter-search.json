@@ -1206,8 +1206,8 @@
       "pending": []
     },
     "isin:INE101A01026|Mahindra & Mahindra": {
-      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-20T22:42:42+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 100,
       "lastSuccessAt": "2026-09-27T08:32:05+00:00",
       "targetThrough": "2026-11-16T07:50:45+00:00",
@@ -3168,6 +3168,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-11-20T22:12:08.219172+00:00"
+    "checkedAt": "2026-11-20T22:42:42.103195+00:00"
   }
 }
