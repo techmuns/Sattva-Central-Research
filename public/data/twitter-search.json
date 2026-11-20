@@ -1198,8 +1198,8 @@
       "pending": []
     },
     "isin:INE818H01020|LTFOODS": {
-      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-20T22:12:08+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 13,
       "lastSuccessAt": "2026-11-16T07:50:45+00:00",
       "targetThrough": null,
@@ -3168,6 +3168,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-11-20T21:38:19.213844+00:00"
+    "checkedAt": "2026-11-20T22:12:08.219172+00:00"
   }
 }
