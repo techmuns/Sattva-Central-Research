@@ -1,11 +1,16 @@
 {
-  "capturedAt": "2026-11-19T09:41:38.398Z",
-  "from": "2026-11-16",
-  "to": "2026-12-10",
+  "capturedAt": "2026-11-20T08:16:58.463Z",
+  "from": "2026-11-17",
+  "to": "2026-12-11",
   "pageSize": 20,
   "source": "Moneycontrol — Earnings Calendar (all-exchange counts plus every earnings-widget pagination page)",
   "note": "The per-date counts and company lists both cover All exchanges. Every published pagination page is captured; counts are re-fetched live by the Worker and these lists are as of capturedAt.",
   "days": [
+    {
+      "date": "2026-12-11",
+      "displayDate": "11 Dec",
+      "count": 0
+    },
     {
       "date": "2026-12-10",
       "displayDate": "10 Dec",
@@ -79,12 +84,12 @@
     {
       "date": "2026-11-26",
       "displayDate": "26 Nov",
-      "count": 0
+      "count": 1
     },
     {
       "date": "2026-11-25",
       "displayDate": "25 Nov",
-      "count": 0
+      "count": 2
     },
     {
       "date": "2026-11-24",
@@ -104,12 +109,12 @@
     {
       "date": "2026-11-21",
       "displayDate": "21 Nov",
-      "count": 3
+      "count": 4
     },
     {
       "date": "2026-11-20",
       "displayDate": "20 Nov",
-      "count": 1
+      "count": 4
     },
     {
       "date": "2026-11-19",
@@ -119,17 +124,12 @@
     {
       "date": "2026-11-18",
       "displayDate": "18 Nov",
-      "count": 9
+      "count": 6
     },
     {
       "date": "2026-11-17",
       "displayDate": "17 Nov",
-      "count": 2
-    },
-    {
-      "date": "2026-11-16",
-      "displayDate": "16 Nov",
-      "count": 5
+      "count": 3
     }
   ],
   "byDate": {
@@ -143,9 +143,9 @@
           "displayDate": "5 Dec",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 8.4,
-          "changePct": 2.19,
-          "marketCap": 226.73,
+          "ltp": 8.34,
+          "changePct": -0.12,
+          "marketCap": 225.11,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/textiles-denim/rbdenims/RD03",
           "ticker": "RNBDENIMS",
@@ -159,7 +159,77 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
+    },
+    "2026-11-26": {
+      "rows": [
+        {
+          "scId": "GLC",
+          "name": "GB Logistics Commerce",
+          "shortName": null,
+          "resultDate": "2026-11-26",
+          "displayDate": "26 Nov",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 30.3,
+          "changePct": 12.22,
+          "marketCap": 24.83,
+          "exchange": "B",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/logistics/gblogisticscommerce/GLC"
+        }
+      ],
+      "scheduledCount": 1,
+      "pageSize": 20,
+      "pagesFetched": 1,
+      "complete": true,
+      "asOnDate": "20/11/2026"
+    },
+    "2026-11-25": {
+      "rows": [
+        {
+          "scId": "RI45",
+          "name": "RBM Infracon",
+          "shortName": null,
+          "resultDate": "2026-11-25",
+          "displayDate": "25 Nov",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 195.2,
+          "changePct": -2.86,
+          "marketCap": 207.56,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/engineering/rbminfracon/RI46",
+          "ticker": "RBMINFRA",
+          "fullName": "RBM Infracon",
+          "industry": "Engineering",
+          "shares": 10633000,
+          "mktCapAtBuild": 207.56
+        },
+        {
+          "scId": "APF02",
+          "name": "Anya Polytech Fertilizers",
+          "shortName": null,
+          "resultDate": "2026-11-25",
+          "displayDate": "25 Nov",
+          "quarter": "Q2-2026",
+          "time": null,
+          "ltp": 16.45,
+          "changePct": -2.37,
+          "marketCap": 197.4,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/packaging-packaging-materials/anyapolytechfertilizers/APF02",
+          "ticker": "ANYA",
+          "fullName": "Anya Polytech",
+          "industry": "Packaging - Packaging Materials",
+          "shares": 120000000,
+          "mktCapAtBuild": 197.4
+        }
+      ],
+      "scheduledCount": 2,
+      "pageSize": 20,
+      "pagesFetched": 1,
+      "complete": true,
+      "asOnDate": "20/11/2026"
     },
     "2026-11-24": {
       "rows": [
@@ -171,9 +241,9 @@
           "displayDate": "24 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 262.85,
-          "changePct": 1.56,
-          "marketCap": 525.37,
+          "ltp": 244.95,
+          "changePct": -6.83,
+          "marketCap": 489.59,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/electronic-goods/wisconindustries/WIL02"
         },
@@ -185,23 +255,23 @@
           "displayDate": "24 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 17.05,
-          "changePct": 0.53,
-          "marketCap": 228.07,
+          "ltp": 17.38,
+          "changePct": 2,
+          "marketCap": 232.49,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/auto-ancillaries/setcoautomotive/SA14",
           "ticker": "SETCO",
           "fullName": "Setco Auto",
           "industry": "Auto Ancillaries - Clutches",
           "shares": 133767275,
-          "mktCapAtBuild": 228.07
+          "mktCapAtBuild": 232.49
         }
       ],
       "scheduledCount": 2,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
     },
     "2026-11-23": {
       "rows": [
@@ -213,9 +283,9 @@
           "displayDate": "23 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 494.75,
-          "changePct": 0.89,
-          "marketCap": 641.32,
+          "ltp": 495.6,
+          "changePct": 0.16,
+          "marketCap": 642.42,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/diversified/exhiconeventsmediasolutions/EEM"
         },
@@ -227,16 +297,16 @@
           "displayDate": "23 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 83.6,
-          "changePct": -0.91,
-          "marketCap": 525.21,
+          "ltp": 83.88,
+          "changePct": 0.24,
+          "marketCap": 526.97,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/iron-steel/bombaycoatedspecialsteels/BCSSL",
           "ticker": "BCSSL",
           "fullName": "Bombay Coated",
           "industry": "Iron & Steel",
           "shares": 62824211,
-          "mktCapAtBuild": 525.21
+          "mktCapAtBuild": 526.97
         },
         {
           "scId": "CRL03",
@@ -246,9 +316,9 @@
           "displayDate": "23 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 106,
-          "changePct": -2.14,
-          "marketCap": 138.89,
+          "ltp": 103,
+          "changePct": -2.1,
+          "marketCap": 134.96,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/electrodes-welding-equipment/carverroboweld/CRL03"
         },
@@ -260,23 +330,23 @@
           "displayDate": "23 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 24.8,
-          "changePct": 4.86,
-          "marketCap": 29.82,
+          "ltp": 25,
+          "changePct": 0.81,
+          "marketCap": 30.06,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/transmission-towers-equipments/koredigital/KD05",
           "ticker": "KDL",
           "fullName": "Kore Digital",
           "industry": "Transmission Towers / Equipments",
           "shares": 12024000,
-          "mktCapAtBuild": 29.82
+          "mktCapAtBuild": 30.06
         }
       ],
       "scheduledCount": 4,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
     },
     "2026-11-21": {
       "rows": [
@@ -288,11 +358,25 @@
           "displayDate": "21 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 730.1,
-          "changePct": -0.38,
-          "marketCap": 1614.93,
+          "ltp": 721,
+          "changePct": -1.35,
+          "marketCap": 1594.8,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/vegetable-oils-products/shrivenkateshrefineries/SVR"
+        },
+        {
+          "scId": "SIA02",
+          "name": "Spice Islands Industries",
+          "shortName": null,
+          "resultDate": "2026-11-21",
+          "displayDate": "21 Nov",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 142.85,
+          "changePct": -4.99,
+          "marketCap": 445.22,
+          "exchange": "B",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/textiles-readymade-apparels/spiceislandsindustries/SIA02"
         },
         {
           "scId": "HLA",
@@ -302,9 +386,9 @@
           "displayDate": "21 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 4.85,
-          "changePct": -3,
-          "marketCap": 24.07,
+          "ltp": 4.95,
+          "changePct": -1,
+          "marketCap": 24.56,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/trading/healthylifeagritec/HLA"
         },
@@ -317,17 +401,17 @@
           "quarter": "NA",
           "time": null,
           "ltp": 1.77,
-          "changePct": -3.8,
+          "changePct": null,
           "marketCap": 3.43,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/miscellaneous/afenterprises/AFE01"
         }
       ],
-      "scheduledCount": 3,
+      "scheduledCount": 4,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
     },
     "2026-11-20": {
       "rows": [
@@ -339,18 +423,65 @@
           "displayDate": "20 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 4.31,
-          "changePct": -4.86,
-          "marketCap": 688.95,
+          "ltp": 4.23,
+          "changePct": -1.86,
+          "marketCap": 676.17,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cigarettes-tobacco/eliteconinternational/KJA"
+        },
+        {
+          "scId": "FDS01",
+          "name": "GVP Infotech",
+          "shortName": null,
+          "resultDate": "2026-11-20",
+          "displayDate": "20 Nov",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 6.98,
+          "changePct": -0.14,
+          "marketCap": 121.07,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/computers-software/gvpinfotech/FDS01",
+          "ticker": "GVPTECH",
+          "fullName": "GVP Infotech",
+          "industry": "IT Services & Consulting",
+          "shares": 173447593,
+          "mktCapAtBuild": 122.63
+        },
+        {
+          "scId": "II19",
+          "name": "STARBEAM VENTURES",
+          "shortName": null,
+          "resultDate": "2026-11-20",
+          "displayDate": "20 Nov",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 0.61,
+          "changePct": -4.69,
+          "marketCap": 39.87,
+          "exchange": "B",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/fertilizers/starbeamventures/II18"
+        },
+        {
+          "scId": "MGB",
+          "name": "Trans India House Impex",
+          "shortName": null,
+          "resultDate": "2026-11-20",
+          "displayDate": "20 Nov",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 2.74,
+          "changePct": 1.11,
+          "marketCap": 19.47,
+          "exchange": "B",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/computers-hardware/transindiahouseimpex/IOS01"
         }
       ],
-      "scheduledCount": 1,
+      "scheduledCount": 4,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
     },
     "2026-11-19": {
       "rows": [
@@ -362,9 +493,9 @@
           "displayDate": "19 Nov",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 169.41,
-          "changePct": 2.57,
-          "marketCap": 2888.31,
+          "ltp": 165.44,
+          "changePct": -2.57,
+          "marketCap": 2820.62,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/finance-others/muthootmicrofin/MML06",
           "ticker": "MUTHOOTMF",
@@ -374,18 +505,23 @@
           "mktCapAtBuild": 3662.34
         },
         {
-          "scId": "SIA02",
-          "name": "Spice Islands Industries",
+          "scId": "KSS02",
+          "name": "Krishca Strapping Solutions",
           "shortName": null,
           "resultDate": "2026-11-19",
           "displayDate": "19 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 150.5,
-          "changePct": 4.84,
-          "marketCap": 469.06,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/textiles-readymade-apparels/spiceislandsindustries/SIA02"
+          "ltp": 198.95,
+          "changePct": -2.07,
+          "marketCap": 316.88,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/iron-steel/krishcastrappingsolutions/KSS02",
+          "ticker": "KRISHCA",
+          "fullName": "Krishca Strap",
+          "industry": "Iron & Steel",
+          "shares": 15927750,
+          "mktCapAtBuild": 316.88
         },
         {
           "scId": "GCI02",
@@ -395,32 +531,37 @@
           "displayDate": "19 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 14.94,
-          "changePct": -0.47,
-          "marketCap": 56.94,
+          "ltp": 14.55,
+          "changePct": -2.48,
+          "marketCap": 55.45,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/transport-infrastructure/krrailenginerring/GCI02"
         },
         {
-          "scId": "GLC",
-          "name": "GB Logistics Commerce",
+          "scId": "AG01",
+          "name": "Antarctica",
           "shortName": null,
           "resultDate": "2026-11-19",
           "displayDate": "19 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 27,
-          "changePct": 20,
-          "marketCap": 22.13,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/logistics/gblogisticscommerce/GLC"
+          "ltp": 0.73,
+          "changePct": -5.19,
+          "marketCap": 11.32,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/printing-stationery/antarctica/A16",
+          "ticker": "ANTGRAPHIC",
+          "fullName": "Antarctica",
+          "industry": "Printing And Publishing",
+          "shares": 155009600,
+          "mktCapAtBuild": 11.32
         }
       ],
       "scheduledCount": 4,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
     },
     "2026-11-18": {
       "rows": [
@@ -432,35 +573,16 @@
           "displayDate": "18 Nov",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 284.7,
-          "changePct": 1.69,
-          "marketCap": 1766.05,
+          "ltp": 270.23,
+          "changePct": -4.36,
+          "marketCap": 1676.29,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/plastic-products-others/blspolymers/BPL11",
           "ticker": "BLSPOLY",
           "fullName": "BLS Polymers",
           "industry": "Plastic Products - Others",
           "shares": 62031834,
-          "mktCapAtBuild": 1766.05
-        },
-        {
-          "scId": "FDS01",
-          "name": "GVP Infotech",
-          "shortName": null,
-          "resultDate": "2026-11-18",
-          "displayDate": "18 Nov",
-          "quarter": "Q2-2026",
-          "time": null,
-          "ltp": 6.95,
-          "changePct": 1.31,
-          "marketCap": 120.55,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/computers-software/gvpinfotech/FDS01",
-          "ticker": "GVPTECH",
-          "fullName": "GVP Infotech",
-          "industry": "IT Services & Consulting",
-          "shares": 173447593,
-          "mktCapAtBuild": 122.63
+          "mktCapAtBuild": 1676.29
         },
         {
           "scId": "MPF01",
@@ -470,11 +592,30 @@
           "displayDate": "18 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 60,
-          "changePct": -6.25,
-          "marketCap": 64.66,
+          "ltp": 62.9,
+          "changePct": -0.08,
+          "marketCap": 67.79,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/plastics-tubes-pipes-hoses-fittings/malpanipipesfittings/MPF01"
+        },
+        {
+          "scId": "KEL05",
+          "name": "Konstelec Engineers",
+          "shortName": null,
+          "resultDate": "2026-11-18",
+          "displayDate": "18 Nov",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 34.3,
+          "changePct": -4.99,
+          "marketCap": 51.79,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/other-construction-materials/konstelecengineers/KEL06",
+          "ticker": "KONSTELEC",
+          "fullName": "Konstelec",
+          "industry": "Other Construction Materials",
+          "shares": 15100000,
+          "mktCapAtBuild": 51.79
         },
         {
           "scId": "API02",
@@ -482,32 +623,18 @@
           "shortName": null,
           "resultDate": "2026-11-18",
           "displayDate": "18 Nov",
-          "quarter": "Q2-2026",
+          "quarter": "Q1-2026",
           "time": null,
-          "ltp": 2.99,
-          "changePct": 0.34,
-          "marketCap": 47.06,
+          "ltp": 2.94,
+          "changePct": -1.67,
+          "marketCap": 46.28,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/construction-contracting-housing/ansalpropertiesinfrastructure/API07",
           "ticker": "ANSALAPI",
           "fullName": "Ansal Propertie",
           "industry": "Construction - Residential & Commercial Complexes",
           "shares": 157404876,
-          "mktCapAtBuild": 47.06
-        },
-        {
-          "scId": "II19",
-          "name": "STARBEAM VENTURES",
-          "shortName": null,
-          "resultDate": "2026-11-18",
-          "displayDate": "18 Nov",
-          "quarter": "Q2-2026",
-          "time": null,
-          "ltp": 0.64,
-          "changePct": -4.48,
-          "marketCap": 41.83,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/fertilizers/starbeamventures/II18"
+          "mktCapAtBuild": 46.28
         },
         {
           "scId": "KP09",
@@ -517,25 +644,11 @@
           "displayDate": "18 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 5.12,
-          "changePct": -4.48,
-          "marketCap": 26.94,
+          "ltp": 5.1,
+          "changePct": -0.97,
+          "marketCap": 26.84,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/packaging/kaisercorporation/KP09"
-        },
-        {
-          "scId": "MGB",
-          "name": "Trans India House Impex",
-          "shortName": null,
-          "resultDate": "2026-11-18",
-          "displayDate": "18 Nov",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 2.74,
-          "changePct": -3.86,
-          "marketCap": 19.47,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/computers-hardware/transindiahouseimpex/IOS01"
         },
         {
           "scId": "MCS03",
@@ -545,32 +658,18 @@
           "displayDate": "18 Nov",
           "quarter": "NA",
           "time": null,
-          "ltp": 23.4,
-          "changePct": 2.86,
-          "marketCap": 18.71,
+          "ltp": 23.18,
+          "changePct": 1.85,
+          "marketCap": 18.54,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/misc-commercial-services/samyakinternational/SI90"
-        },
-        {
-          "scId": "SIL16",
-          "name": "SBL Infratech",
-          "shortName": null,
-          "resultDate": "2026-11-18",
-          "displayDate": "18 Nov",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 43.4,
-          "changePct": 3.33,
-          "marketCap": 3.52,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/construction-real-estate/sblinfratech/SIL18"
         }
       ],
-      "scheduledCount": 9,
+      "scheduledCount": 6,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
     },
     "2026-11-17": {
       "rows": [
@@ -582,11 +681,30 @@
           "displayDate": "17 Nov",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 75.05,
-          "changePct": -1.15,
-          "marketCap": 155.23,
+          "ltp": 74,
+          "changePct": -1.4,
+          "marketCap": 153.06,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/engineering-construction/core4engineers/CEL05"
+        },
+        {
+          "scId": "RIS",
+          "name": "Richa Info Systems",
+          "shortName": null,
+          "resultDate": "2026-11-17",
+          "displayDate": "17 Nov",
+          "quarter": "Q2-2026",
+          "time": null,
+          "ltp": 75,
+          "changePct": -4.94,
+          "marketCap": 116.11,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/software/richainfosystems/RIS",
+          "ticker": "RICHA",
+          "fullName": "Richa Info",
+          "industry": "Software",
+          "shares": 15480713,
+          "mktCapAtBuild": 116.11
         },
         {
           "scId": "SB01",
@@ -596,107 +714,18 @@
           "displayDate": "17 Nov",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 25.69,
-          "changePct": -1.72,
-          "marketCap": 15.66,
+          "ltp": 24.77,
+          "changePct": -4.99,
+          "marketCap": 15.1,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/engineering-industrial-equipments/arigatouniverse/SB01"
         }
       ],
-      "scheduledCount": 2,
+      "scheduledCount": 3,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "19/11/2026"
-    },
-    "2026-11-16": {
-      "rows": [
-        {
-          "scId": "STL05",
-          "name": "Sandhar Technologies",
-          "shortName": null,
-          "resultDate": "2026-11-16",
-          "displayDate": "16 Nov",
-          "quarter": "Q2-2026",
-          "time": null,
-          "ltp": 574.25,
-          "changePct": 2.34,
-          "marketCap": 3456.45,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/auto-ancillaries/sandhartechnologies/STl06",
-          "ticker": "SANDHAR",
-          "fullName": "Sandhar Technol",
-          "industry": "Auto Ancillaries - Auto, Truck & Motorcycle Parts",
-          "shares": 60190708,
-          "mktCapAtBuild": 3743.56
-        },
-        {
-          "scId": "AIC02",
-          "name": "Panorama Studios International",
-          "shortName": null,
-          "resultDate": "2026-11-16",
-          "displayDate": "16 Nov",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 59.73,
-          "changePct": 4.99,
-          "marketCap": 1483.01,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/film-production-distribution-entertainment/panoramastudiosinternational/AIC04",
-          "ticker": "PANORAMA",
-          "fullName": "Panorama Studio",
-          "industry": "Film Production, Distribution & Entertainment",
-          "shares": 248285625,
-          "mktCapAtBuild": 1198.23
-        },
-        {
-          "scId": "SR03",
-          "name": "BHARAT GLOBAL DEVELOPERS",
-          "shortName": null,
-          "resultDate": "2026-11-16",
-          "displayDate": "16 Nov",
-          "quarter": "Q2-2026",
-          "time": null,
-          "ltp": 81.99,
-          "changePct": -1.31,
-          "marketCap": 830.23,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/computers-software-medium-small/bharatglobaldevelopers/SR03"
-        },
-        {
-          "scId": "JCL03",
-          "name": "JD Cables",
-          "shortName": null,
-          "resultDate": "2026-11-16",
-          "displayDate": "16 Nov",
-          "quarter": "Q2-2026",
-          "time": null,
-          "ltp": 151.95,
-          "changePct": 6.26,
-          "marketCap": 342.66,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cables/jdcables/JCL03"
-        },
-        {
-          "scId": "DPC",
-          "name": "Mitshi India",
-          "shortName": null,
-          "resultDate": "2026-11-16",
-          "displayDate": "16 Nov",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 12.4,
-          "changePct": 0.49,
-          "marketCap": 10.91,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/paints-varnishes/mitshiindia/DPC"
-        }
-      ],
-      "scheduledCount": 5,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "19/11/2026"
+      "asOnDate": "20/11/2026"
     }
   }
 }
