@@ -1169,8 +1169,8 @@
       "lastDiscoveryAt": "2026-11-16T07:50:45+00:00"
     },
     "isin:INE0O6601022|KROSS": {
-      "lastAttemptAt": "2026-11-16T07:50:45+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-20T20:59:31+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 120,
       "targetThrough": "2026-10-20T15:29:19+00:00",
       "pending": [
@@ -3168,6 +3168,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 223,
-    "checkedAt": "2026-11-20T18:58:03.717734+00:00"
+    "checkedAt": "2026-11-20T20:59:31.580580+00:00"
   }
 }
