@@ -937,7 +937,7 @@
       "pending": []
     },
     "isin:INE858B01029|ISGEC": {
-      "lastAttemptAt": "2026-11-16T00:25:04+00:00",
+      "lastAttemptAt": "2026-11-20T12:36:31+00:00",
       "error": "search-unavailable",
       "lastResultCount": 12,
       "lastSuccessAt": "2026-10-25T14:44:23+00:00",
@@ -3174,7 +3174,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 1,
-    "incomplete": 221,
-    "checkedAt": "2026-11-20T10:59:49.019185+00:00"
+    "incomplete": 224,
+    "checkedAt": "2026-11-20T12:36:31.329887+00:00"
   }
 }
