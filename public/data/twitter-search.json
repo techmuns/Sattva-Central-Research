@@ -667,54 +667,58 @@
       "pending": []
     },
     "isin:INE291A01017|Garware Hi-Tech Film": {
-      "lastAttemptAt": "2026-11-15T09:40:48+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-16T18:13:23+00:00",
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE291A01017|GRWRHITECH": {
-      "lastAttemptAt": "2026-11-15T10:22:55+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-09-16T18:13:23+00:00",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "error": null,
+      "lastResultCount": 79,
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE741B01027|Glittke Granites": {
-      "lastAttemptAt": "2026-11-15T11:16:17+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE077F01035|GOCL Corporation": {
-      "lastAttemptAt": "2026-11-15T14:01:17+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "error": null,
+      "lastResultCount": 6,
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE077F01035|GOCLCORP": {
-      "lastAttemptAt": "2026-11-15T15:40:09+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "error": null,
+      "lastResultCount": 6,
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE850D01014|Godrej Agrovet": {
-      "lastAttemptAt": "2026-11-15T16:43:27+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 63,
-      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "error": null,
+      "lastResultCount": 36,
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE850D01014|GODREJAGRO": {
-      "lastAttemptAt": "2026-11-15T17:15:30+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 35,
-      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "error": null,
+      "lastResultCount": 11,
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -739,32 +743,29 @@
       ]
     },
     "isin:INE330T01021|Happy Forgings": {
-      "lastAttemptAt": "2026-11-15T17:53:17+00:00",
-      "lastResultCount": 107,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "lastResultCount": 44,
+      "error": null,
       "lastSuccessAt": "2026-09-07T15:18:18+00:00",
       "targetThrough": "2026-11-07T23:32:09+00:00",
       "pending": [
         {
-          "from": "2026-09-05T15:18:18+00:00",
-          "to": "2026-10-07T07:25:13.500000+00:00"
-        },
-        {
           "from": "2026-10-07T07:25:13.500000+00:00",
           "to": "2026-11-07T23:32:09+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-20T08:23:29+00:00"
     },
     "isin:INE330T01021|HAPPYFORGE": {
-      "lastAttemptAt": "2026-11-15T19:44:34+00:00",
-      "lastResultCount": 69,
-      "error": "search-unavailable",
-      "lastSuccessAt": "2026-11-07T23:32:09+00:00",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
+      "lastResultCount": 62,
+      "error": null,
+      "lastSuccessAt": "2026-11-20T08:23:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE548A01028|HFCL": {
-      "lastAttemptAt": "2026-11-15T20:15:27+00:00",
+      "lastAttemptAt": "2026-11-20T08:23:29+00:00",
       "lastResultCount": 114,
       "error": "search-unavailable",
       "targetThrough": "2026-09-07T15:18:18+00:00",
@@ -3152,8 +3153,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 229,
-    "checkedAt": "2026-11-20T07:56:11.355773+00:00"
+    "attempted": 10,
+    "incomplete": 221,
+    "checkedAt": "2026-11-20T08:23:29.124325+00:00"
   }
 }
