@@ -1,6 +1,6 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-21T13:59:44+00:00",
+  "capturedAt": "2026-11-21T17:43:21+00:00",
   "handles": [
     "moneycontrolcom"
   ],
@@ -9344,9 +9344,9 @@
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 36,
-    "incomplete": 208,
-    "checkedAt": "2026-11-21T13:59:18.405137+00:00"
+    "attempted": 35,
+    "incomplete": 189,
+    "checkedAt": "2026-11-21T17:42:55.812583+00:00"
   },
   "archive": [
     {
@@ -9501,9 +9501,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-21T15:48:12.650Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-21T17:43:21.507Z",
     "lastSuccessAt": null
   }
 }
