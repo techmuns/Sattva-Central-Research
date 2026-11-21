@@ -1454,9 +1454,9 @@
       "lastSuccessAt": "2026-09-08T19:20:14+00:00"
     },
     "isin:INE0BYP01024|Oswal Pumps": {
-      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "lastAttemptAt": "2026-11-21T03:29:34+00:00",
       "lastResultCount": 33,
-      "error": null,
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-09-27T12:23:53+00:00",
       "targetThrough": null,
       "pending": [],
@@ -3158,6 +3158,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 222,
-    "checkedAt": "2026-11-21T02:55:47.615357+00:00"
+    "checkedAt": "2026-11-21T03:29:34.325605+00:00"
   }
 }
