@@ -1471,7 +1471,7 @@
       "pending": []
     },
     "isin:INE119201023|Park Medi World": {
-      "lastAttemptAt": "2026-11-16T12:32:11+00:00",
+      "lastAttemptAt": "2026-11-21T05:49:02+00:00",
       "lastResultCount": 9,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-10-26T02:16:06+00:00",
@@ -3158,6 +3158,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 227,
-    "checkedAt": "2026-11-21T04:01:10.601796+00:00"
+    "checkedAt": "2026-11-21T05:49:02.656533+00:00"
   }
 }
