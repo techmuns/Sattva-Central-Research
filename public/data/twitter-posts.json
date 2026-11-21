@@ -9501,9 +9501,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-11-21T13:59:44.356Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-11-21T14:59:47.696Z",
     "lastSuccessAt": null
   }
 }

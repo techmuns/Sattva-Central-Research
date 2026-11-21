@@ -2007,7 +2007,7 @@
       "pending": []
     },
     "isin:INE526E01018|SHRIPISTON": {
-      "lastAttemptAt": "2026-11-17T03:41:47+00:00",
+      "lastAttemptAt": "2026-11-21T14:59:32+00:00",
       "error": "search-unavailable",
       "lastResultCount": 3,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -3102,8 +3102,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 36,
+    "attempted": 1,
     "incomplete": 208,
-    "checkedAt": "2026-11-21T13:59:18.405137+00:00"
+    "checkedAt": "2026-11-21T14:59:32.012533+00:00"
   }
 }
