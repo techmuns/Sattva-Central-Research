@@ -2431,8 +2431,8 @@
       "pending": []
     },
     "isin:INE205A01025|Vedanta": {
-      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-21T20:40:41+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 118,
       "targetThrough": "2026-09-20T00:19:51+00:00",
       "pending": [
@@ -3036,6 +3036,6 @@
     "planned": 255,
     "attempted": 1,
     "incomplete": 181,
-    "checkedAt": "2026-11-21T20:09:37.206458+00:00"
+    "checkedAt": "2026-11-21T20:40:41.935881+00:00"
   }
 }
