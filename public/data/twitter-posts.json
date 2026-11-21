@@ -1,10 +1,395 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-21T00:00:38+00:00",
+  "capturedAt": "2026-11-21T13:59:44+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2124130641524740501",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Indian Army units sourcing Chinese drone components, industry tells Defence Ministry, cites security concerns\n\n-Army units are procuring Chinese drone components.\n-DFI urges Defence Ministry to issue a strict advisory.\n-Bids cite China-linked brands despite import bans.\n\n@AihikS reports 👇\nhttps://t.co/K4DWe718NC",
+      "created_at": "2026-11-21T13:19:44+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124130641524740501",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124130025578676267",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC |  PPFAS’ CIO Rajeev Thakkar pushes back on AI doom narrative for Indian IT: 'Four years is enough time'\n\nRajeev Thakkar says AI threat to IT is overstated.\nOutsourcing disruption is not yet visible in earnings.\nPPFAS maintains a contrarian bet on Indian IT stocks.\n\nRead more:\nhttps://t.co/a48u30r4uE",
+      "created_at": "2026-11-21T13:17:17+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124130025578676267",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124127579850563964",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Delhi MCD tightens waste rules with Rs 10,000 fine for garbage burning, upto Rs 1.5 lakh penalty for manufacturers\n\n•Open garbage burning to attract a Rs 10,000 penalty.\n•Fines range from Rs 500 to Rs 1.5 lakh for offenders.\n\nRead 👇\n\nhttps://t.co/1azvRusaH7",
+      "created_at": "2026-11-21T13:07:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124127579850563964",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124127329094103392",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Three World Cups for the men. A historic first World Cup for the women. One nation with every reason to be proud.\n\nCBRE Ek Pehal 2026 honoured India's blind cricket champions in a moment filled with applause, admiration and the recognition their achievements deserved.\n\nThe athletes continue to raise the bar and inspire the nation.\n\n#CBREEkPehal2026 #BlindCricket #BeyondBoundaries\n#Partnered \n@GKMahantesh @CBRE_India  @AnshumanMagzine \n@SamarthanamTFTD @bomanirani @MayantiLanger_B @ajinkyarahane88",
+      "created_at": "2026-11-21T13:06:34+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124127329094103392",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124123160253489481",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Medicap Healthcare cuts IPO size by 29% to Rs 170 crore, drops pre-IPO placement\n\nMedicap Healthcare cuts IPO size by 29%\nRevised IPO size stands at Rs 170 crore\nCompany drops pre-IPO placement component\n\nRead more:\nhttps://t.co/PCjJlu2Qvu",
+      "created_at": "2026-11-21T12:50:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124123160253489481",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124106047287705912",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Passenger mobility company Chartered Speed cuts IPO size to Rs 433 crore after SEBI regulatory changes\n\n-Chartered Speed reduces IPO size to Rs 433 crore\n-IPO Mix: Fresh issue of Rs 333 crore, OFS of Rs 100 crore\n-SEBI approved company's IPO papers in January 2026\n\nRead More:\nhttps://t.co/PSjPZCGBOv",
+      "created_at": "2026-11-21T11:42:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124106047287705912",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124101768728445268",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#StartupWithMC | MoEngage confirms security breach, says customer impact limited\n\nMoEngage says the breach originated through a compromised third-party vendor account; crypto exchange ZebPay among the affected customers.\n\nRead More:\nhttps://t.co/1IQxgaJHSO",
+      "created_at": "2026-11-21T11:25:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124101768728445268",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124100864352920058",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Watch | Prime Minister Narendra Modi on Saturday inaugurated Nitish Setu, a 9.76-km extradosed cable-stayed bridge across the Ganga in Bihar's Vaishali district, as part of his visit to the state to dedicate development projects worth more than Rs 34,000 crore.\n\nThe Prime Minister arrived in Patna earlier in the day, where he met former Bihar chief minister Nitish Kumar at the airport before proceeding with his engagements. Modi shared a photograph of their meeting on X, saying, \"It was a delight to meet Nitish Kumar Ji at Patna airport.\"\n\nThe newly inaugurated bridge, constructed at an estimated expenditure of Rs 4,280 crore, is expected to provide an important road link between Patna and Vaishali districts.",
+      "created_at": "2026-11-21T11:21:24+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124100864352920058",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124095904185716947",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "FBI and US Agriculture Department have been targeted in separate cyber incidents, raising fresh concerns over the security of sensitive US government systems.\n\nThe FBI is investigating a suspected intrusion into its nationwide criminal information database, while hackers reportedly breached a US Agriculture Department system used to facilitate payments to farmers.\n\nRead More:\nhttps://t.co/GIOwJaW0YG",
+      "created_at": "2026-11-21T11:01:42+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124095904185716947",
+      "image": "https://pbs.twimg.com/media/HXpN8aUaYAA9hkX.jpg",
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124085726522613834",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "RT @CNBC_Awaaz: बाजार की बारीकियों को समझने और निवेश के नए मंत्र जानने के लिए जुड़िए CNBC आवाज़ के मार्केट महाकुंभ से!\n\n📅 28 नवंबर | मुंबई\n\nबाजार के दिग्गजों से सीखें सफलता के मंत्र और बनाएं निवेश की बेहतर रणनीति।\n\nTo Register Visit\nhttps://t.co/KDS6BkNEIW\n\n#MarketMahakumbh #CNBCAwaaz @_anujsinghal @virendraonNifty @MiraeAsset_IN",
+      "created_at": "2026-11-21T10:21:15+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124085726522613834",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124085002514346388",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "RT @CNBCTV18News: Tomorrow is being shaped by the decisions, ideas and innovations of today.\n\nBringing together some of the sharpest minds to decode what lies ahead, THE SIGNAL sets the stage for a conversation that looks beyond the present and into the future of technology.\n\nFeaturing Nikesh Arora, Chairman & CEO, Palo Alto Networks, in an exclusive conversation with @ShereenBhan  \n\nStay tuned. The future has a lot to say.\n\n#TheSignal #CNBCTV18 #NikeshArora #FutureOfTechnology #Leadership #Innovation",
+      "created_at": "2026-11-21T10:18:22+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124085002514346388",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124084302229164505",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "GST Network adds metro rail as fifth mode of transport in e-way bill system\n\nGSTN has added metro rail as a mode of transport in the e-way bill system, allowing web users to generate bills and update transport details, while API users can test the facility in a sandbox environment ahead of its live rollout.\n\nRead More:\nhttps://t.co/NM0fOu4AmE",
+      "created_at": "2026-11-21T10:15:35+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124084302229164505",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124065455765963077",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | A protest over restrictions on the social media accounts of two Indian Youth Congress (IYC) leaders escalated into a confrontation with Meta on November 20, after party workers allegedly damaged property inside the company's Hyderabad office and staged demonstrations in Mumbai.\n\nThe BJP has condemned the incident, accusing the Congress of encouraging vandalism against private companies.\n\nThe protest at Meta's office in Hyderabad's Gachibowli was led by Telangana Youth Congress president Jakkidi Shivacharan Reddy. Videos circulating on social media showed demonstrators moving through office corridors and a cafeteria area, with some workers smashing flower pots and disrupting the premises.\n\n#Congress #Meta #Hyderabad",
+      "created_at": "2026-11-21T09:00:42+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124065455765963077",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124054345255997555",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Bitcoin falls to more than 2-year low as global markets sink\n\nThe original cryptocurrency slumped 6% in the US on Friday and another 5.7% in Asia on Saturday to $55,533, its weakest since September 2024.\n\nRead more: \nhttps://t.co/StIb185JOh",
+      "created_at": "2026-11-21T08:16:33+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124054345255997555",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124054195825496074",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Watch | Uttar Pradesh Chief Minister Yogi Adityanath was overcome with emotion on Saturday as he paid his final respects to his mother, Savitri Devi, whose last rites were performed at Chandi Ghat cremation ground in Haridwar. The 91-year-old passed away at her native village in Uttarakhand on Friday morning.\n\nVisuals from the funeral showed Adityanath with tears in his eyes as his mother's mortal remains were taken from their ancestral home in Panchur village in Uttarakhand's Pauri Garhwal district to Haridwar for the final rites. \n\n#YogiAdityanath #UttarPradesh",
+      "created_at": "2026-11-21T08:15:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124054195825496074",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124052932492656671",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Star Health faces Rs 2 crore IRDAI penalty: What the regulator found in health insurance claims\n\n-IRDAI fines Star Health Rs 2 crore for improper claim denials.\n-Insurer blamed for poor communication and deductions.\n-Star Health ordered to submit ATR to board.\n\n@imNavneetDubey reports:\nhttps://t.co/QWZEvOlhF5",
+      "created_at": "2026-11-21T08:10:56+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124052932492656671",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124045900750131650",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Parliament's Monsoon session remains unprorogued for 100 days, govt yet to announce special sitting\n\nBoth Houses were adjourned sine die (for an indefinite period) on August 13, but neither the Lok Sabha nor the Rajya Sabha has been prorogued (formal conclusion of session) as of November 21.\n\nRead More:\nhttps://t.co/YkkgBOylWv",
+      "created_at": "2026-11-21T07:43:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124045900750131650",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124041370964754435",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Nvidia employees complained about Jensen Huang's behavior years ago\n\nStephen Pettigrew, the first in-house lawyer hired by Nvidia, alleged he was fired for raising concerns about the conduct of Nvidia executives, while the company cited performance issues for his termination, according to court documents.\n\nRead More:\nhttps://t.co/4XoRJjfs36",
+      "created_at": "2026-11-21T07:25:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124041370964754435",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124036840860852517",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "First high-speed rail service will commence in last quarter of 2027: Ashwini Vaishnaw on bullet train\n\nTalking about the pace of construction, he said that as of September, 456 km of pier work and 371 km of viaduct construction have been completed.\n\nRead More:\nhttps://t.co/zAyiHpDZEZ",
+      "created_at": "2026-11-21T07:07:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124036840860852517",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124032562729533859",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#AIWithMC | Anthropic researcher claims to solve Riemann problem with Claude\n\nThe Riemann hypothesis relates to the distribution of prime numbers and has long been considered one of the most difficult math problems in the field.\n\nRead More:\nhttps://t.co/418fEz3XLf",
+      "created_at": "2026-11-21T06:50:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124032562729533859",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124029171781579086",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Stay ahead with the AI Edge!!  \n\nGet the latest AI breakthroughs, industry insights, and technology trends delivered directly to your inbox every Saturday.\n\nSubscribe to out AI Edge Newsletter:\nhttps://t.co/3GFJqhlrVm",
+      "created_at": "2026-11-21T06:36:31+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124029171781579086",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124028968865288278",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "In today's AI Edge edition : India's listed unicorns find AI juice\n\nRead details for more updates: \nhttps://t.co/zRp6siEm4M",
+      "created_at": "2026-11-21T06:35:43+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124028968865288278",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124028268999594234",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#AIEdge | 🚨Ready for your AI Edge?\n\nArtificial intelligence is done sitting in the lab. \n\nIndia's new-age companies are putting it to work, turning days into minutes, smaller teams into bigger engines and experiments into measurable savings.\n\n🧵 Follow the thread for more!   \n\n#ArtificialIntelligence",
+      "created_at": "2026-11-21T06:32:56+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124028268999594234",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124021238482059470",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#ArtificialIntelligence | From pilots to profits: Listed new-age firms scale up AI deployment\n\n- Indian new-age firms shift AI from pilots to core operations.\n- Companies report productivity gains, faster times, lower costs.\n- AI automates workflows in retail, logistics, and education.\n\n@AryamanGupta_ brings in details:\nhttps://t.co/a7WA5cEAk4",
+      "created_at": "2026-11-21T06:05:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124021238482059470",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124018721652089305",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Hinduja Leyland Finance merger with NDL Ventures awaits legal formalities; auditors flag loan discrepancies\n\n-NCLT approves Hinduja Leyland Finance merger with NDL Ventures.\n-Auditors flag loan discrepancies, prompting independent review.\n-Legal formalities and RBI registration expected by December.\n\nRead More:\nhttps://t.co/IIykcxXhbZ",
+      "created_at": "2026-11-21T05:55:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124018721652089305",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124016652543238294",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Rather than targeting payment APIs (historically a common method of targeting payment and financial platforms), the threat actors alter the business records or approval processes that determine whether such payments should go through.\n\nBy doing this, CERT-In said, they were able to steal money by using \"legitimate payment processes\".\n\nRead More:\nhttps://t.co/8Gyo3XRPZj",
+      "created_at": "2026-11-21T05:46:46+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124016652543238294",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124014694906429947",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "PM Modi to visit Bengal, Bihar and UP today; Rs 34,470 cr projects lined up in Bihar\n\n-PM Modi to visit West Bengal, Bihar, and UP on Nov 21.\n-He will inaugurate projects worth Rs 34,470 crore in Bihar.\n-Key highlights include Nitish Setu and IIT platinum jubilee.\n\nRead More:\nhttps://t.co/n0NTpKUjdS",
+      "created_at": "2026-11-21T05:39:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124014694906429947",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124008655117062553",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "From No. 1 to No. 4: Nvidia falls behind Apple, Microsoft and Alphabet as shares tumble\n\nNvidia slipped behind Alphabet in market value as its shares plunged 14% on Nov 20, extending a seven-week losing streak despite record quarterly revenue and a stronger sales forecast.\n\nRead More:\nhttps://t.co/3xJt5fz7xh",
+      "created_at": "2026-11-21T05:15:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124008655117062553",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124008084574274037",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | Gold made investors richer. But could their money have worked harder?\n\n-Gold ETF investor returns lagged the rally due to late buying.\n-Rupee depreciation boosted Indian gold returns over 20 years.\n-Equities outperformed gold significantly from 2013 to 2026.\n\n@feroze_azeez reports 👇\nhttps://t.co/qyB3ecf4PC",
+      "created_at": "2026-11-21T05:12:44+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124008084574274037",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124004404437434373",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Four weeks of gains! Sensex, Nifty scale 9-month highs on record FII buying\n\nThe Indian rupee gained 1.66% or 157 paise to close at a seven-month high of 92.67 per US dollar on November 20.\n\nRakesh Patil writes:\nhttps://t.co/jkybaMtVhn",
+      "created_at": "2026-11-21T04:58:06+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124004404437434373",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124003741359829047",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#StartupsWithMC | Weekly Funding Roundup: The startup deals you may have missed in week of November 22\n\nThe week’s funding deals, beyond the usual headline-grabbers. From AI infrastructure and industrial automation to recycling, fintech and healthcare, here are some of the companies that raised fresh capital this week.\n\nRead More:\nhttps://t.co/rK4gbqCD2k",
+      "created_at": "2026-11-21T04:55:28+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124003741359829047",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2124002112241615214",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "China trying to suppress India's rise, backed Pakistan during Operation Sindoor: US report\n\n-US report warns China is actively constraining India's rise.\n-Beijing uses border pressure and economic leverage against India.\n-Report urges deeper US-India intelligence and tech ties.\n\nRead More:\nhttps://t.co/tiCmMkoHRR",
+      "created_at": "2026-11-21T04:49:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2124002112241615214",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123997078917378102",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "India, France condemn Pahalgam and Red Fort terror attacks at counter-terrorism meet in Delhi\n\nDuring the meeting, both sides exchanged views on the threat assessment in their respective regions and at the global level, including challenges posed by state-sponsored terrorism and cross-border terrorism.\n\nRead More:\nhttps://t.co/6lj2dgKrHX",
+      "created_at": "2026-11-21T04:29:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123997078917378102",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123993304266080611",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Nasdaq 100 has worst week since 2020 on AI drama\n\nFears that Wall Street’s biggest investment boom in decades is running out of steam drove the American equity benchmark down 3.7%, with the index falling for a seventh straight day. The Nasdaq 100 lost 5.6% on Friday, posting its worst week since March 2020.\n\nRead More:\nhttps://t.co/bc7wkEXysD",
+      "created_at": "2026-11-21T04:14:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123993304266080611",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123988522637865464",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Nearly 880,000 AI chips cleared for China, but Bessent sees no need for fresh Nvidia curbs\n\n-Treasury Secretary says no new Nvidia chip limits are needed.\n-US previously blocked Chinese remote access to advanced chips.\n-Commerce Department approved sales of older chips to China.\n\nRead More:\nhttps://t.co/eA5F7IoZmW",
+      "created_at": "2026-11-21T03:55:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2123988522637865464",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom",
+      "matchedQueries": []
+    },
     {
       "tweet_id": "2123843504858427503",
       "handle": "MycallsTrading",
@@ -8954,595 +9339,14 @@
           "query": "\"HAPPYFORGE\""
         }
       ]
-    },
-    {
-      "tweet_id": "2123347539089121491",
-      "handle": "IIFL_Finance",
-      "display_name": "IIFL Finance",
-      "text": "@CommonMan2195 Hi there, thank you for your time on the call. As discussed, please visit your home branch on Monday for further assistance. For any additional queries or concerns, write to us at socialconnect@iifl.com. We will be happy to assist you.",
-      "created_at": "2026-11-19T09:27:57+00:00",
-      "url": "https://x.com/IIFL_Finance/status/2123347539089121491",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123347362332754134",
-      "handle": "marketsday",
-      "display_name": "Markets Today",
-      "text": "Nifty Bank Hits Record High as Brokerage Forecasts Sector Earnings Rebound – November 19, 2026\n\n🔹 The Nifty Bank index climbed over 1.5 percent to a record peak of 62,984.60, driven by gains in major lenders.\n\n🔹 Motilal Oswal Financial Services projects banking sector earnings to grow at a 17 percent compound annual growth rate between FY26 and FY28.\n\n🔹 Private sector banks are expected to lead the recovery with an estimated 22 percent earnings growth rate, compared to 11 percent for public sector banks.\n\n🔹 Top preferred banking picks include ICICI Bank, HDFC Bank, Kotak Mahindra Bank, AU Small Finance Bank, and State Bank of India.\n\n🔹 Asset quality stress in unsecured retail segments such as microfinance, credit cards, and personal loans has largely normalized through FY27.\n\n🔹 Fourth-quarter exit earnings growth is estimated at 21 percent year-on-year, supported by surplus liquidity deployment and rate transmission.\n\n🔹 Key downside risks include deposit competition, elevated funding costs, inflation, a weak monsoon, and potential cuts to bancassurance income.\n\n#NiftyBank #IndianBanking #StockMarketIndia #BankingStocks #EarningsOutlook",
-      "created_at": "2026-11-19T09:27:15+00:00",
-      "url": "https://x.com/marketsday/status/2123347362332754134",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE338I01027",
-          "query": "\"Motilal Oswal Financial Services\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123346008067453385",
-      "handle": "hd_kumaraswamy",
-      "display_name": "ಹೆಚ್.ಡಿ.ಕುಮಾರಸ್ವಾಮಿ | HD Kumaraswamy",
-      "text": "📍New Delhi \n\nReviewed the Industry Preparedness and Capability Assessment under the Rare Earth Permanent Magnets (REPM) Scheme, along with my esteemed Cabinet colleague, Shri @BjpVarma avaru, Hon’ble Minister of State for Heavy Industries and Steel, senior officials of the Ministry and industry representatives.\n\nAlso handed over Letters of Intent (LoIs) to the successful bidders — Coal India Limited, Prozeal Green Energy Limited, ReNew Private Limited and Midwest Energy Limited.\n\nUnder the visionary leadership of Hon’ble Prime Minister Shri @narendramodi avaru, India is taking significant strides towards establishing a robust, self-reliant and globally competitive rare earth permanent magnet manufacturing ecosystem.\n\nThis landmark initiative will strengthen domestic manufacturing capabilities, reduce import dependence, enhance supply-chain resilience and advance the vision of Aatmanirbhar Bharat.\n\n@MHI_GoI\n\n#REPM #RareEarthPermanentMagnets #AatmanirbharBharat #MakeInIndia #ViksitBharat",
-      "created_at": "2026-11-19T09:21:52+00:00",
-      "url": "https://x.com/hd_kumaraswamy/status/2123346008067453385",
-      "image": "https://pbs.twimg.com/media/HXej2rqa4AEr41b.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123345977377784172",
-      "handle": "livemint",
-      "display_name": "Mint",
-      "text": "Mining stocks showed mixed trading: Coal India and MOIL gained modestly, while NMDC slipped. Systematix sees growth potential across the companies, but flags operating costs and pricing pressures. Its recommendations are Buy for MOIL and NMDC and Hold for Coal India; MOIL offers the greatest upside.\n\nhttps://t.co/cA3hgW62xb",
-      "created_at": "2026-11-19T09:21:45+00:00",
-      "url": "https://x.com/livemint/status/2123345977377784172",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123345063057276993",
-      "handle": "Nilkamal8199",
-      "display_name": "Nilkamal Kumar",
-      "text": "खुद दिन रात कांग्रेस की चाटुकारिता करने वाला चमचा दूसरों को निष्पक्षता का ज्ञान दे रहा है 😄😂😀🤣",
-      "created_at": "2026-11-19T09:18:07+00:00",
-      "url": "https://x.com/Nilkamal8199/status/2123345063057276993",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"Nilkamal\""
-        },
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"NILKAMAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123344997701599541",
-      "handle": "tradejini",
-      "display_name": "Tradejini",
-      "text": "Tata Motors PV (-5%), Coal India (-4%), and Nestlé India (-1.87%) declined despite positive developments in parts of their businesses.\n\nStrong profits don't always mean rising stock prices.",
-      "created_at": "2026-11-19T09:17:51+00:00",
-      "url": "https://x.com/tradejini/status/2123344997701599541",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123344473346514949",
-      "handle": "RajMShaikh",
-      "display_name": "Raj - The Alpha Trader",
-      "text": "Hero Zero option trade\n\n#Coalindia 395 Ce Cmp 1.35 for 4 6 8 🧐🧐",
-      "created_at": "2026-11-19T09:15:46+00:00",
-      "url": "https://x.com/RajMShaikh/status/2123344473346514949",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123344098610540888",
-      "handle": "RajMShaikh",
-      "display_name": "Raj - The Alpha Trader",
-      "text": "#Banknifty 62500 Ce made days high of Rs. 689.65 almost nearby my 2nd tgt ☺️☺️, 300 ka 700 😍😍😍",
-      "created_at": "2026-11-19T09:14:17+00:00",
-      "url": "https://x.com/RajMShaikh/status/2123344098610540888",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123344048576712875",
-      "handle": "Nilkamal8199",
-      "display_name": "Nilkamal Kumar",
-      "text": "@TajinderBagga कांग्रेस एक आतंकवादी संगठन है।",
-      "created_at": "2026-11-19T09:14:05+00:00",
-      "url": "https://x.com/Nilkamal8199/status/2123344048576712875",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"Nilkamal\""
-        },
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"NILKAMAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123343206259794132",
-      "handle": "viralshah1982",
-      "display_name": "viralshah",
-      "text": "Kalyankjil....will it blast?\n\n https://t.co/3tlcg05dHd",
-      "created_at": "2026-11-19T09:10:44+00:00",
-      "url": "https://x.com/viralshah1982/status/2123343206259794132",
-      "image": "https://pbs.twimg.com/media/HXZWZTibEAAiDjt.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE303R01014",
-          "query": "\"KALYANKJIL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123342420159140176",
-      "handle": "Nilkamal8199",
-      "display_name": "Nilkamal Kumar",
-      "text": "@ThePrintIndia @BhardwajAnanya तुम जैसे भड़वे पत्रकारिता करने वाले को जूते पड़ने चाहिए, जो पांच वक्त के कट्टर मुस्लिम नमाजी को ब्रेड मेकर बोल रही है?",
-      "created_at": "2026-11-19T09:07:37+00:00",
-      "url": "https://x.com/Nilkamal8199/status/2123342420159140176",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"Nilkamal\""
-        },
-        {
-          "entityId": "isin:INE310A01015",
-          "query": "\"NILKAMAL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123338660041167294",
-      "handle": "IIFL_Finance",
-      "display_name": "IIFL Finance",
-      "text": "@rahul6666617074 Hi Rahul, this isn't the experience we want for you. Our team is committed to addressing your concern as soon as possible. Please share your loan account number and contact details in direct message so we can look into this at the earliest.  https://t.co/cTIdEaTfsw",
-      "created_at": "2026-11-19T08:52:40+00:00",
-      "url": "https://x.com/IIFL_Finance/status/2123338660041167294",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123338386647966112",
-      "handle": "Bhardwaj_SirJi",
-      "display_name": "Abhishek Bhardwaj",
-      "text": "#cnxit \n#NIFTYIT \n#coforge \n#Infosys \n#infy \n#tcs \nPrice retracing BO level.\nWhat is expected next? https://t.co/lDKwKP8ILj",
-      "created_at": "2026-11-19T08:51:35+00:00",
-      "url": "https://x.com/Bhardwaj_SirJi/status/2123338386647966112",
-      "image": "https://pbs.twimg.com/media/HXec-nRasAATIkY.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123337373912277302",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "Forget Vice City: What is Namma Benglooru, the viral free GTA-style game set in Bengaluru\n\nLike GTA, it’s built as an open world. A big part of the appeal is how relatable it is. Potholes, traffic, PG accommodation and familiar neighbourhoods all find their way into the game, so for Bengalureans it can feel like a slightly more fun version of the daily commute.\n\nhttps://t.co/v0NtodJSQj",
-      "created_at": "2026-11-19T08:47:34+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123337373912277302",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123337162414584026",
-      "handle": "DFinMirror",
-      "display_name": "The Financial Mirror",
-      "text": "A good day for me intraday wise : ) \n\nTraded in, \n•#BLSPoly - BLS Polymers Ltd\n•#LTFoods - LT Foods Limited \n•#TinnaRubr - Tinna Rubber and Infrastructure Ltd https://t.co/N0k7ddUqoN",
-      "created_at": "2026-11-19T08:46:43+00:00",
-      "url": "https://x.com/DFinMirror/status/2123337162414584026",
-      "image": "https://pbs.twimg.com/media/HXeb5M5bYAIhmJz.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE12F801023",
-          "query": "\"OnEMI Technology Solutions\""
-        },
-        {
-          "entityId": "isin:INE12F801023",
-          "query": "\"Kissht\""
-        },
-        {
-          "entityId": "isin:INE12F801023",
-          "query": "\"OnEMI Technology\""
-        },
-        {
-          "entityId": "isin:INE12F801023",
-          "query": "\"KISSHT\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123336860848275713",
-      "handle": "MotilalOswalLtd",
-      "display_name": "Motilal Oswal Financial Services Ltd",
-      "text": "@hitendravankani Hi Hitendra, we've already taken up your concern through the Motilal Oswal Asset Management Facebook page and shall continue to assist you there. Be rest assured, your concern is already in progress and we will assist you with a resolution at the earliest.",
-      "created_at": "2026-11-19T08:45:31+00:00",
-      "url": "https://x.com/MotilalOswalLtd/status/2123336860848275713",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE338I01027",
-          "query": "\"Motilal Oswal Financial Services\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123335535729029249",
-      "handle": "FinancialXpress",
-      "display_name": "Financial Express",
-      "text": "ICYMI | Newspoint: Reputation and reinvention—Nirmal Jain, Founder, IIFL Finance https://t.co/mYTlOe14eP",
-      "created_at": "2026-11-19T08:40:16+00:00",
-      "url": "https://x.com/FinancialXpress/status/2123335535729029249",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334914884182239",
-      "handle": "VSR9000",
-      "display_name": "VSR",
-      "text": "9/n | My Stance\n\nOver a favourable multi-year cycle, I believe INDO-MIM has the potential to deliver ~25-30% CAGR in sales.\n\nBut I am not ready to initiate a fresh position at current valuations.\n\nAs I always say,\n- growth rates in manufacturing businesses can surprise intermittently,\n- but sustaining extraordinary growth consistently is always a challenge.\n\n💠 At ~12x FY27 P/S, the risk-to-reward isn't favorable enough for my capital allocation preferences.\n\n⚠️ DYDD & DYOR",
-      "created_at": "2026-11-19T08:37:48+00:00",
-      "url": "https://x.com/VSR9000/status/2123334914884182239",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334911100661763",
-      "handle": "VSR9000",
-      "display_name": "VSR",
-      "text": "8/n | Growth Through Adjacencies\n\nIndustrial gas turbines, data centre power infrastructure, humanoids, private satellites, electronics, aerospace, medical devices...\n\nINDO-MIM doesn't necessarily need to re-invent itself to participate in these emerging themes.\n\nIt can leverage its existing niche engineering capabilities, expand its SKU portfolio and deepen customer relationships.\n\nA mature manufacturing platform participating in emerging industries.\n\nThat's what excites me about this business.",
-      "created_at": "2026-11-19T08:37:47+00:00",
-      "url": "https://x.com/VSR9000/status/2123334911100661763",
-      "image": "https://pbs.twimg.com/media/HXeZTHdbwAAbZ3_.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334906919182567",
-      "handle": "VSR9000",
-      "display_name": "VSR",
-      "text": "7/n | Efficiency\n\nINDO-MIM is already a relatively efficient business.\n\nH1 FY27:\n\n▪️ EBITDA margin: 32%\n▪️ PAT margin: 18.2%\n▪️ ROCE: 36.5%\n\n▪️ OP/NP Ratio : ~1.8x\n\nThere is scope for incremental efficiency through capacity utilisation, backward integration and subsidiary turnarounds.\n\nBut over the longer term, I would rather build my expectations around parallel growth in the top line and bottom line than assume perpetual margin expansion.",
-      "created_at": "2026-11-19T08:37:46+00:00",
-      "url": "https://x.com/VSR9000/status/2123334906919182567",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334903710331109",
-      "handle": "VSR9000",
-      "display_name": "VSR",
-      "text": "6/n | Metal Powders & Inventory\n\n🍀 One of the strengths of INDO-MIM lies in its metallurgy and metal powder capabilities.\n\n💠 Backward integration into stainless steel powders is already in place.\n\nUpcoming iron powder capacity:\n▪️ 3,000 tonnes annually\n▪️ 1,500-2,000 tonnes for captive requirements\n\n▪️ Surplus capacity can be for external sales\n\nWhile some inventory holding is inherent to the business, WIP and finishing operations deserve closer attention.\n\n🚨 Inventory days increased from 340 to 441 YoY.\n\n🟡 Management intends to reduce this by ~75 days by FY27-end.",
-      "created_at": "2026-11-19T08:37:45+00:00",
-      "url": "https://x.com/VSR9000/status/2123334903710331109",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334886602006695",
-      "handle": "VSR9000",
-      "display_name": "VSR",
-      "text": "3/n | Track Programs, Not Just Sectors\n\nINDO-MIM operates with 6,000–6,500 SKUs\n\n- manufacturing around 1,000–1,200 different components every month.\n\nIn aerospace alone, the company intends to add at least 400 components to its existing portfolio of ~1,200.\n\n▪️ From the concall, what I infer is that tracking individual programs, tooling orders and their conversion into commercial production is more meaningful than merely tracking sectoral tailwinds.\n\n💠 The real growth lies in winning more parts per customer, more programs per customer and more customers per capability.",
-      "created_at": "2026-11-19T08:37:41+00:00",
-      "url": "https://x.com/VSR9000/status/2123334886602006695",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334875055059330",
-      "handle": "VSR9000",
-      "display_name": "VSR",
-      "text": "#INDOMIM 🔖 TL;DR\n#QuestioningConvictionMuscle\n\nToday INDO-MIM is already a efficient early-stage-mature business enjoying double-digit growth\n\n~ thanks to the structural tailwinds in precision engineering\n\n🧵a thread on how I perceive the business,\nwhat I intend to track and my stance",
-      "created_at": "2026-11-19T08:37:38+00:00",
-      "url": "https://x.com/VSR9000/status/2123334875055059330",
-      "image": "https://pbs.twimg.com/media/HXeOe3NaYAArPIo.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"Indo-Mim\""
-        },
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"INDOMIM\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334551888187597",
-      "handle": "stocksbyrishabh",
-      "display_name": "Swing Trader Rishabh",
-      "text": "Portfolio update:\n\n1. Aarti Pharmalabs – Fresh entry taken.\n2. Holding a strong stock from one of the strongest sectors, currently up around 5%.\n3. IIFL Finance – Currently in the red, but our stop-loss hasn't been hit. Holding as planned.\n\nTomorrow is Friday, the weekly closing.\n\nI'll share a fresh set of swing stocks for the 4th week of November with our community members.",
-      "created_at": "2026-11-19T08:36:21+00:00",
-      "url": "https://x.com/stocksbyrishabh/status/2123334551888187597",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334402898014246",
-      "handle": "im_umanggoel",
-      "display_name": "umang goel",
-      "text": "@mohinimaheshwa Coal India and Airtel",
-      "created_at": "2026-11-19T08:35:45+00:00",
-      "url": "https://x.com/im_umanggoel/status/2123334402898014246",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123334358614659336",
-      "handle": "dhanamonline",
-      "display_name": "DhanamOnline",
-      "text": "മഹാനദി കോൾഫീൽഡ്‌സ്\nകോൾ ഇന്ത്യയുടെ ഉപകമ്പനിയിൽ നിക്ഷേപിക്കാൻ അവസരം\n\nVisit : https://t.co/ZBNhht06XG\n\n#DhanamOnline #MahanadiCoalfieldsIPO #CoalIndia #IPOIndia #IndianStockMarket #ഓഹരിവിപണി https://t.co/JzWwYFZEKT",
-      "created_at": "2026-11-19T08:35:35+00:00",
-      "url": "https://x.com/dhanamonline/status/2123334358614659336",
-      "image": "https://pbs.twimg.com/media/HXeZUceb0AAinnD.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123333875078451572",
-      "handle": "theonlybrahma",
-      "display_name": "Brahma | Telugu in Bengaluru",
-      "text": "￼\nWhat did Mangaluru actually get from the Centre? Let's talk facts, not WhatsApp forwards.\nPORT:\nNew Mangalore Port got ₹1,500 cr projects in Nov 2025 — 150-bed hospital, 4-lane port road, truck terminal, rail sheds. Plus ₹438 cr for Berth 9 redevelopment. Plus ₹25 cr coastal berth at Old Mangaluru Port. Karnataka has 32 Sagarmala projects worth ₹6,526 cr — Mangaluru is the main port.\nRAILWAY:\nMangaluru Central Station — ₹94 cr sanctioned under Amrit Bharat. Mangaluru Junction also selected. Subrahmanya Road station redeveloped. Sakleshpur-Subrahmanya electrification done. And Bengaluru-Mangaluru-Madgaon Vande Bharat flagged off.\nROADS:\nNH-75 Mangaluru-Bengaluru 4-laning BC Road-Addahole — ₹1,660 cr. CRIF roads in Dakshina Kannada — ₹57 cr for 14 works, 82.94 km. NH-73 BC Road-Punjalakatte — ₹64 cr. Plus DPR approved for Surathkal-BC Road widening + NH-66 service roads Talapady to Kundapur.\nSMART CITY:\nMangaluru Smart City — 105 projects, ₹2,573 cr. 93 projects worth ₹2,425 cr completed. Centre gave ₹453 cr. DC Office Padil, Urwa stadium, waterfront — all part of it.\nAIRPORT:\nMangaluru Airport terminal expansion started Nov 2026 — capacity 2.5 mn to 5.2 mn by 2029. Full master plan ₹5,200 cr.\nENERGY:\nMRPL — Central PSU ONGC's refinery at Mangaluru, 15 MMTPA. Now planning ₹31,073 cr expansion to 18 MMTPA + petrochemicals. Plus ONGC 1.75 MMT Strategic Petroleum Reserve at Mangaluru.\nSo did Mangaluru get zero? No.\nDid Mangaluru get ONE big package like Amaravati got in one Budget? Also no.\nMangaluru got projects department by department. Amaravati got a capital in one go. That is the difference.\nWe don't need to abuse the Centre. We need to ask for the next step with one voice — Mangaluru-Bengaluru doubling, airport station, port-industry corridor — as ONE Mangaluru Package.\nFacts first. Then demand.",
-      "created_at": "2026-11-19T08:33:40+00:00",
-      "url": "https://x.com/theonlybrahma/status/2123333875078451572",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE103A01014",
-          "query": "\"MRPL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123333614712807741",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | IT shares extend decline to 3rd straight day as Nasdaq gains strength ahead of Anthropic listing\n\nThe sentiment towards IT stocks remained weak amid concerns that expectations of higher US interest rates could affect technology spending by clients.\n\nRead More:\nhttps://t.co/NoVx7mY9F9",
-      "created_at": "2026-11-19T08:32:38+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123333614712807741",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123332793711378879",
-      "handle": "PuneIbs",
-      "display_name": "Official IBS Pune",
-      "text": "Mahanadi Coalfields Limited, a subsidiary of Coal India, is launching its Initial Public Offering (IPO) on November 19, 2026. The company aims to raise approximately ₹8,700 crore through the sale of a 10% stake, with a price band of ₹129–₹136 per share.\n#IBSPune #ICFAI  #IPO https://t.co/2MD8FM4aEv",
-      "created_at": "2026-11-19T08:29:22+00:00",
-      "url": "https://x.com/PuneIbs/status/2123332793711378879",
-      "image": "https://pbs.twimg.com/media/HXeXzheaIAAXZvd.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123332329389306311",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#WATCH | 'Have you raised wages, created jobs?' PM Modi challenges India Inc after tax cuts, trade deals\n\nPrime Minister Narendra Modi on questioned whether Indian companies had done enough to increase employment and employee incomes following corporate tax reductions and other government reforms, urging industry to take greater responsibility for India's economic transformation.\n\n\"Today there is no income tax on earnings up to ₹12 lakh. Did you increase your employees' salaries or hire more staff?\" PM Modi questioned whether companies had raised employee incomes and expanded employment, suggesting that businesses could not expect the government alone to drive the country's development.\n\n#PMModi #IncomeTax",
-      "created_at": "2026-11-19T08:27:31+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123332329389306311",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123330615001112841",
-      "handle": "IIFL_Finance",
-      "display_name": "IIFL Finance",
-      "text": "@SumitKu92650872 Hi Sumit, we understand your concern regarding the delay in loan closure. Our team is committed to addressing this as soon as possible. Please share your loan account number and contact details in direct message for further support.  https://t.co/cTIdEaTfsw",
-      "created_at": "2026-11-19T08:20:42+00:00",
-      "url": "https://x.com/IIFL_Finance/status/2123330615001112841",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123329520191381653",
-      "handle": "Prabinmen",
-      "display_name": "PM",
-      "text": "#Kalyan Jewellers CMP 654 #KALYANKJIL \n\nwill this one find a short-term bottom here - won't be commenting immediately unless i see couple of candles",
-      "created_at": "2026-11-19T08:16:21+00:00",
-      "url": "https://x.com/Prabinmen/status/2123329520191381653",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE303R01014",
-          "query": "\"KALYANKJIL\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123329360421871949",
-      "handle": "babasanju1990",
-      "display_name": "Sanju Baba",
-      "text": "@kiranshaw @blrtechsummit @DKShivakumar Garbage clearance do not required big investment, come out of Biocon in E City you will find 100 spots of garbage dump on road side. It's not just E city, whole Bangalore have this problem. City is full of Garbage. This should be 1st step to make city clean before making movable",
-      "created_at": "2026-11-19T08:15:43+00:00",
-      "url": "https://x.com/babasanju1990/status/2123329360421871949",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE376G01013",
-          "query": "\"Biocon\""
-        },
-        {
-          "entityId": "isin:INE376G01013",
-          "query": "\"BIOCON\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123328595279901038",
-      "handle": "MacroMatrix1",
-      "display_name": "MacroMatrix",
-      "text": "Nifty market is predicting AI trade going to start again. \nNifty IT is sell off today and semiconductor and data Center stocks went high. \n\nWatch out for \nCGPower \nGvT&D\nABB\nPowerindia \nSiemens \nL&T\nNETWEB \nE2E\n\nMarket is pricing oil will crash \nWatch out for \nOil India \nHindpetro/BPCL\nFMCG. \nNestles India \nGrodrejcp \nMarico \nDabur \nAutomobile & two wheelers \n\nNifty is too strong due to oil price and commodity price crash now.",
-      "created_at": "2026-11-19T08:12:41+00:00",
-      "url": "https://x.com/MacroMatrix1/status/2123328595279901038",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE067A01029",
-          "query": "\"CGPOWER\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123328589915418955",
-      "handle": "Kbm_tophizo",
-      "display_name": "KBM🇷🇼🇺🇬",
-      "text": "@Hoimasfinest1 Easy easy we shall also groww",
-      "created_at": "2026-11-19T08:12:40+00:00",
-      "url": "https://x.com/Kbm_tophizo/status/2123328589915418955",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
-    "attempted": 7,
-    "incomplete": 217,
-    "checkedAt": "2026-11-21T00:00:09.505051+00:00"
+    "attempted": 36,
+    "incomplete": 208,
+    "checkedAt": "2026-11-21T13:59:18.405137+00:00"
   },
   "archive": [
     {
@@ -9697,9 +9501,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-11-21T12:46:06.172Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-11-21T13:59:44.356Z",
     "lastSuccessAt": null
   }
 }

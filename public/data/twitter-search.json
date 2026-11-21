@@ -1570,48 +1570,44 @@
       "pending": []
     },
     "isin:INE572E01012|PNBHOUSING": {
-      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 70,
-      "lastSuccessAt": "2026-10-16T06:34:32+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": [],
       "lastDiscoveryAt": "2026-11-16T18:39:49+00:00"
     },
     "isin:INE722B01019|Praveg": {
-      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 24,
-      "lastSuccessAt": "2026-11-16T18:39:49+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE722B01019|PRAVEG": {
-      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 23,
-      "lastSuccessAt": "2026-11-16T18:39:49+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE546Y01022|Praxis Home Retails": {
-      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-11-16T18:39:49+00:00",
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE546Y01022|PRAXIS": {
-      "lastAttemptAt": "2026-11-16T18:39:49+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 123,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-09-18T06:26:21+00:00",
       "pending": [
-        {
-          "from": "2026-09-09T06:26:21.607142+00:00",
-          "to": "2026-09-11T12:26:21.455356+00:00"
-        },
         {
           "from": "2026-09-11T12:26:21.455356+00:00",
           "to": "2026-09-13T18:26:21.303571+00:00"
@@ -1625,26 +1621,22 @@
           "to": "2026-09-18T06:26:21+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-16T18:39:49+00:00"
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE811K01011|Prestige Estate Projects": {
-      "lastAttemptAt": "2026-11-16T18:44:25+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-11-02T06:57:57+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE811K01011|PRESTIGE": {
-      "lastAttemptAt": "2026-11-16T20:33:15+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 116,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-09-18T06:26:21+00:00",
       "pending": [
-        {
-          "from": "2026-09-11T12:26:21.455356+00:00",
-          "to": "2026-09-13T18:26:21.303571+00:00"
-        },
         {
           "from": "2026-09-13T18:26:21.303571+00:00",
           "to": "2026-09-16T00:26:21.151785+00:00"
@@ -1662,43 +1654,36 @@
           "to": "2026-09-11T12:26:21.455356+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-02T06:57:57+00:00"
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE0V9N01017|Prizor Viztech": {
-      "lastAttemptAt": "2026-11-16T21:18:01+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "lastSuccessAt": "2026-10-16T07:16:43+00:00",
       "targetThrough": "2026-11-02T06:57:57+00:00",
       "pending": [
         {
-          "from": "2026-10-14T07:16:43+00:00",
-          "to": "2026-10-23T19:07:20+00:00"
-        },
-        {
           "from": "2026-10-23T19:07:20+00:00",
           "to": "2026-11-02T06:57:57+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE004A01022|Protean eGov Technologies": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 24,
-      "lastSuccessAt": "2026-11-16T22:24:28+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE004A01022|PROTEAN": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 108,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-10-21T09:58:18+00:00",
       "pending": [
-        {
-          "from": "2026-10-10T19:54:34.500000+00:00",
-          "to": "2026-10-21T09:58:18+00:00"
-        },
         {
           "from": "2026-09-30T05:50:51+00:00",
           "to": "2026-10-05T12:52:42.750000+00:00"
@@ -1708,7 +1693,7 @@
           "to": "2026-10-10T19:54:34.500000+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-16T22:24:28+00:00",
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00",
       "lastSuccessAt": "2026-10-02T05:50:51+00:00"
     },
     "isin:INE0SII01026|Quality Power Electrical Equipments": {
@@ -1729,32 +1714,25 @@
       "lastSuccessAt": "2026-09-13T23:47:09+00:00"
     },
     "isin:INE855B01025|Rain Industries": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 106,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": "2026-11-16T22:24:28+00:00",
       "pending": [
         {
-          "from": "2026-10-19T09:58:18+00:00",
-          "to": "2026-11-02T16:11:23+00:00"
-        },
-        {
           "from": "2026-11-02T16:11:23+00:00",
           "to": "2026-11-16T22:24:28+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE855B01025|RAIN": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 109,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-09-13T23:47:09+00:00",
       "pending": [
-        {
-          "from": "2026-09-09T11:47:09.334029+00:00",
-          "to": "2026-09-11T17:47:09.167015+00:00"
-        },
         {
           "from": "2026-09-11T17:47:09.167015+00:00",
           "to": "2026-09-13T23:47:09+00:00"
@@ -1776,47 +1754,41 @@
           "to": "2026-09-09T11:47:09.334029+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-16T22:24:28+00:00"
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE399G01023|Ramkrishna Forgings": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 112,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": "2026-11-16T22:24:28+00:00",
       "pending": [
         {
-          "from": "2026-10-19T09:58:18+00:00",
-          "to": "2026-11-02T16:11:23+00:00"
-        },
-        {
           "from": "2026-11-02T16:11:23+00:00",
           "to": "2026-11-16T22:24:28+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE399G01023|RKFORGE": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 135,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "lastSuccessAt": "2026-10-21T09:58:18+00:00",
       "targetThrough": "2026-11-16T22:24:28+00:00",
       "pending": [
         {
-          "from": "2026-10-19T09:58:18+00:00",
-          "to": "2026-11-02T16:11:23+00:00"
-        },
-        {
           "from": "2026-11-02T16:11:23+00:00",
           "to": "2026-11-16T22:24:28+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE027A01015|Rashtriya Chemicals": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 25,
-      "lastSuccessAt": "2026-11-16T22:24:28+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -1847,85 +1819,76 @@
       "lastDiscoveryAt": "2026-10-02T06:48:54+00:00"
     },
     "isin:INE425Y01011|RPSG Ventures Limite": {
-      "lastAttemptAt": "2026-11-16T22:24:28+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE425Y01011|RPSGVENT": {
-      "lastAttemptAt": "2026-11-16T23:42:53+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 7,
-      "lastSuccessAt": "2026-10-21T09:58:18+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE500L01026|S H Kelkar & Company": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-11-17T00:32:42+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE08U801020|Samhi Hotels": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 60,
-      "lastSuccessAt": "2026-11-17T00:32:42+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE08U801020|SAMHI": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 13,
-      "lastSuccessAt": "2026-10-02T06:48:54+00:00",
-      "targetThrough": "2026-11-11T03:09:51+00:00",
-      "pending": [
-        {
-          "from": "2026-10-21T04:59:22.500000+00:00",
-          "to": "2026-11-11T03:09:51+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-17T00:32:42+00:00"
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-11T03:09:51+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE148I01020|Sammaan Capital": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 97,
-      "lastSuccessAt": "2026-11-17T00:32:42+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE148I01020|SAMMAANCAP": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 42,
-      "lastSuccessAt": "2026-11-17T00:32:42+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE860D01013|Sanjivani Paranteral": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-11-17T00:32:42+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE953O01021|Sansera Engineering": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 108,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-11-11T03:09:51+00:00",
       "pending": [
-        {
-          "from": "2026-10-19T04:55:16.500000+00:00",
-          "to": "2026-11-11T03:09:51+00:00"
-        },
         {
           "from": "2026-09-26T06:40:42+00:00",
           "to": "2026-10-07T17:47:59.250000+00:00"
@@ -1935,125 +1898,108 @@
           "to": "2026-10-19T04:55:16.500000+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-17T00:32:42+00:00",
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00",
       "lastSuccessAt": "2026-09-28T06:40:42+00:00"
     },
     "isin:INE953O01021|SANSERA": {
-      "lastAttemptAt": "2026-11-17T00:32:42+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 38,
-      "targetThrough": "2026-09-28T06:40:42+00:00",
-      "pending": [
-        {
-          "from": "2026-09-21T12:40:42.349961+00:00",
-          "to": "2026-09-23T18:40:42.233307+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-11T03:09:51+00:00"
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00",
+      "lastSuccessAt": "2026-09-28T06:40:42+00:00"
     },
     "isin:INE08NE01025|Sanstar": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-11-17T01:27:47+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE08NE01025|SANSTAR": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-11-17T01:27:47+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE955I01044|Sejal Glass": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-10-02T08:02:07+00:00",
-      "targetThrough": "2026-10-16T13:03:01+00:00",
-      "pending": [
-        {
-          "from": "2026-10-08T10:32:34+00:00",
-          "to": "2026-10-16T13:03:01+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-17T01:27:47+00:00"
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-16T13:03:01+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE955I01044|SEJALLTD": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 58,
-      "lastSuccessAt": "2026-11-17T01:27:47+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE597J01018|Shalby": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 104,
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "lastSuccessAt": "2026-10-02T08:02:07+00:00",
       "targetThrough": "2026-11-17T01:27:47+00:00",
       "pending": [
         {
-          "from": "2026-09-30T08:02:07+00:00",
-          "to": "2026-10-24T04:44:57+00:00"
-        },
-        {
           "from": "2026-10-24T04:44:57+00:00",
           "to": "2026-11-17T01:27:47+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE597J01018|SHALBY": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-10-11T22:57:17+00:00",
-      "targetThrough": "2026-10-16T14:21:24+00:00",
-      "pending": [
-        {
-          "from": "2026-10-13T06:39:20.500000+00:00",
-          "to": "2026-10-16T14:21:24+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-17T01:27:47+00:00"
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-21T13:59:18+00:00"
     },
     "isin:INE024F01011|Shilchar Technologies": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 95,
-      "lastSuccessAt": "2026-11-17T01:27:47+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE024F01011|SHILCTECH": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": null,
-      "lastResultCount": 12,
-      "lastSuccessAt": "2026-11-17T01:27:47+00:00",
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE109A01011|Shipping Corporation of India": {
-      "lastAttemptAt": "2026-11-17T01:27:47+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 30,
-      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE526E01018|SPR Auto Technologies": {
-      "lastAttemptAt": "2026-11-17T02:13:29+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 6,
-      "lastSuccessAt": "2026-10-16T14:21:24+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T13:59:18+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE526E01018|Shriram Pistons & Rings": {
-      "lastAttemptAt": "2026-11-17T03:00:14+00:00",
+      "lastAttemptAt": "2026-11-21T13:59:18+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-16T14:21:24+00:00",
@@ -3156,8 +3102,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 1,
-    "incomplete": 229,
-    "checkedAt": "2026-11-21T12:45:50.244353+00:00"
+    "attempted": 36,
+    "incomplete": 208,
+    "checkedAt": "2026-11-21T13:59:18.405137+00:00"
   }
 }
