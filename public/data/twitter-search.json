@@ -1,26 +1,22 @@
 {
   "queries": {
     "isin:INE423A01024|Adani Enterprises": {
-      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 102,
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-11-18T09:12:08+00:00",
       "pending": [
-        {
-          "from": "2026-10-01T05:24:56+00:00",
-          "to": "2026-10-25T07:18:32+00:00"
-        },
         {
           "from": "2026-10-25T07:18:32+00:00",
           "to": "2026-11-18T09:12:08+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-12T22:32:50+00:00",
+      "lastDiscoveryAt": "2026-11-21T19:34:48+00:00",
       "lastSuccessAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE423A01024|ADANIENT": {
-      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 65,
       "targetThrough": "2026-10-12T22:32:50+00:00",
       "pending": [
@@ -2334,100 +2330,87 @@
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0OC301013|Turtlemint Fintech Solutions": {
-      "lastAttemptAt": "2026-11-17T23:02:26+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0OC301013|TURTLEMINT": {
-      "lastAttemptAt": "2026-11-18T00:01:09+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 101,
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-11-04T15:29:18+00:00",
       "pending": [
-        {
-          "from": "2026-09-22T08:08:20+00:00",
-          "to": "2026-10-13T23:48:49+00:00"
-        },
         {
           "from": "2026-10-13T23:48:49+00:00",
           "to": "2026-11-04T15:29:18+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-22T10:22:06+00:00",
+      "lastDiscoveryAt": "2026-11-21T19:34:48+00:00",
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|Urban Company": {
-      "lastAttemptAt": "2026-11-18T01:41:58+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 108,
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
       "targetThrough": "2026-11-04T15:29:18+00:00",
       "pending": [
-        {
-          "from": "2026-09-22T08:08:20+00:00",
-          "to": "2026-10-13T23:48:49+00:00"
-        },
         {
           "from": "2026-10-13T23:48:49+00:00",
           "to": "2026-11-04T15:29:18+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-22T10:22:06+00:00",
+      "lastDiscoveryAt": "2026-11-21T19:34:48+00:00",
       "lastSuccessAt": "2026-09-24T08:08:20+00:00"
     },
     "isin:INE0CAZ01013|URBANCO": {
-      "lastAttemptAt": "2026-11-18T01:47:50+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 17,
-      "lastSuccessAt": "2026-10-17T05:23:01+00:00",
-      "targetThrough": "2026-10-22T10:22:06+00:00",
-      "pending": [
-        {
-          "from": "2026-10-18T19:52:33.500000+00:00",
-          "to": "2026-10-22T10:22:06+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-11-04T15:29:18+00:00"
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-22T10:22:06+00:00",
+      "targetThrough": null,
+      "pending": [],
+      "lastDiscoveryAt": "2026-11-21T19:34:48+00:00"
     },
     "isin:INE879I01012|Valor Estate": {
-      "lastAttemptAt": "2026-11-18T02:57:33+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-11-04T15:29:18+00:00",
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-11-18T04:05:56+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 2,
-      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-11-18T06:05:04+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 17,
-      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
-      "lastAttemptAt": "2026-11-18T07:28:19+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 44,
-      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1CDF01017|VAML": {
-      "lastAttemptAt": "2026-11-18T08:09:38+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 63,
-      "lastSuccessAt": "2026-11-12T20:42:43+00:00",
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2625,14 +2608,18 @@
       "pending": []
     },
     "isin:INE0LRU01027|Aarti Pharmalabs": {
-      "lastAttemptAt": "2026-11-18T03:33:58+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE0LRU01027|AARTIPHARM": {
-      "lastAttemptAt": "2026-11-18T09:12:08+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 20,
-      "lastSuccessAt": "2026-10-28T07:31:11+00:00",
+      "lastAttemptAt": "2026-11-21T19:34:48+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-11-21T19:34:48+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -3047,8 +3034,8 @@
   },
   "coverage": {
     "planned": 255,
-    "attempted": 35,
-    "incomplete": 189,
-    "checkedAt": "2026-11-21T17:42:55.812583+00:00"
+    "attempted": 13,
+    "incomplete": 181,
+    "checkedAt": "2026-11-21T19:34:48.426226+00:00"
   }
 }
