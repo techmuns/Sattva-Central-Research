@@ -77,6 +77,7 @@ import { announcementSignal } from '../public/js/data/filing-signals.js';
 import { announcementTypeOf } from '../public/js/data/announcement-types.js';
 import { insiderSignal } from '../public/js/data/insider-signal.js';
 import { insiderTradeIdentity } from '../public/js/data/insider-history.js';
+import { currentSymbol } from '../public/js/data/announcement-identity.js';
 import { articleUrlKey, insiderTradeSourceUrl } from '../public/js/data/filings-shared.js';
 import { BREAKOUT_OBJECT, expectedSession, quoteFresh } from '../public/js/data/breakout-live-shared.js';
 import { readScreenerConcallCollector } from './screener-concalls-collector.mjs';
@@ -299,7 +300,16 @@ function group(rows, limit, perCompanyLimit = PER_COMPANY_LIMIT) {
   return { groups: groups.filter((g) => g.items.length), count: rows.length, more: rows.length - groups.reduce((n, g) => n + g.items.length, 0) };
 }
 
-const bookIndex = (holdings) => new Map(holdings.map((h) => [upper(h.ticker), h]));
+// THE BOOK IS INDEXED, AND EVERY CAPTURED ROW MATCHED, BY THE SYMBOL A COMPANY TRADES UNDER TODAY.
+// A source that lags an exchange rename still files the holding under its old symbol (RENAMED_SYMBOLS
+// in announcement-identity.js): HEG Advanced Materials' Q2 earnings-call intimation reached BSE's
+// capture as HEG on 29 October 2026, and a book reading HEGAM matched no brief to it.
+const bookIndex = (holdings) => new Map(holdings.map((h) => [currentSymbol(h.ticker), h]));
+/** A row filed under a renamed company's old symbol while the current symbol has a row of its own. */
+const shadowedRows = (rows) => {
+  const own = new Set(rows.map((r) => upper(r?.ticker)).filter((t) => t && currentSymbol(t) === t));
+  return (r) => upper(r?.ticker) !== currentSymbol(r?.ticker) && own.has(currentSymbol(r?.ticker));
+};
 
 // ---- 2. announcements on direct holdings ----------------------------------------------------------
 
@@ -325,7 +335,7 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
     const parsed = resolveAll(parseAnnouncements(xml), buildResolver({ book: holdings }));
     nse = { ok: true, readAt: now, count: parsed.length, resolved: parsed.filter((r) => r.ticker).length, matched: 0 };
     for (const r of parsed) {
-      const ticker = upper(r.ticker);
+      const ticker = currentSymbol(r.ticker);
       const at = Date.parse(r.publishedAt || '');
       if (!ticker || !byTicker.has(ticker) || !inSpan(at)) continue;
       nse.matched += 1;
@@ -352,7 +362,7 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
       nseHistory.days.push(day);
       for (const raw of file.rows) {
         const r = raw?.ticker ? raw : resolveRow(raw || {}, resolver);
-        const ticker = upper(r.ticker);
+        const ticker = currentSymbol(r.ticker);
         const at = Date.parse(r.publishedAt || '');
         if (!ticker || !byTicker.has(ticker) || !inSpan(at)) continue;
         nseHistory.matched += 1;
@@ -368,7 +378,7 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
   const heldFiling = (a, fallback = a.ticker) => {
     if (a.isin) return byIsin.get(upper(a.isin));
     const code = String(a.scripCode || a.bseCode || '').trim();
-    const held = byBseCode.get(code) || byTicker.get(upper(fallback));
+    const held = byBseCode.get(code) || byTicker.get(currentSymbol(fallback));
     return code && held?.bseCode && code !== String(held.bseCode).trim() ? null : held;
   };
   const publishedFilingInstant = a => /T\d{2}:\d{2}.*(?:Z|[+-]\d{2}:\d{2})$/i.test(a.publishedAt || '') ? Date.parse(a.publishedAt) : NaN;
@@ -393,7 +403,7 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
     : { ok: false, reason: 'capture-unavailable', capturedAt: null, from: null, to: null, matched: 0 };
   const appendFiling = (a, holding, fallback) => {
     const at = filingInstant(a); if (!holding || !inSpan(at)) return;
-    const ticker = upper(holding.ticker), exchange = filingVenue(a, fallback), legacyKey = bseKey(a);
+    const ticker = currentSymbol(holding.ticker), exchange = filingVenue(a, fallback), legacyKey = bseKey(a);
     if (exchange === 'BSE') bse.matched++;
     const key = exchange === 'NSE' ? nseKey({ ...a, company: a.company || holding.name, publishedAt: a.publishedAt || new Date(at).toISOString(), subject: a.subject || a.title || a.headline })
       : exchange === 'BSE' ? bseKey({ ...a, scripCode: a.scripCode || holding.bseCode || ticker }) : `capture:${ticker}:${exchange}:${legacyKey}`;
@@ -483,7 +493,7 @@ export async function readNews({ env, window, lateFrom = window.from, reported =
   const inSpan = article => { const at = Date.parse(article?.publishedAt || ''); return at >= from && at < window.to; };
   inSpan.range = { from, to: window.to };
   function admit(article, ticker, { via = null, attribution = null } = {}) {
-    ticker = upper(ticker); if (!article?.title || !byTicker.has(ticker) || !inSpan(article)) return false;
+    ticker = currentSymbol(ticker); if (!article?.title || !byTicker.has(ticker) || !inSpan(article)) return false;
     const at = Date.parse(article.publishedAt), url = article.url || article.tradingViewUrl;
     const key = article.tradingViewId ? `tv:${ticker}|${article.tradingViewId || url}` : `news:${ticker}|${url || article.id}`;
     const alias = `${ticker}|url:${articleUrlKey({ url })}`, keys = [key, alias];
@@ -598,10 +608,10 @@ export async function readTrades({ env, window, lateFrom = window.from, reported
   for (const e of identities?.entries || []) {
     const line = byIsin.get(upper(e?.isin));
     if (!line?.ticker) continue;
-    for (const code of [e.bseCode, ...(e.bseCodes || [])]) if (code) codeToTicker.set(String(code), upper(line.ticker));
+    for (const code of [e.bseCode, ...(e.bseCodes || [])]) if (code) codeToTicker.set(String(code), currentSymbol(line.ticker));
   }
   const tickerOf = (row) => {
-    const t = upper(row?.ticker);
+    const t = currentSymbol(row?.ticker);
     if (byTicker.has(t)) return t;
     return /^\d+$/.test(t) ? codeToTicker.get(t) || null : null;
   };
@@ -683,8 +693,11 @@ export async function readSessionQuotes({ env, now = Date.now(), edition, day = 
       }
     } catch { return { reason: 'capture-unavailable', rows: [] }; }
     const rows = [];
-    for (const row of Array.isArray(capture?.rows) ? capture.rows : []) {
-      const ticker = upper(row?.ticker);
+    const list = Array.isArray(capture?.rows) ? capture.rows : [], shadowed = shadowedRows(list);
+    for (const row of list) {
+      // One quote per holding: the same series captured under both symbols is listed once.
+      if (shadowed(row)) continue;
+      const ticker = currentSymbol(row?.ticker);
       if (!byTicker.has(ticker) || row.sessionDate !== session || !quoteFresh(row, sessionClock)) continue;
       const pct = pctOf(row.price, row.prevClose);
       if (pct == null) continue;
@@ -697,8 +710,10 @@ export async function readSessionQuotes({ env, now = Date.now(), edition, day = 
     if (!daily) return { reason: 'daily-unavailable', rows: [] };
     if (daily.price_date !== session) return { reason: 'daily-behind', priceDate: daily.price_date || null, rows: [] };
     const rows = [];
-    for (const row of daily.rows || daily.companies || []) {
-      const ticker = upper(row?.ticker);
+    const list = daily.rows || daily.companies || [], shadowed = shadowedRows(list);
+    for (const row of list) {
+      if (shadowed(row)) continue;
+      const ticker = currentSymbol(row?.ticker);
       const pct = row?.pct_change_today == null || row.pct_change_today === '' ? NaN : Number(row.pct_change_today);
       if (!byTicker.has(ticker) || (row.bar_date || session) !== session || !Number.isFinite(pct)) continue;
       const last = Number.isFinite(row.cmp) ? row.cmp : null;
@@ -793,10 +808,10 @@ export async function readCalendar({ env, day, holdings, fetcher = fetch, now = 
   const to = addDays(day, CALENDAR_DAYS);
   const inRange = (d) => DAY_RE.test(String(d || '')) && d >= from && d <= to;
   const tickerOf = (row) => {
-    const t = upper(row?.ticker);
+    const t = currentSymbol(row?.ticker);
     if (byTicker.has(t)) return t;
     const byName = resolveRow({ company: row?.name || row?.company || '', symbolHint: null }, resolver).ticker;
-    return byName && byTicker.has(upper(byName)) ? upper(byName) : null;
+    return byName && byTicker.has(currentSymbol(byName)) ? currentSymbol(byName) : null;
   };
   const merged = new Map();
   const admit = (row) => {
@@ -877,7 +892,7 @@ export async function readActions({ env, day, holdings, uncapped = false }) {
   const rows = [];
   let debtSkipped = 0;
   for (const r of capture.rows) {
-    const line = byTicker.get(upper(r?.ticker)) || byIsin.get(upper(r?.isin));
+    const line = byTicker.get(currentSymbol(r?.ticker)) || byIsin.get(upper(r?.isin));
     if (!line) continue;
     const dates = [['Ex-date', r.exDate], ['Record date', r.recordDate], ['Book closure', r.bookClosureStart]]
       .filter(([, d]) => DAY_RE.test(String(d || '')) && d >= from && d <= to)
@@ -887,7 +902,7 @@ export async function readActions({ env, day, holdings, uncapped = false }) {
     const key = `action:${r.id || [line.ticker, r.actionType, dates[0].date, norm(r.purpose)].join('|')}`;
     if (seen.has(key)) { const old = seen.get(key); old.sourceUrls = evidenceUrls(old.sourceUrls, r.screenerCompanyUrl, r.sourceUrl, r.url, r.sourceUrls); continue; }
     rows.push({
-      key, ticker: upper(line.ticker), company: line.name, type: String(r.actionType || 'action'),
+      key, ticker: currentSymbol(line.ticker), company: line.name, type: String(r.actionType || 'action'),
       purpose: String(r.purpose || r.actionType || 'Corporate action'), dates, on: dates.map((d) => d.date).sort()[0],
       source: (Array.isArray(r.sources) && r.sources.length ? r.sources : [r.source]).filter(Boolean).join(' · ') || 'capture',
       url: [r.screenerCompanyUrl, r.sourceUrl].find((u) => typeof u === 'string' && /^https:\/\//.test(u)) || null,
@@ -967,7 +982,7 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
   // consume paid slots or the coverage denominator of genuinely new developments.
   await annotateEditorialHistory(brief, briefStats(brief).companies, reported);
   // Notes see the final groups, including every publisher's qualifications and source text.
-  brief.ai = includeAi ? await readAiNotes({ env, fetcher, now, companies: briefStats(brief).companies, sectors: new Map(holdings.map((h) => [upper(h.ticker), h.sector && !/^unclassified$/i.test(h.sector) ? h.sector : null])) })
+  brief.ai = includeAi ? await readAiNotes({ env, fetcher, now, companies: briefStats(brief).companies, sectors: new Map(holdings.map((h) => [currentSymbol(h.ticker), h.sector && !/^unclassified$/i.test(h.sector) ? h.sector : null])) })
     : { ok: false, reason: 'preview', requested: 0, answered: 0, items: {} };
   if (contentService && newsAiEnabled(env)) brief.newsAiBudget = contentService.newsBudget.status(now);
   brief.reported = briefStories(brief).flatMap(s => (s.keys || []).map(key => ({ key, publishedAt: s.at })));
