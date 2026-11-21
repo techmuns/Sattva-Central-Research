@@ -1,10 +1,26 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-11-20T23:25:53+00:00",
+  "capturedAt": "2026-11-21T00:00:38+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2123843504858427503",
+      "handle": "MycallsTrading",
+      "display_name": "Mycalls Trading",
+      "text": "Status of earlier given calls 👇 (Part 4) \n\n#MOTILALOFS NOV 1200PE, 16.75 to 21.7 💥🎉 (Yesterday's BTST Call), 3.8K Profit 💥🎉\n\n#HDFCBANK NOV 820CE, 5.45 to 27.75 💥🎉 (Yesterday's BTST Call), 14.4K Profit 💥🎉🔥🔥, 5x 💰🚀\n\nFollow us on TG @ https://t.co/9Xv2yULwqD",
+      "created_at": "2026-11-20T18:18:45+00:00",
+      "url": "https://x.com/MycallsTrading/status/2123843504858427503",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE338I01027",
+          "query": "\"MOTILALOFS\""
+        }
+      ]
+    },
     {
       "tweet_id": "2123833762501074958",
       "handle": "BullCoinstore",
@@ -31,6 +47,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123828927303155788",
+      "handle": "Santosh83707516",
+      "display_name": "🤨 Santosh 😐",
+      "text": "🙏 @RBI,@RBIsays @PaywithRing , @Kissht_EMI और संबंधित Lending Partners से मेरा सीधा सवाल!\n\nपिछले 21 महीनों से मैं लगातार ईमेल और X (Twitter) के माध्यम से Ring और Kissht को अपनी आर्थिक समस्या बता रहा हूँ।\n\nएक वास्तविक डिफॉल्टर होने के बावजूद मेरी मंशा अपना लोन चुकाने की है। मैंने Settlement और अपनी आय के अनुसार Monthly EMI पर Restructuring का विकल्प माँगा, लेकिन आज तक मुझे कोई समाधान नहीं दिया गया।\n\nकंपनी की तरफ से केवल Full Outstanding Amount की माँग की जा रही है, जबकि मेरी आर्थिक स्थिति में पूरी रकम चुकाना संभव नहीं है।\n\nमेरा सीधा सवाल है:\n\nजब मैंने बार-बार भुगतान करने की इच्छा जताई और अपनी क्षमता के अनुसार समाधान माँगा, फिर भी मुझे कोई विकल्प नहीं दिया गया, तो आगे चलकर कंपनी किस आधार पर मुझसे पूरी रकम वसूलने की जिम्मेदारी निभाएगी?\n\n🙏@RBI से अनुरोध है कि इस मामले की जाँच करे और ऐसे मामलों में ग्राहकों को उचित शिकायत निवारण तथा समाधान का रास्ता दिलाने में मदद करे।\n\nमुझे लोन से भागना नहीं है, मुझे अपनी क्षमता के अनुसार लोन चुकाने का अवसर चाहिए।\n\n@RBI @RBIsays @PaywithRing @Kissht_EMI @FinMinIndia",
+      "created_at": "2026-11-20T17:20:49+00:00",
+      "url": "https://x.com/Santosh83707516/status/2123828927303155788",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
     },
     {
       "tweet_id": "2123826968005423571",
@@ -92,6 +128,26 @@
       ]
     },
     {
+      "tweet_id": "2123818160923226218",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "विदेश में पढ़ने वाला नशेड़ी 😄🤣😂😀APEC 1989 में बनी। सदस्यता के लिए Asia-Pacific क्षेत्र, मजबूत व्यापार संबंध और market-driven खुली नीतियां जरूरी हैं (consensus से)। भारत ने 1991 में आवेदन किया (कांग्रेस सरकार), लेकिन protectionism और 1997 के moratorium के कारण नहीं मिला। डेयरी-कृषि पूरी तरह खोलने से छोटे किसान प्रभावित हो सकते हैं, इसलिए भारत इसे बचाता है। कांग्रेस के लगभग 15 साल शासन में भी सदस्यता नहीं मिली- Grok Information",
+      "created_at": "2026-11-20T16:38:02+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123818160923226218",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123817759717122506",
       "handle": "myAlerts_in",
       "display_name": "myAlerts.in",
@@ -112,6 +168,26 @@
       ]
     },
     {
+      "tweet_id": "2123817556981186819",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@RahulGandhi यह नशेड़ी सिर्फ फेक न्यूज़ फैलाकर पीएम बनना चाहता है 😄🤣😂😀 https://t.co/bYPYztnO1O",
+      "created_at": "2026-11-20T16:35:38+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123817556981186819",
+      "image": "https://pbs.twimg.com/media/HXlQzq9b0AAKu3q.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123805835495436637",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -121,6 +197,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123805758827671841",
+      "handle": "DailyFrequency1",
+      "display_name": "​Daily Frequency🫶",
+      "text": "@sprahajoshi Usually a Nilkamal chair that has seen more family drama than the living room sofa",
+      "created_at": "2026-11-20T15:48:45+00:00",
+      "url": "https://x.com/DailyFrequency1/status/2123805758827671841",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
     },
     {
       "tweet_id": "2123804125439930840",
@@ -200,6 +296,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123799040592859333",
+      "handle": "Rahultwitts",
+      "display_name": "RAHUL BARANWAL",
+      "text": "@nilkamal_ltd \nI have ordered a bed from nilkamal website with order no - 209089, dated - 13 oct 206.\nI recieved the package on \nDuring installation by your service guy, he reprorted few Missing items and installation was not done. Customer care is not helping for return.",
+      "created_at": "2026-11-20T15:22:04+00:00",
+      "url": "https://x.com/Rahultwitts/status/2123799040592859333",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
     },
     {
       "tweet_id": "2123797671811088466",
@@ -313,6 +429,26 @@
         {
           "entityId": "isin:INE303R01014",
           "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123775308360994872",
+      "handle": "VishalShuks1vs",
+      "display_name": "Vishal Shukla",
+      "text": "*45% रिटर्न कमाने का मौका!*\n\n* मई में बाजार में लिस्ट हुई थी कंपनी,\n* अब HSBC ने पहली बार शेयर पर दी BUY की राय\n* ₹500 का टारगेट\n* मुनाफे में 60% CAGR की उम्मीद\n\nhttps://t.co/YH3krO7m8o https://t.co/nR4AhqdROO",
+      "created_at": "2026-11-20T13:47:46+00:00",
+      "url": "https://x.com/VishalShuks1vs/status/2123775308360994872",
+      "image": "https://pbs.twimg.com/media/HXkqYl5awAA_HJm.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
         }
       ]
     },
@@ -591,6 +727,26 @@
       ]
     },
     {
+      "tweet_id": "2123752151193387029",
+      "handle": "vsvicky_",
+      "display_name": "Satpal Singh",
+      "text": "Bandhan Small Cap Fund 🔥 \n\nOct 2026 Fresh Buys Only\n\n8 Brand-New entries in Oct 2026\n\nSwiggy\nBiocon\nPB Fintech\nJio Platforms\nTD Power Systems\nUnion Bank of India \nExcelsoft Technologies \nOnEMI Tech Solutions (Kissht)\n\nCash Deployed across Consumption, PSU Banks, Power, Infrastructure, Pharma and Technology",
+      "created_at": "2026-11-20T12:15:44+00:00",
+      "url": "https://x.com/vsvicky_/status/2123752151193387029",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123752003860037872",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -837,6 +993,26 @@
         {
           "entityId": "isin:INE303R01014",
           "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123728450267791575",
+      "handle": "Kissht_EMI",
+      "display_name": "Kissht",
+      "text": "Dear Customer, We take customer concerns very seriously and strictly adhere to RBI guidelines, ensuring ethical practices at all times. Please send us a DM with your registered email address so we can formally investigate your complaint and take appropriate action. Thank you! https://t.co/dvxOEDfccS",
+      "created_at": "2026-11-20T10:41:34+00:00",
+      "url": "https://x.com/Kissht_EMI/status/2123728450267791575",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -1371,6 +1547,26 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2123691736358961619",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@UnnatiGusain3 Hello, we understand your concern. Please be assured that your case is currently being processed. We kindly request some time to resolve this and will update you shortly.",
+      "created_at": "2026-11-20T08:15:40+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123691736358961619",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123691179896365406",
       "handle": "gaze_observer",
       "display_name": "The Cloaked Gaze 👀",
@@ -1399,6 +1595,26 @@
         {
           "entityId": "isin:INE530B01024",
           "query": "\"IIFL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123690034155196549",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@UnnatiGusain3 Hi, we are sorry for the inconvenience. Please DM us your order ID and contact number so we can review the issue and assist you promptly.  https://t.co/vabVK1k5nA",
+      "created_at": "2026-11-20T08:08:55+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123690034155196549",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -1473,6 +1689,26 @@
       ]
     },
     {
+      "tweet_id": "2123689017812435392",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@UnnatiGusain3 Hi, this is unacceptable. We sincerely apologize for the repeated issues. Kindly DM us your order ID and contact number so our team can prioritize this immediately.  https://t.co/vabVK1k5nA",
+      "created_at": "2026-11-20T08:04:52+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123689017812435392",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123688492958142965",
       "handle": "algo_charts",
       "display_name": "The Algo Day Trader",
@@ -1501,6 +1737,26 @@
         {
           "entityId": "isin:INE338I01027",
           "query": "\"Motilal Oswal Financial Services\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123686993670644047",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@UnnatiGusain3 Hi, that doesn't sound right. Kindly DM us your order ID and contact number so we can look into this right away.  https://t.co/vabVK1k5nA",
+      "created_at": "2026-11-20T07:56:50+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123686993670644047",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -1618,6 +1874,26 @@
         {
           "entityId": "isin:INE303R01014",
           "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123680715325993093",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@anamdowney Hello, we'll get this checked and get back to you.",
+      "created_at": "2026-11-20T07:31:53+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123680715325993093",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -1836,6 +2112,34 @@
         {
           "entityId": "isin:INE548A01028",
           "query": "\"HFCL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123670525193109687",
+      "handle": "DFinMirror",
+      "display_name": "The Financial Mirror",
+      "text": "A mixed day for me intraday wise! \n\nTraded in, \n•#OAL - Oriental Aromatics Ltd\n•#Kalpataru - Kalpataru Limited \n•#KissHT - OnEMI Technology Solutions \n•#KPIGreen - KPI Green Energy Limited https://t.co/stzxlvRZyI",
+      "created_at": "2026-11-20T06:51:23+00:00",
+      "url": "https://x.com/DFinMirror/status/2123670525193109687",
+      "image": "https://pbs.twimg.com/media/HXjLFYkagAAa-TX.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -2094,6 +2398,70 @@
         {
           "entityId": "isin:INE303R01014",
           "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123664038001582136",
+      "handle": "CNBCTV18News",
+      "display_name": "CNBC-TV18",
+      "text": "📈 HSBC sees 47% upside in a newly listed stock, initiating coverage with a 'Buy' rating.\n\n🔎 What's driving the bullish call?\n\n✍️ @senmeghna tracks HSBC's outlook.\n\nhttps://t.co/t438M22wAp\n\n#StocksToWatch #HSBC #StockMarket #DigitalLending #CNBCTV18",
+      "created_at": "2026-11-20T06:25:37+00:00",
+      "url": "https://x.com/CNBCTV18News/status/2123664038001582136",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123662611703292280",
+      "handle": "Nilkamal_Homes",
+      "display_name": "Nilkamal Homes",
+      "text": "@VARUNGOYAL58389 Hi Varun, that doesn't sound right. Kindly DM us your Order ID and contact number so our team can look into this right away.",
+      "created_at": "2026-11-20T06:19:57+00:00",
+      "url": "https://x.com/Nilkamal_Homes/status/2123662611703292280",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123662544640618704",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@VARUNGOYAL58389 Hi Varun, that doesn't sound right. Kindly DM us your Order ID and contact number so our team can look into this right away.",
+      "created_at": "2026-11-20T06:19:41+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123662544640618704",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -2761,6 +3129,30 @@
       ]
     },
     {
+      "tweet_id": "2123645796998598935",
+      "handle": "CNBCTV18Live",
+      "display_name": "CNBC-TV18",
+      "text": "#HSBC is betting on this #newlisting for an upside of 47%\n\n@senmeghna \nhttps://t.co/0I5e7ioZNA",
+      "created_at": "2026-11-20T05:13:08+00:00",
+      "url": "https://x.com/CNBCTV18Live/status/2123645796998598935",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123645060310770093",
       "handle": "EconomicTimes",
       "display_name": "Economic Times",
@@ -2800,6 +3192,46 @@
         {
           "entityId": "isin:INE548A01028",
           "query": "\"HFCL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123642604046704694",
+      "handle": "CNBC_Awaaz",
+      "display_name": "CNBC-AWAAZ",
+      "text": "#AwaazMarkets |  KISSHT में अच्छी तेजी\n\nHSBC ने Buy रेटिंग के साथ कवरेज शुरु की\n\nइस साल मई में आया था IPO, इश्यू प्राइस 171\n\nइश्यू प्राइस  से दोगुना हुआ शेयर\n\nपूरी डिटेल बता रहे हैं आशीष चतुर्वेदी\n\n@Ashish_4vedi #Kissht #StockMarket #HSBC #BuyRating #IPOListing https://t.co/T5vSErhxL4",
+      "created_at": "2026-11-20T05:00:26+00:00",
+      "url": "https://x.com/CNBC_Awaaz/status/2123642604046704694",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123641914889310292",
+      "handle": "sauroskii",
+      "display_name": "saur | stocktipsarena.com",
+      "text": "KISSHT (On EMI Technologies) sees 1st institution coverage from HSBC. Potential upside 41%. https://t.co/G3uL98hg4k",
+      "created_at": "2026-11-20T04:57:42+00:00",
+      "url": "https://x.com/sauroskii/status/2123641914889310292",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -2971,6 +3403,26 @@
         {
           "entityId": "isin:INE530B01024",
           "query": "\"IIFL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123636540463337905",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@pulsarnandhu Hi, we would like to inform you that we have already shared a response regarding your concern under reference number CC654624. Kindly refer to the same for further details.",
+      "created_at": "2026-11-20T04:36:21+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123636540463337905",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -3337,6 +3789,46 @@
       ]
     },
     {
+      "tweet_id": "2123622410176094631",
+      "handle": "market_pulse_ai",
+      "display_name": "Earnings Pulse",
+      "text": "🚀 Pre-Market Gainers — 20 Nov\nTop stocks gapping up at open:\n#DBL #SWANDEF #KISSHT #MAXHEALTH #PWL\n\n#PreMarket #Stocks #StockMarket https://t.co/48xg3q3mVd",
+      "created_at": "2026-11-20T03:40:12+00:00",
+      "url": "https://x.com/market_pulse_ai/status/2123622410176094631",
+      "image": "https://pbs.twimg.com/media/HXifU9wbcAAN1nk.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123622244085829891",
+      "handle": "Anshuman_si8238",
+      "display_name": "Dharma warrior",
+      "text": "@animeshkrz The sculpture is not nageswar the Nageshwar is always situated on Nilkamal... \nMundamala.. \nAndhanam with two nagars in hand...",
+      "created_at": "2026-11-20T03:39:32+00:00",
+      "url": "https://x.com/Anshuman_si8238/status/2123622244085829891",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123622237785952602",
       "handle": "baro_jwngma",
       "display_name": "Hello Market",
@@ -3441,6 +3933,26 @@
         {
           "entityId": "isin:INE530B01024",
           "query": "\"IIFL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123618028529291445",
+      "handle": "Ashish_shah72",
+      "display_name": "ASHISH SHAH",
+      "text": "HSBC on Onemi Tech\n  Initiate Buy, TP Rs 500  KISSHT belongs to a handful of companies in India with a differentiated and digital unsecured lending model  Rapid scale-up off a low base, efficiency gains and controlled credit costs to drive a c60% PAT CAGR over FY26-29e  Value stock at an implied PB of 2.2x FY28e BVPS",
+      "created_at": "2026-11-20T03:22:47+00:00",
+      "url": "https://x.com/Ashish_shah72/status/2123618028529291445",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -3577,6 +4089,26 @@
       ]
     },
     {
+      "tweet_id": "2123611978073825769",
+      "handle": "Smartinv360",
+      "display_name": "Smartinvestor.360",
+      "text": "Today's Brokerage Views 20 Nov 2026\n\nMax Healthcare, Apollo Hospitals, Vedanta, Paytm, OnEMI Technology Solutions, Maruti Suzuki India,  LG Electronics India, Whirlpool of India, Adani Energy Solutions, Cyient, Genus Power Infrastructures, Pricol, \n\n#BrokerageRadar https://t.co/UkwYtT06GT",
+      "created_at": "2026-11-20T02:58:45+00:00",
+      "url": "https://x.com/Smartinv360/status/2123611978073825769",
+      "image": "https://pbs.twimg.com/media/HXiV090bQAEDcBX.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123610814137647604",
       "handle": "ETNOWlive",
       "display_name": "ET NOW",
@@ -3625,6 +4157,22 @@
         {
           "entityId": "isin:INE530B01024",
           "query": "\"IIFL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123607738311946391",
+      "handle": "Sharad9Dubey",
+      "display_name": "Sharad Dubey",
+      "text": "HSBC On Onemi Technology Solution\nInitiate Buy-TP Rs 500/share\nDifferentiated and digital unsecured lending model\nRapid scale-up off a low base\nEfficiency gains and controlled credit costs\n60% PAT CAGR over FY26-29e",
+      "created_at": "2026-11-20T02:41:54+00:00",
+      "url": "https://x.com/Sharad9Dubey/status/2123607738311946391",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
         }
       ]
     },
@@ -3693,6 +4241,46 @@
       ]
     },
     {
+      "tweet_id": "2123603532167410083",
+      "handle": "nimeshscnbc",
+      "display_name": "Nimesh Shah",
+      "text": "HSBC on Onemi Tech \nInitiate Buy, TP Rs 500 \nKISSHT belongs to a handful of companies in India with a differentiated and digital unsecured lending model \nRapid scale-up off a low base, efficiency gains and controlled credit costs to drive a c60% PAT CAGR over FY26-29e \nValue stock at an implied PB of 2.2x FY28e BVPS\n@CNBCTV18Live @_RituSingh",
+      "created_at": "2026-11-20T02:25:11+00:00",
+      "url": "https://x.com/nimeshscnbc/status/2123603532167410083",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123601368351174808",
+      "handle": "AshVerma111",
+      "display_name": "Aashish Verma",
+      "text": "#HSBC On #OnEMI_Tech\n\nInitiate Buy Call, Target Price At Rs 500/Sh\n\nKISSHT Among A Handful Of Indian Cos With A Differentiated Digital Unsecured Lending Model\nLow-base Growth, Optg Efficiencies & Controlled Credit Costs Could Drive Around 60% PAT CAGR Over FY26-29\nValuation Appears Attractive At An Implied 2.2x FY28 Book Value",
+      "created_at": "2026-11-20T02:16:35+00:00",
+      "url": "https://x.com/AshVerma111/status/2123601368351174808",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123600286761746560",
       "handle": "thebigbulldeals",
       "display_name": "The Big Bull Deals",
@@ -3729,6 +4317,26 @@
         {
           "entityId": "isin:INE850D01014",
           "query": "\"GODREJAGRO\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123599597100749285",
+      "handle": "CNBCTV18Live",
+      "display_name": "CNBC-TV18",
+      "text": "#CNBCTV18Market | HSBC initiates buy call on OnEMI Tech, says, KISSHT among a handful of Indian cos with a differentiated digital unsecured lending model https://t.co/5rSLneZmTR",
+      "created_at": "2026-11-20T02:09:33+00:00",
+      "url": "https://x.com/CNBCTV18Live/status/2123599597100749285",
+      "image": "https://pbs.twimg.com/media/HXiKfGRaAAAGM3o.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
         }
       ]
     },
@@ -3777,6 +4385,26 @@
         {
           "entityId": "isin:INE530B01024",
           "query": "\"IIFL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123596221239759026",
+      "handle": "Price_Rythm",
+      "display_name": "Price Rythm",
+      "text": "#TONBO #APOLLO #PARAS #ASTRAMICRO #KRISHNADEF #IDEAFORGE #KROSS #DEEPAKNTR #CREDITACC #METROBRAND #ISGEC #JAIBALAJI #PNBHOUSING #MASTEK #BHARTIHEXA #DCXINDIA #INDIASHLTR #ORIENTELEC #BAJAJCON #NILKAMAL #GCSL #TATACOMM #SRF #SWANDEF #ZENTEC https://t.co/mOFcug6ZHp",
+      "created_at": "2026-11-20T01:56:08+00:00",
+      "url": "https://x.com/Price_Rythm/status/2123596221239759026",
+      "image": "https://pbs.twimg.com/media/HXiHNG2bUAEbgZD.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -3857,6 +4485,22 @@
         {
           "entityId": "isin:INE548A01028",
           "query": "\"HFCL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123583986178080883",
+      "handle": "NDTVProfit",
+      "display_name": "NDTV Profit News",
+      "text": "#BrokerageRadar: HSBC On Onemi Technology Solution\n\nFor more, visit our Research Reports section: https://t.co/u9bgDR2Qc4 https://t.co/IjwgNseg6N",
+      "created_at": "2026-11-20T01:07:31+00:00",
+      "url": "https://x.com/NDTVProfit/status/2123583986178080883",
+      "image": "https://pbs.twimg.com/media/HXh8VpRaIAA1wPl.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
         }
       ]
     },
@@ -5520,6 +6164,10 @@
         {
           "entityId": "isin:INE591G01025",
           "query": "\"COFORGE\""
+        },
+        {
+          "entityId": "isin:INE338I01027",
+          "query": "\"MOTILALOFS\""
         }
       ]
     },
@@ -5603,6 +6251,10 @@
         {
           "entityId": "isin:INE591G01025",
           "query": "\"COFORGE\""
+        },
+        {
+          "entityId": "isin:INE338I01027",
+          "query": "\"MOTILALOFS\""
         }
       ]
     },
@@ -5616,6 +6268,26 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123420452047704487",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@RahulGandhi विदेशी रेटिंग एजेंसी भारत की रेट ग्रोथ बढ़ा रही है और यह कांग्रेसी आतंकवादी भारत में आर्थिक आपदा लाना चाहता है।",
+      "created_at": "2026-11-19T14:17:41+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123420452047704487",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
     },
     {
       "tweet_id": "2123420063591997610",
@@ -5854,6 +6526,26 @@
         {
           "entityId": "isin:INE103A01014",
           "query": "\"MRPL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123410882193658185",
+      "handle": "ConcallT",
+      "display_name": "Concall Talks",
+      "text": "Onemi Technology Solutions Ltd – Q2FY27 | Concall Insights\n\nFinancial Performance & Growth Guidance\n•AUM grew 68% YoY to ₹9,317 Cr, while disbursements increased 56% to ₹4,612 Cr.\n•PAT doubled YoY to ₹125 Cr, with ROE at 21.65% and return on average AUM at 5.78%.\n•Management upgraded FY27 AUM growth guidance from 40%+ to 60%+, while maintaining ROE guidance above 20%.\n•Growth driven by higher repeat borrowing, increasing ticket sizes and longer loan tenures among better-quality customers.\n\nAsset Quality & Credit Cost\n•Credit cost declined to 6.2% from 9.3% YoY; management targets over 15% reduction by Q4 FY27 versus Q4 FY26, implying approximately 5.8%.\n•GNPA improved to 2.18%, with management maintaining guidance below 2.25%.\n•Shift towards higher credit-score customers and AI-driven underwriting expected to support sustainable growth with lower defaults.\n\nFunding Cost & Operating Leverage\n•Average borrowing cost declined to 13.76%, while incremental borrowing cost stood at ~12.1%.\n•Management expects at least 150 bps reduction in borrowing costs over the next 3–4 quarters as expensive legacy debt matures.\n•Operating leverage expected to reduce OpEx/AUM by ~25–40 bps quarterly, supporting further profitability improvement.\n•Lower funding costs, operating leverage and declining credit costs remain the three major earnings growth drivers.\n\nLAP Business – Emerging Growth Engine\n•LAP AUM reached ₹737 Cr, contributing ~8% of total AUM.\n•Business achieved profitability one quarter ahead of guidance.\n•Management expects 15–20% QoQ LAP growth, potentially scaling the portfolio ~2.5x over the next two years.\n\nCapital & Business Expansion\n•Raised ₹832 Cr through preferential allotment, providing additional growth capital.\n•Management indicated sufficient capital headroom to scale AUM towards ₹30,000 Cr without further equity fundraising, based on its current business model.\n•Evaluating diversification into gold loans and auto loans, alongside expansion of secured lending.\n\nKey Takeaway\n•Strong earnings visibility from 60%+ AUM growth, declining credit costs, cheaper funding, operating leverage and profitable LAP expansion.\n•Key monitorables: Sustainability of underwriting quality during rapid growth, execution of credit-cost reduction, funding-cost improvement and ROE above 20%.",
+      "created_at": "2026-11-19T13:39:40+00:00",
+      "url": "https://x.com/ConcallT/status/2123410882193658185",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
         }
       ]
     },
@@ -6786,6 +7478,22 @@
       ]
     },
     {
+      "tweet_id": "2123390759273726116",
+      "handle": "DailyProfits21",
+      "display_name": "Stock Market India Official",
+      "text": "#StockOptions Update 19th Nov 2026 in #PrimeChannel\n\n#VOLTAS #BLUESTARCO #IREDA #MARUTI #AMBER #PGEL #CROMPTON #HYUNDAI #HEROMOTOCO #HAVELLS #TVSMOTOR #COLPAL #MOTHERSON #EICHERMOT #IDFCFIRSTB #TMPV #BRITANNIA #BANKBARODA #HINDUNILVR #PAYTM #POLICYBZR #MPHASIS #TCS #TECHM #MFSL #INFY #MOTILALOFS #ALKEM #GLENMARK #ADANIENSOL #360ONE #UJJIVANSFB #INDUSTOWER #VBL #APOLLOHOSP #INOXWIND #HCLTECH #MUTHOOTFIN #KARURVYSYA",
+      "created_at": "2026-11-19T12:19:42+00:00",
+      "url": "https://x.com/DailyProfits21/status/2123390759273726116",
+      "image": "https://pbs.twimg.com/media/HXfMlW6aQAAKAka.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE338I01027",
+          "query": "\"MOTILALOFS\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123390530243719476",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -7070,6 +7778,26 @@
       ]
     },
     {
+      "tweet_id": "2123380704109117868",
+      "handle": "nilkamalraj123",
+      "display_name": "Nilkamal Rajwar",
+      "text": ".@GiridihDc इनकी सहायता करें। \n\n@DproGiridih \n@yourBabulal @sureshsawgrd",
+      "created_at": "2026-11-19T11:39:45+00:00",
+      "url": "https://x.com/nilkamalraj123/status/2123380704109117868",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123378897677107490",
       "handle": "moneycontrolcom",
       "display_name": "Moneycontrol",
@@ -7225,6 +7953,26 @@
       ]
     },
     {
+      "tweet_id": "2123375316634869967",
+      "handle": "rupanjanm",
+      "display_name": "Rupanjan Mukherjee",
+      "text": "Sachin Tendulkar doesn't just build innings on the cricket pitch. He's building an investment portfolio off it! 🏏📈\n\nThe Master Blaster has backed businesses across multiple sectors:\n\n🔹 Azad Engineering – Aerospace & Defence manufacturing\n🔹 Spinny – Used car marketplace\n🔹 JetSynthesys – Gaming & technology\n🔹 Rayzon Solar – Renewable energy\n🔹 Truzon Solar – Solar energy\n🔹 Kissht – Fintech\n🔹 Zepto – Quick commerce\n🔹 Recykal – Waste management & circular economy\n\nHis latest reported investment is in Recykal, where he has acquired a minority stake as a strategic investor. The investment amount remains undisclosed.\n\nFrom aerospace engineering to recycling technology, his investment interests go well beyond cricket.\n\nThe lesson? Build your wealth beyond your primary profession.\n\nSachin's second innings is interesting! 👏\n\nWhich of these businesses do you find most promising?\n\n#SachinTendulkar",
+      "created_at": "2026-11-19T11:18:20+00:00",
+      "url": "https://x.com/rupanjanm/status/2123375316634869967",
+      "image": "https://pbs.twimg.com/media/HXe-jV2aoAADHSN.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123375075609161815",
       "handle": "data_globe",
       "display_name": "Globe Data",
@@ -7241,6 +7989,26 @@
       ]
     },
     {
+      "tweet_id": "2123375072287342645",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@DrLaxman_Yadav सच बोलने की हिम्मत नहीं है तो भ्रामक खबर क्यों फैला रहा है? https://t.co/TCs9PgwJbZ",
+      "created_at": "2026-11-19T11:17:22+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123375072287342645",
+      "image": "https://pbs.twimg.com/media/HXe90kcawAAjWci.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123374957707288629",
       "handle": "Neeraj1697",
       "display_name": "Neeraj Lalwani",
@@ -7253,6 +8021,46 @@
         {
           "entityId": "isin:INE522F01014",
           "query": "\"Coal India\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123374879391289434",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@Kumar1975Rajesh कांग्रेसी दल्ला आज रगड़ा गया 😄🤣😂😀",
+      "created_at": "2026-11-19T11:16:36+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123374879391289434",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123374495675072966",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@DrLaxman_Yadav सच बोलने की औकात नहीं है तो भ्रामक खबर क्यों फैला रहा है? https://t.co/w1wnEON0BW",
+      "created_at": "2026-11-19T11:15:04+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123374495675072966",
+      "image": "https://pbs.twimg.com/media/HXe90kcawAAjWci.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -7489,6 +8297,46 @@
       ]
     },
     {
+      "tweet_id": "2123369847815819454",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@DrLaxman_Yadav Hello @grok जौहर यूनिवर्सिटी में बने दो मस्जिदों में कुल कितने व्यक्तिओं के नमाज पढ़ने की कितनी क्षमता है??",
+      "created_at": "2026-11-19T10:56:36+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123369847815819454",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123369803159339358",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@DrLaxman_Yadav Hello @grok जौहर यूनिवर्सिटी में बने दो मस्जिदों में कुल कितने व्यक्तिओं के नमाज पढ़ने की कितनी क्षमता है?",
+      "created_at": "2026-11-19T10:56:26+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123369803159339358",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123369773547589705",
       "handle": "BCCLofficial",
       "display_name": "Bharat Coking Coal Limited",
@@ -7533,6 +8381,26 @@
         {
           "entityId": "isin:INE103A01014",
           "query": "\"MRPL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123369433611522361",
+      "handle": "sutibro_goswami",
+      "display_name": "Sutibro Goswami",
+      "text": "झारखंड में अनाथ हुए मासूम भाई-बहन! अब दर - दर की ठोकरे खाने को मजबूर 🥺💔\n\nगिरिडीह के बगोदर (बिहारो-सलैयाटांड़) में हुए दर्दनाक हादसे ने हँसते-खेलते परिवार को उजाड़ दिया। आज ये नन्हे भाई-बहन पूरी तरह अनाथ हो चुके हैं। इस भरी दुनिया में न कोई इनकी सुध लेने वाला है, न कोई सहारा देने वाला। जिन मासूमों को अभी माँ-बाप के प्यार की जरूरत थी, आज उनके सामने दो वक्त की रोटी और दाने-दाने को मोहताज होने का संकट खड़ा है।\n\nइन बेसहारा बच्चों की आँखों के आँसू सरकार से मदद की गुहार लगा रहे हैं।\nइन अनाथ भाई-बहनों को यूँ ही बेसहारा न छोड़े आदरणीय हर संभव सहायता करने की कृपा करें\n\n@HemantSorenJMM @JharkhandCMO @JmmJharkhand @SitaSorenMLA @yourBabulal @JMMKalpanaSoren @deepakbiruajmm @DipikaPS @nishikant_dubey @GiridihDc @CPChoudharyAJSU @pratulshahdeo @Rabindranathji @IrfanAnsariMLA @BJP4Jharkhand @BikerGirlkancha",
+      "created_at": "2026-11-19T10:54:57+00:00",
+      "url": "https://x.com/sutibro_goswami/status/2123369433611522361",
+      "image": "https://pbs.twimg.com/media/HXe5PYKbsAEGKC2.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -7904,6 +8772,26 @@
       ]
     },
     {
+      "tweet_id": "2123353369578479626",
+      "handle": "nilkamal_ltd",
+      "display_name": "Nilkamal Ltd.",
+      "text": "@VARUNGOYAL58389 Hi, as this order was placed with Blue Dart, we suggest contacting Blue Dart customer support for further assistance.",
+      "created_at": "2026-11-19T09:51:07+00:00",
+      "url": "https://x.com/nilkamal_ltd/status/2123353369578479626",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123353310212268252",
       "handle": "Stocks_Cg",
       "display_name": "Markets by CG",
@@ -7956,6 +8844,26 @@
         {
           "entityId": "isin:INE591G01025",
           "query": "\"COFORGE\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123352199657066778",
+      "handle": "Nilkamal_Homes",
+      "display_name": "Nilkamal Homes",
+      "text": "@VARUNGOYAL58389 Hi, as this order was placed with Blue Dart, we suggest contacting Blue Dart customer support for further assistance.",
+      "created_at": "2026-11-19T09:46:29+00:00",
+      "url": "https://x.com/Nilkamal_Homes/status/2123352199657066778",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -8112,6 +9020,26 @@
       ]
     },
     {
+      "tweet_id": "2123345063057276993",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "खुद दिन रात कांग्रेस की चाटुकारिता करने वाला चमचा दूसरों को निष्पक्षता का ज्ञान दे रहा है 😄😂😀🤣",
+      "created_at": "2026-11-19T09:18:07+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123345063057276993",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123344997701599541",
       "handle": "tradejini",
       "display_name": "Tradejini",
@@ -8160,6 +9088,26 @@
       ]
     },
     {
+      "tweet_id": "2123344048576712875",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@TajinderBagga कांग्रेस एक आतंकवादी संगठन है।",
+      "created_at": "2026-11-19T09:14:05+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123344048576712875",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2123343206259794132",
       "handle": "viralshah1982",
       "display_name": "viralshah",
@@ -8172,6 +9120,26 @@
         {
           "entityId": "isin:INE303R01014",
           "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2123342420159140176",
+      "handle": "Nilkamal8199",
+      "display_name": "Nilkamal Kumar",
+      "text": "@ThePrintIndia @BhardwajAnanya तुम जैसे भड़वे पत्रकारिता करने वाले को जूते पड़ने चाहिए, जो पांच वक्त के कट्टर मुस्लिम नमाजी को ब्रेड मेकर बोल रही है?",
+      "created_at": "2026-11-19T09:07:37+00:00",
+      "url": "https://x.com/Nilkamal8199/status/2123342420159140176",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"Nilkamal\""
+        },
+        {
+          "entityId": "isin:INE310A01015",
+          "query": "\"NILKAMAL\""
         }
       ]
     },
@@ -8221,6 +9189,34 @@
       "image": null,
       "source_url": "https://x.com/moneycontrolcom",
       "matchedQueries": []
+    },
+    {
+      "tweet_id": "2123337162414584026",
+      "handle": "DFinMirror",
+      "display_name": "The Financial Mirror",
+      "text": "A good day for me intraday wise : ) \n\nTraded in, \n•#BLSPoly - BLS Polymers Ltd\n•#LTFoods - LT Foods Limited \n•#TinnaRubr - Tinna Rubber and Infrastructure Ltd https://t.co/N0k7ddUqoN",
+      "created_at": "2026-11-19T08:46:43+00:00",
+      "url": "https://x.com/DFinMirror/status/2123337162414584026",
+      "image": "https://pbs.twimg.com/media/HXeb5M5bYAIhmJz.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology Solutions\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"Kissht\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"OnEMI Technology\""
+        },
+        {
+          "entityId": "isin:INE12F801023",
+          "query": "\"KISSHT\""
+        }
+      ]
     },
     {
       "tweet_id": "2123336860848275713",
@@ -8539,790 +9535,14 @@
           "query": "\"GROWW\""
         }
       ]
-    },
-    {
-      "tweet_id": "2123328550266884125",
-      "handle": "_groww",
-      "display_name": "Groww",
-      "text": "Thank you, @GffFintechfest , for recognising our co-founder and CEO, @lkeshre. \n\nWe’ll keep working to make investing simpler and more accessible.",
-      "created_at": "2026-11-19T08:12:30+00:00",
-      "url": "https://x.com/_groww/status/2123328550266884125",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123327805828268226",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | Physicswallah shares rise 8% as company guides for 25% CAGR by FY30; brokerages say 'Buy – check target prices\n\n- Physicswallah shares surge 8% after growth roadmap.\n- The firm targets Rs 9,000-10,000 crore revenue by FY30.\n- Brokerages like HSBC and Motilal Oswal issued Buy ratings.\n\nRead More:\nhttps://t.co/qAC95kMUVR",
-      "created_at": "2026-11-19T08:09:33+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123327805828268226",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123327752371909119",
-      "handle": "r_laroia",
-      "display_name": "Rakesh Laroia",
-      "text": "#IIFL Finance - Rating Upgrade\n\nICRA upgrades IIFL Finance rating to AA/Stable reaffirmed from AA/Negative; CP programme [ICRA]A1+ reaffirmed\n\nTrades at 0.9 book FY29 n 6.5 PE FY29 post 6400cr fund infusion by promoters n PE major !! \nGold bottom close - Contra take !",
-      "created_at": "2026-11-19T08:09:20+00:00",
-      "url": "https://x.com/r_laroia/status/2123327752371909119",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123326914979148096",
-      "handle": "marketswithsam",
-      "display_name": "Samraat Jadhav",
-      "text": "Brokers Radar –\nBernstein BUY on PAYTM with TGT at 2220.MCX TGT by UBS AT 4500 from 2800. Kaynes Tech TGT reduce by Macquarie at 2800. CLSA BUY on Coforge TGT at 2522. CLSA HOLD - TGT on HCL Tech at 1094. CLSA         BUY - TGT on JSW Steel at 1500.",
-      "created_at": "2026-11-19T08:06:00+00:00",
-      "url": "https://x.com/marketswithsam/status/2123326914979148096",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123326386224103719",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#StartupsWithMC | Anthropic's first VC backer Spark Capital's $777 million investment swells to $10.3 billion\n\nLed by general partner Yasmin Razavi, the venture firm was the first institutional investor to lead a funding round in 2023 and continued backing the Claude-maker through six rounds\n\n@AryamanGupta_ reports: \nhttps://t.co/IxEfyDrik7",
-      "created_at": "2026-11-19T08:03:54+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123326386224103719",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123326072582545465",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | Paytm shares plunge nearly 11%, Pine Labs down 5% as UPI transaction charges face delay, steep cut\n\n-Paytm and Pine Labs shares plunged amid UPI MDR delay reports.\n-Proposed UPI MDR implementation may wait until after 2027 polls.\n-Merchant-to-merchant UPI transactions may face a flat Rs 5 fee.\n\nRead More:\nhttps://t.co/119Rui4eXh",
-      "created_at": "2026-11-19T08:02:39+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123326072582545465",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123325937429455151",
-      "handle": "hey_kamal",
-      "display_name": "Kamal Madasu",
-      "text": "@mohinimaheshwa Can we buy coal india now?",
-      "created_at": "2026-11-19T08:02:07+00:00",
-      "url": "https://x.com/hey_kamal/status/2123325937429455151",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123325920005984567",
-      "handle": "SwingTr13847854",
-      "display_name": "A K SINGH",
-      "text": "📊 IPO Watch, 19 Nov\n🪨 #MahanadiCoalfields: ₹8,981 cr, 100% sale by Coal India. Profit ₹11,842 → ₹10,825 → ₹10,698 cr (falling) but 31.6% margins and P/E ~8.4x. GMP ₹3 (2%). Day 1: 0.03x so far.\n🌾 #CrystalCrop: ₹455 cr. Profit ₹87 → ₹118 → ₹145 cr (growing), but only a 4.6% margin and P/E 25–31x. GMP ₹18 (6.6%), booked 1.94x. Closes tomorrow.\nValue vs growth: which one are you applying for? 👇\n\nNot investment advice. \n#IPO #IPOAlert #StockMarketIndia",
-      "created_at": "2026-11-19T08:02:03+00:00",
-      "url": "https://x.com/SwingTr13847854/status/2123325920005984567",
-      "image": "https://pbs.twimg.com/media/HXeRqZ1acAABV6i.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123325872375828875",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCPersonalFinance | Gold needs 50% rally to reclaim record high, silver needs 170%: Which metal offers better risk-reward?\n\n- Gold and silver prices have seen a sharp correction.\n- Gold offers a better risk-reward equation than silver.\n- Central bank buying provides ongoing support for gold.\n\n@Dipen_Journals reports:\n\nRead More:\nhttps://t.co/22VUIv8ogG",
-      "created_at": "2026-11-19T08:01:52+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123325872375828875",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123325718641959238",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | Nomura sees Godrej Properties, Prestige Estates driving Q3 launches; sustenance sales remain resilient\n\n- Nomura expects strong Q3 launches by developers.\n- Godrej and Prestige lead upcoming project pipelines.\n- Nomura retains Buy ratings on major real estate stocks.\n\nRead More:\nhttps://t.co/QvsvqBB5CJ",
-      "created_at": "2026-11-19T08:01:15+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123325718641959238",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123324693528908116",
-      "handle": "rk_ette",
-      "display_name": "Radhakrishna Ette",
-      "text": "@mohinimaheshwa Coal India 478/- , holding since 20 months. Hold or sell .",
-      "created_at": "2026-11-19T07:57:11+00:00",
-      "url": "https://x.com/rk_ette/status/2123324693528908116",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123324590378402050",
-      "handle": "QuantBreadth",
-      "display_name": "QuantBreadth | Market Internals",
-      "text": "IT is the laggard sector as of now, INFY being at the bottom of today's performance.\n\nCoforge is looking good among all IT stocks https://t.co/fa4gaRU2vh",
-      "created_at": "2026-11-19T07:56:46+00:00",
-      "url": "https://x.com/QuantBreadth/status/2123324590378402050",
-      "image": "https://pbs.twimg.com/media/HXeP7D0bQAAXtUN.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123324564759585105",
-      "handle": "eduinvestingin",
-      "display_name": "Eduinvesting.in",
-      "text": "Garware Hi-Tech Films Q2 FY27: Record ₹696 Cr Quarter, a Raw-Material Bunker, and a Sun That Clocks Off Every Q3\nhttps://t.co/yCtbJ85zAx",
-      "created_at": "2026-11-19T07:56:40+00:00",
-      "url": "https://x.com/eduinvestingin/status/2123324564759585105",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE291A01017",
-          "query": "\"GRWRHITECH\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123324245715665212",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | Nasdaq futures jump 1.1%, S&P 500 futures rebound as Anthropic's record $81 billion IPO lifts AI stocks\n\n- US stock futures rallied following Anthropic's record IPO.\n- Anthropic raised $81.31B, making it the biggest debut ever.\n- The massive IPO revived investor appetite for tech stocks.\n\nRead More:\nhttps://t.co/qc5u8fCKxr",
-      "created_at": "2026-11-19T07:55:24+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123324245715665212",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123323765664743598",
-      "handle": "PatrikaRoyal",
-      "display_name": "Royal Patrika",
-      "text": "शेयर बाजार में जोरदार उछाल! सेंसेक्स 500 अंक चढ़ा, निफ्टी भी 150 अंक ऊपर; महानदी कोलफील्ड्स का IPO खुला\n\nभारतीय शेयर बाजार में 19 नवंबर को तेजी देखने को मिली। सेंसेक्स करीब 500 अंक की बढ़त के साथ 82,500 के स्तर पर पहुंचा, जबकि निफ्टी करीब 150 अंक चढ़कर 25,350 पर कारोबार कर रहा था। ऑटो, बैंकिंग और रियल्टी शेयरों में जोरदार खरीदारी रही। इस बीच महानदी कोलफील्ड्स का IPO भी आज से निवेशकों के लिए खुल गया है। इसमें 23 नवंबर तक बोली लगाई जा सकेगी। IPO का प्राइस बैंड 129 से 136 रुपये प्रति शेयर तय किया गया है। न्यूनतम निवेश 14,960 रुपये है। इस इश्यू के जरिए कोल इंडिया अपनी 10% हिस्सेदारी बेचकर करीब 9,500 करोड़ रुपये जुटाने की तैयारी में है। शेयरों की लिस्टिंग 27 नवंबर को संभावित है।\n\nलेटेस्ट अपडेट के लिए विजिट करें: https://t.co/4sMmBtneev\n\n#ShareMarket #Sensex #Nifty50 #StockMarketNews #MahanadiCoalfieldsIPO #IPO2026 #CoalIndia #BusinessNews #ShareMarketUpdate #RoyalPatrika\n\nSensex Today, Nifty Today, Indian Stock Market, Sensex 500 Points Up, Nifty 150 Points Up, Mahanadi Coalfields IPO, IPO Dates, Coal India IPO, Stock Market News, Royal Patrika",
-      "created_at": "2026-11-19T07:53:29+00:00",
-      "url": "https://x.com/PatrikaRoyal/status/2123323765664743598",
-      "image": "https://pbs.twimg.com/media/HXePtHCa4AA4JIL.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        },
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123323629610172461",
-      "handle": "IPOReview_Groww",
-      "display_name": "IPO Review by Groww",
-      "text": "Market Debut Alert 📢🎓\n\nJ.K. Shah Commerce Education Limited (JKSCEL) Lists on BSE & NSE!\n\nCarved out via a demerger from Veranda Learning Solutions Limited, J.K. Shah Commerce Education made a direct market debut without a traditional IPO:\n\n🔹Listing Date: 18 November, 2026\n🔹NSE Listing Price: ₹218 per share\n🔹BSE Listing Price: ₹219 per share\n🔹Listing Route: Demerger from Veranda Learning Solutions \n🔹Share Entitlement Ratio: 1:1\n🔹Face Value: ₹10 per share\n🔹Listed At: BSE & NSE\n\nFollow IPO Review by Groww for upcoming IPO news, subscription updates & allotment details! \n\n#JKShah #JKShahClasses #JKSCEL #VerandaLearning #Demerger #StockListing #MarketDebut #StockMarketIndia #ShareMarket #DalalStreet #BSE #NSE #IPOReviewByGroww",
-      "created_at": "2026-11-19T07:52:57+00:00",
-      "url": "https://x.com/IPOReview_Groww/status/2123323629610172461",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123323459082277289",
-      "handle": "traderboardin",
-      "display_name": "Trader Board",
-      "text": "🔴 EXIT · Breakout · 🛑 Stop-loss\nCOFORGE 2100 CE · 29 Dec\nExit ₹48.00 (-20.6%)\n1:22 PM IST\n⚙️ Automated/algo — not advice\n@traderboardin",
-      "created_at": "2026-11-19T07:52:16+00:00",
-      "url": "https://x.com/traderboardin/status/2123323459082277289",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123323333131542922",
-      "handle": "groww_cs",
-      "display_name": "Groww Support",
-      "text": "@Zafar_nama @lkeshre Hi, we've responded to you via DM.",
-      "created_at": "2026-11-19T07:51:46+00:00",
-      "url": "https://x.com/groww_cs/status/2123323333131542922",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123323005145407563",
-      "handle": "wegro_app",
-      "display_name": "Wegro App",
-      "text": "IIFL Finance Limited 🚀 has received a significant credit rating update from ICRA Limited.\n\nKey highlights:\n\n- 𝗥𝗮𝘁𝗶𝗻𝗴 𝗥𝗲𝗮𝗳𝗳𝗶𝗿𝗺𝗮𝘁𝗶𝗼𝗻: ICRA has reaffirmed the rating for IIFL Finance's Non-Convertible Debentures (NCDs) and Subordinated Debt Programme at [𝗜𝗖𝗥𝗔] 𝗔𝗔.\n- 𝗢𝘂𝘁𝗹𝗼𝗼𝗸 𝗥𝗲𝘃𝗶𝘀𝗶𝗼𝗻: Crucially, the outlook for these instruments has been revised from ‘Negative’ to ‘𝗦𝘁𝗮𝗯𝗹𝗲’ 📈.\n- 𝗖𝗼𝗺𝗺𝗲𝗿𝗰𝗶𝗮𝗹 𝗣𝗮𝗽𝗲𝗿: The rating for the Company’s Commercial Paper Programme has been reaffirmed at [𝗜𝗖𝗥𝗔] 𝗔1+.\n\n𝗦𝘂𝗯𝘀𝗶𝗱𝗶𝗮𝗿𝘆 𝗨𝗽𝗱𝗮𝘁𝗲:\n\n- IIFL Home Finance Limited, a material subsidiary, also saw its ratings reaffirmed at [𝗜𝗖𝗥𝗔] 𝗔𝗔 for NCDs, Subordinated Debt Programme, and Long-Term Bank Line.\n- The outlook for IIFL Home Finance's ratings has similarly been revised to ‘𝗦𝘁𝗮𝗯𝗹𝗲’ from ‘Negative’.\n- Its Commercial Paper Programme rating is reaffirmed at [𝗜𝗖𝗥𝗔] 𝗔1+.\n\nThis positive development indicates improved creditworthiness and stability for both IIFL Finance and its subsidiary.\n\n📊 IIFL FINANCE LTD | 🏷️ Credit Rating\n\n🌐 Details: https://t.co/2iiOqBIfoL\n\n⚡️Instant stock alerts on WhatsApp - Try FREE 👉 https://t.co/PdwQDWbXUY",
-      "created_at": "2026-11-19T07:50:28+00:00",
-      "url": "https://x.com/wegro_app/status/2123323005145407563",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123322203118936260",
-      "handle": "MultibaggAI",
-      "display_name": "multibagg.ai",
-      "text": "How to check: open the RHP and look for “Offer for Sale” vs “Fresh Issue.”\nFresh issue = money goes to the company.\nOffer for sale = money goes to existing shareholders.\n\nMahanadi Coalfields: 100% offer for sale by Coal India\nPrice band: ₹129–136 | Lot: 110 shares (₹14,960)\nOpen: 19–23 Nov | Listing: 27 Nov\n\nFull IPO details: https://t.co/q2EeAFmIYl",
-      "created_at": "2026-11-19T07:47:17+00:00",
-      "url": "https://x.com/MultibaggAI/status/2123322203118936260",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123321628285186384",
-      "handle": "MultibaggAI",
-      "display_name": "multibagg.ai",
-      "text": "Mahanadi Coalfields IPO opens today. ₹8,981 crore.\n\nThe company will receive ₹0 of it.\n\nEvery share on sale belongs to Coal India. So the entire amount goes to the parent, not to the mines, machines or workers at Mahanadi.\n\nWorth checking one line in any IPO before reading anything else: who is actually getting the money?",
-      "created_at": "2026-11-19T07:45:00+00:00",
-      "url": "https://x.com/MultibaggAI/status/2123321628285186384",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123321573075734881",
-      "handle": "JinesshShah",
-      "display_name": "Jinessh Shah",
-      "text": "#COFORGE\nAfter a strong upmove, the stock formed a good base on the right side in Daily Time Frame\n\nBreakout followed. Then came a pullback towards the 20 SMA.\n\nNow, the stock is consolidating for the last 5–6 candles.\n\nWaiting for a strong green candle to show fresh strength.\n\nKeep COFORGE on your watchlist!\n\n#Happytrading",
-      "created_at": "2026-11-19T07:44:47+00:00",
-      "url": "https://x.com/JinesshShah/status/2123321573075734881",
-      "image": "https://pbs.twimg.com/media/HXeLkUvaIAAS6XV.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123320874871005219",
-      "handle": "ThanksDeepest",
-      "display_name": "Deepest Thanks",
-      "text": "IIFL Finance Limited – ICRA reaffirms AA ratings and revises outlook from Negative to Stable; proposed ₹6,414 crore capital infusion, improving profitability and stronger capitalisation support the revision, while vulnerable assets and funding costs remain key monitorables.\n\nhttps://t.co/pJsd7vGHat",
-      "created_at": "2026-11-19T07:42:00+00:00",
-      "url": "https://x.com/ThanksDeepest/status/2123320874871005219",
-      "image": "https://pbs.twimg.com/media/HXeNCfvbAAAziQR.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123320737339711724",
-      "handle": "chartwhisp60202",
-      "display_name": "Chart Whisperer",
-      "text": "Intraday stocks for today.\n\nBLS polymer \nVed power\nVrl logistics \nGroww \nKmc hospitallity \nBrain bees \nCams \n\nWill update anything if getting live .",
-      "created_at": "2026-11-19T07:41:27+00:00",
-      "url": "https://x.com/chartwhisp60202/status/2123320737339711724",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123320647388701142",
-      "handle": "chartwhisp60202",
-      "display_name": "Chart Whisperer",
-      "text": "30 STOCKS IN FOCUS | STRONG PRICE MOMENTUM & RECORD HIGHS\n\nBANKING & FINANCIAL SERVICES\n\n1. Karur Vysya Bank\n2. Punjab National Bank\n3. Motilal Oswal Financial Services\n4. ICICI Bank\n5. SG Finserv\n6. Union Bank of India\n7. Algoquant Fintech\n8. Kotak Mahindra Bank\n9. Bank of Maharashtra\n10. Karnataka Bank\n11. Billionbrains Garage Ventures (Groww)\n\nTECHNOLOGY & DIGITAL BUSINESSES\n\n12. Eternal\n13. Gyftr\n14. Panache Digilife\n\nINDUSTRIALS, ENGINEERING & MATERIALS\n\n15. KDDL\n16. Shyam Metalics & Energy\n17. Knowledge Marine & Engineering Works\n18. Gayatri Rubbers & Chemicals\n19. Hindusthan Insulators & Industries\n20. Inomet Advanced Materials\n\nCHEMICALS & AGRICULTURE\n\n21. Aries Agro\n22. Navin Fluorine International\n23. Alufluoride\n\nHEALTHCARE\n\n24. Credent Connect N Care\n25. KMC Speciality Hospitals\n\nCONSUMER, TEXTILES & JEWELLERY\n\n26. Welspun Living\n27. M K Sons Fine Jewels\n28. Indian Hotels Company\n29. Nupur Recyclers\n30. Sonaselection",
-      "created_at": "2026-11-19T07:41:06+00:00",
-      "url": "https://x.com/chartwhisp60202/status/2123320647388701142",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"Billionbrains Garage Ventures\""
-        },
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        },
-        {
-          "entityId": "isin:INE338I01027",
-          "query": "\"Motilal Oswal Financial Services\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123319749044301894",
-      "handle": "VinodBh87402638",
-      "display_name": "Vinod Bhandari",
-      "text": "Gold sinks to 14-month low: Muthoot Finance, Manappuram, IIFL Finance shares fall, jewellery stocks drag\n\nhttps://t.co/DevvwMMQwv",
-      "created_at": "2026-11-19T07:37:32+00:00",
-      "url": "https://x.com/VinodBh87402638/status/2123319749044301894",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123319683965468709",
-      "handle": "QuantBreadth",
-      "display_name": "QuantBreadth | Market Internals",
-      "text": "INDOMIM forming a good base for an upside move. Needs to close above 8 and 20 EMA today. \n\nNot a recommendation. https://t.co/ErDtMkHuw8",
-      "created_at": "2026-11-19T07:37:16+00:00",
-      "url": "https://x.com/QuantBreadth/status/2123319683965468709",
-      "image": "https://pbs.twimg.com/media/HXeLWqYbsAAI7p5.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE084101034",
-          "query": "\"INDOMIM\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123319658224713742",
-      "handle": "xpChest",
-      "display_name": "xp Chest",
-      "text": "@addiecien Groww",
-      "created_at": "2026-11-19T07:37:10+00:00",
-      "url": "https://x.com/xpChest/status/2123319658224713742",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123319351113900108",
-      "handle": "growth_edge_",
-      "display_name": "GrowthEdge",
-      "text": "Mahanadi Coalfields (MCL) IPO opens today—India’s third Coal India subsidiary to list in 2026. \n\nKey numbers to know before applying:\n\n✅ Issue Size: ₹8,981 Cr (100% OFS by Coal India)\n\n✅ Price Band: ₹129 – ₹136 per share\n\n✅ Min Retail Lot: 110 shares (₹14,960)\n\n✅ Valuation: 8.4x FY26 earnings on ₹10,698 Cr profit & zero debt\n\n✅ GMP: Muted at ₹3 (2.3% estimated listing gain)\n\nStrong cash-generating PSU monopoly—but muted grey market sentiment makes it more of a steady dividend/value play than a listing-day pop.",
-      "created_at": "2026-11-19T07:35:57+00:00",
-      "url": "https://x.com/growth_edge_/status/2123319351113900108",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123319325545361500",
-      "handle": "FWUpdates_",
-      "display_name": "Front Wave Updates",
-      "text": "Promoter trades, latest disclosures:\nSelling: Happy Forgings promoters sold 32.48 lakh shares (3.44% stake). Flair Writing promoters sold 5 lakh.\nBuying: Gallantt Ispat promoter 30 lakh, Thomas Cook promoter 8.07 lakh, La Opala promoter 1 lakh.\nDisclosures don’t give reasons.",
-      "created_at": "2026-11-19T07:35:51+00:00",
-      "url": "https://x.com/FWUpdates_/status/2123319325545361500",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE330T01021",
-          "query": "\"Happy Forgings\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123319111778185372",
-      "handle": "financegyaninew",
-      "display_name": "Finance Gyani",
-      "text": "Jio Finance, Coal India, SBI, Indian Hotels, Lemon Tree Hotels, Canara Bank, YES Bank,  NALCO, Dalmia Bharat, Bharat Forge, Tonbo Imaging, TD Power Systems Share में क्या करें? | Finance Gyani\n\n#jiofinancialservicessharelatestnews #avinashgorakshakar #bablirautela #financegyani https://t.co/9kycwppjmG",
-      "created_at": "2026-11-19T07:35:00+00:00",
-      "url": "https://x.com/financegyaninew/status/2123319111778185372",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123318865799340358",
-      "handle": "yadav_ridhaan_",
-      "display_name": "Ridhaan Yadav",
-      "text": "@growth_edge_ I am Directly buying via IndMoney or groww",
-      "created_at": "2026-11-19T07:34:01+00:00",
-      "url": "https://x.com/yadav_ridhaan_/status/2123318865799340358",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123318857377226940",
-      "handle": "FWUpdates_",
-      "display_name": "Front Wave Updates",
-      "text": "IIFL Finance block deal: FIH Mauritius Investments sold 5.65 crore shares at ₹617, about ₹3,488 Cr. The top 12 buyers listed took about 59% of it, mostly mutual funds.\nBlock data doesn’t give reasons for either side.",
-      "created_at": "2026-11-19T07:33:59+00:00",
-      "url": "https://x.com/FWUpdates_/status/2123318857377226940",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123318649322717664",
-      "handle": "trevorgudchild",
-      "display_name": "Gudchild",
-      "text": "@Ejykmomentum Groww",
-      "created_at": "2026-11-19T07:33:10+00:00",
-      "url": "https://x.com/trevorgudchild/status/2123318649322717664",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123318355167965457",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MarketsWithMC | Silver ETFs decline up to 2%, Hindustan Zinc shares down as precious metal crashes up to 5%\n\nAt around 12:50 pm, Nippon India Silver ETF was trading 1.38 per cent lower, while Groww Silver ETF and Zerodha Silver ETF declined 1.31 per cent and 1.46 per cent, respectively.\n\nRead More:\nhttps://t.co/luI8wcHVr4",
-      "created_at": "2026-11-19T07:31:59+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123318355167965457",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123318305905938872",
-      "handle": "paripune",
-      "display_name": "Paritosh sharma",
-      "text": "Mahanadi Coalfields IPO opens today 🪨\n\n• Size: ₹8,981 cr, entirely a sale of shares by Coal India (the company gets no money)\n• Price band: ₹129–136\n• Lot: 110 shares, ₹14,960\n• Closes 23 Nov, listing 27 Nov\n• GMP: about ₹3 (~2–3%)\n\n(Not investment advice)",
-      "created_at": "2026-11-19T07:31:48+00:00",
-      "url": "https://x.com/paripune/status/2123318305905938872",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123317876501499989",
-      "handle": "IamAtulRoy",
-      "display_name": "Atul Roy",
-      "text": "Mahanadi Coalfields IPO opened today and is open till Monday, 23 Nov. Coal India is selling 10% for ₹8,981 Cr, so MCL itself gets nothing from it.\n\nAt ₹136 it is priced at 8.4x FY26 earnings, about the same as Coal India. The dividend is the main reason to look: ₹12.69 a share in FY26, around 9.3% at the top of the band. But production fell 9.3% in H1 FY27, and that is what I would watch.\n\nFull 1Pager below 👇",
-      "created_at": "2026-11-19T07:30:05+00:00",
-      "url": "https://x.com/IamAtulRoy/status/2123317876501499989",
-      "image": "https://pbs.twimg.com/media/HXeKWv3acAAQchB.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123317852354777395",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#Business | HUDCO eyes financing for satellite towns, urban redevelopment and multimodal corridors\n\n- HUDCO targets private-sector loans at 5-10% in three years.\n- Loan book growth driven by new urban infrastructure projects.\n- Net NPAs fall as HUDCO focuses on recoveries and asset quality.\n\n@IshaanGera & Surojit Gupta with more details\nhttps://t.co/KiEIZfAVg3",
-      "created_at": "2026-11-19T07:29:59+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123317852354777395",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123316509951074400",
-      "handle": "praseninld",
-      "display_name": "Prasenjeet Dash",
-      "text": "🟢Markets Rebound;Gold &amp; Silver Slide!\n\n📈Sensex recovers 850pts; Nifty nears 25,400.\n\n📉Gold hits a 14-month low, dragging Muthoot, Manappuram &amp; IIFL Finance.\n\n🪙Experts warn of further weakness in silver, copper &amp; crude oil.\n\n#Nifty #Sensex #Gold #Silver #StockMarket #Investing",
-      "created_at": "2026-11-19T07:24:39+00:00",
-      "url": "https://x.com/praseninld/status/2123316509951074400",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123315844033991140",
-      "handle": "bhamre_avi",
-      "display_name": "Option Ka Hero",
-      "text": "🤑🤑 #optiontrading  🤑🤑\n\n#Sensex 105/115 Sl 70 Target 170/200/225/250\n\n#Nifty50 #GIFTNIFTY #coalindia #Gold #btc #Stocks #stockmarket #banknifty \n@AnilSinghvi_ @ashumadan4 @PRSundar64",
-      "created_at": "2026-11-19T07:22:01+00:00",
-      "url": "https://x.com/bhamre_avi/status/2123315844033991140",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123315770243547525",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCPRO | PNB Housing Finance is sharpening its focus on high-yielding retail segments to drive growth and margins. Can improving profitability and asset quality trigger a valuation re-rating?\n\nhttps://t.co/6Db1yRNrkJ",
-      "created_at": "2026-11-19T07:21:43+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123315770243547525",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2123315433998889344",
-      "handle": "IIFL_Finance",
-      "display_name": "IIFL Finance",
-      "text": "@amanchavan_ Hi Aman, we are currently working on your request and will share an update shortly. We request your patience in the meantime.",
-      "created_at": "2026-11-19T07:20:23+00:00",
-      "url": "https://x.com/IIFL_Finance/status/2123315433998889344",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123315174660866125",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "#MCPersonalFinance | Gold sinks to 14-month low: Muthoot Finance, Manappuram, IIFL Finance shares fall, jewellery stocks drag\n\n-Gold loan stocks decline up to 3.5% amid dropping gold prices.\n-US Fed rate hike expectations drive global gold prices down.\n-Lower gold prices affect collateral value for lenders.\n\n@a_shaleen reports 👇\nhttps://t.co/QVlSYOHknf",
-      "created_at": "2026-11-19T07:19:21+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2123315174660866125",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE530B01024",
-          "query": "\"IIFL Finance\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123314412383608966",
-      "handle": "Keval_IM",
-      "display_name": "Investment_ Mantra",
-      "text": "Capital Market in becoming major part of listed universe\nStock with 1 L CR+ market cap\n1. NSE\n2. BSE\n3. SBI AMC\n4. ICICI AMC\n5. HDFC AMC\n6. Groww\n\nWhy no AMC is coming up with Active capital market fund. There is index fund not active fund yet\nThey are the best people to understand capital market and still they don't want to manage capital market fund?",
-      "created_at": "2026-11-19T07:16:19+00:00",
-      "url": "https://x.com/Keval_IM/status/2123314412383608966",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE0HOQ01053",
-          "query": "\"GROWW\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123314243877654577",
-      "handle": "tradewith_kirti",
-      "display_name": "Kirtii Chaturvedi",
-      "text": "Guys, WHAT A MOVE! What just happened to Sensex?\n\n230 to 357 — 127 points HIGH! That's a massive move!\n\n#CoalIndia #GIFTNIFTY #stock #commodity #intraday #PriceAction #LTFoods #optionbuying #MarketUpdate #NiftyBank #GoldmanSachs #SBIN #SEBI #OptionsTrading #Paytm #Sensex #Copper https://t.co/Vtui3Y3Wel",
-      "created_at": "2026-11-19T07:15:39+00:00",
-      "url": "https://x.com/tradewith_kirti/status/2123314243877654577",
-      "image": "https://pbs.twimg.com/media/HXeG-1XbkAAPLst.png",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"COALINDIA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123314122154754061",
-      "handle": "dkagarwal",
-      "display_name": "dkagarwal",
-      "text": "7/n\n\nAt INR 136, MCL is valued at 8.4x FY26 P/E, in line with Coal India at 8.1x. The board has no independent directors and the CMD retires in Jan 2027. With a GMP of 1% (19 Nov 2026), we see no meaningful listing gains. We would skip the issue, and income investors may track it after listing.",
-      "created_at": "2026-11-19T07:15:10+00:00",
-      "url": "https://x.com/dkagarwal/status/2123314122154754061",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123314113791361100",
-      "handle": "Foliomaxin",
-      "display_name": "Foliomax",
-      "text": "💻 IT Software, Q2 FY27: Rupee में +13%, Dollar में सिर्फ़ +2%\n\nTCS, Infosys, HCLTech, Wipro जैसी companies की कहानी इस बार एक शब्द में समझ आती है: currency।\n\nSector की तस्वीर (48 listed companies, Jul-Sep 2026):\n• Revenue ₹2.22 lakh cr से ₹2.51 lakh cr, यानी +12.9% YoY\n• Operating margin ~21.8%, स्थिर\n• Net profit Q1 के बराबर\n\n+13% सुनने में ठीक लगता है। पर ज़रा रुकिए।\n\n💱 असली growth कितनी?\nIT companies की ज़्यादातर कमाई dollar में होती है। पिछले एक साल में rupee ~₹86 से ~₹94 प्रति dollar हुआ। यानी हर dollar अब ~9% ज़्यादा rupees देता है, बिना ज़्यादा काम किए।\n\n• TCS: rupee में +11.2%, पर dollar में +2.4%, constant currency में +2.8%\n• Infosys: rupee में +10.7%, dollar में +1.3%, constant currency में +1.5%। FY27 guidance घटाकर 1-2%\n\nयानी बड़ी IT companies असल में सिर्फ़ 1-3% बढ़ रही हैं। बाक़ी rupee का कमाल है।\n\n🤖 AI: दोस्त भी, दुश्मन भी\nदोस्त:\n• TCS की AI से सालाना कमाई $3.1 billion पार, revenue का 10% से ज़्यादा\n• Infosys का AI revenue 10.5%, एक quarter में +29%\nदुश्मन:\n• Clients कहते हैं AI से काम जल्दी होता है, तो दाम घटाओ\n• HCLTech के CEO के मुताबिक जो deal पहले $100 million का होता, वो अब ~$80 million का\n• कम लोगों से उतना ही काम, यानी revenue अब headcount के साथ नहीं बढ़ता\n\n📝 Deals फिर भी आ रहे\n• TCS: $9.6 billion के नए contracts\n• Infosys: $5.2 billion, जिसमें $2 billion से बड़ा एक mega deal\n\n🚀 Mid-tier companies आगे\n• Coforge +54%, Persistent +30%, Mphasis +17%, Fractal +20%\n• छोटी companies तेज़ी से market share ले रही हैं, ख़ासकर नई technology वाले काम में\n\nसीख: Export वाली company का revenue पढ़ते वक़्त हमेशा पूछिए, constant currency में कितना बढ़ा? Rupee कमज़ोर हो तो numbers चमकते हैं, मज़बूत हो तो वही numbers फीके पड़ जाते हैं।\n\n🔭 आगे क्या?\n• बड़ी IT companies की असली growth FY27 में low single digit ही दिखती है\n• Rupee कमज़ोर रहा तो rupee numbers सहारा देते रहेंगे\n• Billing का तरीक़ा बदल रहा है: घंटों के हिसाब से नहीं, नतीजों के हिसाब से (outcome-based)\n• US visa, tariff और clients की सावधानी जोखिम बने हुए हैं\n\nदेखने वाली बातें: Q3 में constant currency growth और guidance, deal TCV का revenue में बदलना, AI revenue बनाम discounts, rupee-dollar rate, headcount।\n\nEducational purpose only. Not investment advice. Not SEBI registered. DYOR.\n\n#ITStocks #Foliomax",
-      "created_at": "2026-11-19T07:15:08+00:00",
-      "url": "https://x.com/Foliomaxin/status/2123314113791361100",
-      "image": "https://pbs.twimg.com/media/HXeG6dmaIAEeRCi.jpg",
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"Coforge\""
-        },
-        {
-          "entityId": "isin:INE591G01025",
-          "query": "\"COFORGE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123313756075962464",
-      "handle": "srikanth0725",
-      "display_name": "skyyy",
-      "text": "@mohinimaheshwa Coal india",
-      "created_at": "2026-11-19T07:13:43+00:00",
-      "url": "https://x.com/srikanth0725/status/2123313756075962464",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2123313637888860243",
-      "handle": "dkagarwal",
-      "display_name": "dkagarwal",
-      "text": "3/n\n\nMost of what MCL earns per tonne is set by Coal India: 82.1% of FY26 sales were at notified prices fixed by grade. The e-auction premium, its main upside, fell to INR 275 per tonne from INR 802 in FY24, and with cost per tonne up 34%, operating EBITDA margin slipped to 41.7% from 46.4%.",
-      "created_at": "2026-11-19T07:13:15+00:00",
-      "url": "https://x.com/dkagarwal/status/2123313637888860243",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE522F01014",
-          "query": "\"Coal India\""
-        }
-      ]
     }
   ],
   "failed": [],
   "searchCoverage": {
     "planned": 255,
     "attempted": 7,
-    "incomplete": 219,
-    "checkedAt": "2026-11-20T23:25:20.882218+00:00"
+    "incomplete": 217,
+    "checkedAt": "2026-11-21T00:00:09.505051+00:00"
   },
   "archive": [
     {
@@ -9479,7 +9699,7 @@
     "optional": true,
     "status": "partial",
     "reason": "partial-read",
-    "lastAttemptAt": "2026-11-20T23:25:53.159Z",
+    "lastAttemptAt": "2026-11-21T00:00:39.062Z",
     "lastSuccessAt": null
   }
 }

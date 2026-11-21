@@ -1329,87 +1329,85 @@
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE338I01027|MOTILALOFS": {
-      "lastAttemptAt": "2026-11-16T09:51:21+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-11-21T00:00:09+00:00",
+      "error": null,
+      "lastResultCount": 55,
       "lastSuccessAt": "2026-10-25T22:41:56+00:00",
       "targetThrough": "2026-11-16T09:51:21+00:00",
       "pending": [
         {
-          "from": "2026-10-23T22:41:56+00:00",
-          "to": "2026-11-04T16:16:38.500000+00:00"
-        },
-        {
           "from": "2026-11-04T16:16:38.500000+00:00",
           "to": "2026-11-16T09:51:21+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-11-21T00:00:09+00:00"
     },
     "isin:INE310A01015|Nilkamal": {
-      "lastAttemptAt": "2026-11-16T09:51:21+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 104,
+      "lastAttemptAt": "2026-11-21T00:00:09+00:00",
+      "error": null,
+      "lastResultCount": 51,
       "targetThrough": "2026-10-25T22:41:56+00:00",
       "pending": [
-        {
-          "from": "2026-09-11T11:04:59+00:00",
-          "to": "2026-10-03T16:53:27.500000+00:00"
-        },
         {
           "from": "2026-10-03T16:53:27.500000+00:00",
           "to": "2026-10-25T22:41:56+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-16T09:51:21+00:00",
+      "lastDiscoveryAt": "2026-11-21T00:00:09+00:00",
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE310A01015|NILKAMAL": {
-      "lastAttemptAt": "2026-11-16T10:41:26+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 12,
-      "targetThrough": null,
-      "pending": [],
+      "lastAttemptAt": "2026-11-21T00:00:09+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 106,
+      "targetThrough": "2026-11-21T00:00:09+00:00",
+      "pending": [
+        {
+          "from": "2026-09-11T11:04:59+00:00",
+          "to": "2026-10-16T17:32:34+00:00"
+        },
+        {
+          "from": "2026-10-16T17:32:34+00:00",
+          "to": "2026-11-21T00:00:09+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-11-09T21:01:42+00:00",
       "lastSuccessAt": "2026-09-13T11:04:59+00:00"
     },
     "isin:INE12F801023|OnEMI Technology Solutions": {
-      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "lastAttemptAt": "2026-11-21T00:00:09+00:00",
       "error": null,
-      "lastResultCount": 9,
-      "lastSuccessAt": "2026-11-16T11:40:46+00:00",
+      "lastResultCount": 8,
+      "lastSuccessAt": "2026-11-21T00:00:09+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE12F801023|Kissht": {
-      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
-      "error": "result-cap-incomplete",
-      "lastResultCount": 105,
+      "lastAttemptAt": "2026-11-21T00:00:09+00:00",
+      "error": null,
+      "lastResultCount": 84,
       "lastSuccessAt": "2026-10-05T06:14:50+00:00",
       "targetThrough": "2026-11-16T11:40:46+00:00",
       "pending": [
-        {
-          "from": "2026-10-03T06:14:50+00:00",
-          "to": "2026-10-25T08:57:48+00:00"
-        },
         {
           "from": "2026-10-25T08:57:48+00:00",
           "to": "2026-11-16T11:40:46+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-11-09T21:01:42+00:00"
+      "lastDiscoveryAt": "2026-11-21T00:00:09+00:00"
     },
     "isin:INE12F801023|OnEMI Technology": {
-      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
+      "lastAttemptAt": "2026-11-21T00:00:09+00:00",
       "error": null,
-      "lastResultCount": 43,
-      "lastSuccessAt": "2026-11-01T19:49:32+00:00",
+      "lastResultCount": 33,
+      "lastSuccessAt": "2026-11-21T00:00:09+00:00",
       "targetThrough": null,
       "pending": [],
       "lastDiscoveryAt": "2026-11-16T11:40:46+00:00"
     },
     "isin:INE12F801023|KISSHT": {
-      "lastAttemptAt": "2026-11-16T11:40:46+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-11-21T00:00:09+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 105,
       "targetThrough": "2026-11-16T11:40:46+00:00",
       "pending": [
@@ -3159,7 +3157,7 @@
   "coverage": {
     "planned": 255,
     "attempted": 7,
-    "incomplete": 219,
-    "checkedAt": "2026-11-20T23:25:20.882218+00:00"
+    "incomplete": 217,
+    "checkedAt": "2026-11-21T00:00:09.505051+00:00"
   }
 }
